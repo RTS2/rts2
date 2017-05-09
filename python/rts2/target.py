@@ -15,7 +15,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import json
+from . import json
 
 class Target:
 	def __init__(self,id,name=None):
@@ -30,7 +30,7 @@ class Target:
 		try:
 			data = json.getProxy().loadJson('/api/tbyid',{'id':self.id})['d'][0]
 			self.name = data[1]
-		except Exception,ex:
+		except Exception as ex:
 			self.name = None
 
 def get(name):

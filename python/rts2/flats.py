@@ -33,7 +33,7 @@
 import sys
 import string
 import time
-import scriptcomm
+from . import scriptcomm
 
 # email communication
 import smtplib
@@ -92,7 +92,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 	:param maxDarks: maximal number of dark frames. Dark exposures are the same as used for skyflats
 	:param expTimes: exposure times for flats attempts"""
 
-	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,maxBias=0,maxDarks=0,expTimes=range(1,20)):
+	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,maxBias=0,maxDarks=0,expTimes=list(range(1,20))):
 		scriptcomm.Rts2Comm.__init__(self)
 		# Configuration (filters, binning, ..) for evening, we will use
 		# reverse for morning. You fill array with Flat objects, which
@@ -466,7 +466,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 			  	conf = [self.usedFlats[i].binning,self.usedFlats[i].window]
 				try:
 					i = usedConfigs.index(conf)
-				except ValueError,v:
+				except ValueError as v:
 					usedConfigs.append(conf)
 		
 		if self.maxBias > 0:
@@ -494,7 +494,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 		try:
 			self.getData(domeDevice, tmpDirectory)
 			self.produceMasterFlats(tmpDirectory)
-		except scriptcomm.Rts2NotActive,noa:
+		except scriptcomm.Rts2NotActive as noa:
 			self.log('W','flat script interruped')
 
 			if len(self.goodFlats) + len(self.badFlats) != len(self.flatImages):
@@ -513,10 +513,10 @@ class FlatScript (scriptcomm.Rts2Comm):
 	def sendEmail(self,email,observatoryName):
 		msg = ''
 		try:
-			msg = 'Flats finished at {0}.\n\nGood flats: {1}\nBad flats: {2}\n\n'.format(datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
+			msg = 'Flats finished at {0}.\n\nGood flats: {1}\nBad flats: {2}\n\n'.format(datetime.today(),string.join(list(map(Flat.signature,self.goodFlats)),';'),string.join(list(map(Flat.signature,self.badFlats)),';'))
 			for flat in self.usedFlats:
 				msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
-		except TypeError,te:
+		except TypeError as te:
 			msg = 'Cannot get flats - good: {0}, bad: {1}'.format(self.goodFlats,self.badFlats)
 
 		mimsg = MIMEText(msg)

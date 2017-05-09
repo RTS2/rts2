@@ -16,8 +16,8 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
-import imgprocess
-import scriptcomm
+from . import imgprocess
+from . import scriptcomm
 
 sc = scriptcomm.Rts2Comm()
 
@@ -49,7 +49,7 @@ class Centering(scriptcomm.Rts2Comm):
 			try:
 				self.findOffset(x[0] * ra_offset,x[1] * dec_offset,exptime)
 				return
-			except Exception,ex:
+			except Exception as ex:
 				self.log('W','attempt on offset for {0} {1} failed:{2}'.format(x[0] * ra_offset, x[1] * dec_offset,ex))
 				if self.imgn:
 					self.toTrash(self.imgn)

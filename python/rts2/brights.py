@@ -21,7 +21,7 @@ import os
 import numpy as np
 from astropy import wcs
 from astropy.io import fits
-import libnova
+from . import libnova
 import time
 
 __DS9 = 'brights'
@@ -31,7 +31,7 @@ def find_stars_on_data(data, verbose = 0, useDS9 = False):
 	bkg.subfrom(data)
 	thres = 1.5 * bkg.globalrms
 	if verbose > 1:
-		print 'global average background: {0:.2f} rms: {1:.3f} threshold: {2:.3f}'.format(bkg.globalback, bkg.globalrms, thres)
+		print('global average background: {0:.2f} rms: {1:.3f} threshold: {2:.3f}'.format(bkg.globalback, bkg.globalrms, thres))
 	objects = sep.extract(data, thres)
 	# order by flux
 	if len(objects) == 0:
@@ -56,7 +56,7 @@ def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None):
 	b_y = s_objects[0]['y']
 	b_flux = s_objects[0]['flux']
 	if verbose:
-		print 'detected {0} objects'.format(len(s_objects))
+		print('detected {0} objects'.format(len(s_objects)))
 
 	if exclusion is not None:
 		def dist(x1,y1,x2,y2):
@@ -74,7 +74,7 @@ def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None):
 					s_y = s_objects[j]['y']
 					if dist(s_x,s_y,b_x,b_y) < exclusion:
 						if verbose:
-							print 'rejecting star at {0} {1}, too close to {2} {3}'.format(b_x, b_y, s_x, s_y)
+							print('rejecting star at {0} {1}, too close to {2} {3}'.format(b_x, b_y, s_x, s_y))
 							break
 			if j == len(s_objects) - 1:
 				found = True
@@ -84,10 +84,10 @@ def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None):
 			return None, None, None, None
 
 	if verbose:
-		print 'brightest at {0:.2f} {1:.2f}'.format(b_x,b_y)
+		print('brightest at {0:.2f} {1:.2f}'.format(b_x,b_y))
 		if verbose > 1:
 			for o in s_objects:
-				print 'object {0}'.format(o)
+				print('object {0}'.format(o))
 
 	bb_flux = b_flux
 	if len(s_objects) > 1:
@@ -97,11 +97,11 @@ def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None):
 		d=ds9.ds9(__DS9)
 		try:
 			d.set('file {0}'.format(fn))
-		except Exception,ex:
+		except Exception as ex:
 			time.sleep(4)
 			try:
 				d.set('file {0}'.format(fn))
-			except Exception,ex:
+			except Exception as ex:
 				pass
 		d.set('regions','image; point({0},{1}) # point=cross 25, color=green'.format(b_x,b_y))
 		if verbose > 1:
@@ -143,8 +143,8 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 
 	try:
 		paoff = hdu[0].header['DER1.PA']
-	except KeyError,ke:
-		print 'cannot find DER1.PA, using defaults'
+	except KeyError as ke:
+		print('cannot find DER1.PA, using defaults')
 
 	if dss:
 		d.set('dss size 7 7')
@@ -166,10 +166,10 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 
 	if verbose > 1:
 		pixcrd = np.array([[x, y], [x + 1, y + 1], [0,0]], np.float)
-		print 'some pixels', w.all_pix2world(pixcrd, 1)
+		print('some pixels', w.all_pix2world(pixcrd, 1))
 
 	wh = w.to_header()
-	for h in wh.items():
+	for h in list(wh.items()):
 		hdu[0].header.append((h[0], h[1], wh.comments[h[0]]))
 	hdu.writeto('out.fits', clobber=True)
 

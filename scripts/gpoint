@@ -57,10 +57,10 @@ def generate_model(args):
 			filnum = int(fs[2]) if len(fs) == 3 else 1
 			removed = model.filter(fs[0], float(fs[1]), filnum)
 			if removed is None:
-				print 'model within bounds'
+				print('model within bounds')
 				break
 			for r in removed:
-				print 'removed line:\n{0}'.format('\n'.join(r))
+				print('removed line:\n{0}'.format('\n'.join(r)))
 	model.print_stat()
 
 	if args.model_output is not None:
@@ -73,12 +73,12 @@ def generate_model(args):
 	if args.error_output is not None:
 		f = open(args.error_output,'w+')
 		out_dat = model.indata
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_ha),axis=1)
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_dec),axis=1)
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular_hadec),axis=1)
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_alt),axis=1)
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_az),axis=1)
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular_altaz),axis=1)
+		out_dat = np.append(out_dat,[[x*3600] for x in model.diff_ha],axis=1)
+		out_dat = np.append(out_dat,[[x*3600] for x in model.diff_dec],axis=1)
+		out_dat = np.append(out_dat,[[x*3600] for x in model.diff_angular_hadec],axis=1)
+		out_dat = np.append(out_dat,[[x*3600] for x in model.diff_alt],axis=1)
+		out_dat = np.append(out_dat,[[x*3600] for x in model.diff_az],axis=1)
+		out_dat = np.append(out_dat,[[x*3600] for x in model.diff_angular_altaz],axis=1)
 		for b in out_dat:
 			f.write('{0}\n'.format('\t'.join(b)))
 		f.close()
@@ -110,7 +110,7 @@ def plot_offsets(args):
 
 	model.fit_to_extra()
 	
-	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
+	ha_b,ha_e,dec = [float(f) for f in args.plot_offsets.split(':')]
 	import pylab
 
 	terms = []
@@ -119,7 +119,7 @@ def plot_offsets(args):
 		plotgrid = (1,1)
 	else:
 		if args.show_offset_terms == '*':
-			terms = model.best.params.keys()
+			terms = list(model.best.params.keys())
 		else:
 			terms = args.show_offset_terms.split(',')
 		plotgrid = (1+len(terms),1)
@@ -129,13 +129,13 @@ def plot_offsets(args):
 
 	r = 1
 	for t in terms:
-		print 'plotting term {0}'.format(t)
+		print('plotting term {0}'.format(t))
 		b = model.best.params
-		for ti in b.keys():
+		for ti in list(b.keys()):
 			if not(ti == t):
 				b[ti].value = 0
 		if model.verbose > 1:
-			print b
+			print(b)
 		subplot = pylab.subplot2grid(plotgrid,(r,0),colspan=1,rowspan=1)
 		model.plot_offsets(b,subplot,ha_b,ha_e,dec)
 		r += 1
@@ -156,7 +156,7 @@ def add_models(args):
 	if args.model_output is not None:
 		m_out.save(args.model_output)
 
-	print m_out
+	print(m_out)
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
 '\tgpoint -p ha:ha-merr,mjd:ha-err,num:dec-err modelin\tproduces model and ha model error,ha-err and dec-err plots')
@@ -181,6 +181,7 @@ parser.add_argument('--band',dest='plot_band',action='store',help='put on plots 
 parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
 parser.add_argument('--refine',dest='refine',action='store',help='refine existing model - use the same extra parameters, do fit, add two together')
 parser.add_argument('--fixed',dest='fixed',action='store',help='list (, separated) of parameters to fix (ie,ia,..)')
+parser.add_argument('--autofix',dest='autofix',action='store',help='fix terms with highest error until all errors are below given value',type=float)
 parser.add_argument('--extra',dest='extra',action='append',default=[],help='extra (harmonics,...) functions')
 parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)
 parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
@@ -211,9 +212,9 @@ class GPointInterpreter(cmd.Cmd):
 			delims = readline.get_completer_delims()
 			readline.set_completer_delims(delims.replace('/',''))
 
-		except Exception,er:
+		except Exception as er:
 			if args.verbose:
-				print 'Cannot read history file {0}:{1}'.format(histfile,str(er))
+				print('Cannot read history file {0}:{1}'.format(histfile,str(er)))
 			open(histfile, 'wb').close()
 		atexit.register(readline.write_history_file, histfile)
 
@@ -222,24 +223,24 @@ class GPointInterpreter(cmd.Cmd):
 	def do_print(self, line):
 		"""print - prints current model parameters"""
 		if self.model is None:
-			print 'no model loaded'
+			print('no model loaded')
 			return
 		if self.model.modelfile is not None:
-			print 'Model file {0}'.format(self.model.modelfile)
+			print('Model file {0}'.format(self.model.modelfile))
 		if line == 'params':
-			for k in self.model.best.params.keys():
-				print '{0} {1:.10f}'.format(k,self.model.best.params[k].value)
+			for k in list(self.model.best.params.keys()):
+				print('{0} {1:.10f}'.format(k,self.model.best.params[k].value))
 		elif line == 'degrees':
-			print self.model.to_string('degrees')
+			print(self.model.to_string('degrees'))
 		elif line == 'arcminutes' or line == 'minutes':
-			print self.model.to_string('arcminutes')
+			print(self.model.to_string('arcminutes'))
 		elif line == 'arcseconds' or line == 'seconds':
-			print self.model.to_string('arcseconds')
+			print(self.model.to_string('arcseconds'))
 		else:
-			print str(self.model)
+			print(str(self.model))
 	
 	def complete_print(self, text, line, begidx, endidx):
-		return filter(lambda x:x[:len(text)] == text, ['params', 'degrees', 'arcminutes', 'arcseconds', 'minutes', 'seconds'])
+		return [x for x in ['params', 'degrees', 'arcminutes', 'arcseconds', 'minutes', 'seconds'] if x[:len(text)] == text]
 
 	def do_fit(self,line):
 		"""fit - fit model parameters from modelin file"""
@@ -263,25 +264,25 @@ class GPointInterpreter(cmd.Cmd):
 		try:
 			self.model.best.params[line].value = 0
 			self.model.best.params[line].set(vary=False)
-		except Exception,ex:
-			print str(ex)
+		except Exception as ex:
+			print(str(ex))
 
 	def complete_remove(self, text, line, begidx, endidx):
-		return filter(lambda x:x[:len(text)] == text, self.model.best.params.keys())
+		return [x for x in list(self.model.best.params.keys()) if x[:len(text)] == text]
 
 	def do_save(self, line):
 		"""save - save current model to file"""
 		if self.model.best is None:
-			print 'No model loaded/fitted'
+			print('No model loaded/fitted')
 			return
 		self.model.save(line)
-		print 'Model saved to {0}'.format(line)
+		print('Model saved to {0}'.format(line))
 	
 	def complete_load(self, text, line, begidx, endidx):
 		return glob.glob(text + '*')
 	
 	def do_exit(self, line):
-		print
+		print()
 		sys.exit()
 
 	def do_EOF(self, line):

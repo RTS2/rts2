@@ -15,8 +15,8 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import queue
-import json
+from . import queue
+from . import json
 import xml.dom.minidom
 
 class Queues:
@@ -27,7 +27,7 @@ class Queues:
 	def load(self):
 		for d in self.jsonProxy.getDevicesByType(json.DEVICE_TYPE_SELECTOR):
 			for q in self.jsonProxy.getValue(d, 'queue_names', refresh_not_found=True)[:-1]:
-				if q not in self.queues.keys():
+				if q not in list(self.queues.keys()):
 					self.queues[q] = queue.Queue(self.jsonProxy, q, service=d)
 				self.queues[q].load()
 	
@@ -48,7 +48,7 @@ class Queues:
 			self.queues[qname] = q
 
 	def save(self, clear=False):
-		map(lambda q: self.queues[q].save(clear), self.queues)
+		list(map(lambda q: self.queues[q].save(clear), self.queues))
 
 	def save_xml(self, fn):
 		document = self.get_xml()

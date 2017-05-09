@@ -83,7 +83,7 @@ class ProcessFiles:
 	def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, split, ci=None):
 		objects = rts2.brights.find_stars(fn, hdu, verbose, useDS9, ci)
 		if verbose > 1:
-			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
+			print(_('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y']))
 		elif ci is not None:
 			rts2.progressbar.progress(ci + 1, len(hdu[0].data))
 		if len(self.sb[0]) == 0:
@@ -93,7 +93,7 @@ class ProcessFiles:
 				if bsi == len(objects):
 					if self.skipped < skip_clouds:
 						if verbose:
-							print _('skipping frame #{0}').format(ci)
+							print(_('skipping frame #{0}').format(ci))
 						self.skipped += 1
 						continue
 					sys.exit(_('too few stars matching criteria'))
@@ -103,10 +103,10 @@ class ProcessFiles:
 				c_d = pixel_distance(x, y, c_x, c_y)
 				bsi += 1
 				if verbose:
-					print _('star x {0:.3f} y {1:.3f} center distance {2:.3f}').format(x, y, c_d)
+					print(_('star x {0:.3f} y {1:.3f} center distance {2:.3f}').format(x, y, c_d))
 				if center_radius is not None and c_d > center_radius:
 					if verbose:
-						print _('star too far from center')
+						print(_('star too far from center'))
 					continue
 				self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['theta']])
 				si += 1
@@ -119,13 +119,13 @@ class ProcessFiles:
 				for star in objects:
 					dist = pixel_distance(b_x, b_y, star['x'], star['y'])
 					if verbose > 1:
-						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
+						print(_('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist))
 					if dist < radius:
 						found_sb.append([star['x'], star['y'], star['flux'], star['a'], star['b'], star['theta']])
 						star_find = True
 						break
 				if star_find == False and verbose:
-					print(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
+					print((_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y)))
 			if len(found_sb) < stars:
 				if self.skipped < skip_clouds:
 					self.skipped += 1
@@ -141,7 +141,7 @@ class ProcessFiles:
 
 	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses):
 		if verbose == 0:
-			print 'Done'
+			print('Done')
 
 		np_sb = np.array(self.sb)
 		# calculate average position
@@ -203,16 +203,16 @@ class ProcessFiles:
 			min_theta[si] = np.min(data_theta)
 
 			if verbose > 0:
-				print '  # stat {0:^8s} {1:^8s} {2:^8s} {3:^8s} {4:^s8} {5:^8s}'.format('x','y','flux','a','b','theta')
-				print '{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'max', max_x[si], max_y[si], max_flux[si], max_a[si], max_b[si], max_theta[si])
-				print '{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'avg', a_x[si], a_y[si], a_flux[si], a_a[si], a_b[si], a_theta[si])
-				print '{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'min', min_x[si], min_y[si], min_flux[si], min_a[si], min_b[si], min_theta[si])
+				print('  # stat {0:^8s} {1:^8s} {2:^8s} {3:^8s} {4:^s8} {5:^8s}'.format('x','y','flux','a','b','theta'))
+				print('{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'max', max_x[si], max_y[si], max_flux[si], max_a[si], max_b[si], max_theta[si]))
+				print('{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'avg', a_x[si], a_y[si], a_flux[si], a_a[si], a_b[si], a_theta[si]))
+				print('{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'min', min_x[si], min_y[si], min_flux[si], min_a[si], min_b[si], min_theta[si]))
 
 			# now get some stats..
-			dist[si] = map(lambda s: pixel_distance(max_x[si], max_y[si], s[0], s[1]), pf.sb[si])
+			dist[si] = [pixel_distance(max_x[si], max_y[si], s[0], s[1]) for s in pf.sb[si]]
 			a_dist[si] = np.average(dist[si])
 
-			print _('star # {0} pixel distance min {1:.2f} max {2:.2f} average {3:.2f} median {4:.2f} std {5:.2f} RMS {6:.2f}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
+			print(_('star # {0} pixel distance min {1:.2f} max {2:.2f} average {3:.2f} median {4:.2f} std {5:.2f} RMS {6:.2f}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si])))
 
 			if max_angle > 0 and stars > 1:
 				angels = calculate_angels(np_sb)
@@ -220,7 +220,7 @@ class ProcessFiles:
 				ang_deviations = np.degrees(angels - average_ang)
 				max_deviation = max(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
 				if verbose:
-					print _('maximal angle deviation: {0:.3f}').format(max_deviation)
+					print(_('maximal angle deviation: {0:.3f}').format(max_deviation))
 
 		if plot or saveplot or stars_plot:
 			import pylab
@@ -228,7 +228,7 @@ class ProcessFiles:
 			fig = pylab.figure()
 			pa = 3 if elipses else 0
 			plotgrid = ((3 + pa) if ang_deviations is None else (4 + pa), 1)
-			print _('generating plots')
+			print(_('generating plots'))
 			rts2.progressbar.progress(0, stars + 1)
 			p_x = pylab.subplot2grid(plotgrid,[0,0])
 			p_y = pylab.subplot2grid(plotgrid,[1,0])
@@ -242,8 +242,8 @@ class ProcessFiles:
 
 			if ang_deviations is not None:
 				p_ang = pylab.subplot2grid(plotgrid,[3,0])
-				p_ang.plot (range(len(pf.sb[0])), np.average(ang_deviations, axis=1), '-')
-				p_ang.fill_between (range(len(pf.sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
+				p_ang.plot (list(range(len(pf.sb[0]))), np.average(ang_deviations, axis=1), '-')
+				p_ang.fill_between (list(range(len(pf.sb[0]))), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 				p_ang.set_ylabel ('Rot. (deg)')
 				devoffs = 1
 
@@ -259,13 +259,13 @@ class ProcessFiles:
 			rts2.progressbar.progress(1, stars + 1)
 
 			for si in range(stars):
-				p_x.plot (range(len(pf.sb[si])), np_sb[si,:,0] - a_x[si], '-')
-				p_y.plot (range(len(pf.sb[si])), np_sb[si,:,1] - a_y[si], '-')
-				p_dist.plot (range(len(pf.sb[si])), a_dist[si] - dist[si], '-')
+				p_x.plot (list(range(len(pf.sb[si]))), np_sb[si,:,0] - a_x[si], '-')
+				p_y.plot (list(range(len(pf.sb[si]))), np_sb[si,:,1] - a_y[si], '-')
+				p_dist.plot (list(range(len(pf.sb[si]))), a_dist[si] - dist[si], '-')
 				if elipses:
-					p_a.plot (range(len(pf.sb[si])), np_sb[si,:,3], '-')
-					p_b.plot (range(len(pf.sb[si])), np_sb[si,:,4], '-')
-					p_theta.plot (range(len(pf.sb[si])), np.degrees (np_sb[si,:,5]) + 180, '-')
+					p_a.plot (list(range(len(pf.sb[si]))), np_sb[si,:,3], '-')
+					p_b.plot (list(range(len(pf.sb[si]))), np_sb[si,:,4], '-')
+					p_theta.plot (list(range(len(pf.sb[si]))), np.degrees (np_sb[si,:,5]) + 180, '-')
 
 				rts2.progressbar.progress(si + 1, stars + 1)
 
@@ -274,9 +274,9 @@ class ProcessFiles:
 			rts2.progressbar.progress(stars + 1, stars + 1)
 
 			if saveplot is not None:
-				print _('saving plots to {0}').format(saveplot),
+				print(_('saving plots to {0}').format(saveplot), end=' ')
 				pylab.savefig(saveplot)
-				print _('done')
+				print(_('done'))
 
 			if plot:
 				pylab.show()
@@ -299,7 +299,7 @@ if options.range is not None:
 imgn = 0 # image number
 
 for fn in options.files:
-	print _('Processing {0}').format(fn)
+	print(_('Processing {0}').format(fn))
 	hdu = fits.open(fn, mmap=True)
 
 	if options.verbose:
@@ -316,14 +316,14 @@ for fn in options.files:
 		c_y = d_y / 2.0
 	else:
 		options.cube = True
-		print _('Detected cube image, switching to cube mode')
+		print(_('Detected cube image, switching to cube mode'))
 		d_x = hdu[0].header['NAXIS1']
 		c_x = d_x / 2.0
 		d_y = hdu[0].header['NAXIS2']
 		c_y = d_y / 2.0
 
 	if options.verbose:
-		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
+		print(_('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y))
 
 	if options.cube:
 		for ci in range(hdu[0].header['NAXIS3']):

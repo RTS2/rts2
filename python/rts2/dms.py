@@ -61,7 +61,7 @@ def parse(strin):
 	return ret	
 
 if __name__ == '__main__':
-	print parse('14:15:16.545') 
-	print parse('-14:15:16')
-	print parse('+14:15:16')
-	print parse('+1-4:15:16') 
+	print(parse('14:15:16.545')) 
+	print(parse('-14:15:16'))
+	print(parse('+14:15:16'))
+	print(parse('+1-4:15:16')) 

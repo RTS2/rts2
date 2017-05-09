@@ -2077,20 +2077,20 @@ class AltAzTest(unittest.TestCase):
 		try:
 			self.model.add_extra('az', 'sincos', 'az;el', '2;2')
 			self.fail('added duplicated argument')
-		except gpoint.DuplicatedExtra,de:
+		except gpoint.DuplicatedExtra as de:
 			self.assertTrue(True,'raised DuplicatedExtra as expected on argument {0}'.format(de.argument))
 
 	def testPlot(self):
 		import os
 		try:
 			os.mkdir('plots')
-		except Exception,ex:
+		except Exception as ex:
 			pass
 
 		p = ['alt-err:az-corr-err@c10@c20@x0:0:200%0:0@c5.5,alt-merr:az-corr-merr@c10@c20@x0:0:200%0:1', 'paz:contor-model-err']
 		for i in range(len(p)):
 			of = 'plots/plot{0:02d}.pdf'.format(i)
-			print 'plotting {0} to {1}'.format(p[i], of)
+			print('plotting {0} to {1}'.format(p[i], of))
 			self.model.plot(p[i], False, of)
 
 	def testAdd(self):
@@ -2106,7 +2106,7 @@ class AltAzTest(unittest.TestCase):
 			# self-adding; result should be original multiplied by 2
 			m1.add_model(m2)
 			m1.save(td + '/model_added')
-			for p in m1.best.params.keys():
+			for p in list(m1.best.params.keys()):
 				self.assertAlmostEqual(m1.best.params[p].value, m2.best.params[p].value * 2)
 
 		finally:
@@ -2131,7 +2131,7 @@ class AltAzTest(unittest.TestCase):
 			m.remove_extra('az_sincos_az_el_1_0_1_0')
 			try:
 				m.remove_extra('az_sincos_az_el_2_0_1_0')
-			except gpoint.NonExistentExtra,ne:
+			except gpoint.NonExistentExtra as ne:
 				self.assertTrue(True,'tested removal of non-existend argument'.format(ne.argument))
 
 			m.fit()
@@ -2160,7 +2160,7 @@ class AltAzTest(unittest.TestCase):
 				'az_sincos_az_el_1_0_1_0':4.8481368111e-06
 			}
 		
-			for p in mtest.best.params.keys():
+			for p in list(mtest.best.params.keys()):
 				self.assertAlmostEqual(mtest.best.params[p].value,expected[p])
 		finally:
 			import shutil

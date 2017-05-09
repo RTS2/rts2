@@ -48,7 +48,7 @@ class ImgProcess:
 			match = self.logmatch.match(a)
 			# pass log commands
 			if match:
-				print a
+				print(a)
 		if ret:
 			return ret
 		raise Exception('Astrometry did not succeed')
@@ -56,4 +56,4 @@ class ImgProcess:
 if __name__ == '__main__':
 	p = ImgProcess()
 	for f in sys.argv[1:]:
-		print p.run(f)
+		print(p.run(f))

@@ -75,9 +75,9 @@ class Rts2Comm:
 	def sendCommand(self,command,device = None):
 		"""Send command to device."""
 		if device is None:
-		  	print 'command',command
+		  	print('command',command)
 		else:
-		  	print 'C',device,command
+		  	print('C',device,command)
 		sys.stdout.flush()
 
 	def readline(self):
@@ -101,25 +101,25 @@ class Rts2Comm:
 	def getValue(self,value,device = None):
 		"""Returns given value."""
 		if device is None:
-			print '?',value
+			print('?',value)
 		else:
-			print 'G',device,value
+			print('G',device,value)
 		sys.stdout.flush()
 		return self.readline()
 
 	def getOwnValue(self, value):
-		print 'get_own', value
+		print('get_own', value)
 		sys.stdout.flush()
 		return self.readline()
 
 	def getLoopCount(self):
-		print 'loopcount'
+		print('loopcount')
 		sys.stdout.flush()
 		return int(self.readline())
 
 	def getRunDevice(self):
 		if self.__run_device is None:
-			print 'run_device'
+			print('run_device')
 			sys.stdout.flush()
 			self.__run_device = self.readline()
 		return self.__run_device
@@ -141,67 +141,67 @@ class Rts2Comm:
 
 	def incrementValue(self,name,new_value,device = None):
 		if (device is None):
-			print "value",name,'+=',new_value
+			print("value",name,'+=',new_value)
 		else:
-			print "V",device,name,'+=',new_value
+			print("V",device,name,'+=',new_value)
 		sys.stdout.flush()
 	
 	def incrementValueType(self,device,name,new_value):
-		print "VT",device,name,'+=',new_value
+		print("VT",device,name,'+=',new_value)
 		sys.stdout.flush()
 
 	def setValue(self, name, new_value, device = None):
 		if (device is None):
-			print "value",name,'=',new_value
+			print("value",name,'=',new_value)
 		else:
-			print "V",device,name,'=',new_value
+			print("V",device,name,'=',new_value)
 		sys.stdout.flush()
 
 	def setOwnValue(self, name, new_value):
-		print 'set_own', name, new_value
+		print('set_own', name, new_value)
 		sys.stdout.flush()
 
 	def setValueByType(self,device,name,new_value):
 		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
-		print "VT",device,name,'=',new_value
+		print("VT",device,name,'=',new_value)
 		sys.stdout.flush()
 
 	def getDeviceByType(self,device):
 		"""Returns name of the first device with given type."""
-		print "device_by_type",device
+		print("device_by_type",device)
 		sys.stdout.flush()
 		return self.readline()
 
 	def targetDisable(self):
 		"""Disable target for autonomous selection."""
-		print "target_disable"
+		print("target_disable")
 		sys.stdout.flush()
 
 	def targetTempDisable(self,ti):
 		"""Temporary disable target for given number of seconds."""
-		print "target_tempdisable",ti
+		print("target_tempdisable",ti)
 		sys.stdout.flush()
 
 	def endScript(self):
 		"""Ask controlling process to end the current script."""
-		print "end_script"
+		print("end_script")
 		sys.stdout.flush()
 
 	def getState(self,device):
 		"""Retrieve device state"""
-		print 'S',device
+		print('S',device)
 		sys.stdout.flush()
 		return int(self.readline())
 	
 	def waitIdle(self,device,timeout):
 		"""Wait for idle state (with timeout)"""
-		print 'waitidle',device,timeout
+		print('waitidle',device,timeout)
 		sys.stdout.flush()
 		return int(self.readline())
 
 	def waitMask(self,device,mask,timeout):
 		"""Wait for given state (when mask & state = mask)"""
-		print 'waitmask',device,mask,timeout
+		print('waitmask',device,mask,timeout)
 		sys.stdout.flush()
 		return int(self.readline())
 
@@ -210,11 +210,11 @@ class Rts2Comm:
 		Unless fileexpand parameter is provided, user is responsible to specify image treatment."""
 		if fileexpand:
 			if overwrite:
-				print "exposure_overwrite", fileexpand
+				print("exposure_overwrite", fileexpand)
 			else:
-				print "exposure_wfn", fileexpand
+				print("exposure_wfn", fileexpand)
 		else:
-			print "exposure"
+			print("exposure")
 		sys.stdout.flush()
 		a = self.readline()
 		if a == 'exposure_failed':
@@ -234,11 +234,11 @@ class Rts2Comm:
 		Unless fileexpand parameter is provided, user is responsible to specify image treatment."""
 		if fileexpand:
 			if overwrite:
-				print "exposure_overwrite", fileexpand
+				print("exposure_overwrite", fileexpand)
 			else:
-				print "exposure_wfn", fileexpand
+				print("exposure_wfn", fileexpand)
 		else:
-			print "endshift"
+			print("endshift")
 		sys.stdout.flush()
 		a = self.readline()
 		if a == 'exposure_failed':
@@ -254,38 +254,38 @@ class Rts2Comm:
 		return fn
 
 	def progressUpdate(self,expected_end,start=time.time()):
-		print "progress",start,expected_end
+		print("progress",start,expected_end)
 		sys.stdout.flush()
 
 	def radec(self,ra,dec):
-		print "radec",ra,dec
+		print("radec",ra,dec)
 		sys.stdout.flush()
 	
 	def newObs(self,ra,dec):
-		print "newobs",ra,dec
+		print("newobs",ra,dec)
 		sys.stdout.flush()
 
 	def altaz(self,alt,az):
-		print "altaz",alt,az
+		print("altaz",alt,az)
 		sys.stdout.flush()
 
 	def newObsAltAz(self,alt,az):
-		print "newaltaz",alt,az
+		print("newaltaz",alt,az)
 		sys.stdout.flush()
 
 	def __imageAction(self,action,imagename):
-		print action,imagename
+		print(action,imagename)
 		sys.stdout.flush()
 		return self.readline()
 
 	def rename(self,imagename,pattern):
-		print "rename",imagename,pattern
+		print("rename",imagename,pattern)
 		sys.stdout.flush()
 		return self.readline()
 
 	def move(self,imagename,pattern):
 		"""Move image to new path, delete it from the database."""
-		print "move",imagename, pattern
+		print("move",imagename, pattern)
 		sys.stdout.flush()
 		return self.readline()
 	
@@ -305,100 +305,100 @@ class Rts2Comm:
 	
 	def delete(self,imagename):
 		"""Delete image from disk."""
-		print "delete",imagename
+		print("delete",imagename)
 		sys.stdout.flush()
 	
 	def process(self,imagename):
 		"""Put image to image processor queue."""
-		print "process",imagename
+		print("process",imagename)
 		sys.stdout.flush()
 
 	def doubleValue(self,name,desc,value,rts2_type=None):
 		"""Add to device double value."""
-		print "double",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else ''
+		print("double",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else '')
 		sys.stdout.flush()
 
 	def doubleVariable(self,name,desc,value):
 		"""Add to device double writable variable."""
-		print "double_w",name,'"{0}"'.format(desc),value
+		print("double_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def timeValue(self,name,desc,value,rts2_type=None):
 		"""Add to device time value."""
-		print "timevalue",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else ''
+		print("timevalue",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else '')
 		sys.stdout.flush()
 
 	def timeVariable(self,name,desc,value):
 		"""Add to device time writable variable."""
-		print "timevalue_w",name,'"{0}"'.format(desc),value
+		print("timevalue_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def integerValue(self,name,desc,value):
 		"""Add to device integer value."""
-		print "integer",name,'"{0}"'.format(desc),value
+		print("integer",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def integerVariable(self,name,desc,value):
 		"""Add to device integer writable variable."""
-		print "integer_w",name,'"{0}"'.format(desc),value
+		print("integer_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 	
 	def stringValue(self,name,desc,value):
 		"""Add to device string value."""
-		print "string",name,'"{0}"'.format(desc),value
+		print("string",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def stringVariable(self,name,desc,value):
 		"""Add to device string writable variable."""
-		print "string_w",name,'"{0}"'.format(desc),value
+		print("string_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def boolValue(self,name,desc,value):
 		"""Add to device boolean value."""
-		print "bool",name,'"{0}"'.format(desc),value
+		print("bool",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def boolVariable(self,name,desc,value):
 		"""Add to device boolean writable variable."""
-		print "bool_w",name,'"{0}"'.format(desc),value
+		print("bool_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def onoffValue(self,name,desc,value):
 		"""Add to device boolean value with on/off display type."""
-		print "onoff",name,'"{0}"'.format(desc),value
+		print("onoff",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def onoffVariable(self,name,desc,value):
 		"""Add to device boolean writable variable with on/off display type."""
-		print "onoff_w",name,'"{0}"'.format(desc),value
+		print("onoff_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
 
 	def raDecValue(self,name,desc,ra,dec):
 		"""Add RA/DEC value pair"""
-		print "radec",name,'"{0}"'.format(desc),ra,dec
+		print("radec",name,'"{0}"'.format(desc),ra,dec)
 		sys.stdout.flush()
 
 	def doubleArrayValue(self,name,desc,values):
-		print "double_array",name,'"{0}"'.format(desc),' '.join(map(str,values))
+		print("double_array",name,'"{0}"'.format(desc),' '.join(map(str,values)))
 		sys.stdout.flush()
 
 	def doubleArrayVariable(self,name,desc,values):
-		print "double_array_w",name,'"{0}"'.format(desc),' '.join(map(str,values))
+		print("double_array_w",name,'"{0}"'.format(desc),' '.join(map(str,values)))
 		sys.stdout.flush()
 
 	def doubleArrayAdd(self,name,values):
-		print "double_array_add",name,' '.join(map(str,values))
+		print("double_array_add",name,' '.join(map(str,values)))
 		sys.stdout.flush()
 
 	def statAdd(self, name, desc, num, value):
 		"""Add to statistics boolean value."""
-		print "stat_add",name,'"{0}"'.format(desc),num,value
+		print("stat_add",name,'"{0}"'.format(desc),num,value)
 		sys.stdout.flush()
 
 	def log(self,level, text):
 		if self.__log_device:
 			text = self.getRunDevice() + ' ' + text
-		print "log",level,text
+		print("log",level,text)
 		sys.stdout.flush()
 	
 	def isEvening(self):
@@ -407,20 +407,20 @@ class Rts2Comm:
 		return sun_az < 180.0
 
 	def tempentry(self, entry):
-		print 'tempentry',entry
+		print('tempentry',entry)
 		sys.stdout.flush()
 
 	def endTarget(self):
-		print 'end_target'
+		print('end_target')
 		sys.stdout.flush()
 
 	def stopTarget(self):
-		print 'stop_target'
+		print('stop_target')
 		sys.stdout.flush()
 
 	def waitTargetMove(self):
 		"""Returns after move was commanded"""
-		print 'wait_target_move'
+		print('wait_target_move')
 		sys.stdout.flush()
 		return self.readline()
 

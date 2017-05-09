@@ -2,7 +2,7 @@
 
 import ephem
 import time
-import json
+from . import json
 
 """Module for TLE computation.
    Allows load set of satellites and cities/observatiries. On the set, passes can
@@ -49,7 +49,7 @@ class Observatories:
 				l = l.rstrip()
 				try:
 					self.observatories.append(ephem.city(l))
-				except KeyError,ke:
+				except KeyError as ke:
 					obs = ephem.Observer()
 					le = l.split()
 					if len(le) == 4:

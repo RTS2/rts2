@@ -15,12 +15,12 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from __future__ import absolute_import
+
 
 import base64
 import json as sysjson
-import httplib
-import urllib
+import http.client
+import urllib.request, urllib.parse, urllib.error
 import re
 import string
 import os
@@ -74,29 +74,29 @@ RTS2_VALUE_STAT       = 0x10
 
 # Python < 2.7 does not provide _MAXLINE
 try:
-	httplib._MAXLINE
+	http.client._MAXLINE
 except AttributeError:
-	httplib._MAXLINE = 2000
+	http.client._MAXLINE = 2000
 
-class ChunkResponse(httplib.HTTPResponse):
+class ChunkResponse(http.client.HTTPResponse):
 
 	read_by_chunks = False
 
 	def __init__(self, sock, debuglevel=0, strict=0, method=None, buffering=False):
 		# Python 2.6 does not have buffering
 		try:
-			httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method, buffering=buffering)
-		except TypeError,te:
-			httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method)
+			http.client.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method, buffering=buffering)
+		except TypeError as te:
+			http.client.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method)
 
 	def _read_chunked(self,amt):
 		if not(self.read_by_chunks):
-			return httplib.HTTPResponse._read_chunked(self,amt)
+			return http.client.HTTPResponse._read_chunked(self,amt)
 						
-		assert self.chunked != httplib._UNKNOWN
-		line = self.fp.readline(httplib._MAXLINE + 1)
-		if len(line) > httplib._MAXLINE:
-			raise httplib.LineTooLong("chunk size")
+		assert self.chunked != http.client._UNKNOWN
+		line = self.fp.readline(http.client._MAXLINE + 1)
+		if len(line) > http.client._MAXLINE:
+			raise http.client.LineTooLong("chunk size")
 		i = line.find(';')
 		if i >= 0:
 			line = line[:i]
@@ -104,7 +104,7 @@ class ChunkResponse(httplib.HTTPResponse):
 			chunk_left = int(line, 16)
 		except ValueError:
 			self.close()
-			raise httplib.IncompleteRead('')
+			raise http.client.IncompleteRead('')
 		if chunk_left == 0:
 			return ''
 		ret = self._safe_read(chunk_left)
@@ -127,7 +127,7 @@ class Rts2JSON:
 		use_proxy = False
 		prefix = ''
 		# use proxy only if not connecting to localhost
-		if url.find('localhost') == -1 and (os.environ.has_key('http_proxy') or http_proxy):
+		if url.find('localhost') == -1 and ('http_proxy' in os.environ or http_proxy):
 			if not(re.match('^http',url)):
 				prefix = 'http://' + url
 			if http_proxy:
@@ -161,7 +161,7 @@ class Rts2JSON:
 		self.hlib = self.newConnection()
 
 	def newConnection(self):
-		r = httplib.HTTPConnection(self.host,self.port)
+		r = http.client.HTTPConnection(self.host,self.port)
 		r.response_class = ChunkResponse
 		if self.verbose:
 			r.set_debuglevel(5)
@@ -170,9 +170,9 @@ class Rts2JSON:
 	def getResponse(self, path, args=None, hlib=None):
 		url = self.prefix + path
 		if args:
-			url += '?' + urllib.urlencode(args)
+			url += '?' + urllib.parse.urlencode(args)
 		if self.verbose:
-			print 'retrieving {0}'.format(url)
+			print('retrieving {0}'.format(url))
 		try:
 			th = hlib
 			if hlib is None:
@@ -183,14 +183,14 @@ class Rts2JSON:
 			r = None
 			try:
 				r = th.getresponse()
-			except httplib.BadStatusLine,ex:
+			except http.client.BadStatusLine as ex:
 				# try to reload
 				th = self.newConnection()
 				if hlib is None:
 					self.hlib = th
 				th.request('GET', url, None, self.headers)
 				r = th.getresponse()
-			except httplib.ResponseNotReady,ex:
+			except http.client.ResponseNotReady as ex:
 				# try to reload
 				th = self.newConnection()
 				if hlib is None:
@@ -198,15 +198,15 @@ class Rts2JSON:
 				th.request('GET', url, None, self.headers)
 				r = th.getresponse()
 
-			if not(r.status == httplib.OK):
+			if not(r.status == http.client.OK):
 				jr = sysjson.load(r)
 				raise Exception(jr['error'])
 			return r
-		except Exception,ec:
+		except Exception as ec:
 			if self.verbose:
 				import traceback
 				traceback.print_exc()
-				print 'Cannot parse',url,':',ec
+				print('Cannot parse',url,':',ec)
 			raise ec
 		finally:
 			if hlib is None:
@@ -218,14 +218,14 @@ class Rts2JSON:
 	def loadJson(self, path, args=None):
 		d = self.loadData(path, args)
 		if self.verbose:
-			print d
+			print(d)
 		return sysjson.loads(d)
 
 	def chunkJson(self, r):
 		r.read_by_chunks = True
 		d = r.read()
 		if self.verbose:
-			print d
+			print(d)
 		r.read_by_chunks = False
 		return sysjson.loads(d)
 
@@ -239,7 +239,7 @@ class JSONProxy(Rts2JSON):
 	def refresh(self, device=None):
 		if device is None:
 			dall = self.loadJson('/api/getall', {'e': 1})
-			self.devices = dict(map(lambda x: (x, dall[x]['d']), dall))
+			self.devices = dict([(x, dall[x]['d']) for x in dall])
 
 		else:
 			self.devices[device] = self.loadJson('/api/get', {'d': device, 'e': 1})['d']
@@ -256,7 +256,7 @@ class JSONProxy(Rts2JSON):
 	def getDevice(self, device, refresh_not_found = False):
 		try:
 			return self.devices[device]
-		except KeyError,ke:
+		except KeyError as ke:
 			if refresh_not_found == False:
 				raise ke
 			self.refresh(device)
@@ -265,7 +265,7 @@ class JSONProxy(Rts2JSON):
 	def getVariable(self, device, value, refresh_not_found = False):
 		try:
 			return self.devices[device][value]
-		except KeyError,ke:
+		except KeyError as ke:
 			if refresh_not_found == False:
 				raise ke
 			self.refresh(device)
@@ -297,11 +297,11 @@ class JSONProxy(Rts2JSON):
 	def getSelection(self, device, name):
 		try:
 			return self.selection_cache[device][name]
-		except KeyError,k:
+		except KeyError as k:
 			rep = self.loadJson('/api/selval', {'d':device, 'n':name})
 			try:
 				self.selection_cache[device][name] = rep
-			except KeyError,k2:
+			except KeyError as k2:
 				self.selection_cache[device] = {}
 				self.selection_cache[device][name] = rep
 			return rep
@@ -317,7 +317,7 @@ class JSONProxy(Rts2JSON):
 
 	def setValues(self,values,device=None,async=None):
 		if device:
-			values = dict(map(lambda x:('{0}.{1}'.format(device,x[0]),x[1]),values.items()))
+			values = dict([('{0}.{1}'.format(device,x[0]),x[1]) for x in list(values.items())])
 		if async:
 			values['async'] = async
 		self.loadJson('/api/mset',values)

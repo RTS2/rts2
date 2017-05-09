@@ -34,7 +34,7 @@ import numpy
 import math
 import signal
 
-import dms
+from . import dms
 
 class WCSAxisProjection:
 	def __init__(self,fkey):
@@ -145,7 +145,7 @@ class AstrometryScript:
 		solve_field.append(self.infpath)
 
 		if verbose:
-			print 'running',' '.join(solve_field)
+			print('running',' '.join(solve_field))
 	    
 		proc=subprocess.Popen(solve_field, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=lambda:os.setpgid(0, 0))
 
@@ -153,7 +153,7 @@ class AstrometryScript:
 			def __term_proc(sig, stack):
 				os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
 				if verbose:
-					print 'killing process, as timeout was reached'
+					print('killing process, as timeout was reached')
 			signal.signal(signal.SIGALRM, __term_proc)
 			signal.alarm(timeout)
 
@@ -169,7 +169,7 @@ class AstrometryScript:
 			if a == '':
 				break
 			if verbose:
-				print a,
+				print(a, end=' ')
 			match=radecline.match(a)
 			if match:
 				ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]

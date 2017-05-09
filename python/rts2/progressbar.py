@@ -31,7 +31,7 @@ atexit.register(show_cursor)
 
 try:
 	COLS = struct.unpack('hh',  fcntl.ioctl(sys.stderr, termios.TIOCGWINSZ, '1234'))[1]
-except IOError,io:
+except IOError as io:
 	# outputing to file..
 	COLS = 0
 

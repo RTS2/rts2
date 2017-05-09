@@ -18,15 +18,15 @@
 
 import math
 import sys
-import altazpath
-import brights
-import libnova
-import spiral
+from . import altazpath
+from . import brights
+from . import libnova
+from . import spiral
 import rts2.json
-import kmparse
+from . import kmparse
 import time
 import os.path
-import scat
+from . import scat
 import numpy
 
 import gettext
@@ -36,11 +36,11 @@ def wait_for_key(t):
 	"""Wait for key press for maximal t seconds."""
 	from select import select
 	while t > 0:
-		print _("Hit enter to interrupt the sequence within {0} seconds...\r").format(t),
+		print(_("Hit enter to interrupt the sequence within {0} seconds...\r").format(t), end=' ')
 		sys.stdout.flush()
 		rlist, wlist, xlist = select([sys.stdin], [], [], 1)
 		if rlist:
-			print _("Interrupted. Now either find the bright stars typing alt-az offsets, or type c to continue")
+			print(_("Interrupted. Now either find the bright stars typing alt-az offsets, or type c to continue"))
 			sys.stdin.readline()
 			return True
 		t -= 1
@@ -65,7 +65,7 @@ class TPVP:
 		if telescope is None:
 			try:
 				self.telescope = self.j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)[0]
-			except IndexError,ie:
+			except IndexError as ie:
 				raise Exception(_('cannot find any telescope'))
 		else:
 			self.telescope = telescope
@@ -74,14 +74,14 @@ class TPVP:
 		if st <= 0:
 			return
 		for sec in range(int(st),0,-1):
-			print _('waiting {0} seconds                                                                \r'.format(sec)),
+			print(_('waiting {0} seconds                                                                \r'.format(sec)), end=' ')
 			sys.stdout.flush()
 			time.sleep(1)
 			self.j.refresh(self.telescope)
 			if self.j.getState(self.telescope) & 0x01000620 == 0x00000020:
-				print _('stable telescope                                                                      ')
+				print(_('stable telescope                                                                      '))
 				return
-		print _('Telescope still unstable                        ')
+		print(_('Telescope still unstable                        '))
 		time.sleep(st - int(st))
 
 	def set_mags(self,mmax,mmin):
@@ -112,18 +112,18 @@ class TPVP:
 		alt=self.j.getValue(self.telescope,"TEL_",refresh_not_found=True)['alt']
 		cosa = math.cos(math.radians(alt))
 		step_az /= cosa
-		print _('Scaling azimuth by factor {0:.10f} to {1:.2f}').format(cosa,step_az)
+		print(_('Scaling azimuth by factor {0:.10f} to {1:.2f}').format(cosa,step_az))
 		for i in range(maxsteps):
 			a,e = s.get_next_step()
 			x += a
 			y += e
 			if i < last_step:
 				continue
-			print _('step {0} next {1} {2} altaz {3:.3f} {4:.3f}').format(i,x,y,x*step_alt,y*step_az)
+			print(_('step {0} next {1} {2} altaz {3:.3f} {4:.3f}').format(i,x,y,x*step_alt,y*step_az))
 			self.j.setValue(self.telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
 			if wait_for_key(timeout):
 				return i
-		print _('spiral ends..')
+		print(_('spiral ends..'))
 		return i
 	
 	def tel_hrz_to_equ(self,alt,az):
@@ -136,21 +136,21 @@ class TPVP:
 		return ra,dec
 	
 	def find_bright_star(self,alt,az,minalt=None):
-		import bsc
+		from . import bsc
 		ra,dec = self.tel_hrz_to_equ(alt,az)
 		lst = self.j.getValue(self.telescope,'LST')
 		lat = self.j.getValue(self.telescope,'LATITUDE')
-		print _('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,self.__mag_max,self.__mag_min)
+		print(_('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,self.__mag_max,self.__mag_min))
 		# find bsc..
 		bsc = None
 		if self.catalog == 'hip':
 			bsc=self.hipparcos.search_catalogue(ra, dec, 10,self.__mag_max, self.__mag_min)
 			if len(bsc) == 0:
 				return None
-			print _('Found HIP #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0].xno,numpy.degrees(bsc[0].sra0),numpy.degrees(bsc[0].sdec0),bsc[0].mag,numpy.degrees(bsc[0].xrpm),numpy.degrees(bsc[0].xdpm))
+			print(_('Found HIP #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0].xno,numpy.degrees(bsc[0].sra0),numpy.degrees(bsc[0].sdec0),bsc[0].mag,numpy.degrees(bsc[0].xrpm),numpy.degrees(bsc[0].xdpm)))
 		else:
 			bsc=bsc.find_nearest(ra,dec,self.__mag_max,self.__mag_min,lst,lat,minalt)
-			print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0],bsc[1],bsc[2],bsc[3],bsc[7],bsc[8])
+			print(_('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0],bsc[1],bsc[2],bsc[3],bsc[7],bsc[8]))
 		return bsc
 	
 	def __check_model_firstline(self,modelname):
@@ -168,9 +168,9 @@ class TPVP:
 	def __save_modeline(self,modelname,mn):
 		modline = self.get_altazm_line()
 		if modelname is None:
-			print _('model line {0}').format(modline)
+			print(_('model line {0}').format(modline))
 			return
-		print _('adding to aling file {0}').format(modline)
+		print(_('adding to aling file {0}').format(modline))
 		oa = open(modelname, 'a')
 		oa.write('{0}\t{1}\n'.format(mn,modline))
 		oa.flush()
@@ -181,7 +181,7 @@ class TPVP:
 			for mn in range(1,999):
 				if os.path.isfile('model_{0:03}.fits'.format(mn)) == False:
 					break
-			print _('run #{0}').format(mn)
+			print(_('run #{0}').format(mn))
 		return mn
 
 	def __run(self,tarf_ra,tarf_dec,pm_ra,pm_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9):
@@ -201,27 +201,27 @@ class TPVP:
 			self.j.refresh(self.telescope)
 			tel=self.j.getValue(self.telescope,'TEL')
 			hrz=self.j.getValue(self.telescope,'TEL_')
-			print _('moving to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}\r').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']),
+			print(_('moving to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}\r').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']), end=' ')
 			sys.stdout.flush()
 			time.sleep(1)
 			tmout -= 1
 	
 		if tmout <= 0:
-			print _('destination not reached, continue with new target                         ')
+			print(_('destination not reached, continue with new target                         '))
 			return None,None
 
 		self.__stable(self.sleeptime)
 	
-		print _('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
+		print(_('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']))
 		if imagescript is not None:
-			print _('taking script {0}').format(imagescript)
+			print(_('taking script {0}').format(imagescript))
 			fn = 'model_{0:03}.fits'.format(mn)
 			os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(self.camera,imagescript,fn))
 			if useDS9 is not None:
 				d = ds9.ds9('Model')
 				d.set('file {0}'.format(fn))
 			return fn,mn
-		print _('Slew finished, starting search now')
+		print(_('Slew finished, starting search now'))
 		next_please = False
 		last_step = 0
 		while next_please == False:
@@ -233,7 +233,7 @@ class TPVP:
 			if skip_spiral == False:
 				last_step = self.run_spiral(timeout,last_step,maxspiral)
 			while True:
-				print _('Now either type offsets (commulative, arcmin), m when star is centered, r to repeat from 0 steps, z to zero offsets, or s to skip this field and hit enter')
+				print(_('Now either type offsets (commulative, arcmin), m when star is centered, r to repeat from 0 steps, z to zero offsets, or s to skip this field and hit enter'))
 				ans = sys.stdin.readline().rstrip()
 				if ans == '':
 					continue
@@ -245,7 +245,7 @@ class TPVP:
 					break
 				elif ans == 's':
 					next_please = True
-					print _('skipping this field, going to the next target')
+					print(_('skipping this field, going to the next target'))
 					break
 				elif ans[0] == 'r':
 					ls = ans.split()
@@ -255,25 +255,25 @@ class TPVP:
 						else:
 							last_step = 0
 						break
-						print _('going back to step {0}').format(last_step)
-					except Exception,ex:
-						print _('invalid r command format: {0}').format(ans)
+						print(_('going back to step {0}').format(last_step))
+					except Exception as ex:
+						print(_('invalid r command format: {0}').format(ans))
 						continue
 				elif ans == 'c':
-					print _('continuing..')
+					print(_('continuing..'))
 					last_step -= 1
 					break
 				elif ans == 'z':
-					print _('zeroing offsets')
+					print(_('zeroing offsets'))
 					self.j.setValue(self.telescope,'AZALOFFS','0 0')
 					break
 				try:
 					azo,alto = ans.split()
-					print _('offseting ALT {0} AZ {1} arcmin').format(azo,alto)
+					print(_('offseting ALT {0} AZ {1} arcmin').format(azo,alto))
 					self.j.executeCommand(self.telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
 	
-				except Exception,ex:
-					print _('unknow command {0}, please try again').format(ans)
+				except Exception as ex:
+					print(_('unknow command {0}, please try again').format(ans))
 		return None,None
 	
 	def run_manual_altaz(self,alt,az,timeout,modelname,maxspiral,imagescript,mn,useDS9,minalt):
@@ -282,7 +282,7 @@ class TPVP:
 		mn = self.__get_mn(mn)
 
 		if maxspiral >= -1:
-			print _('Next model point at altitude {0:.3g} azimuth {1:.3g}').format(alt,az)
+			print(_('Next model point at altitude {0:.3g} azimuth {1:.3g}').format(alt,az))
 			s = self.find_bright_star(alt,az,minalt)
 			if self.catalog == 'hip':
 				tarf_ra = numpy.degrees(s[0].sra0)
@@ -305,7 +305,7 @@ class TPVP:
 	def run_manual_bsc(self,bscnum,timeout,modelname,maxspiral,imagescript,mn,useDS9):
 		mn = self.__get_mn(mn)
 
-		import bsc
+		from . import bsc
 		s = bsc.get_star(bscnum)
 		tarf_ra = s[1]
 		tarf_dec = s[2]
@@ -330,9 +330,9 @@ class TPVP:
 			self.__stable(self.sleeptime)
 			# verify ve really center on star
 			vfn = 'verify_{0:03}_{1:02}.fits'.format(mn,vn)
-			print _('taking verify exposure {0} # {1}         ').format(vfn,vn)
+			print(_('taking verify exposure {0} # {1}         ').format(vfn,vn))
 			if os.path.isfile(vfn):
-				print _('removing {0}').format(vfn)
+				print(_('removing {0}').format(vfn))
 				os.unlink(vfn)
 			os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(self.camera,imagescript,vfn))
 			vhdu = fits.open(vfn)
@@ -344,9 +344,9 @@ class TPVP:
 				off_x = self.fov_center[0] - b_x
 				off_y = self.fov_center[1] - b_y
 			pixdist = math.sqrt(off_x ** 2 + off_y ** 2)
-			print _('brightest X {0:.2f} Y {1:.2f} offset from center {2:.2f} {3:.2f} distance {4:.2f} flux {5:g} {6:.2f}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
+			print(_('brightest X {0:.2f} Y {1:.2f} offset from center {2:.2f} {3:.2f} distance {4:.2f} flux {5:g} {6:.2f}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio))
 			if minflux is not None and b_flux < minflux:
-				print _('brightest star too faint, its flux is {0}, should be at least {1}').format(b_flux, minflux)
+				print(_('brightest star too faint, its flux is {0}, should be at least {1}').format(b_flux, minflux))
 				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_alt
 	
 			flux_history.append(b_flux)
@@ -357,13 +357,13 @@ class TPVP:
 			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(vfn,useDS9,mn,self.fov_center)
 			if off_radec is None:
 				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
-			print _('Brightest flux {0:.2f}').format(flux)
+			print(_('Brightest flux {0:.2f}').format(flux))
 			history_alt.append(off_azalt[1])
 			history_az.append(off_azalt[0])
 			if pixdist < verifyradius:
-				print _('converged')
+				print(_('converged'))
 				return True,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
-			print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+			print(_('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600))
 			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 	
 		return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
@@ -378,12 +378,12 @@ class TPVP:
 
 			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,self.fov_center)
 			if minflux is not None and (flux is None or flux < minflux) and maxspiral >= -1:
-				print _('Bright star not found on the first image, running spiral search')
+				print(_('Bright star not found on the first image, running spiral search'))
 				last_step = 1
 				while last_step < maxspiral and (flux is None or flux < minflux):
 					self.run_spiral(timeout,last_step,last_step+1)
 					self.__stable(self.sleeptime)
-					print _('taking script {0}').format(imagescript)
+					print(_('taking script {0}').format(imagescript))
 					fn = 'spiral_{0:03}_{1:03}.fits'.format(mn,last_step)
 					os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(self.camera,imagescript,fn))
 					if useDS9:
@@ -391,11 +391,11 @@ class TPVP:
 						d = ds9.ds9('Model')
 						d.set('file {0}'.format(fn))
 					off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,self.fov_center)
-					print _('Brightest in {0} flux {1:.1f}').format(fn,flux)
+					print(_('Brightest in {0} flux {1:.1f}').format(fn,flux))
 					last_step += 1
 	
 			if off_radec is None or flux is None or (minflux is not None and flux < minflux):
-				print _('Bright star not found - continue')
+				print(_('Bright star not found - continue'))
 				if modelname is not None:
 					modelf = open(modelname,'a')
 					if type(p) == int:
@@ -405,7 +405,7 @@ class TPVP:
 					modelf.close()
 				continue
 	
-			print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+			print(_('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600))
 			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 			ver,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az = self.__verify(mn,timeout,imagescript,useDS9,maxverify,verifyradius,minflux)
 			if modelname is not None:
@@ -415,7 +415,7 @@ class TPVP:
 					modelf.write('# BSC #{0} RA {1:.5f} DEC {2:.5f} mag {3} flux history {4} flux ratio history {5}\n'.format(p,bsc[1],bsc[2],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
 				else:
 					modelf.write('# BSC #{0} alt {1:.3f} az {2:.3f} mag {3} flux history {4} flux ratio history {5}\n'.format(bsc[0],p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
-				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5} alt {6} az {7} \n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y)),','.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_alt)),','.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_az))))
+				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5} alt {6} az {7} \n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y)),','.join(['{0:.3f}"'.format(x*3600) for x in history_alt]),','.join(['{0:.3f}"'.format(x*3600) for x in history_az])))
 				# comment lines
 				if ver == False and maxverify > 0:
 					modelf.write('# ')

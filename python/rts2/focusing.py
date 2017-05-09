@@ -35,13 +35,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import scriptcomm
-import sextractor
+from . import scriptcomm
+from . import sextractor
 sepPresent = False
 try:
 	import sep
 	sepPresent = True
-except Exception,ex:
+except Exception as ex:
 	pass
 
 from pylab import *
@@ -173,14 +173,14 @@ class Focusing (scriptcomm.Rts2Comm):
 		self.fwhm=[]
 		fwhm_min = None
 		self.fwhm_MinimumX = None
-		keys = tries.keys()
+		keys = list(tries.keys())
 		keys.sort()
 		sextr = sextractor.Sextractor(threshold=threshold,deblendmin=deblendmin)
 		for k in keys:
 			try:
 				sextr.runSExtractor(tries[k])
 				fwhm,fwhms,nstars = sextr.calculate_FWHM(min_stars,self.filterGalaxies)
-			except Exception, ex:
+			except Exception as ex:
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
 			self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,fwhm,nstars))
@@ -199,7 +199,7 @@ class Focusing (scriptcomm.Rts2Comm):
 		fwhm=[]
 		fwhm_min=None
 		fwhm_MinimumX=None
-		keys = tries.keys()
+		keys = list(tries.keys())
 		keys.sort()
 		ln2=math.log(2)
 		for k in keys:
@@ -221,7 +221,7 @@ class Focusing (scriptcomm.Rts2Comm):
 				if (fwhm_min is None or im_fwhm < fwhm_min):
 					fwhm_MinimumX = k
 					fwhm_min = im_fwhm
-			except Exception,ex:
+			except Exception as ex:
 				self.log('W','offset {0}: {1} {2}'.format(k,ex,traceback.format_exc()))
 		return focpos,fwhm,fwhm_min,fwhm_MinimumX
 

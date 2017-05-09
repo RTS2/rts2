@@ -19,7 +19,7 @@
 
 __author__ = 'petr@kubanek.net'
 
-import dms
+from . import dms
 
 def parse(strin):
 	"""Parse string in RADEC to two floats. RA is expected to be in hours(:minutes:seconds). Both RA and DEC are returned in degrees."""
@@ -27,7 +27,7 @@ def parse(strin):
 	return (dms.parse(ra) * 15.0, dms.parse(dec))
 
 if __name__ == '__main__':
-	print parse('12:30:40 14:15:16.545') 
-	print parse('12:30:40 -14:15:16')
-	print parse('12:30:40 +14:15:16')
-	print parse('+1-4:15:16') 
+	print(parse('12:30:40 14:15:16.545')) 
+	print(parse('12:30:40 -14:15:16'))
+	print(parse('12:30:40 +14:15:16'))
+	print(parse('+1-4:15:16')) 

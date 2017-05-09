@@ -27,5 +27,5 @@ def kmparse(string):
 			return float(string[:-1]) * 1000000
 		else:
 			return float(string)
-	except Exception,ex:
+	except Exception as ex:
 		raise argparse.ArgumentTypeError('invalid suffix/number:{0}'.format(string))

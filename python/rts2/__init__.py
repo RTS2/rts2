@@ -17,12 +17,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 # populate namescpace with handy classes
-from scriptcomm import Rts2Comm,Rts2Exception,Rts2NotActive
-from imgprocess import ImgProcess
-from centering import Centering
-from flats import Flat,FlatScript
-from json import getProxy,createProxy
-from queue import Queue,QueueEntry
-from queues import Queues
-from sextractor import Sextractor
-from focusing import Focusing
+from .scriptcomm import Rts2Comm,Rts2Exception,Rts2NotActive
+from .imgprocess import ImgProcess
+from .centering import Centering
+from .flats import Flat,FlatScript
+from .json import getProxy,createProxy
+from .queue import Queue,QueueEntry
+from .queues import Queues
+from .sextractor import Sextractor
+from .focusing import Focusing

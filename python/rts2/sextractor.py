@@ -68,8 +68,8 @@ class Sextractor:
 		try:
 			proc = subprocess.Popen(cmd)
 			proc.wait()
-		except OSError,err:
-			print >> sys.stderr, 'canot run command: "', ' '.join(cmd), '", error ',err
+		except OSError as err:
+			print('canot run command: "', ' '.join(cmd), '", error ',err, file=sys.stderr)
 			raise err
 
 		# parse output
@@ -78,12 +78,12 @@ class Sextractor:
 		while (True):
 		 	x=of.readline()
 			if self.verbose:
-				print x,
+				print(x, end=' ')
 			if x == '':
 				break
 			if x[0] == '#':
 				continue
-			self.objects.append(map(float,x.split()))
+			self.objects.append(list(map(float,x.split())))
 	
 		# unlink tmp files
 		pfi.close()
@@ -110,8 +110,8 @@ class Sextractor:
 				if x[i_class] > limit:
 					ret.append(x)
 			return ret
-		except ValueError,ve:
-			print 'result does not contain CLASS_STAR'
+		except ValueError as ve:
+			print('result does not contain CLASS_STAR')
 			traceback.print_exc()
 	
 	def get_FWHM_stars(self,starsn=None,filterGalaxies=True,segments=None):
@@ -149,10 +149,10 @@ class Sextractor:
 						break
 				else:
 					if self.verbose:
-						print 'rejected - FLAGS:', x[i_flags], ', CLASS_STAR:', x[i_class], 'line ', x
+						print('rejected - FLAGS:', x[i_flags], ', CLASS_STAR:', x[i_class], 'line ', x)
 
 			return fwhmlist
-		except ValueError,ve:
+		except ValueError as ve:
 			traceback.print_exc()
 			return []
 
@@ -162,9 +162,9 @@ class Sextractor:
 		try:
 			i_fwhm = self.get_field('FWHM_IMAGE')
 			import numpy
-			fwhms = map(lambda x:x[i_fwhm],obj)
+			fwhms = [x[i_fwhm] for x in obj]
  			return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
  		#	return numpy.average(obj), len(obj)
-		except ValueError,ve:
+		except ValueError as ve:
 			traceback.print_exc()
 			raise Exception('cannot find FWHM_IMAGE value')

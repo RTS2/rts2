@@ -15,9 +15,9 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import json
-import iso8601
-import target
+from . import json
+from . import iso8601
+from . import target
 import time
 import xml.dom.minidom
 
@@ -164,7 +164,7 @@ class Queue:
 				queue_cmd += ' {0} {1} {2} {3}'.format(-1 if x.qid is None else x.qid, x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
 
 			if remove_new:
-				self.entries = filter(lambda x: x.qid > 0, self.entries)
+				self.entries = [x for x in self.entries if x.qid > 0]
 
 			self.jsonProxy.executeCommand(self.service,'queue_qids {0}{1}'.format(self.name, queue_cmd))
 	
@@ -191,13 +191,13 @@ class Queue:
 				node.appendChild(cel)
 			node.appendChild(en)
 
-		map(lambda x:appendEntry(x), self.entries)
+		list(map(lambda x:appendEntry(x), self.entries))
 
 	def from_xml(self,node):
 		"""Construct queue from XML representation."""
 		try:
 			self.window = float(node.getAttribute('window'))
-		except ValueError,ve:
+		except ValueError as ve:
 			self.window = None
 		self.skip_below = _getXmlBoolAttribute(node, 'skip_below')
 		self.test_constr = _getXmlBoolAttribute(node, 'test_constr')
@@ -215,7 +215,7 @@ class Queue:
 
 	def __str__(self):
 		if len(self.entries):
-			ids = map(lambda q:str(q.id), self.entries)
+			ids = [str(q.id) for q in self.entries]
 			return ' '.join(ids)
 		return 'empty'
 

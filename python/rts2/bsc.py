@@ -2552,10 +2552,10 @@ def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=
 	"""Find nearest BSC star to given RA DEC coordinates. Min and maximal magnitude can be specified (make sure min < max)."""
 	data = __filtered_bsc
 	if mag_min is not None and mag_max is not None:
-		data = filter(lambda x: mag_min < x[3] < mag_max, data)
+		data = [x for x in data if mag_min < x[3] < mag_max]
 	# filter all stars closer than mindist
 	if lst is not None and latitude is not None and minalt is not None:
-		data.sort(lambda x,y:cmp(libnova.angular_separation(x[1],x[2],ra,dec),libnova.angular_separation(y[1],y[2],ra,dec)))
+		data.sort(key=lambda x:libnova.angular_separation(x[1],x[2],ra,dec))
 		for s in data:
 			if minalt < libnova.equ_to_hrz(s[1],s[2],lst,latitude)[0]:
 				return s
@@ -2563,18 +2563,18 @@ def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=
 
 def get_star(num):
 	"""Get star with given BSC number. Raises IndexError if the star cannot be found."""
-	data = filter(lambda x: x[0] == num, BSCS)
+	data = [x for x in BSCS if x[0] == num]
 	return data[0]
 
 def min_sep(x,data=BSCS):
-	return min(map(lambda y:libnova.angular_separation(x[1],x[2],y[1],y[2]), filter(lambda z:not z[0] == x[0],data)))
+	return min([libnova.angular_separation(x[1],x[2],y[1],y[2]) for y in [z for z in data if not z[0] == x[0]]])
 
 def star_nums(data=BSCS):
-	return map(lambda z:z[0],data)
+	return [z[0] for z in data]
 
 def filter_mindist(mindist,data=BSCS):
 	__filtered_bsc=[]
 	for s in data:
-		if min_sep(s,filter(lambda z:not z[0] in star_nums(__filtered_bsc),data)) > mindist:
+		if min_sep(s,[z for z in data if not z[0] in star_nums(__filtered_bsc)]) > mindist:
 			__filtered_bsc.append(s)
 	return __filtered_bsc
