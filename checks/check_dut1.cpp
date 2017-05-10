@@ -1,9 +1,11 @@
 #include "dut1.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <check.h>
 #include <check_utils.h>
 #include <math.h>
+#include <unistd.h>
 
 void setup_dut1 (void)
 {
@@ -35,10 +37,30 @@ START_TEST(GETDUT1)
 }
 END_TEST
 
+START_TEST(UPDATE)
+{
+	const char *fn = tmpnam (NULL);
+	updateDUT1 (fn, NULL);
+
+	time_t now = time (NULL);
+	struct tm *gmt;
+	gmt = gmtime (&now);
+
+	double dut1 = getDUT1 (fn, gmt);
+	printf ("Current DUT1: %f\n", dut1);
+	ck_assert_msg (!isnan (dut1), "current data not found in uploaded time diff file!");
+
+	gmt->tm_year += 3;
+	ck_assert_msg (isnan (getDUT1 (fn, gmt)), "found data for DUT1 3 years from now!");
+
+	unlink (fn);
+}
+END_TEST
+
 Suite * dut1_suite (void)
 {
 	Suite *s;
-	TCase *tc_dut1;
+	TCase *tc_dut1, *tc_update;
 
 	s = suite_create ("DUT1");
 	tc_dut1 = tcase_create ("DUT1 extraction");
@@ -46,6 +68,10 @@ Suite * dut1_suite (void)
 	tcase_add_checked_fixture (tc_dut1, setup_dut1, teardown_dut1);
 	tcase_add_test (tc_dut1, GETDUT1);
 	suite_add_tcase (s, tc_dut1);
+
+	tc_update = tcase_create ("DUT1 download");
+	tcase_add_test (tc_update, UPDATE);
+	suite_add_tcase (s, tc_update);
 
 	return s;
 }

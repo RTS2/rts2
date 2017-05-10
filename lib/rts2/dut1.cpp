@@ -42,7 +42,7 @@ void updateDUT1 (const char *fn, const char *url)
 	char *reply;
 	int reply_length;
 
-	int ret = client->executePostRequest (url, NULL, reply, reply_length);
+	int ret = client->executePostRequest (uri, NULL, reply, reply_length);
 
 	if (!ret)
 	{
