@@ -1,7 +1,40 @@
 language: python
 
+dist: trusty
+
+addons:
+  apt:
+    packages:
+      libc6-dev
+      liberfa1
+      liberfa-dev
+      libtool
+      libcfitsio3-dev
+      libnova-dev
+      libncurses5-dev
+      libgraphicsmagick++1-dev
+      libx11-dev
+      docbook-xsl
+      xsltproc
+      libxml2-dev
+      libarchive-dev
+      python-numpy
+      python-scipy
+      python-pyfits
+      python-matplotlib
+      libxt-dev
+      libfftw3-dev
+      gnuplot-x11
+      libjson-glib-dev
+      libsoup2.4-dev
+      pkg-config
+
 python:
   - "2.7"
   - "3.5"
+
+install:
+  - pip install lmfit
+
 script:
   - ./autogen.sh && ./configure && make && make check
