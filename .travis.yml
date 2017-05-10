@@ -28,6 +28,9 @@ addons:
       libjson-glib-dev
       libsoup2.4-dev
       pkg-config
+      postgresql-server-dev-all
+      postgresql
+      libecpg-dev
 
 python:
   - "2.7"
