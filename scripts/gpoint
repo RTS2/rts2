@@ -89,7 +89,7 @@ def generate_model(args):
 		plots=','.join([bp,plots]) if plots else bp
 
 	if args.altaz_plots:
-		altaz='num:model-err%0:0:3:1,num:ha-err%1:0:1:1,num:dec-err%2:0:1:1,paz:contour-model-err%1:1:2:2'
+		altaz='num:model-err%0:0:1:3,num:ha-err%1:0:1:1,num:dec-err%2:0:1:1,paz:contour-model-err%1:1:2:2'
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if args.altaz_heatmaps:

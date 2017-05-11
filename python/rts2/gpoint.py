@@ -957,7 +957,7 @@ class GPoint:
 					if g is None:
 						raise Exception('grid can be specified only once')
 					j += 1
-					grids = plot_s[j].split(':')
+					grids = map(int,plot_s[j].split(':'))
 					if self.verbose:
 						print('grids',grids)
 					grid.append(list(map(int, grids)) + g[len(grids):])
