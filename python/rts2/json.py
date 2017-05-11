@@ -15,12 +15,13 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
+from future.standard_library import install_aliases
+install_aliases()
 
 import base64
 import json as sysjson
 import http.client
-import urllib.request, urllib.parse, urllib.error
+from urllib.parse import urlencode
 import re
 import string
 import os
@@ -170,7 +171,7 @@ class Rts2JSON:
 	def getResponse(self, path, args=None, hlib=None):
 		url = self.prefix + path
 		if args:
-			url += '?' + urllib.parse.urlencode(args)
+			url += '?' + urlencode(args)
 		if self.verbose:
 			print('retrieving {0}'.format(url))
 		try:

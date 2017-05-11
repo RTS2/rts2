@@ -773,62 +773,57 @@ class GPoint:
 		plot.yaxis.set_major_formatter(pylab.FuncFormatter(arcmin_formatter))
 		return plot
 
-	def plot_alt_az(self,grid,contour='',pfact=4):
+	def plot_alt_az(self,fig,ax,contour='',pfact=4):
 		import pylab
-		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
-		polar.plot(np.radians(270 - self.aa_az),90 - self.aa_alt,'r.')
-		polar.plot(np.radians(270 - self.ar_az),90 - self.ar_alt,'g.')
-		polar.set_rmax(90)
-		polar.set_xticklabels(['E','NE','N','NW','W','SW','S','SE'])
+		ax.set_rmax(90)
+		ax.set_xticklabels(['E','NE','N','NW','W','SW','S','SE'])
+		ax.plot(np.radians(270 - self.aa_az),90 - self.aa_alt,'r.')
+		ax.plot(np.radians(270 - self.ar_az),90 - self.ar_alt,'g.')
 		if contour:
 			X = np.radians(270 - self.ar_az)
 			Y = 90 - self.ar_alt
 
 			if contour == 'model':
 				Z = self.diff_model_angular * 3600
-				polar.set_title('Model differences')
+				ax.set_title('Model differences')
 			elif contour == 'real':
 				Z = self.diff_angular_altaz * 3600 if self.altaz else self.diff_angular_hadec * 3600
-				polar.set_title('Real differences')
+				ax.set_title('Real differences')
 
 			xi = np.linspace(np.radians(-90),np.radians(271),num = 360 * pfact)
 			yi = np.linspace(min(Y),max(Y),num = 90 * pfact)
 			zi = pylab.griddata(X, Y, Z, xi, yi, interp='linear')
-			ctf = polar.contourf(xi,yi,zi,cmap='hot')
-			cbar = pylab.colorbar(ctf, orientation='vertical', pad=0.05)
+			ctf = ax.contourf(xi,yi,zi,cmap='hot')
+			cbar = fig.colorbar(ctf, ax=ax, orientation='vertical',shrink=0.5)
 			cbar.set_ticks(list(range(0,int(max(Z)),int(max(Z) / 10.0))))
 			cbar.ax.set_xticklabels(list(map("{0}'".format,list(range(0,int(max(Z)))))))
 		else:
-			polar.set_title('Alt-Az distribution')
-		return polar
+			ax.set_title('Alt-Az distribution')
+		return ax
 
-	def plot_hist(self,grid,dn,bins):
+	def plot_hist(self,ax,dn,bins):
 		import pylab
-		hist = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		if bins is None:
-			n,bin,patches = hist.hist(self.__get_data(dn)[0])
+			n,bin,patches = ax.hist(self.__get_data(dn)[0])
 		else:
-			n,bin,patches = hist.hist(self.__get_data(dn)[0],bins-1)
-		hist.set_title('{0} histogram binned {1}'.format(self.__get_data(dn)[2],len(bin)))
-		hist.set_ylabel('Occurence')
-		hist.set_xlabel('{0} arcsec'.format(self.__get_data(dn)[2]))
-		return hist
+			n,bin,patches = ax.hist(self.__get_data(dn)[0],bins-1)
+		ax.set_title('{0} histogram binned {1}'.format(self.__get_data(dn)[2],len(bin)))
+		ax.set_ylabel('Occurence')
+		ax.set_xlabel('{0} arcsec'.format(self.__get_data(dn)[2]))
+		return ax
 
-	def plot_vect(self,grid,x1,y1,x2,y2,draw):
+	def plot_vect(self,ax,x1,y1,x2,y2,draw):
 		import pylab
 		u = self.__get_data(x2)[0] - self.__get_data(x1)[0]
 		v = self.__get_data(y2)[0] - self.__get_data(y1)[0]
 		dist = np.sqrt(u ** 2 + v ** 2)
 		if draw is None:
 			draw = ['c{0}!red'.format(np.mean(dist)),'c{0}!green'.format(np.max(dist))]
-		vect = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		vect.quiver(self.__get_data(x1)[0],self.__get_data(y1)[0],u,v,dist)
-		vect.set_xlabel('{0} - {1}'.format(self.__get_data(x1)[2],self.__get_data(x2)[2]))
-		vect.set_ylabel('{0} - {1}'.format(self.__get_data(y1)[2],self.__get_data(y2)[2]))
+		ax.quiver(self.__get_data(x1)[0],self.__get_data(y1)[0],u,v,dist)
+		ax.set_xlabel('{0} - {1}'.format(self.__get_data(x1)[2],self.__get_data(x2)[2]))
+		ax.set_ylabel('{0} - {1}'.format(self.__get_data(y1)[2],self.__get_data(y2)[2]))
 
-		self.__draw(vect,draw)
-
-		return vect
+		return ax
 
 	def __get_data(self,name):
 		if self.name_map is None:
@@ -862,23 +857,22 @@ class GPoint:
 				})
 		return name_map[name.lower()]
 
-	def plot_data(self,p,nx,ny,band,draw):
-		"""Plots data in plot."""
+	def plot_data(self,ax,nx,ny):
+		"""Generate plot from data."""
 		if self.verbose:
 			print('plotting {0} {1}'.format(nx,ny))
 		xdata = self.__get_data(nx)
 		ydata = self.__get_data(ny)
-		p.plot(xdata[0],ydata[0],ydata[1])
-		p.set_xlabel(xdata[2])
-		p.set_ylabel(ydata[2])
-		if band is not None:
-			import matplotlib.patches as patches
-			band = float(band)
-			p.add_patch(patches.Rectangle((min(xdata[0]), -band), max(xdata[0]) - min(xdata[0]), 2*band, alpha=0.7, facecolor='red', edgecolor='none'))
-		self.__draw(p,draw)
-		return p
+		ax.plot(xdata[0],ydata[0],ydata[1])
+		ax.set_xlabel(xdata[2])
+		ax.set_ylabel(ydata[2])
+		#if band is not None:
+		#	import matplotlib.patches as patches
+		#	band = float(band)
+		#	p.add_patch(patches.Rectangle((min(xdata[0]), -band), max(xdata[0]) - min(xdata[0]), 2*band, alpha=0.7, facecolor='red', edgecolor='none'))
+		return ax
 
-	def __draw(self,p,draw):
+	def __draw(self,ax,draw):
 		if draw is None:
 			return
 		import matplotlib.pyplot as plt
@@ -894,7 +888,7 @@ class GPoint:
 				except ValueError as ve:
 					x = y = 0
 					r = float(d[1:])
-				p.add_artist(plt.Circle((x,y), r, fill=False, color=color))
+				ax.add_artist(plt.Circle((x,y), r, fill=False, color=color))
 			elif d[0] == 'x':
 				try:
 					x,y,r = list(map(float,d[1:].split(':')))
@@ -904,14 +898,40 @@ class GPoint:
 						r = float(d[1:])
 					except ValueError as ve2:
 						r = np.max(np.abs([p.get_ylim(),p.get_xlim()]))
-				p.add_artist(plt.Line2D([x,x],[y+r,y-r],color=color))
-				p.add_artist(plt.Line2D([x-r,x+r],[y,y],color=color))
+				ax.add_artist(plt.Line2D([x,x],[y+r,y-r],color=color))
+				ax.add_artist(plt.Line2D([x-r,x+r],[y,y],color=color))
 			else:
 				raise Exception('unknow draw element {0}'.format(d))
 
+	def __gen_plot(self,fig,gridspec,axnam):
+		if axnam[0] == 'paz':
+			ax=axnam[1].split('-')
+			axis = fig.add_subplot(gridspec,projection='polar')
+			if ax[0] == 'contour':
+				ret = self.plot_alt_az(fig,axis,ax[1])
+			else:
+				ret = self.plot_alt_az(fig,axis)
+		elif axnam[0] == 'hist':
+			bins = None
+			axis = fig.add_subplot(gridspec)
+			if len(axnam) > 2:
+				bins=int(axnam[2])
+			ret = self.plot_hist(axis,axnam[1],bins)
+		elif axnam[0] == 'vect':
+			axis = fig.add_subplot(gridspec)
+			if not len(axnam) == 5:
+				ret = self.plot_vect(axis,'az-corr-err','alt-err','az-corr-merr','alt-merr',draw[i])
+			else:
+				ret = self.plot_vect(axis,axnam[1],axnam[2],axnam[3],axnam[4],draw[i])
+		else:
+			axis = fig.add_subplot(gridspec)
+			for j in axnam[1:]:
+				ret = self.plot_data(axis,axnam[0],j)
+		return ret
 
-	def __gen_plot(self,plots,band):
-		import pylab
+	def __gen_plots(self,plots,band):
+		import matplotlib.pyplot as plt
+		import matplotlib.gridspec as gridspec
 		plot = []
 		grid = []
 		draw = []
@@ -956,6 +976,8 @@ class GPoint:
 		self.plotgrid = (rows,cols)
 		if self.verbose:
 			print('row {0} cols {1}'.format(rows,cols))
+		fig = plt.figure()
+		gs = gridspec.GridSpec(rows,cols)
 		for i in range(0,len(plot)):
 			axnam=plot[i].split(':')
 			if len(axnam) < 2:
@@ -963,30 +985,14 @@ class GPoint:
 			g = grid[i]
 			if self.verbose:
 				print('grid',g)
-			p = pylab.subplot2grid(self.plotgrid,g[:2],colspan=g[2],rowspan=g[3])
-			if axnam[0] == 'paz':
-				ax=axnam[1].split('-')
-				if ax[0] == 'contour':
-					self.plot_alt_az(g,ax[1])
-				else:
-					self.plot_alt_az(g)
-			elif axnam[0] == 'hist':
-				bins = None
-				if len(axnam) > 2:
-					bins=int(axnam[2])
-				self.plot_hist(g,axnam[1],bins)
-			elif axnam[0] == 'vect':
-				if not len(axnam) == 5:
-					self.plot_vect(g,'az-corr-err','alt-err','az-corr-merr','alt-merr',draw[i])
-				else:
-					self.plot_vect(g,axnam[1],axnam[2],axnam[3],axnam[4],draw[i])
-			else:
-				for j in axnam[1:]:
-					self.plot_data(p,axnam[0],j,band,draw[i])
+			ax = self.__gen_plot(fig,gs[g[0]:g[0] + g[2],g[1]:g[1] + g[3]],axnam)
+			self.__draw(ax,draw[i])
+
+		return fig
 
 	def plot(self,plots,band=None,ofile=None):
 		import pylab
-		self.__gen_plot(plots,band)
+		self.__gen_plots(plots,band)
 		pylab.tight_layout()
 		if ofile is None:
 			pylab.show()
@@ -1146,3 +1152,28 @@ class GPoint:
 			except KeyError as ve:
 				self.best.params[e.parname()] = minimizer.Parameter()
 				self.best.params[e.parname()].value = e.multi
+
+	def pdf_report(self,output_file,template_file=None):
+		"""Generates PDF report based on template file. If no template is provided, default report is generated."""
+		from matplotlib.backends.backend_pdf import PdfPages
+
+		# add default template if none provided
+		if template_file is None:
+			if self.altaz:
+				template = ["*ha:dec","*az:alt","*az-corr-err:alt-err@c10"]
+			else:
+				template = ["*ha:dec","*ha-corr-err:alt-err@c10"]
+		else:
+			tf = open(template_file, 'r')
+			tempate = tr.readlines()
+			tf.close
+
+		pdf = PdfPages(output_file)
+
+		for line in template:
+			if self.verbose > 1:
+				print ('Generating from line'.format(line))
+				# plot
+				if line[0] == '*':
+					fig = self.__gen_plots(line[1:])
+					pdf.savefig(fig)
