@@ -97,7 +97,9 @@ def generate_model(args):
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if plots:
-		model.plot(plots,args.plot_band,args.oplot)
+		model.plot(plots,args.oplot)
+		if args.report:
+			model.pdf_report(args.report,args.report_template)
 
 # Plot model offsets
 def plot_offsets(args):
@@ -177,7 +179,6 @@ parser.add_argument('--model-input',dest='model_input',action='store_true',defau
 parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
 parser.add_argument('--show-offset-terms',dest='show_offset_terms',action='store',default=None,type=str,help='terms to show on subplot')
 parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
-parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
 parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
 parser.add_argument('--refine',dest='refine',action='store',help='refine existing model - use the same extra parameters, do fit, add two together')
 parser.add_argument('--fixed',dest='fixed',action='store',help='list (, separated) of parameters to fix (ie,ia,..)')
@@ -187,6 +188,8 @@ parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='
 parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
 parser.add_argument('--xtol',dest='xtol',action='store',default=1.49012e-08,help='relative error desired in the approximate solution',type=float)
 parser.add_argument('--gtol',dest='gtol',action='store',default=0,help='orthogonality desired between the function vector and the columns of the Jacobian',type=float)
+parser.add_argument('-r',dest='report',action='store',default=None,help='PDF report filename')
+parser.add_argument('--report-template',dest='report_template',action='store',default=None,help='PDF report template file')
 
 parser.add_argument('-i',dest='interactive',action='store_true',default=False,help='run interactively, open console to type commands')
 
@@ -304,4 +307,3 @@ elif args.add_models:
 	add_models(args)
 else:
 	generate_model(args)
-

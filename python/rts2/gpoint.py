@@ -929,7 +929,7 @@ class GPoint:
 				ret = self.plot_data(axis,axnam[0],j)
 		return ret
 
-	def __gen_plots(self,plots,band):
+	def __gen_plots(self,plots):
 		import matplotlib.pyplot as plt
 		import matplotlib.gridspec as gridspec
 		plot = []
@@ -990,9 +990,9 @@ class GPoint:
 
 		return fig
 
-	def plot(self,plots,band=None,ofile=None):
+	def plot(self,plots,ofile=None):
 		import pylab
-		self.__gen_plots(plots,band)
+		self.__gen_plots(plots)
 		pylab.tight_layout()
 		if ofile is None:
 			pylab.show()
@@ -1156,6 +1156,7 @@ class GPoint:
 	def pdf_report(self,output_file,template_file=None):
 		"""Generates PDF report based on template file. If no template is provided, default report is generated."""
 		from matplotlib.backends.backend_pdf import PdfPages
+		import matplotlib.pyplot as plt
 
 		# add default template if none provided
 		if template_file is None:
@@ -1173,7 +1174,10 @@ class GPoint:
 		for line in template:
 			if self.verbose > 1:
 				print ('Generating from line'.format(line))
-				# plot
-				if line[0] == '*':
-					fig = self.__gen_plots(line[1:])
-					pdf.savefig(fig)
+			# plot
+			if line[0] == '*':
+				plt.title('Page from {0}'.format(line[1:]))
+				fig = self.__gen_plots(line[1:])
+				pdf.savefig(fig)
+				plt.close()
+		pdf.close()
