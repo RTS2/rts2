@@ -35,7 +35,7 @@ AS_IF([test "x$CHECK_LIBS" != x], [
 libjsoncpp="no"
 
 PKG_CHECK_MODULES([JSONCPP],[jsoncpp >= 0.9.6],,AC_MSG_RESULT(not found))
-AM_CONDITIONAL(LIBJSONCPP, test "x$CHECK_LIBS" != x)
+AM_CONDITIONAL(LIBJSONCPP, test "x$JSONCPP_LIBS" != x)
 AS_IF([test "x$CHECK_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBJSONCPP, "1", [use libjsoncpp])
   libjsoncpp="yes"
