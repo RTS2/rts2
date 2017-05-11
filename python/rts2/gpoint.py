@@ -812,13 +812,11 @@ class GPoint:
 		ax.set_xlabel('{0} arcsec'.format(self.__get_data(dn)[2]))
 		return ax
 
-	def plot_vect(self,ax,x1,y1,x2,y2,draw):
+	def plot_vect(self,ax,x1,y1,x2,y2):
 		import pylab
 		u = self.__get_data(x2)[0] - self.__get_data(x1)[0]
 		v = self.__get_data(y2)[0] - self.__get_data(y1)[0]
 		dist = np.sqrt(u ** 2 + v ** 2)
-		if draw is None:
-			draw = ['c{0}!red'.format(np.mean(dist)),'c{0}!green'.format(np.max(dist))]
 		ax.quiver(self.__get_data(x1)[0],self.__get_data(y1)[0],u,v,dist)
 		ax.set_xlabel('{0} - {1}'.format(self.__get_data(x1)[2],self.__get_data(x2)[2]))
 		ax.set_ylabel('{0} - {1}'.format(self.__get_data(y1)[2],self.__get_data(y2)[2]))
@@ -897,7 +895,7 @@ class GPoint:
 					try:
 						r = float(d[1:])
 					except ValueError as ve2:
-						r = np.max(np.abs([p.get_ylim(),p.get_xlim()]))
+						r = np.max(np.abs([ax.get_ylim(),ax.get_xlim()]))
 				ax.add_artist(plt.Line2D([x,x],[y+r,y-r],color=color))
 				ax.add_artist(plt.Line2D([x-r,x+r],[y,y],color=color))
 			else:
@@ -920,9 +918,9 @@ class GPoint:
 		elif axnam[0] == 'vect':
 			axis = fig.add_subplot(gridspec)
 			if not len(axnam) == 5:
-				ret = self.plot_vect(axis,'az-corr-err','alt-err','az-corr-merr','alt-merr',draw[i])
+				ret = self.plot_vect(axis,'az-corr-err','alt-err','az-corr-merr','alt-merr')
 			else:
-				ret = self.plot_vect(axis,axnam[1],axnam[2],axnam[3],axnam[4],draw[i])
+				ret = self.plot_vect(axis,axnam[1],axnam[2],axnam[3],axnam[4])
 		else:
 			axis = fig.add_subplot(gridspec)
 			for j in axnam[1:]:
@@ -978,6 +976,7 @@ class GPoint:
 			print('row {0} cols {1}'.format(rows,cols))
 		fig = plt.figure()
 		gs = gridspec.GridSpec(rows,cols)
+		axes = []
 		for i in range(0,len(plot)):
 			axnam=plot[i].split(':')
 			if len(axnam) < 2:
@@ -987,8 +986,9 @@ class GPoint:
 				print('grid',g)
 			ax = self.__gen_plot(fig,gs[g[0]:g[0] + g[2],g[1]:g[1] + g[3]],axnam)
 			self.__draw(ax,draw[i])
+			axes.append(ax)
 
-		return fig
+		return fig,axes
 
 	def plot(self,plots,ofile=None):
 		import pylab
@@ -1157,27 +1157,47 @@ class GPoint:
 		"""Generates PDF report based on template file. If no template is provided, default report is generated."""
 		from matplotlib.backends.backend_pdf import PdfPages
 		import matplotlib.pyplot as plt
+		import datetime
 
 		# add default template if none provided
 		if template_file is None:
 			if self.altaz:
-				template = ["*ha:dec","*az:alt","*az-corr-err:alt-err@c10"]
+				template = ["@vect:az-corr-err:alt-err:az-corr-merr:alt-merr@c10@c20@x","@ha:dec","@az:alt","@az-corr-err:alt-err@c10"]
 			else:
-				template = ["*ha:dec","*ha-corr-err:alt-err@c10"]
+				template = ["@vect:ha-corr-err:ha-err:ha-corr-merr:ha-merr@c10@c20@x","@ha:dec","@ha-corr-err:alt-err@c10"]
 		else:
 			tf = open(template_file, 'r')
-			tempate = tr.readlines()
+			template = tf.readlines()
 			tf.close
 
 		pdf = PdfPages(output_file)
 
+		text = ''
+
 		for line in template:
-			if self.verbose > 1:
-				print ('Generating from line'.format(line))
+			if self.verbose:
+				print ('Generating report line {0}'.format(line))
 			# plot
-			if line[0] == '*':
-				plt.title('Page from {0}'.format(line[1:]))
-				fig = self.__gen_plots(line[1:])
+			if line[0] == '@':
+				fig,axes = self.__gen_plots(line[1:].rstrip('\n'))
+				if len(text) == 0:
+					text = 'Figure from {0}'.format(line[1:])
+				axes[0].set_title(text,wrap=True)
 				pdf.savefig(fig)
 				plt.close()
+				text = ''
+			# close page
+			elif line[0] == '!':
+				fig = plt.figure()
+				fig.text(.1,.95,text,va='top',wrap=True)
+				pdf.savefig(fig)
+				plt.close()
+			# text
+			elif line[0] != '#':
+				text += line
+
+		d = pdf.infodict()
+		d['Title'] = 'GPoint report'
+		d['ModDate'] = datetime.datetime.today()
+
 		pdf.close()

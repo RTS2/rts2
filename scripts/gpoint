@@ -98,8 +98,9 @@ def generate_model(args):
 
 	if plots:
 		model.plot(plots,args.oplot)
-		if args.report:
-			model.pdf_report(args.report,args.report_template)
+
+	if args.report:
+		model.pdf_report(args.report,args.report_template)
 
 # Plot model offsets
 def plot_offsets(args):

@@ -2091,7 +2091,16 @@ class AltAzTest(unittest.TestCase):
 		for i in range(len(p)):
 			of = 'plots/plot{0:02d}.pdf'.format(i)
 			print('plotting {0} to {1}'.format(p[i], of))
-			self.model.plot(p[i], False, of)
+			self.model.plot(p[i], of)
+
+	def testReport(self):
+		import os
+		try:
+			os.mkdir('reports')
+		except Exception:
+			pass
+		self.model.pdf_report('reports/all.pdf')
+		self.model.pdf_report('reports/template.pdf','gpoint_template')
 
 	def testAdd(self):
 		import tempfile

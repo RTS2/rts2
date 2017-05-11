@@ -2,7 +2,7 @@ LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pl
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
 TESTS = check_python_libnova check_python_gpoint check_python_rts2 check_python_bsc
-EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily
+EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template
 
 if LIBCHECK
 TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1
@@ -30,3 +30,6 @@ check_dut1_SOURCES = check_dut1.cpp
 else
 EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp check_dut1.cpp
 endif
+
+clean-local:
+	-rm -rf plots reports

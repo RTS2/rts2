@@ -1,0 +1,21 @@
+# test file for report generation
+Pointing model for a virtual telescope. Used for testing of the GPoint reporting.
+The base of telescope pointing modelling is as follows:
+
+* record target and actual telescope poitings (where the telescope was commanded to point, and where it actually pointed).
+
+* compute error (alt-az for alt-az mounts, ha-dec for equatorial mounts,..)
+
+* produce a function which from the target coordinates (where the telescope was commanded to point) estimates errors
+
+* add those errors to target coordinates next time you will be observing with the telescope
+
+For telescopes with reasonable error control, pointing error residuals RMS below 10" (arcseconds) is not unusuall. The best telescopes can easily achieve poitings with 1-2 arcseconds RMS.
+!
+Vector plots of the errors. The beginning of each vector is unmodelled error, end is residual error (error after appliing model corrections).
+# now finally some plots
+@vect:az-corr-err:alt-err:az-corr-merr:alt-merr@c10@x
+@az:az-corr-err
+@az:alt-err
+@alt:az-corr-err
+@alt:alt-err
