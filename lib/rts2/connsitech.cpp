@@ -20,6 +20,9 @@
 #include "constsitech.h"
 #include "connection/sitech.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <endian.h>
 
 using namespace rts2core;
@@ -29,6 +32,9 @@ ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName
 	binary = false;
 	version = -1;
 	PIDSampleRate = 1;
+
+	logFile = -1;
+	logCount = 0;
 }
 
 int ConnSitech::init ()
@@ -195,6 +201,9 @@ void ConnSitech::sendYAxisRequest (SitechYAxisRequest &ax_request)
 	// sends the data..
 	writePort (data, 34);
 
+	if (logFile > 0)
+		logBuffer ('Y', data, 34);
+
 	// read back reply
 	SitechAxisStatus ax_status;
 	readAxisStatus (ax_status);
@@ -220,6 +229,9 @@ void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
 	*((uint16_t *) (data + 19)) = htole16 (binaryChecksum (data, 19, true));
 
 	writePort (data, 21);
+
+	if (logFile > 0)
+		logBuffer ('Y', data, 34);
 
 	SitechAxisStatus ax_status;
 	readAxisStatus (ax_status);
@@ -298,6 +310,9 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	ax_status.y_worm_phase = ret[30];
 	memcpy (ax_status.x_last, ret + 31, 4);
 	memcpy (ax_status.y_last, ret + 35, 4);
+
+	if (logFile > 0)
+		logBuffer ('A', ret, 41);
 }
 
 void ConnSitech::readConfiguration (SitechControllerConfiguration &config)
@@ -466,5 +481,42 @@ double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
 			return (double) speed / loop_ticks * (360.0 * PIDSampleRate / SPEED_MULTI);
 		default:
 			return 0;
+	}
+}
+
+void ConnSitech::startLogging (const char *logFileName)
+{
+	endLogging ();
+
+	logFile = open (logFileName, O_APPEND | O_WRONLY | O_CREAT);
+	if (logFile < 0)
+	{
+		logStream (MESSAGE_WARNING) << "cannot start SiTech logging to " << logFileName << " " << strerror (errno);
+		return;
+	}
+}
+
+void ConnSitech::endLogging ()
+{
+	if (logFile > 0)
+	{
+		fsync (logFile);
+		close (logFile);
+	}
+	logFile = -1;
+}
+
+void ConnSitech::logBuffer (char spec, void *data, size_t len)
+{
+	struct timeval tv;
+	gettimeofday (&tv, NULL);
+	write (logFile, &spec, 1);
+	write (logFile, &tv, sizeof (tv));
+	write (logFile, data, len);
+	logCount++;
+	if (logCount > 200)
+	{
+		fsync (logFile);
+		logCount = 0;
 	}
 }

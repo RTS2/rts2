@@ -287,6 +287,9 @@ class ConnSitech: public ConnSerial
 		// which controller is connected
 		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 
+		void startLogging (const char *logFileName);
+		void endLogging ();
+
 	private:
 		/**
 		 * Reads XXS, XXR and YXR status replies.
@@ -305,6 +308,14 @@ class ConnSitech: public ConnSerial
 		uint16_t binaryChecksum (const char *dbuf, size_t blen, bool invertH);
 
 		bool binary;
+
+		int logFile;
+		int logCount; // flush after n records
+
+		/**
+		 * Log sitech communication to a file.
+		 */
+		void logBuffer (char spec, void *data, size_t len);
 };
 
 }

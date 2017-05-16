@@ -87,6 +87,8 @@ class SitechAltAz:public AltAz
 		const char *tel_tty;
 		rts2core::ConnSitech *telConn;
 
+		rts2core::ValueString *sitechLogFile;
+
 		rts2core::SitechAxisStatus altaz_status;
 		rts2core::SitechYAxisRequest altaz_Yrequest;
 		rts2core::SitechXAxisRequest altaz_Xrequest;
@@ -221,6 +223,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	az_last_errors = 0;
 	alt_last_errors = 0;
+
+	createValue (sitechLogFile, "sitech_logfile", "SiTech logging file", false);
+	sitechLogFile->setValueString ("");
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -649,6 +654,14 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == trackingLook)
 	{
 		userTrackingLook->setValueBool (true);
+		return 0;
+	}
+	if (oldValue == sitechLogFile)
+	{
+		if (strlen (newValue->getValue ()) > 0)
+			telConn->startLogging (newValue->getValue ());
+		else
+			telConn->endLogging ();
 		return 0;
 	}
 
