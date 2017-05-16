@@ -597,6 +597,24 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	ea_speed = (ac - c_ac) / sec_step;
 	ed_speed = (dc - c_dc) / sec_step;
 
+/*
+	double agCap = corrAgresivityCap->getValueFloat () / 100.0;
+
+	if (agCap > 0)
+	{
+		if (fabs(ac - c_ac) * cos (ln_deg_to_rad (eqpos.dec)) > slowDist_a)
+		{
+			int32_t ac_adder = (ac - c_ac) / sec_step;
+			ac_speed += ac_adder * agCap;
+		}
+		if (fabs(dc - c_dc) > slowDist_d)
+		{
+			int32_t dc_adder = (dc - c_dc) / sec_step;
+			dc_speed += dc_adder * agCap;
+		}
+	}
+*/
+
 	speed_angle = ln_rad_to_deg (atan2 (ac_speed, dc_speed));
 	err_angle = ln_rad_to_deg (atan2 (ea_speed, ed_speed));
 

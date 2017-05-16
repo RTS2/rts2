@@ -685,7 +685,7 @@ void SitechAltAz::scaleTrackingLook ()
 			else
 				change = 2;
 		}
-		else if (trackingLook->getValueFloat () > 0.5)
+		else if (trackingLook->getValueFloat () > 1)
 		{
 			if (trackingLook->getValueFloat () > 5)
 				change = -2;
@@ -740,8 +740,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	az_change = a_azc - r_az_pos->getValueLong ();
 	alt_change = a_altc - r_alt_pos->getValueLong ();
 
-	a_azc += az_change * 60;
-	a_altc += alt_change * 60;
+//	a_azc += az_change * 60;
+//	a_altc += alt_change * 60;
 
 	if (a_azc > azMax->getValueLong ())
 		a_azc = azMax->getValueLong ();

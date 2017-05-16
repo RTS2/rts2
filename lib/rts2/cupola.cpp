@@ -252,7 +252,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 	if (conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
 	{
 		if (trackTelescope->getValueBool () == false)
-			return -2;
+			return 0;
 	}
 	if (conn->isCommand (COMMAND_CUPOLA_MOVE) || conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
 	{
