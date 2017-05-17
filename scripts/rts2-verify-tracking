@@ -45,6 +45,7 @@ parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel
 parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
 parser.add_argument('--elipses', help=_('plot star fit elipsis parameters'), action='store_true', dest='elipses', default=False)
 parser.add_argument('--range', help=_('process given range of images'), action='store', dest='range', default=None)
+parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o'])
 
 options = parser.parse_args()
 
@@ -141,7 +142,7 @@ class ProcessFiles:
 
 			return 0
 
-	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses):
+	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses, markers):
 		if verbose == 0:
 			print('Done')
 
@@ -247,7 +248,7 @@ class ProcessFiles:
 
 			if ang_deviations is not None:
 				p_ang = fig.add_subplot(gs[3:4,0:1],sharex=xaxis)
-				p_ang.plot (list(range(len(pf.sb[0]))), np.average(ang_deviations, axis=1), '-')
+				p_ang.plot (list(range(len(pf.sb[0]))), np.average(ang_deviations, axis=1), markers)
 				p_ang.fill_between (list(range(len(pf.sb[0]))), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 				p_ang.set_ylabel ('Rot. (deg)')
 				devoffs = 1
@@ -267,13 +268,13 @@ class ProcessFiles:
 			rts2.progressbar.progress(1, stars + 1)
 
 			for si in range(stars):
-				p_x.plot (list(range(len(pf.sb[si]))), np_sb[si,:,0] - a_x[si], '.')
-				p_y.plot (list(range(len(pf.sb[si]))), np_sb[si,:,1] - a_y[si], '.')
-				p_dist.plot (list(range(len(pf.sb[si]))), a_dist[si] - dist[si], '.')
+				p_x.plot (list(range(len(pf.sb[si]))), np_sb[si,:,0] - a_x[si], markers)
+				p_y.plot (list(range(len(pf.sb[si]))), np_sb[si,:,1] - a_y[si], markers)
+				p_dist.plot (list(range(len(pf.sb[si]))), a_dist[si] - dist[si], markers)
 				if elipses:
-					p_a.plot (list(range(len(pf.sb[si]))), np_sb[si,:,3], '.')
-					p_b.plot (list(range(len(pf.sb[si]))), np_sb[si,:,4], '.')
-					p_theta.plot (list(range(len(pf.sb[si]))), np.degrees (np_sb[si,:,5]) + 180, '.')
+					p_a.plot (list(range(len(pf.sb[si]))), np_sb[si,:,3], markers)
+					p_b.plot (list(range(len(pf.sb[si]))), np_sb[si,:,4], markers)
+					p_theta.plot (list(range(len(pf.sb[si]))), np.degrees (np_sb[si,:,5]) + 180, markers)
 
 				rts2.progressbar.progress(si + 1, stars + 1)
 
@@ -351,6 +352,6 @@ for fn in options.files:
 		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
 
 	if options.cube:
-		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
+		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
 
-pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
+pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)

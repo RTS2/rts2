@@ -1,0 +1,142 @@
+#!/usr/bin/env python
+#
+# Dumps various SiTech data from serial log
+# 
+# (C) 2017 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+from __future__ import print_function
+
+import argparse
+import time
+import struct
+import sys
+import matplotlib
+import pylab
+import matplotlib.dates
+import matplotlib.gridspec as gridspec
+import datetime
+import numpy
+
+import gettext
+gettext.install('dump-sitech')
+
+parser = argparse.ArgumentParser(description=_('Dumps data from SiTech log.\n\nExample use:\n\n\tdump-sitech track.log'))
+
+def valid_date(d):
+	return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
+
+parser.add_argument('files', help=_('Trace logs to process'), action='append')
+parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store', type=valid_date, default=None)
+parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
+
+args = parser.parse_args()
+
+def sitech_checksum(s, invertH):
+	"""Calculates sitech checksum from byte array"""
+	checksum = 0
+	for x in s:
+		checksum = (checksum + ord(x)) & 0xFFFF
+	if invertH:
+		return checksum ^ 0xFF00
+	return checksum
+
+def process_file(fn, d_from, d_to):
+	f = open(fn,'rb')
+
+	positions = []
+	commands = []
+
+	while True:
+		d = f.read(17)
+		if len(d) != 17:
+			return positions, commands
+		et,t,usec = struct.unpack('=cqq',d)
+
+		date = datetime.datetime.fromtimestamp(t + float(usec) / 1e6)
+
+		if d_to is not None and date > d_to:
+			return positions, commands
+		if d_from is not None and date < d_from:
+			continue
+
+		print('{0} {1} {2}'.format(time.ctime(t), usec, et))
+
+		try:
+			if et == 'A':
+				data = f.read(41)
+				address,x_pos,y_pos,x_enc,y_enc,keypad,x_bit,y_bit,extra_bits,ain_1,ain_2,mclock,temperature,y_worm_phase,x_last,x_err,y_last,y_err,checksum = struct.unpack('<biiii bbbbhh IbbhhhhH',data)
+				if sitech_checksum(data[:39],True) != checksum:
+					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:39],True), checksum)))
+				positions.append([date, x_pos, y_pos, x_err, y_err])
+			elif et == 'Y':
+				data = f.read(34) # should be 21..
+				x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data[:21])
+				if sitech_checksum(data[:19],True) != checksum:
+					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:19],True), checksum)))
+				commands.append([date, x_dest, y_dest, x_speed, y_speed])
+			elif et == 'Y':
+				data = f.read(34)
+				x_dest,x_speed,y_dest,y_speed,x_rate_adder,y_rate_adder,x_rate_adder_t,y_rate_adder_t,checksum=struct.unpack('<8iH',data)
+				if sitech_checksum(data[:32],True) != checksum:
+					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:32],True), checksum)))
+				commands.append([date, x_dest, y_dest, x_speed, y_speed])
+			else:
+				sys.exit(_('Unknow entry type: {0}'.format(et)))
+		except ValueError, ve:
+			print(ve)
+	f.close()
+	return positions, commands
+
+for fn in args.files:
+	print(_('Processing {0}'.format(fn)))
+	positions, commands = process_file(fn, args.d_from, args.d_to)
+
+	positions = numpy.array(positions)
+	commands = numpy.array(commands)
+
+	fig = pylab.figure()
+	gs = gridspec.GridSpec(6,1)
+
+	def add_plot(index,xaxis,ylabel):
+		ret = fig.add_subplot(index, sharex=xaxis)
+		ret.set_xlim(xaxis.get_xlim())
+		ret.set_ylabel(ylabel)
+		return ret
+
+	ax_pos_x = fig.add_subplot(gs[0:1,0:1])
+
+	ax_pos_x.plot(positions[:,0], positions[:,1], ',')
+	ax_pos_x.set_ylabel('Alt pos')
+
+	ax_pos_y = add_plot(gs[1:2,0:1], ax_pos_x, 'Az pos')
+	ax_pos_y.plot(positions[:,0], positions[:,2], 'g,')
+
+	ax_err_x = add_plot(gs[2:3,0:1], ax_pos_x, 'Alt err')
+	ax_err_x.plot(positions[:,0], positions[:,3], ',')
+
+	ax_err_y = add_plot(gs[3:4,0:1], ax_pos_x, 'Az err')
+	ax_err_y.plot(positions[:,0], positions[:,4], 'g,')
+
+	commd_x_speed = add_plot(gs[4:5,0:1], ax_pos_x, 'Alt speed')
+	commd_x_speed.plot(commands[:,0], commands[:,3], ',')
+
+	commd_y_speed = add_plot(gs[5:6,0:1], ax_pos_x, 'Az speed')
+	commd_y_speed.plot(commands[:,0], commands[:,4], 'g,')
+
+	fig.subplots_adjust(hspace=0)
+
+	pylab.show()
