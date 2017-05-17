@@ -231,7 +231,7 @@ void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
 	writePort (data, 21);
 
 	if (logFile > 0)
-		logBuffer ('Y', data, 34);
+		logBuffer ('X', data, 21);
 
 	SitechAxisStatus ax_status;
 	readAxisStatus (ax_status);
