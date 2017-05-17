@@ -18,11 +18,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+from __future__ import print_function
+
 import sys
 import math
 import os
 import rts2.altazpath
-import rts2.json
+import rts2.rtsapi
 import rts2.kmparse
 import rts2.tpvp
 import time
@@ -56,7 +58,7 @@ parser.add_argument('action', help=_('action (line,spiral,model,bright-star,veri
 
 options = parser.parse_args()
 
-j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
 __mm = list(map(float,options.mags.split(':')))
 if len(__mm) != 2:

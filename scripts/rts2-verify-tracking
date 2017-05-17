@@ -18,6 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+from __future__ import print_function
+
 import numpy as np
 import sys
 from astropy.io import fits
@@ -108,7 +110,7 @@ class ProcessFiles:
 					if verbose:
 						print(_('star too far from center'))
 					continue
-				self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['theta']])
+				self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['cxy']])
 				si += 1
 		else:
 			found_sb = []
@@ -224,15 +226,18 @@ class ProcessFiles:
 
 		if plot or saveplot or stars_plot:
 			import pylab
+			import matplotlib.gridspec as gridspec
 			pylab.ioff()
 			fig = pylab.figure()
 			pa = 3 if elipses else 0
-			plotgrid = ((3 + pa) if ang_deviations is None else (4 + pa), 1)
+			rows = (3 + pa) if ang_deviations is None else (4 + pa)
+			gs = gridspec.GridSpec(rows,1)
 			print(_('generating plots'))
 			rts2.progressbar.progress(0, stars + 1)
-			p_x = pylab.subplot2grid(plotgrid,[0,0])
-			p_y = pylab.subplot2grid(plotgrid,[1,0])
-			p_dist = pylab.subplot2grid(plotgrid,[2,0])
+			p_x = fig.add_subplot(gs[0:1,0:1])
+			xaxis = p_x # principal X axis
+			p_y = fig.add_subplot(gs[1:2,0:1],sharex=xaxis)
+			p_dist = fig.add_subplot(gs[2:3,0:1],sharex=xaxis)
 
 			p_x.set_ylabel ('X (px)')
 			p_y.set_ylabel ('Y (px)')
@@ -241,16 +246,19 @@ class ProcessFiles:
 			devoffs = 0
 
 			if ang_deviations is not None:
-				p_ang = pylab.subplot2grid(plotgrid,[3,0])
+				p_ang = fig.add_subplot(gs[3:4,0:1],sharex=xaxis)
 				p_ang.plot (list(range(len(pf.sb[0]))), np.average(ang_deviations, axis=1), '-')
 				p_ang.fill_between (list(range(len(pf.sb[0]))), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 				p_ang.set_ylabel ('Rot. (deg)')
 				devoffs = 1
 
 			if elipses:
-				p_a = pylab.subplot2grid(plotgrid,[3+devoffs,0])
-				p_b = pylab.subplot2grid(plotgrid,[4+devoffs,0])
-				p_theta = pylab.subplot2grid(plotgrid,[5+devoffs,0])
+				rs = 3 + devoffs
+				p_a = fig.add_subplot(gs[rs:rs+1,0:1],sharex=xaxis)
+				rs += 1
+				p_b = fig.add_subplot(gs[rs:rs+1,0:1],sharex=xaxis)
+				rs += 1
+				p_theta = fig.add_subplot(gs[rs:rs+1,0:1],sharex=xaxis)
 
 				p_a.set_ylabel('A (px)')
 				p_b.set_ylabel('B (px)')
@@ -259,17 +267,17 @@ class ProcessFiles:
 			rts2.progressbar.progress(1, stars + 1)
 
 			for si in range(stars):
-				p_x.plot (list(range(len(pf.sb[si]))), np_sb[si,:,0] - a_x[si], '-')
-				p_y.plot (list(range(len(pf.sb[si]))), np_sb[si,:,1] - a_y[si], '-')
-				p_dist.plot (list(range(len(pf.sb[si]))), a_dist[si] - dist[si], '-')
+				p_x.plot (list(range(len(pf.sb[si]))), np_sb[si,:,0] - a_x[si], '.')
+				p_y.plot (list(range(len(pf.sb[si]))), np_sb[si,:,1] - a_y[si], '.')
+				p_dist.plot (list(range(len(pf.sb[si]))), a_dist[si] - dist[si], '.')
 				if elipses:
-					p_a.plot (list(range(len(pf.sb[si]))), np_sb[si,:,3], '-')
-					p_b.plot (list(range(len(pf.sb[si]))), np_sb[si,:,4], '-')
-					p_theta.plot (list(range(len(pf.sb[si]))), np.degrees (np_sb[si,:,5]) + 180, '-')
+					p_a.plot (list(range(len(pf.sb[si]))), np_sb[si,:,3], '.')
+					p_b.plot (list(range(len(pf.sb[si]))), np_sb[si,:,4], '.')
+					p_theta.plot (list(range(len(pf.sb[si]))), np.degrees (np_sb[si,:,5]) + 180, '.')
 
 				rts2.progressbar.progress(si + 1, stars + 1)
 
-			pylab.tight_layout()
+			fig.subplots_adjust(hspace=0)
 
 			rts2.progressbar.progress(stars + 1, stars + 1)
 

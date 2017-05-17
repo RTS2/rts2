@@ -50,7 +50,6 @@ def sendEmail(subject, body):
 			f.write(subject + '\n' + body)
 			f.close()
 try:
-	import rts2.json
 	import rts2.scriptcomm
 
 	time.sleep(30)

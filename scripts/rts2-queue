@@ -15,7 +15,7 @@ import string
 import rts2
 import rts2.target
 import rts2.radec
-import rts2.json
+import rts2.rtsapi
 import re
 import time
 import calendar
@@ -155,11 +155,11 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
 	if options.simulate:
 		now = time.time()
-		night_beginning = rts2.json.getProxy().getValue('centrald', 'night_beginning', True)
-		night_ending = rts2.json.getProxy().getValue('centrald', 'night_ending')
+		night_beginning = rts2.rtsapi.getProxy().getValue('centrald', 'night_beginning', True)
+		night_ending = rts2.rtsapi.getProxy().getValue('centrald', 'night_ending')
 		if night_beginning > night_ending:
 			night_beginning = now
-		rts2.json.getProxy().executeCommand('SEL', 'simulate {0} {1}'.format(night_beginning, night_ending))
+		rts2.rtsapi.getProxy().executeCommand('SEL', 'simulate {0} {1}'.format(night_beginning, night_ending))
 		sys.exit(0)
 
 	if options.save_xml and options.load_xml:
@@ -173,7 +173,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 		
 	q = None
 	if options.queue:
-		q = rts2.Queue(rts2.json.getProxy(), options.queue)
+		q = rts2.Queue(rts2.rtsapi.getProxy(), options.queue)
 
 	def test_q():
 		if q is None:
@@ -254,12 +254,12 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 		q.load()
 
 	if options.save_xml:
-	  	qs = rts2.Queues(rts2.json.getProxy())
+	  	qs = rts2.Queues(rts2.rtsapi.getProxy())
 		qs.load()
 		qs.save_xml(options.save_xml)
 			
 	if options.load_xml:
-		qs = rts2.Queues(rts2.json.getProxy())
+		qs = rts2.Queues(rts2.rtsapi.getProxy())
 		for xml in options.load_xml:
 			qs.load_xml(xml)
 		qs.save(True)
@@ -271,7 +271,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 			q.load()
 			print "Queue {0}: {1}".format(options.queue, q)
 		else:
-			qs = rts2.Queues(rts2.json.getProxy())
+			qs = rts2.Queues(rts2.rtsapi.getProxy())
 			qs.load()
 			for q in qs.queues:
 				print "Queue {0}: {1}".format(qs.queues[q].name, qs.queues[q])

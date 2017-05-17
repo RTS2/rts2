@@ -20,7 +20,7 @@
 
 import sys
 import urllib
-import rts2.json
+import rts2.rtsapi
 import json as sysjson
 import time
 
@@ -55,7 +55,7 @@ parser.add_argument('--push', help='print value on its updates', action='store_t
 
 options = parser.parse_args()
 
-j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
 if (options.runscript or options.list_minmax) and not (options.device):
 	print >>sys.stderr,'--device argument must be specified with --cmd option'
@@ -83,7 +83,7 @@ try:
 			print 'executing command ', g, ':', j.loadJson('/api/cmd', {'d':options.device, 'c':g})
 	if options.list_minmax:
 		for v in j.getDevice(options.device, refresh_not_found=True):
-			if j.getVariable(options.device, v)[0] & rts2.json.RTS2_VALUE_MMAX:
+			if j.getVariable(options.device, v)[0] & rts2.rtsapi.RTS2_VALUE_MMAX:
 				print '{0}.min ='.format(v)
 				print '{0}.max ='.format(v)
 	if options.runscript:

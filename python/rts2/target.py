@@ -15,7 +15,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from . import json
+from . import rtsapi
 
 class Target:
 	def __init__(self,id,name=None):
@@ -28,7 +28,7 @@ class Target:
 			name = None
 			return
 		try:
-			data = json.getProxy().loadJson('/api/tbyid',{'id':self.id})['d'][0]
+			data = rtsapi.getProxy().loadJson('/api/tbyid',{'id':self.id})['d'][0]
 			self.name = data[1]
 		except Exception as ex:
 			self.name = None
@@ -36,9 +36,9 @@ class Target:
 def get(name):
 	"""Return array with targets matching given name or target ID"""
 	try:
-		return json.getProxy().loadJson('/api/tbyid',{'id':int(name)})['d']
+		return rtsapi.getProxy().loadJson('/api/tbyid',{'id':int(name)})['d']
 	except ValueError:
-		return json.getProxy().loadJson('/api/tbyname',{'n':name})['d']
+		return rtsapi.getProxy().loadJson('/api/tbyname',{'n':name})['d']
 
 def create(name,ra,dec):
-	return json.getProxy().loadJson('/api/create_target', {'tn':name, 'ra':ra, 'dec':dec})['id']
+	return rtsapi.getProxy().loadJson('/api/create_target', {'tn':name, 'ra':ra, 'dec':dec})['id']

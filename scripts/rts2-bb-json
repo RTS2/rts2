@@ -23,7 +23,7 @@ import string
 import sys
 import urllib
 import rts2.dms
-import rts2.json
+import rts2.rtsapi
 
 from optparse import OptionParser
 
@@ -48,7 +48,7 @@ parser.add_option('--progress', help='Reports progress of the give schedule ID',
 
 (options,args)=parser.parse_args()
 
-j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
 def resolve(s):
 	"""Resolve target from string. Either list existing RTS2 targets, or return Simbad/MPEC options"""

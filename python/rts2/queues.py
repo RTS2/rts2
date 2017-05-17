@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 from . import queue
-from . import json
+from . import rtsapi
 import xml.dom.minidom
 
 class Queues:

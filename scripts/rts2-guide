@@ -4,7 +4,7 @@
 # (C) 2017 Petr Kubanek
 #
 
-import rts2.json
+import rts2.rtsapi
 import rts2.brights
 
 import sys
@@ -30,9 +30,9 @@ parser.add_argument('--not-guide', help=('only record changes, do not guide'), a
 
 options = parser.parse_args()
 
-j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
-tn = j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)
+tn = j.getDevicesByType(rts2.rtsapi.DEVICE_TYPE_MOUNT)
 if tn is None:
 	sys.exit(_('Telescope not connected?'))
 
