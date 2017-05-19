@@ -23,8 +23,10 @@ from __future__ import print_function
 import numpy as np
 import sys
 from astropy.io import fits
+import astropy.time
 
 import argparse
+import datetime
 import gettext
 gettext.install('rts2-verify-tracking')
 
@@ -79,11 +81,22 @@ def calculate_angels(sb):
 class ProcessFiles:
 	def __init__(self, nstars):
 		self.sb = [] # contains selected x, y, flux as members
+		self.times = [] # contains exposure times (datetime.datetime object)
 		self.skipped = 0
 		for si in range(nstars):
 			self.sb.append([])
 
-	def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, split, ci=None):
+	def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, split, ci=None, date_keyword='DATE-OBS'):
+		if ci is None:
+			ftime = astropy.time.Time(hdu[0].header[date_keyword]).to_datetime()
+		else:
+			exp_time = float(hdu[0].header['EXPOSURE'])
+			if len(self.times) == 0:  # no time yet
+				ftime = astropy.time.Time(hdu[0].header[date_keyword]).to_datetime()
+			else:
+				ftime = self.times[0]
+			ftime += datetime.timedelta(seconds=exp_time * ci)
+		self.times.append(ftime)
 		objects = rts2.brights.find_stars(fn, hdu, verbose, useDS9, ci)
 		if verbose > 1:
 			print(_('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y']))
@@ -248,8 +261,8 @@ class ProcessFiles:
 
 			if ang_deviations is not None:
 				p_ang = fig.add_subplot(gs[3:4,0:1],sharex=xaxis)
-				p_ang.plot (list(range(len(pf.sb[0]))), np.average(ang_deviations, axis=1), markers)
-				p_ang.fill_between (list(range(len(pf.sb[0]))), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
+				p_ang.plot (self.times, np.average(ang_deviations, axis=1), markers)
+				p_ang.fill_between (self.times, np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 				p_ang.set_ylabel ('Rot. (deg)')
 				devoffs = 1
 
@@ -268,13 +281,13 @@ class ProcessFiles:
 			rts2.progressbar.progress(1, stars + 1)
 
 			for si in range(stars):
-				p_x.plot (list(range(len(pf.sb[si]))), np_sb[si,:,0] - a_x[si], markers)
-				p_y.plot (list(range(len(pf.sb[si]))), np_sb[si,:,1] - a_y[si], markers)
-				p_dist.plot (list(range(len(pf.sb[si]))), a_dist[si] - dist[si], markers)
+				p_x.plot (self.times, np_sb[si,:,0] - a_x[si], markers)
+				p_y.plot (self.times, np_sb[si,:,1] - a_y[si], markers)
+				p_dist.plot (self.times, a_dist[si] - dist[si], markers)
 				if elipses:
-					p_a.plot (list(range(len(pf.sb[si]))), np_sb[si,:,3], markers)
-					p_b.plot (list(range(len(pf.sb[si]))), np_sb[si,:,4], markers)
-					p_theta.plot (list(range(len(pf.sb[si]))), np.degrees (np_sb[si,:,5]) + 180, markers)
+					p_a.plot (self.times, np_sb[si,:,3], markers)
+					p_b.plot (self.times, np_sb[si,:,4], markers)
+					p_theta.plot (self.times, np.degrees (np_sb[si,:,5]) + 180, markers)
 
 				rts2.progressbar.progress(si + 1, stars + 1)
 
@@ -339,7 +352,7 @@ for fn in options.files:
 			imgn += 1
 			if imgranges is not None and imgn not in imgranges:
 				continue
-			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci)
+			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci, 'FRAME')
 			if ret == -1:
 				# split graphs
 				pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
@@ -354,4 +367,5 @@ for fn in options.files:
 	if options.cube:
 		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
 
-pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
+if not(options.cube):
+	pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
