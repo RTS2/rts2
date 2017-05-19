@@ -82,9 +82,9 @@ def process_file(fn, d_from, d_to):
 				if sitech_checksum(data[:39],True) != checksum:
 					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:39],True), checksum)))
 				positions.append([date, x_pos, y_pos, x_err, y_err])
-			elif et == 'Y':
-				data = f.read(34) # should be 21..
-				x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data[:21])
+			elif et == 'X':
+				data = f.read(21)
+				x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data)
 				if sitech_checksum(data[:19],True) != checksum:
 					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:19],True), checksum)))
 				commands.append([date, x_dest, y_dest, x_speed, y_speed])
