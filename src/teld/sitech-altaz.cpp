@@ -224,7 +224,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	az_last_errors = 0;
 	alt_last_errors = 0;
 
-	createValue (sitechLogFile, "sitech_logfile", "SiTech logging file", false);
+	createValue (sitechLogFile, "sitech_logfile", "SiTech logging file", false, RTS2_VALUE_WRITABLE);
 	sitechLogFile->setValueString ("");
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
@@ -740,8 +740,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	az_change = a_azc - r_az_pos->getValueLong ();
 	alt_change = a_altc - r_alt_pos->getValueLong ();
 
-//	a_azc += az_change * 60;
-//	a_altc += alt_change * 60;
+	a_azc += az_change * 300;
+	a_altc += alt_change * 300;
 
 	if (a_azc > azMax->getValueLong ())
 		a_azc = azMax->getValueLong ();
@@ -752,6 +752,11 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		a_altc = altMax->getValueLong ();
 	if (a_altc < altMin->getValueLong ())
 		a_altc = altMin->getValueLong ();
+
+	if (abs (aze_speed) > 50)
+		azc_speed += aze_speed * 0.8;
+	if (abs (alte_speed) > 50)
+		altc_speed += alte_speed * 0.8;
 
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
