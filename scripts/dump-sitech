@@ -42,6 +42,7 @@ def valid_date(d):
 parser.add_argument('files', help=_('Trace logs to process'), action='append')
 parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store', type=valid_date, default=None)
 parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
+parser.add_argument('-d', dest='fdump', help=_('dump CSV to the file'), action='store', type=argparse.FileType('w+'), default=None)
 
 args = parser.parse_args()
 
@@ -54,11 +55,15 @@ def sitech_checksum(s, invertH):
 		return checksum ^ 0xFF00
 	return checksum
 
-def process_file(fn, d_from, d_to):
+def process_file(fn, d_from, d_to, fdump=None):
 	f = open(fn,'rb')
 
 	positions = []
 	commands = []
+
+	if fdump:
+		# write header to csv dump
+		fdump.write('A/Y/X,position date,X position,Y position,X error,Y error,command date,X target,Y target,X speed,Y speed\n')
 
 	while True:
 		d = f.read(17)
@@ -98,12 +103,15 @@ def process_file(fn, d_from, d_to):
 				sys.exit(_('Unknow entry type: {0}'.format(et)))
 		except ValueError, ve:
 			print(ve)
+
+		if fdump and len(positions) > 0 and len(commands) > 0:
+			fdump.write('{0},{1},{2}\n'.format(et,','.join(map(str,positions[-1])),','.join(map(str,commands[-1]))))
 	f.close()
 	return positions, commands
 
 for fn in args.files:
 	print(_('Processing {0}'.format(fn)))
-	positions, commands = process_file(fn, args.d_from, args.d_to)
+	positions, commands = process_file(fn, args.d_from, args.d_to, args.fdump)
 
 	positions = numpy.array(positions)
 	commands = numpy.array(commands)
