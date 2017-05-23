@@ -210,6 +210,8 @@ class SitechAltAz:public AltAz
 
 		int az_last_errors;
 		int alt_last_errors;
+
+		long last_loop;
 };
 
 }
@@ -336,6 +338,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	firstSlewCall = true;
 	wasStopped = false;
+
+	last_loop = 0;
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
 	addOption (OPT_SHOW_PID, "pid", 1, "allow PID read and edit");
@@ -783,8 +787,15 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	if (a_altc < altMin->getValueLong ())
 		a_altc = altMin->getValueLong ();
 
-	azc_speed += azErrPID->loop (aze_speed);
-	altc_speed += altErrPID->loop (alte_speed);
+	double loop_sec = (mclock->getValueLong () - last_loop) / 1000.0;
+
+	if (loop_sec < 1)
+	{
+		azc_speed += azErrPID->loop (aze_speed, loop_sec);
+		altc_speed += altErrPID->loop (alte_speed, loop_sec);
+	}
+
+	last_loop = mclock->getValueLong ();
 
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
