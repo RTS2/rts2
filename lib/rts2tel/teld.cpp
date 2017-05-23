@@ -171,9 +171,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
-		createValue (corrAgresivityCap, "tracking_agr", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
-		corrAgresivityCap->setValueFloat (50);
-
 		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
 		createValue (trackingWarning, "tracking_warning", "issue warning if tracking frequency drops bellow this number", false, RTS2_VALUE_WRITABLE);
@@ -186,7 +183,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
-		corrAgresivityCap = NULL;
 		trackingFrequency = NULL;
 		trackingWarning = NULL;
 		skyVect = NULL;
@@ -596,24 +592,6 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 
 	ea_speed = (ac - c_ac) / sec_step;
 	ed_speed = (dc - c_dc) / sec_step;
-
-/*
-	double agCap = corrAgresivityCap->getValueFloat () / 100.0;
-
-	if (agCap > 0)
-	{
-		if (fabs(ac - c_ac) * cos (ln_deg_to_rad (eqpos.dec)) > slowDist_a)
-		{
-			int32_t ac_adder = (ac - c_ac) / sec_step;
-			ac_speed += ac_adder * agCap;
-		}
-		if (fabs(dc - c_dc) > slowDist_d)
-		{
-			int32_t dc_adder = (dc - c_dc) / sec_step;
-			dc_speed += dc_adder * agCap;
-		}
-	}
-*/
 
 	speed_angle = ln_rad_to_deg (atan2 (ac_speed, dc_speed));
 	err_angle = ln_rad_to_deg (atan2 (ea_speed, ed_speed));

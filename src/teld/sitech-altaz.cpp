@@ -251,6 +251,12 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	userTrackingLook->setValueBool (false);
 	lastTrackingNum = 0;
 
+	createValue (azErrPID, "az_err_PID", "PID parameters for AZ error correction", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (altErrPID, "alt_err_PID", "PID parameters for Alt error correction", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+
+	azErrPID->setPID (0, 0.02, 0);
+	altErrPID->setPID (0, 0.02, 0);
+
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
 
@@ -777,10 +783,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	if (a_altc < altMin->getValueLong ())
 		a_altc = altMin->getValueLong ();
 
-	if (abs (aze_speed) > 50)
-		azc_speed += aze_speed * 0.8;
-	if (abs (alte_speed) > 50)
-		altc_speed += alte_speed * 0.8;
+	azc_speed += azErrPID->loop (aze_speed);
+	altc_speed += altErrPID->loop (alte_speed);
 
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
