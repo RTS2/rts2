@@ -92,8 +92,7 @@ class Rotator:public rts2core::Device
 		/**
 		 * Set parallactic angle offset.
 		 */
-		void setPAOffset (double paOff) { paOffset->setValueDouble (paOff); }
-
+		void setPAOffset (double paOff);
 	private:
 		rts2core::ValueDouble *zeroOffs;
 		rts2core::ValueDouble *offset;

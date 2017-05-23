@@ -212,9 +212,13 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		updateToGo ();
 		maskState (ROT_MASK_AUTOROT | ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_ROTATING | BOP_EXPOSURE, "rotator rotation started");
 	}
-	if (old_value == paTracking)
+	else if (old_value == paTracking)
 	{
 		maskState (ROT_MASK_AUTOROT | ROT_MASK_PATRACK | BOP_EXPOSURE, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
+	}
+	else if (old_value == offset)
+	{
+		logStream (MESSAGE_INFO | INFO_ROTATOR_OFFSET) << new_value->getValueDouble () << " " << paOffset->getValueDouble ()<< sendLog;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -228,6 +232,12 @@ void Rotator::setCurrentPosition (double cp)
 double Rotator::getPA (double t)
 {
 	return parallacticAngle->getValueDouble () + (parallacticAngleRate->getValueDouble () / 3600.0) * (t - parallacticAngleRef->getValueDouble ());
+}
+
+void Rotator::setPAOffset (double paOff)
+{
+	paOffset->setValueDouble (paOff);
+	logStream (MESSAGE_INFO | INFO_ROTATOR_OFFSET) << offset->getValueDouble () << " " << paOff << sendLog;
 }
 
 void Rotator::updateToGo ()

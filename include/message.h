@@ -67,6 +67,9 @@ typedef uint32_t messageType_t;
 #define DEBUG_MOUNT_TRACKING_LOG        0x001300
 #define DEBUG_MOUNT_TRACKING_SHORT_LOG  0x001400
 
+// rotator messages
+#define INFO_ROTATOR_OFFSET             0x002000
+
 #define MESSAGE_MASK_ALL                0xFFFFFF
 
 namespace rts2core

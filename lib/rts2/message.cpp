@@ -118,6 +118,8 @@ const std::string Message::getMessageString ()
 		case DEBUG_MOUNT_TRACKING_SHORT_LOG:
 			os << expandString ("target $1 $2 model $3 $4 etar $5 $6 htar $7 $8");
 			break;
+		case INFO_ROTATOR_OFFSET:
+			os << expandString ("setting derotator offset to $1, PA offset to $2");
 		default:
 			return messageString;
 	}
