@@ -23,6 +23,8 @@
 
 #include "connection/sitech.h"
 
+#define OPT_SHOW_PID	OPT_LOCAL + 7
+
 /**
  * Sitech AltAz driver.
  */
@@ -115,6 +117,10 @@ class SitechAltAz:public AltAz
 		rts2core::ValueFloat *trackingFactor;
 
 		rts2core::IntegerArray *PIDs;
+		rts2core::ValuePID *az_slew_PID;
+		rts2core::ValuePID *az_track_PID;
+		rts2core::ValuePID *alt_slew_PID;
+		rts2core::ValuePID *alt_track_PID;
 
 		rts2core::ValueLong *az_enc;
 		rts2core::ValueLong *alt_enc;
@@ -274,6 +280,11 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (PIDs, "pids", "axis PID values", false);
 
+	az_slew_PID = NULL;
+	az_track_PID = NULL;
+	alt_slew_PID = NULL;
+	alt_track_PID = NULL;
+
 	createValue (az_enc, "ENCAZ", "AZ encoder readout", true);
 	createValue (alt_enc, "ENCALT", "ALT encoder readout", true);
 
@@ -321,6 +332,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	wasStopped = false;
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
+	addOption (OPT_SHOW_PID, "pid", 1, "allow PID read and edit");
 
 	addParkPosOption ();
 }
@@ -338,6 +350,18 @@ int SitechAltAz::processOption (int in_opt)
 	{
 		case 'f':
 			tel_tty = optarg;
+			break;
+
+		case OPT_SHOW_PID:
+			createValue (az_slew_PID, "PID_az_slew", "AZ slew PID");
+			createValue (az_track_PID, "PID_az_track", "AZ tracking PID");
+			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID");
+			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID");
+
+			updateMetaInformations (az_slew_PID);
+			updateMetaInformations (az_track_PID);
+			updateMetaInformations (alt_slew_PID);
+			updateMetaInformations (alt_track_PID);
 			break;
 
 		default:
@@ -1023,6 +1047,23 @@ void SitechAltAz::getPIDs ()
 	PIDs->addValue (telConn->getSiTechValue ('Y', "PPP"));
 	PIDs->addValue (telConn->getSiTechValue ('Y', "III"));
 	PIDs->addValue (telConn->getSiTechValue ('Y', "DDD"));
+
+	if (alt_slew_PID)
+	{
+		alt_slew_PID->setPID (telConn->getSiTechValue ('X', "PP"), telConn->getSiTechValue ('X', "II"), telConn->getSiTechValue ('X', "DD"));
+	}
+	if (alt_track_PID)
+	{
+		alt_track_PID->setPID (telConn->getSiTechValue ('X', "P"), telConn->getSiTechValue ('X', "I"), telConn->getSiTechValue ('X', "D"));
+	}
+	if (az_slew_PID)
+	{
+		az_slew_PID->setPID (telConn->getSiTechValue ('Y', "PP"), telConn->getSiTechValue ('Y', "II"), telConn->getSiTechValue ('Y', "DD"));
+	}
+	if (az_track_PID)
+	{
+		az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
+	}
 }
 
 int main (int argc, char **argv)
