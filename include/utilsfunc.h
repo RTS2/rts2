@@ -403,4 +403,17 @@ uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen);
  */
 int parseVariableName (const char *name, char **device, char **variable);
 
+/**
+ * Calculate paralactic angle.
+ *
+ * @param ha object hour angle (in degrees)
+ * @param dec object declination (in degrees)
+ * @param sin_lat sinus of latitude
+ * @param cos_lat cosinus of latitude
+ * @param tan_lat tan of latitude
+ * @param pa calculated object paralactic angle (in degrees)
+ * @param parate calculated object paralactic rate (in degrees/hours)
+ */
+void parallacticAngle (double ha, double dec, double sin_lat, double cos_lat, double tan_lat, double &pa, double &parate);
+
 #endif							 /* !__RTS_UTILSFUNC__ */

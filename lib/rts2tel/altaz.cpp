@@ -204,24 +204,6 @@ void AltAz::counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double
 	dec = pos.dec;
 }
 
-void AltAz::parallactic_angle (double ha, double dec, double &pa, double &parate)
-{
-	double radha = ln_deg_to_rad (ha);
-	double raddec = ln_deg_to_rad (dec);
-	double cos_dec = cos (raddec);
-	double sin_dec = sin (raddec);
-	double cos_ha = cos (radha);
-	double sin_ha = sin (radha);
-	double div = (sin_lat * cos_dec - cos_lat * sin_dec * cos_ha);
-	// don't divide by 0
-	if (fabs (div) < 10e-5)
-		pa = 0;
-	else
-		pa = ln_rad_to_deg (atan2 (cos_lat * sin_ha, div));
-	double par1 = (tan_lat * cos_dec - sin_dec * cos_ha);
-	parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
-}
-
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
 {
 	// nothing to check

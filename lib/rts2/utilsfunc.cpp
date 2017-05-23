@@ -568,3 +568,21 @@ int parseVariableName (const char *name, char **device, char **variable)
 	(*variable)[len - 1] = '\0';
 	return 0;
 }
+
+void parallacticAngle (double ha, double dec, double sin_lat, double cos_lat, double tan_lat, double &pa, double &parate)
+{
+	double radha = ln_deg_to_rad (ha);
+	double raddec = ln_deg_to_rad (dec);
+	double cos_dec = cos (raddec);
+	double sin_dec = sin (raddec);
+	double cos_ha = cos (radha);
+	double sin_ha = sin (radha);
+	double div = (sin_lat * cos_dec - cos_lat * sin_dec * cos_ha);
+	// don't divide by 0
+	if (fabs (div) < 10e-5)
+		pa = 0;
+	else
+		pa = ln_rad_to_deg (atan2 (cos_lat * sin_ha, div));
+	double par1 = (tan_lat * cos_dec - sin_dec * cos_ha);
+	parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
+}
