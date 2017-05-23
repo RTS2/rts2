@@ -236,8 +236,11 @@ double Rotator::getPA (double t)
 
 void Rotator::setPAOffset (double paOff)
 {
-	paOffset->setValueDouble (paOff);
-	logStream (MESSAGE_INFO | INFO_ROTATOR_OFFSET) << offset->getValueDouble () << " " << paOff << sendLog;
+	if (paOffset->getValueDouble () != paOff)
+	{
+		paOffset->setValueDouble (paOff);
+		logStream (MESSAGE_INFO | INFO_ROTATOR_OFFSET) << offset->getValueDouble () << " " << paOff << sendLog;
+	}
 }
 
 void Rotator::updateToGo ()

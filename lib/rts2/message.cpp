@@ -120,6 +120,7 @@ const std::string Message::getMessageString ()
 			break;
 		case INFO_ROTATOR_OFFSET:
 			os << expandString ("setting derotator offset to $1, PA offset to $2");
+			break;
 		default:
 			return messageString;
 	}
