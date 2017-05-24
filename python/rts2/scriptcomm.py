@@ -75,9 +75,9 @@ class Rts2Comm:
 	def sendCommand(self,command,device = None):
 		"""Send command to device."""
 		if device is None:
-		  	print('command',command)
+		  	print('command {0}'.format(command))
 		else:
-		  	print('C',device,command)
+		  	print('C {0} {1}'.format(device,command))
 		sys.stdout.flush()
 
 	def readline(self):
@@ -101,14 +101,14 @@ class Rts2Comm:
 	def getValue(self,value,device = None):
 		"""Returns given value."""
 		if device is None:
-			print('?',value)
+			print('? {0}'.format(value))
 		else:
-			print('G',device,value)
+			print('G {0} {1}'.format(device,value))
 		sys.stdout.flush()
 		return self.readline()
 
 	def getOwnValue(self, value):
-		print('get_own', value)
+		print('get_own {0}'.format(value))
 		sys.stdout.flush()
 		return self.readline()
 
@@ -141,34 +141,34 @@ class Rts2Comm:
 
 	def incrementValue(self,name,new_value,device = None):
 		if (device is None):
-			print("value",name,'+=',new_value)
+			print("value {0} += {1}".format(name,new_value))
 		else:
-			print("V",device,name,'+=',new_value)
+			print("V {0} {1} += {2}".format(device,name,new_value))
 		sys.stdout.flush()
 	
 	def incrementValueType(self,device,name,new_value):
-		print("VT",device,name,'+=',new_value)
+		print("VT {0} {1} += {2}".format(device,name,'+=',new_value))
 		sys.stdout.flush()
 
 	def setValue(self, name, new_value, device = None):
 		if (device is None):
-			print("value",name,'=',new_value)
+			print("value {0} = {1}".format(name,new_value))
 		else:
-			print("V",device,name,'=',new_value)
+			print("V {0} {1} = {2}".format(device,name,new_value))
 		sys.stdout.flush()
 
 	def setOwnValue(self, name, new_value):
-		print('set_own', name, new_value)
+		print('set_own {0} {1}'.format(name, new_value))
 		sys.stdout.flush()
 
 	def setValueByType(self,device,name,new_value):
 		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
-		print("VT",device,name,'=',new_value)
+		print("VT {0} {1} = {2}".format(device,name,new_value))
 		sys.stdout.flush()
 
 	def getDeviceByType(self,device):
 		"""Returns name of the first device with given type."""
-		print("device_by_type",device)
+		print("device_by_type {0}".format(device))
 		sys.stdout.flush()
 		return self.readline()
 
@@ -179,7 +179,7 @@ class Rts2Comm:
 
 	def targetTempDisable(self,ti):
 		"""Temporary disable target for given number of seconds."""
-		print("target_tempdisable",ti)
+		print("target_tempdisable {0}".format(ti))
 		sys.stdout.flush()
 
 	def endScript(self):
@@ -189,19 +189,19 @@ class Rts2Comm:
 
 	def getState(self,device):
 		"""Retrieve device state"""
-		print('S',device)
+		print('S {0}'.format(device))
 		sys.stdout.flush()
 		return int(self.readline())
 	
 	def waitIdle(self,device,timeout):
 		"""Wait for idle state (with timeout)"""
-		print('waitidle',device,timeout)
+		print('waitidle {0} {1}'.format(device,timeout))
 		sys.stdout.flush()
 		return int(self.readline())
 
 	def waitMask(self,device,mask,timeout):
 		"""Wait for given state (when mask & state = mask)"""
-		print('waitmask',device,mask,timeout)
+		print('waitmask {0} {1} {2}'.format(device,mask,timeout))
 		sys.stdout.flush()
 		return int(self.readline())
 
@@ -210,9 +210,9 @@ class Rts2Comm:
 		Unless fileexpand parameter is provided, user is responsible to specify image treatment."""
 		if fileexpand:
 			if overwrite:
-				print("exposure_overwrite", fileexpand)
+				print("exposure_overwrite {0}".format(fileexpand))
 			else:
-				print("exposure_wfn", fileexpand)
+				print("exposure_wfn {0}".format(fileexpand))
 		else:
 			print("exposure")
 		sys.stdout.flush()
@@ -234,9 +234,9 @@ class Rts2Comm:
 		Unless fileexpand parameter is provided, user is responsible to specify image treatment."""
 		if fileexpand:
 			if overwrite:
-				print("exposure_overwrite", fileexpand)
+				print("exposure_overwrite {0}".format(fileexpand))
 			else:
-				print("exposure_wfn", fileexpand)
+				print("exposure_wfn {0}".format(fileexpand))
 		else:
 			print("endshift")
 		sys.stdout.flush()
@@ -254,23 +254,23 @@ class Rts2Comm:
 		return fn
 
 	def progressUpdate(self,expected_end,start=time.time()):
-		print("progress",start,expected_end)
+		print("progress {0} {1}".format(start,expected_end))
 		sys.stdout.flush()
 
 	def radec(self,ra,dec):
-		print("radec",ra,dec)
+		print("radec {0} {1}".format(ra,dec))
 		sys.stdout.flush()
 	
 	def newObs(self,ra,dec):
-		print("newobs",ra,dec)
+		print("newobs {0} {1}".format(ra,dec))
 		sys.stdout.flush()
 
 	def altaz(self,alt,az):
-		print("altaz",alt,az)
+		print("altaz {0} {1}".format(alt,az))
 		sys.stdout.flush()
 
 	def newObsAltAz(self,alt,az):
-		print("newaltaz",alt,az)
+		print("newaltaz {0} {1}".format(alt,az))
 		sys.stdout.flush()
 
 	def __imageAction(self,action,imagename):

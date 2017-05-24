@@ -1,0 +1,26 @@
+#!/usr/bin/python
+# restarts camera on FRAM
+
+import rts2.scriptcomm
+import os
+import time
+
+c=rts2.scriptcomm.Rts2Comm()
+
+os.system('/usr/local/bin/rts2-stop WF6')
+os.system('/usr/local/bin/rts2-stop NF3')
+
+os.system('/usr/local/bin/rts2-stop WF6')
+os.system('/usr/local/bin/rts2-stop NF3')
+
+time.sleep(2)
+
+c.setValue('CCD_switch',1,'DOME')
+time.sleep(2)
+c.setValue('CCD_switch',0,'DOME')
+time.sleep(30)
+
+os.system('/usr/local/bin/rts2-start WF6')
+os.system('/usr/local/bin/rts2-start NF3')
+
+c.log('I', 'camera restarted')
