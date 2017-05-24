@@ -931,7 +931,9 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 
 void SitechAltAz::getTel ()
 {
-	telConn->getAxisStatus ('X');
+	// update data only if telescope is not tracking - if it is tracking, commands to set target will return last_status
+	if (!isTracking ())
+		telConn->getAxisStatus ('X');
 
 	az_enc->setValueLong (telConn->last_status.y_enc);
 	alt_enc->setValueLong (telConn->last_status.x_enc);
