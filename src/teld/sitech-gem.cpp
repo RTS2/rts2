@@ -112,7 +112,6 @@ class Sitech:public GEM
 
 		rts2core::ConnSitech *serConn;
 
-		rts2core::SitechAxisStatus radec_status;
 		rts2core::SitechYAxisRequest radec_Yrequest;
 		rts2core::SitechXAxisRequest radec_Xrequest;
 
@@ -246,7 +245,7 @@ class Sitech:public GEM
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true, true, false), radec_status (), radec_Yrequest (), radec_Xrequest ()
+Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true, true, false), radec_Yrequest (), radec_Xrequest ()
 {
 	unlockPointing ();
 
@@ -430,7 +429,7 @@ void Sitech::getTel ()
 {
 	try
 	{
-		serConn->getAxisStatus ('X', radec_status);
+		serConn->getAxisStatus ('X');
 	}
 	catch (rts2core::Error er)
 	{
@@ -445,42 +444,42 @@ void Sitech::getTel ()
 		return;
 	}
 
-	r_ra_pos->setValueLong (radec_status.y_pos);
-	r_dec_pos->setValueLong (radec_status.x_pos);
+	r_ra_pos->setValueLong (serConn->last_status.y_pos);
+	r_dec_pos->setValueLong (serConn->last_status.x_pos);
 
-	ra_pos->setValueLong (radec_status.y_pos + haZero->getValueDouble () * haCpd->getValueDouble ());
-	dec_pos->setValueLong (radec_status.x_pos + decZero->getValueDouble () * decCpd->getValueDouble ());
+	ra_pos->setValueLong (serConn->last_status.y_pos + haZero->getValueDouble () * haCpd->getValueDouble ());
+	dec_pos->setValueLong (serConn->last_status.x_pos + decZero->getValueDouble () * decCpd->getValueDouble ());
 
-	ra_enc->setValueLong (radec_status.y_enc);
-	dec_enc->setValueLong (radec_status.x_enc);
+	ra_enc->setValueLong (serConn->last_status.y_enc);
+	dec_enc->setValueLong (serConn->last_status.x_enc);
 
-	extraBit->setValueInteger (radec_status.extra_bits);
+	extraBit->setValueInteger (serConn->last_status.extra_bits);
 	// not stopped, not in manual mode
-	autoModeRa->setValueBool ((radec_status.extra_bits & AUTO_Y) == 0);
-	autoModeDec->setValueBool ((radec_status.extra_bits & AUTO_X) == 0);
-	mclock->setValueLong (radec_status.mclock);
-	temperature->setValueInteger (radec_status.temperature);
+	autoModeRa->setValueBool ((serConn->last_status.extra_bits & AUTO_Y) == 0);
+	autoModeDec->setValueBool ((serConn->last_status.extra_bits & AUTO_X) == 0);
+	mclock->setValueLong (serConn->last_status.mclock);
+	temperature->setValueInteger (serConn->last_status.temperature);
 
-	ra_worm_phase->setValueInteger (radec_status.y_worm_phase);
+	ra_worm_phase->setValueInteger (serConn->last_status.y_worm_phase);
 
 	switch (serConn->sitechType)
 	{
 		case rts2core::ConnSitech::SERVO_I:
 		case rts2core::ConnSitech::SERVO_II:
-			ra_last->setValueLong (le32toh (*(uint32_t*) &radec_status.y_last));
-			dec_last->setValueLong (le32toh (*(uint32_t*) &radec_status.x_last));
+			ra_last->setValueLong (le32toh (*(uint32_t*) &(serConn->last_status.y_last)));
+			dec_last->setValueLong (le32toh (*(uint32_t*) &(serConn->last_status.x_last)));
 			break;
 		case rts2core::ConnSitech::FORCE_ONE:
 		{
 			// upper nimble
-			uint16_t ra_val = radec_status.y_last[0] << 4;
-			ra_val += radec_status.y_last[1];
+			uint16_t ra_val = serConn->last_status.y_last[0] << 4;
+			ra_val += serConn->last_status.y_last[1];
 
-			uint16_t dec_val = radec_status.x_last[0] << 4;
-			dec_val += radec_status.x_last[1];
+			uint16_t dec_val = serConn->last_status.x_last[0] << 4;
+			dec_val += serConn->last_status.x_last[1];
 
 			// find all possible errors
-			switch (radec_status.y_last[0] & 0x0F)
+			switch (serConn->last_status.y_last[0] & 0x0F)
 			{
 				case 0:
 					ra_errors_val->setValueInteger (ra_val);
@@ -522,7 +521,7 @@ void Sitech::getTel ()
 			}
 
 
-			switch (radec_status.x_last[0] & 0x0F)
+			switch (serConn->last_status.x_last[0] & 0x0F)
 			{
 				case 0:
 					dec_errors_val->setValueInteger (dec_val);
@@ -563,8 +562,8 @@ void Sitech::getTel ()
 					break;
 			}
 
-			ra_pos_error->setValueInteger (*(uint16_t*) &radec_status.y_last[2]);
-			dec_pos_error->setValueInteger (*(uint16_t*) &radec_status.x_last[2]);
+			ra_pos_error->setValueInteger (*(uint16_t*) &(serConn->last_status.y_last[2]));
+			dec_pos_error->setValueInteger (*(uint16_t*) &(serConn->last_status.x_last[2]));
 			break;
 		}
 	}
@@ -635,8 +634,8 @@ void Sitech::getTel ()
 		}
 	}
 
-	xbits = radec_status.x_bit;
-	ybits = radec_status.y_bit;
+	xbits = serConn->last_status.x_bit;
+	ybits = serConn->last_status.y_bit;
 }
 
 void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec)
@@ -650,7 +649,7 @@ void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_tel
 
 	getTel ();
 
-	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec, getTelUTC1 + getTelUTC2);
+	int ret = counts2sky (serConn->last_status.y_pos, serConn->last_status.x_pos, telra, teldec, telflip, un_telra, un_teldec, getTelUTC1 + getTelUTC2);
 	if (ret)
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }

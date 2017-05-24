@@ -251,7 +251,7 @@ class ConnSitech: public ConnSerial
 		 *
 		 * @throw Error on communication error
 		 */
-		void getAxisStatus (char axis, SitechAxisStatus &ax_status);
+		void getAxisStatus (char axis);
 
 		/**
 		 * Sends binary more request to the axis.
@@ -290,11 +290,13 @@ class ConnSitech: public ConnSerial
 		void startLogging (const char *logFileName);
 		void endLogging ();
 
+		SitechAxisStatus last_status;
+
 	private:
 		/**
 		 * Reads XXS, XXR and YXR status replies.
 		 */
-		void readAxisStatus (SitechAxisStatus &ax_status);
+		void readAxisStatus ();
 
 		/**
 		 * Reads configuration of Sitech controller.

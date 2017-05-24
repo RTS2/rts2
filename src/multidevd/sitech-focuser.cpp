@@ -63,17 +63,17 @@ int SitechFocuser::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 
 int SitechFocuser::info ()
 {
-	sitech->getAxisStatus ('X', axisStatus);
+	sitech->getAxisStatus ('X');
 
-	position->setValueDouble ((double) axisStatus.y_pos / POSITION_FACTOR);
-	encoder->setValueLong (axisStatus.y_enc);
+	position->setValueDouble ((double) sitech->last_status.y_pos / POSITION_FACTOR);
+	encoder->setValueLong (sitech->last_status.y_enc);
 
-	autoMode->setValueBool ((axisStatus.extra_bits & AUTO_Y) == 0);
+	autoMode->setValueBool ((sitech->last_status.extra_bits & AUTO_Y) == 0);
 
-	uint16_t val = axisStatus.y_last[0] << 4;
-	val += axisStatus.y_last[1];
+	uint16_t val = sitech->last_status.y_last[0] << 4;
+	val += sitech->last_status.y_last[1];
 
-	switch (axisStatus.y_last[0] & 0x0F)
+	switch (sitech->last_status.y_last[0] & 0x0F)
 	{
 		case 0:
 			errors_val->setValueInteger (val);

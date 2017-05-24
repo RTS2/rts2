@@ -91,7 +91,6 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueString *sitechLogFile;
 
-		rts2core::SitechAxisStatus altaz_status;
 		rts2core::SitechYAxisRequest altaz_Yrequest;
 		rts2core::SitechXAxisRequest altaz_Xrequest;
 
@@ -911,41 +910,41 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 
 void SitechAltAz::getTel ()
 {
-	telConn->getAxisStatus ('X', altaz_status);
+	telConn->getAxisStatus ('X');
 
-	r_az_pos->setValueLong (altaz_status.y_pos);
-	r_alt_pos->setValueLong (altaz_status.x_pos);
+	r_az_pos->setValueLong (telConn->last_status.y_pos);
+	r_alt_pos->setValueLong (telConn->last_status.x_pos);
 
-	az_enc->setValueLong (altaz_status.y_enc);
-	alt_enc->setValueLong (altaz_status.x_enc);
+	az_enc->setValueLong (telConn->last_status.y_enc);
+	alt_enc->setValueLong (telConn->last_status.x_enc);
 
-	extraBit->setValueInteger (altaz_status.extra_bits);
+	extraBit->setValueInteger (telConn->last_status.extra_bits);
 	// not stopped, not in manual mode
-	autoModeAz->setValueBool ((altaz_status.extra_bits & AUTO_Y) == 0);
-	autoModeAlt->setValueBool ((altaz_status.extra_bits & AUTO_X) == 0);
-	mclock->setValueLong (altaz_status.mclock);
-	temperature->setValueInteger (altaz_status.temperature);
+	autoModeAz->setValueBool ((telConn->last_status.extra_bits & AUTO_Y) == 0);
+	autoModeAlt->setValueBool ((telConn->last_status.extra_bits & AUTO_X) == 0);
+	mclock->setValueLong (telConn->last_status.mclock);
+	temperature->setValueInteger (telConn->last_status.temperature);
 
-	az_worm_phase->setValueInteger (altaz_status.y_worm_phase);
+	az_worm_phase->setValueInteger (telConn->last_status.y_worm_phase);
 
 	switch (telConn->sitechType)
 	{
 		case rts2core::ConnSitech::SERVO_I:
 		case rts2core::ConnSitech::SERVO_II:
-			az_last->setValueLong (le32toh (*(uint32_t*) &altaz_status.y_last));
-			alt_last->setValueLong (le32toh (*(uint32_t*) &altaz_status.x_last));
+			az_last->setValueLong (le32toh (*(uint32_t*) &(telConn->last_status.y_last)));
+			alt_last->setValueLong (le32toh (*(uint32_t*) &(telConn->last_status.x_last)));
 			break;
 		case rts2core::ConnSitech::FORCE_ONE:
 		{
 			// upper nimble
-			uint16_t az_val = altaz_status.y_last[0] << 4;
-			az_val += altaz_status.y_last[1];
+			uint16_t az_val = telConn->last_status.y_last[0] << 4;
+			az_val += telConn->last_status.y_last[1];
 
-			uint16_t alt_val = altaz_status.x_last[0] << 4;
-			alt_val += altaz_status.x_last[1];
+			uint16_t alt_val = telConn->last_status.x_last[0] << 4;
+			alt_val += telConn->last_status.x_last[1];
 
 			// find all possible errors
-			switch (altaz_status.y_last[0] & 0x0F)
+			switch (telConn->last_status.y_last[0] & 0x0F)
 			{
 				case 0:
 					az_errors_val->setValueInteger (az_val);
@@ -987,7 +986,7 @@ void SitechAltAz::getTel ()
 			}
 
 
-			switch (altaz_status.x_last[0] & 0x0F)
+			switch (telConn->last_status.x_last[0] & 0x0F)
 			{
 				case 0:
 					alt_errors_val->setValueInteger (alt_val);
@@ -1028,8 +1027,8 @@ void SitechAltAz::getTel ()
 					break;
 			}
 
-			az_pos_error->addValue (*(int16_t*) &altaz_status.y_last[2], 20);
-			alt_pos_error->addValue (*(int16_t*) &altaz_status.x_last[2], 20);
+			az_pos_error->addValue (*(int16_t*) &(telConn->last_status.y_last[2]), 20);
+			alt_pos_error->addValue (*(int16_t*) &(telConn->last_status.x_last[2]), 20);
 			
 			az_pos_error->calculate ();
 			alt_pos_error->calculate ();
@@ -1048,7 +1047,7 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 #endif
 	getTel ();
 
-	counts2hrz (altaz_status.y_pos, altaz_status.x_pos, telaz, telalt, un_telaz, un_telzd);
+	counts2hrz (telConn->last_status.y_pos, telConn->last_status.x_pos, telaz, telalt, un_telaz, un_telzd);
 }
 
 void SitechAltAz::getPIDs ()

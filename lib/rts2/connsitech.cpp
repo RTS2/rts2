@@ -35,6 +35,8 @@ ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName
 
 	logFile = -1;
 	logCount = 0;
+
+	memset (&last_status, 0, sizeof (last_status));
 }
 
 int ConnSitech::init ()
@@ -170,12 +172,12 @@ int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
 	return atol (ret + 1);
 }
 
-void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
+void ConnSitech::getAxisStatus (char axis)
 {
 	switchToBinary ();
 	siTechCommand (axis, "XS");
 
-	readAxisStatus (ax_status);
+	readAxisStatus ();
 }
 
 void ConnSitech::sendYAxisRequest (SitechYAxisRequest &ax_request)
@@ -205,8 +207,7 @@ void ConnSitech::sendYAxisRequest (SitechYAxisRequest &ax_request)
 		logBuffer ('Y', data, 34);
 
 	// read back reply
-	SitechAxisStatus ax_status;
-	readAxisStatus (ax_status);
+	readAxisStatus ();
 }
 
 void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
@@ -233,8 +234,7 @@ void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
 	if (logFile > 0)
 		logBuffer ('X', data, 21);
 
-	SitechAxisStatus ax_status;
-	readAxisStatus (ax_status);
+	readAxisStatus ();
 }
 
 void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
@@ -273,7 +273,7 @@ void ConnSitech::getConfiguration (SitechControllerConfiguration &config)
 	readConfiguration (config);
 }
 
-void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
+void ConnSitech::readAxisStatus ()
 {
 	char ret[42];
 
@@ -293,23 +293,23 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	}
 
 	// fill in proper return values..
-	ax_status.address = ret[0];
-	ax_status.x_pos = le32toh (*((uint32_t *) (ret + 1)));
-	ax_status.y_pos = le32toh (*((uint32_t *) (ret + 5)));
-	ax_status.x_enc = le32toh (*((uint32_t *) (ret + 9)));
-	ax_status.y_enc = le32toh (*((uint32_t *) (ret + 13)));
+	last_status.address = ret[0];
+	last_status.x_pos = le32toh (*((uint32_t *) (ret + 1)));
+	last_status.y_pos = le32toh (*((uint32_t *) (ret + 5)));
+	last_status.x_enc = le32toh (*((uint32_t *) (ret + 9)));
+	last_status.y_enc = le32toh (*((uint32_t *) (ret + 13)));
 
-	ax_status.keypad = ret[17];
-	ax_status.x_bit = ret[18];
-	ax_status.y_bit = ret[19];
-	ax_status.extra_bits = ret[20];
-	ax_status.ain_1 = le16toh (*((uint16_t *) (ret + 21)));
-	ax_status.ain_2 = le16toh (*((uint16_t *) (ret + 23)));
-	ax_status.mclock = le32toh (*((uint32_t *) (ret + 25)));
-	ax_status.temperature = ret[29];
-	ax_status.y_worm_phase = ret[30];
-	memcpy (ax_status.x_last, ret + 31, 4);
-	memcpy (ax_status.y_last, ret + 35, 4);
+	last_status.keypad = ret[17];
+	last_status.x_bit = ret[18];
+	last_status.y_bit = ret[19];
+	last_status.extra_bits = ret[20];
+	last_status.ain_1 = le16toh (*((uint16_t *) (ret + 21)));
+	last_status.ain_2 = le16toh (*((uint16_t *) (ret + 23)));
+	last_status.mclock = le32toh (*((uint32_t *) (ret + 25)));
+	last_status.temperature = ret[29];
+	last_status.y_worm_phase = ret[30];
+	memcpy (last_status.x_last, ret + 31, 4);
+	memcpy (last_status.y_last, ret + 35, 4);
 
 	if (logFile > 0)
 		logBuffer ('A', ret, 41);

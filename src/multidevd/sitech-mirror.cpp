@@ -57,16 +57,16 @@ SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c, co
 
 int SitechMirror::info ()
 {
-	sitech->getAxisStatus ('X', axisStatus);
+	sitech->getAxisStatus ('X');
 
-	currPos->setValueLong (axisStatus.x_pos);
+	currPos->setValueLong (sitech->last_status.x_pos);
 
-	autoMode->setValueBool ((axisStatus.extra_bits & AUTO_X) == 0);
+	autoMode->setValueBool ((sitech->last_status.extra_bits & AUTO_X) == 0);
 
-	uint16_t val = axisStatus.x_last[0] << 4;
-	val += axisStatus.x_last[1];
+	uint16_t val = sitech->last_status.x_last[0] << 4;
+	val += sitech->last_status.x_last[1];
 
-	switch (axisStatus.x_last[0] & 0x0F)
+	switch (sitech->last_status.x_last[0] & 0x0F)
 	{
 		case 0:
 			errors_val->setValueInteger (val);
@@ -118,7 +118,7 @@ int SitechMirror::isMoving ()
 	int ret = info ();
 	if (ret)
 		return -1;
-	return abs (axisStatus.x_pos - tarPos->getValueLong ()) < 1000 ? -2: 100;
+	return abs (sitech->last_status.x_pos - tarPos->getValueLong ()) < 1000 ? -2: 100;
 }
 
 int SitechMirror::setValue (rts2core::Value* oldValue, rts2core::Value *newValue)

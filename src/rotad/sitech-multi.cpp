@@ -113,12 +113,12 @@ int SitechMulti::callInfo ()
 {
 	try
 	{
-		derConn->getAxisStatus ('X', der_status);
+		derConn->getAxisStatus ('X');
 
 		if (rotators[0] != NULL)
-			rotators[0]->processAxisStatus (&der_status);
+			rotators[0]->processAxisStatus (&(derConn->last_status));
 		if (rotators[1] != NULL)
-			rotators[1]->processAxisStatus (&der_status);
+			rotators[1]->processAxisStatus (&(derConn->last_status));
 
 		if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
 			derSetTarget ();

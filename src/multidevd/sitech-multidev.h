@@ -40,7 +40,6 @@ class SitechMultidev
 		}
 
 		rts2core::ConnSitech *sitech;
-		rts2core::SitechAxisStatus axisStatus;
 		rts2core::SitechXAxisRequest requestX;
 		rts2core::SitechYAxisRequest requestY;
 };

@@ -63,7 +63,6 @@ class SitechMulti:public rts2core::MultiBase
 
 		rts2core::MultiDev md;
 
-		rts2core::SitechAxisStatus der_status;
 		rts2core::SitechYAxisRequest der_Yrequest;
 		rts2core::SitechXAxisRequest der_Xrequest;
 
