@@ -2087,11 +2087,14 @@ class AltAzTest(unittest.TestCase):
 		except Exception as ex:
 			pass
 
-		p = ['alt-err:az-corr-err@c10@c20@x0:0:200%0:0@c5.5,alt-merr:az-corr-merr@c10@c20@x0:0:200%0:1', 'paz:contor-model-err']
-		for i in range(len(p)):
-			of = 'plots/plot{0:02d}.pdf'.format(i)
-			print('plotting {0} to {1}'.format(p[i], of))
-			self.model.plot(p[i], of)
+		try:
+			p = ['alt-err:az-corr-err@c10@c20@x0:0:200%0:0@c5.5,alt-merr:az-corr-merr@c10@c20@x0:0:200%0:1', 'paz:contor-model-err']
+			for i in range(len(p)):
+				of = 'plots/plot{0:02d}.pdf'.format(i)
+				print('plotting {0} to {1}'.format(p[i], of))
+				self.model.plot(p[i], of)
+		except ImportError:
+			pass
 
 	def testReport(self):
 		import os
@@ -2099,8 +2102,11 @@ class AltAzTest(unittest.TestCase):
 			os.mkdir('reports')
 		except Exception:
 			pass
-		self.model.pdf_report('reports/all.pdf')
-		self.model.pdf_report('reports/template.pdf','gpoint_template')
+		try:
+			self.model.pdf_report('reports/all.pdf')
+			self.model.pdf_report('reports/template.pdf','gpoint_template')
+		except ImportError:
+			pass
 
 	def testAdd(self):
 		import tempfile
