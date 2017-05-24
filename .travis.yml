@@ -44,5 +44,5 @@ install:
   - pip install lmfit
 
 script:
-  - cd check && for x in check_python*; do ./$x; done
+  - cd checks && for x in check_python*; do ./$x; done
   - if [[ $TRAVIS_PYTHON_VERSION == '3.5' ]]; then (wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure --prefix=`pwd`/build && make install && cd .. && ./autogen.sh && ./configure && make && make check); fi
