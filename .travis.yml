@@ -41,6 +41,31 @@ matrix:
             libecpg-dev
             wget
       env: PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
+    - python: "3.4"
+      addons:
+        apt:
+          packages:
+            libc6-dev
+            libtool
+            libcfitsio3-dev
+            libnova-dev
+            libncurses5-dev
+            libgraphicsmagick++1-dev
+            libx11-dev
+            docbook-xsl
+            xsltproc
+            libxml2-dev
+            libarchive-dev
+            libxt-dev
+            libfftw3-dev
+            gnuplot-x11
+            libjson-glib-dev
+            libsoup2.4-dev
+            pkg-config
+            postgresql-server-dev-all
+            postgresql
+            libecpg-dev
+            wget
       env: PKG_CONFIG_PATH=''
 
 install:
