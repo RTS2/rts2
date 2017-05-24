@@ -1997,17 +1997,25 @@ int Telescope::scriptEnds ()
 void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, struct ln_hrz_posn *hrz, bool writeValues)
 {
 #ifdef RTS2_LIBERFA
-	double aob, zob, hob, dob, rob, co;
+	double aob, zob, hob, dob, rob, eo, ri, di;
 
 	double rc = ln_deg_to_rad (pos->ra);
 	double dc = ln_deg_to_rad (pos->dec);
 
-	int status = eraAtco13 (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, JD, utc2, telDUT1->getValueDouble (), ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &aob, &zob, &hob, &dob, &rob, &co);
+	eraASTROM astrom;
+
+	int status = eraApco13 (JD, utc2, telDUT1->getValueDouble (), ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &astrom, &eo);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;
 		return;
 	}
+
+	// transform ICRS to CIRS
+	eraAtciq (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, &astrom, &ri, &di);
+
+	// transform CISC to observed
+	eraAtioq (ri, di, &astrom, &aob, &zob, &hob, &dob, &rob);
 
 	pos->ra = ln_rad_to_deg (rob);
 	pos->dec = ln_rad_to_deg (dob);
