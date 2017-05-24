@@ -10,15 +10,40 @@ addons:
       python-pyfits
       python-matplotlib
 
-python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
+
+matrix:
+  include:
+    - python: "2.7"
+    - python: "3.4"
+    - addons:
+        apt:
+          packages:
+            libc6-dev
+            libtool
+            libcfitsio3-dev
+            libnova-dev
+            libncurses5-dev
+            libgraphicsmagick++1-dev
+            libx11-dev
+            docbook-xsl
+            xsltproc
+            libxml2-dev
+            libarchive-dev
+            libxt-dev
+            libfftw3-dev
+            gnuplot-x11
+            libjson-glib-dev
+            libsoup2.4-dev
+            pkg-config
+            postgresql-server-dev-all
+            postgresql
+            libecpg-dev
+            wget
+      python: "3.5"
 
 env:
   - PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
   - PKG_CONFIG_PATH=''
-  - C_PACKAGES='libc6-dev libtool libcfitsio3-dev libnova-dev libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev libxt-dev libfftw3-dev gnuplot-x11 libjson-glib-dev libsoup2.4-dev pkg-config postgresql-server-dev-all postgresql libecpg-dev wget'
 
 install:
   - pip install lmfit
@@ -26,5 +51,5 @@ install:
 script:
   - export RET_PYTHON_CHECK="x"
   - cd checks && for x in check_python*; do ./$x; if [[ $? != 0 ]]; then RET_PYTHON_CHECK=$x; fi; done && cd ..
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.5' ]]; then (sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install $C_PACKAGES;wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure --prefix=`pwd`/build && make install && cd .. && ./autogen.sh && ./configure && make && make check); fi
-  - if [[ "x$RET_PYTHON_CHECK" != "xx" ]]; then echo "failed " $RET_PYTHON_CHECK; exit 1; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.5' ]]; then (wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure --prefix=`pwd`/build && make install && cd .. && ./autogen.sh && ./configure && make && make check); fi
+  - if [[ "x$RET_PYTHON_CHECK" != "x" ]]; then echo "failed " $RET_PYTHON_CHECK; exit 1; fi
