@@ -457,8 +457,8 @@
 
 <!ENTITY targetnamesexp "
 <para>
-  Target names can include % character, which match any possible string. So
-  if user provide as target name <emphasis>B%</emphasis> all targets beginning
+  Target names can include &#37; character, which match any possible string. So
+  if user provide as target name <emphasis>B&#37;</emphasis> all targets beginning
   with <emphasis>B</emphasis> will be used.
 </para>
 ">
