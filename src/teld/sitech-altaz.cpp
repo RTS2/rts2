@@ -767,25 +767,6 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		return;
 	}
 
-	int32_t az_change = 0;
-	int32_t alt_change = 0;
-
-	az_change = a_azc - r_az_pos->getValueLong ();
-	alt_change = a_altc - r_alt_pos->getValueLong ();
-
-	a_azc += az_change * 300;
-	a_altc += alt_change * 300;
-
-	if (a_azc > azMax->getValueLong ())
-		a_azc = azMax->getValueLong ();
-	if (a_azc < azMin->getValueLong ())
-		a_azc = azMin->getValueLong ();
-
-	if (a_altc > altMax->getValueLong ())
-		a_altc = altMax->getValueLong ();
-	if (a_altc < altMin->getValueLong ())
-		a_altc = altMin->getValueLong ();
-
 	double loop_sec = (mclock->getValueLong () - last_loop) / 1000.0;
 
 	if (loop_sec < 1)
@@ -826,6 +807,19 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
 
+	a_azc += azc_speed / sec_step * 300;
+	a_altc += altc_speed / sec_step * 300;
+
+	if (a_azc > azMax->getValueLong ())
+		a_azc = azMax->getValueLong ();
+	if (a_azc < azMin->getValueLong ())
+		a_azc = azMin->getValueLong ();
+
+	if (a_altc > altMax->getValueLong ())
+		a_altc = altMax->getValueLong ();
+	if (a_altc < altMin->getValueLong ())
+		a_altc = altMin->getValueLong ();
+
 	altaz_Xrequest.y_dest = a_azc;
 	altaz_Xrequest.x_dest = a_altc;
 
@@ -844,7 +838,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-	ret = checkTrajectory (getTelUTC1 + getTelUTC2, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), altaz_Xrequest.y_dest, altaz_Xrequest.x_dest, az_change / sec_step / 2.0, alt_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false);
+	ret = checkTrajectory (getTelUTC1 + getTelUTC2, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), altaz_Xrequest.y_dest, altaz_Xrequest.x_dest, azc_speed / 2.0, altc_speed / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false);
 	if (ret == 2 && speed_factor > 1) // too big move to future, keep target
 	{
 		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_az_pos->getValueLong () << " " << r_alt_pos->getValueLong () << " only to " << altaz_Xrequest.y_dest << " " << altaz_Xrequest.x_dest << sendLog;
@@ -859,7 +853,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
 	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);
 
-	trackingAngle->addValue (-ln_rad_to_deg (atan2 (az_change, -alt_change)), 15);
+	trackingAngle->addValue (-ln_rad_to_deg (atan2 (azc_speed, -altc_speed)), 15);
 	speedAngle->addValue (speed_angle, 15);
 
 	trackingAngle->calculate ();
