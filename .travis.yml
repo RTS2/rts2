@@ -40,4 +40,4 @@ install:
 
 script:
   - ./autogen.sh && ./configure && make && make check
-  - wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure && make install && cd .. && ./autogen.sh && ./configure && make && make check
+  - wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure && sudo make install && cd .. && ./autogen.sh && ./configure && make && make check
