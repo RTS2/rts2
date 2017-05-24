@@ -1,7 +1,6 @@
 <!ENTITY rts2version "@VERSION@">
 <!ENTITY gnu         "<acronym>GNU</acronym>">
 <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
-<!ENTITY percnt '&#37';>
 
 <!ENTITY prompt      "<prompt>user@host:~$</prompt>">
 
@@ -458,8 +457,8 @@
 
 <!ENTITY targetnamesexp "
 <para>
-  Target names can include &percnt; character, which match any possible string. So
-  if user provide as target name <emphasis>B&percnt;</emphasis> all targets beginning
+  Target names can include % character, which match any possible string. So
+  if user provide as target name <emphasis>B%</emphasis> all targets beginning
   with <emphasis>B</emphasis> will be used.
 </para>
 ">

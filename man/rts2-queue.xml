@@ -212,7 +212,7 @@
       queue.
     </para> 
     <screen>
-      <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B&percnt;</replaceable>
+      <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B%</replaceable>
     </screen>
     <para>
       Following will place on queue named <emphasis>manual</emphasis> all
@@ -221,7 +221,7 @@
       queue.
     </para> 
     <screen>
-      <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B&percnt;</replaceable>
+      <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B%</replaceable>
     </screen>
     <para>
       The next command queues targets with ID 1000 and specify starting time 1h from now:
