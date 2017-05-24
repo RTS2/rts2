@@ -1,6 +1,7 @@
 <!ENTITY rts2version "@VERSION@">
 <!ENTITY gnu         "<acronym>GNU</acronym>">
 <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+<!ENTITY percnt '&#37';>
 
 <!ENTITY prompt      "<prompt>user@host:~$</prompt>">
 
