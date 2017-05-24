@@ -790,8 +790,35 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	if (loop_sec < 1)
 	{
-		azc_speed += azErrPID->loop (aze_speed, loop_sec);
-		altc_speed += altErrPID->loop (alte_speed, loop_sec);
+		if (abs (aze_speed) > 10 || !isTracking ())
+		{
+			int32_t err_sp = azErrPID->loop (aze_speed, loop_sec);
+			if (isTracking ())
+			{
+				int32_t err_cap = abs(azc_speed * 0.015);
+				if (err_sp > err_cap)
+					err_sp = err_cap;
+				else if (err_sp < -err_cap)
+					err_sp = -err_cap;
+			}
+
+			azc_speed += err_sp;
+		}
+
+		if (abs (alte_speed) > 10 || !isTracking ())
+		{
+			int32_t err_sp = altErrPID->loop (alte_speed, loop_sec);
+			if (isTracking ())
+			{
+				int32_t err_cap = abs(altc_speed * 0.015);
+				if (err_sp > err_cap)
+					err_sp = err_cap;
+				else if (err_sp < -err_cap)
+					err_sp = -err_cap;
+			}
+
+			altc_speed += err_sp;
+		}
 	}
 
 	last_loop = mclock->getValueLong ();
@@ -912,9 +939,6 @@ void SitechAltAz::getTel ()
 {
 	telConn->getAxisStatus ('X');
 
-	r_az_pos->setValueLong (telConn->last_status.y_pos);
-	r_alt_pos->setValueLong (telConn->last_status.x_pos);
-
 	az_enc->setValueLong (telConn->last_status.y_enc);
 	alt_enc->setValueLong (telConn->last_status.x_enc);
 
@@ -931,6 +955,9 @@ void SitechAltAz::getTel ()
 	{
 		case rts2core::ConnSitech::SERVO_I:
 		case rts2core::ConnSitech::SERVO_II:
+			r_az_pos->setValueLong (telConn->last_status.y_pos);
+			r_alt_pos->setValueLong (telConn->last_status.x_pos);
+
 			az_last->setValueLong (le32toh (*(uint32_t*) &(telConn->last_status.y_last)));
 			alt_last->setValueLong (le32toh (*(uint32_t*) &(telConn->last_status.x_last)));
 			break;
@@ -1027,9 +1054,25 @@ void SitechAltAz::getTel ()
 					break;
 			}
 
-			az_pos_error->addValue (*(int16_t*) &(telConn->last_status.y_last[2]), 20);
-			alt_pos_error->addValue (*(int16_t*) &(telConn->last_status.x_last[2]), 20);
-			
+			int16_t az_err = *(int16_t*) &(telConn->last_status.y_last[2]);
+			int16_t alt_err = *(int16_t*) &(telConn->last_status.x_last[2]);
+
+			if (abs (az_err) <= 7)
+				r_az_pos->setValueLong (telConn->last_status.y_pos);
+			else
+				r_az_pos->setValueLong (telConn->last_status.y_pos - az_err);
+
+			if (abs (alt_err) <= 7)
+				r_alt_pos->setValueLong (telConn->last_status.x_pos);
+			else
+				r_alt_pos->setValueLong (telConn->last_status.x_pos - alt_err);
+
+			az_pos_error->addValue (az_err, 20);
+			alt_pos_error->addValue (alt_err, 20);
+
+			r_az_pos->setValueLong (telConn->last_status.y_pos);
+			r_alt_pos->setValueLong (telConn->last_status.x_pos);
+
 			az_pos_error->calculate ();
 			alt_pos_error->calculate ();
 			break;
