@@ -40,10 +40,8 @@ matrix:
             postgresql
             libecpg-dev
             wget
-
-env:
-  - PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
-  - PKG_CONFIG_PATH=''
+      env: PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
+      env: PKG_CONFIG_PATH=''
 
 install:
   - pip install lmfit
