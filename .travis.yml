@@ -15,7 +15,8 @@ matrix:
   include:
     - python: "2.7"
     - python: "3.5"
-    - addons:
+    - python: "3.4"
+      addons:
         apt:
           packages:
             libc6-dev
@@ -39,7 +40,6 @@ matrix:
             postgresql
             libecpg-dev
             wget
-      python: "3.4"
 
 env:
   - PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
