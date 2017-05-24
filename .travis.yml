@@ -6,8 +6,6 @@ addons:
   apt:
     packages:
       libc6-dev
-      liberfa1
-      liberfa-dev
       libtool
       libcfitsio3-dev
       libnova-dev
