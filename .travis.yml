@@ -47,4 +47,4 @@ script:
   - export PYTHON_CHECK=x
   - cd checks && for x in check_python*; do ./$x; if [[ $? != 0 ]]; then PYTHON_CHECK=$x; fi; done && cd ..
   - if [[ $TRAVIS_PYTHON_VERSION == '3.5' ]]; then (wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure --prefix=`pwd`/build && make install && cd .. && ./autogen.sh && ./configure && make && make check); fi
-  - if [[ $PYTHON_CHECK ]] != 0; then exit $PYTHON_CHECK; fi
+  - if [[ $PYTHON_CHECK != 0 ]]; then exit $PYTHON_CHECK; fi
