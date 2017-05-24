@@ -40,6 +40,7 @@ matrix:
             postgresql
             libecpg-dev
             wget
+            check
       env: PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
     - python: "2.7"
       addons:
@@ -66,6 +67,7 @@ matrix:
             postgresql
             libecpg-dev
             wget
+            check
       env: PKG_CONFIG_PATH=''
 
 install:
