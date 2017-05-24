@@ -19,15 +19,15 @@ class GemTest(unittest.TestCase):
 		#self.model.save('g.model')
 
 	def testFit(self):
-		self.assertAlmostEqual(-0.0077215222, self.model.best.params['id'])
-		self.assertAlmostEqual(0.0001348661, self.model.best.params['me'])
-		self.assertAlmostEqual(0.0000774638, self.model.best.params['ma'])
-		self.assertAlmostEqual(0.0005952019, self.model.best.params['tf'])
-		self.assertAlmostEqual(-0.0001478327, self.model.best.params['ih'])
-		self.assertAlmostEqual(-0.0007575423, self.model.best.params['ch'])
-		self.assertAlmostEqual(0.0015116117, self.model.best.params['np'])
-		self.assertAlmostEqual(-0.0003465422, self.model.best.params['daf'])
-		self.assertAlmostEqual(0.0001360438, self.model.best.params['fo'])
+		self.assertAlmostEqual(-0.0077215222, self.model.best.params['id'], delta=0.07/3600.0)
+		self.assertAlmostEqual(0.0001348661, self.model.best.params['me'], delta=0.07/3600.0)
+		self.assertAlmostEqual(0.0000774638, self.model.best.params['ma'], delta=0.07/3600.0)
+		self.assertAlmostEqual(0.0005952019, self.model.best.params['tf'], delta=0.07/3600.0)
+		self.assertAlmostEqual(-0.0001478327, self.model.best.params['ih'], delta=0.07/3600.0)
+		self.assertAlmostEqual(-0.0007575423, self.model.best.params['ch'], delta=0.07/3600.0)
+		self.assertAlmostEqual(0.0015116117, self.model.best.params['np'], delta=0.07/3600.0)
+		self.assertAlmostEqual(-0.0003465422, self.model.best.params['daf'], delta=0.07/3600.0)
+		self.assertAlmostEqual(0.0001360438, self.model.best.params['fo'], delta=0.07/3600.0)
 
 class AltAzTest(unittest.TestCase):
 	def setUp(self):
