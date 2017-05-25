@@ -52,9 +52,15 @@ void updateDUT1 (const char *fn, const char *url)
 	}
 
 	int fo = open (fn, O_CREAT | O_TRUNC | O_WRONLY);
+	if (fo < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create file to write DUT1 " << fn << ":" << strerror (errno) << sendLog;
+		goto failed;
+	}
 	write (fo, reply, reply_length);
 	close (fo);
 
+failed:
 	delete[] reply;
 	delete client;
 }
