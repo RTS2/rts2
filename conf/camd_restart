@@ -4,9 +4,28 @@
 import rts2.scriptcomm
 import os
 import time
+import sys
 
 c=rts2.scriptcomm.Rts2Comm()
 
+fe1 = 0
+fe2 = 0
+
+try:
+	fe1 = c.getValueInteger('filter_err','NF3')
+except Exception:
+	c.log('I','NF3 fe1 set to 0')
+
+try:
+	fe2 = c.getValueInteger('filter_err','WF6')
+except Exception:
+	c.log('I','WF6 fe1 set to 0')
+
+if fe1 == 0 and fe2 == 0:
+	c.log('I','filter_err NF3 {0} WF6 {1}'.format(fe1,fe2))
+	sys.exit(0)	
+
+os.system('/usr/local/bin/rts2-stop F0')
 os.system('/usr/local/bin/rts2-stop WF6')
 os.system('/usr/local/bin/rts2-stop NF3')
 
@@ -15,11 +34,12 @@ os.system('/usr/local/bin/rts2-stop NF3')
 
 time.sleep(2)
 
-c.setValue('CCD_switch',1,'DOME')
-time.sleep(2)
 c.setValue('CCD_switch',0,'DOME')
+time.sleep(2)
+c.setValue('CCD_switch',1,'DOME')
 time.sleep(30)
 
+os.system('/usr/local/bin/rts2-start F0')
 os.system('/usr/local/bin/rts2-start WF6')
 os.system('/usr/local/bin/rts2-start NF3')
 
