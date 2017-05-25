@@ -43,6 +43,9 @@ parser.add_argument('files', help=_('Trace logs to process'), action='append')
 parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store', type=valid_date, default=None)
 parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
 parser.add_argument('-d', dest='fdump', help=_('dump CSV to the file'), action='store', type=argparse.FileType('w+'), default=None)
+parser.add_argument('--save-plot', dest='save_plot', help=_('save plot to file'), action='store', default=None)
+parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o'])
+parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
 
 args = parser.parse_args()
 
@@ -71,14 +74,14 @@ def process_file(fn, d_from, d_to, fdump=None):
 			return positions, commands
 		et,t,usec = struct.unpack('=cqq',d)
 
-		date = datetime.datetime.fromtimestamp(t + float(usec) / 1e6)
+		date = datetime.datetime.utcfromtimestamp(t + float(usec) / 1e6)
 
 		if d_to is not None and date > d_to:
 			return positions, commands
-		if d_from is not None and date < d_from:
-			continue
+		do_append = d_from is None or date > d_from
 
-		print('{0} {1} {2}'.format(time.ctime(t), usec, et))
+		if args.verbose:
+			print('{0} {1}'.format(date, et))
 
 		try:
 			if et == 'A':
@@ -86,19 +89,22 @@ def process_file(fn, d_from, d_to, fdump=None):
 				address,x_pos,y_pos,x_enc,y_enc,keypad,x_bit,y_bit,extra_bits,ain_1,ain_2,mclock,temperature,y_worm_phase,x_last,x_err,y_last,y_err,checksum = struct.unpack('<biiii bbbbhh IbbhhhhH',data)
 				if sitech_checksum(data[:39],True) != checksum:
 					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:39],True), checksum)))
-				positions.append([date, x_pos, y_pos, x_err, y_err])
+				if do_append:
+					positions.append([date, x_pos, y_pos, x_err, y_err])
 			elif et == 'X':
 				data = f.read(21)
 				x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data)
 				if sitech_checksum(data[:19],True) != checksum:
 					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:19],True), checksum)))
-				commands.append([date, x_dest, y_dest, x_speed, y_speed])
+				if do_append:
+					commands.append([date, x_dest, y_dest, x_speed, y_speed])
 			elif et == 'Y':
 				data = f.read(34)
 				x_dest,x_speed,y_dest,y_speed,x_rate_adder,y_rate_adder,x_rate_adder_t,y_rate_adder_t,checksum=struct.unpack('<8iH',data)
 				if sitech_checksum(data[:32],True) != checksum:
 					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:32],True), checksum)))
-				commands.append([date, x_dest, y_dest, x_speed, y_speed])
+				if do_append:
+					commands.append([date, x_dest, y_dest, x_speed, y_speed])
 			else:
 				sys.exit(_('Unknow entry type: {0}'.format(et)))
 		except ValueError, ve:
@@ -123,28 +129,40 @@ for fn in args.files:
 		ret = fig.add_subplot(index, sharex=xaxis)
 		ret.set_xlim(xaxis.get_xlim())
 		ret.set_ylabel(ylabel)
+		ret.grid(True)
 		return ret
 
 	ax_pos_x = fig.add_subplot(gs[0:1,0:1])
 
-	ax_pos_x.plot(positions[:,0], positions[:,1], ',')
+	ax_pos_x.plot(positions[:,0], positions[:,1], args.markers)
 	ax_pos_x.set_ylabel('Alt pos')
+	ax_pos_x.grid(True)
 
 	ax_pos_y = add_plot(gs[1:2,0:1], ax_pos_x, 'Az pos')
-	ax_pos_y.plot(positions[:,0], positions[:,2], 'g,')
+	ax_pos_y.plot(positions[:,0], positions[:,2], 'g' + args.markers)
 
 	ax_err_x = add_plot(gs[2:3,0:1], ax_pos_x, 'Alt err')
-	ax_err_x.plot(positions[:,0], positions[:,3], ',')
+	ax_err_x.plot(positions[:,0], positions[:,3], args.markers)
 
 	ax_err_y = add_plot(gs[3:4,0:1], ax_pos_x, 'Az err')
-	ax_err_y.plot(positions[:,0], positions[:,4], 'g,')
+	ax_err_y.plot(positions[:,0], positions[:,4], 'g' + args.markers)
 
 	commd_x_speed = add_plot(gs[4:5,0:1], ax_pos_x, 'Alt speed')
-	commd_x_speed.plot(commands[:,0], commands[:,3], ',')
+	commd_x_speed.plot(commands[:,0], commands[:,3], args.markers)
 
 	commd_y_speed = add_plot(gs[5:6,0:1], ax_pos_x, 'Az speed')
-	commd_y_speed.plot(commands[:,0], commands[:,4], 'g,')
+	commd_y_speed.plot(commands[:,0], commands[:,4], 'g' + args.markers)
 
 	fig.subplots_adjust(hspace=0)
 
-	pylab.show()
+	#fig.autofmt_xdate()
+	fig.format_xdata = matplotlib.dates.DateFormatter('%h:%m')
+
+	if args.save_plot is not None:
+		print(_('saving plot to {0}').format(args.save_plot, end=' '))
+		pylab.savefig(args.save_plot)
+		print(_('done'))
+	else:
+		pylab.show()
+
+	pylab.close(fig)
