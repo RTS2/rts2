@@ -792,7 +792,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	if (loop_sec < 1)
 	{
-		if (abs (aze_speed) > 10 || !isTracking ())
+		if (abs (aze_speed) > 25 || !isTracking ())
 		{
 			int32_t err_sp = azErrPID->loop (aze_speed, loop_sec);
 			if (isTracking ())
@@ -807,7 +807,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			azc_speed += err_sp;
 		}
 
-		if (abs (alte_speed) > 10 || !isTracking ())
+		if (abs (alte_speed) > 25 || !isTracking ())
 		{
 			int32_t err_sp = altErrPID->loop (alte_speed, loop_sec);
 			if (isTracking ())
