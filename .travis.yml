@@ -76,5 +76,5 @@ install:
 script:
   - export RET_PYTHON_CHECK="x"
   - cd checks && for x in check_python*; do ./$x; if [[ $? != 0 ]]; then RET_PYTHON_CHECK=$x; fi; done && cd ..
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then (wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure --prefix=`pwd`/build && make install && cd .. && ./autogen.sh && ./configure && make && make check); fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then (wget https://github.com/liberfa/erfa/archive/v1.2.0.tar.gz && tar xzf v1.2.0.tar.gz && cd erfa-1.2.0/ && ./bootstrap.sh && ./configure --prefix=`pwd`/build && make install && cd .. && ./autogen.sh && ./configure && make && make check && cat checks/test-suite.log); fi
   - if [[ "x$RET_PYTHON_CHECK" != "xx" ]]; then echo "failed " $RET_PYTHON_CHECK; exit 1; fi
