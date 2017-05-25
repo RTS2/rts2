@@ -57,6 +57,7 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 
 	connGpib = NULL;
 	debug = false;
+	replyWithValueName = false;
 
 	addOption ('m', NULL, 1, "board number (default to 0)");
 	addOption (OPT_SERIAL_SEP, "serial-sep", 1, "serial separator (default to LF)");
@@ -82,13 +83,20 @@ void Gpib::writeValue (const char *name, rts2core::Value *value)
 {
 	std::ostringstream _os;
 	_os << name << " ";
-	switch (value->getValueType ())
+	switch (value->getValueExtType ())
 	{
-		case RTS2_VALUE_BOOL:
-			_os << (((rts2core::ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+		case RTS2_VALUE_MMAX:
+			_os << value->getValueDouble ();
 			break;
 		default:
-			_os << value->getDisplayValue ();
+			switch (value->getValueType ())
+			{
+				case RTS2_VALUE_BOOL:
+					_os << (((rts2core::ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+					break;
+				default:
+					_os << value->getDisplayValue ();
+			}
 	}
 	gpibWrite (_os.str ().c_str ());
 }
@@ -218,6 +226,8 @@ int Gpib::initHardware ()
 
 	try
 	{
+		if (replyWithValueName)
+			connGpib->setReplyWithValueName ();
 		connGpib->setDebug (debug);
 		connGpib->initGpib ();
 	}
@@ -227,4 +237,11 @@ int Gpib::initHardware ()
 		return -1;
 	}
 	return 0;
+}
+
+void Gpib::setReplyWithValueName ()
+{
+	replyWithValueName = true;
+	if (connGpib != NULL)
+		connGpib->setReplyWithValueName ();
 }

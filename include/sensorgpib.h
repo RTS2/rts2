@@ -87,6 +87,8 @@ class Gpib:public Sensor
 
 		bool isSerial () { return connGpib->isSerial (); }
 
+		void setReplyWithValueName ();
+
 		rts2core::ValueString *idn;
 
 	private:
@@ -108,6 +110,8 @@ class Gpib:public Sensor
 		rts2core::ConnGpib *connGpib;
 		
 		bool debug;
+
+		bool replyWithValueName;
 };
 
 };

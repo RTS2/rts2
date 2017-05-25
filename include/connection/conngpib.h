@@ -41,6 +41,7 @@ class ConnGpib
 	public:
 		ConnGpib ()
 		{
+			replyWithValueName = false;
 		}
 
 		virtual ~ ConnGpib (void)
@@ -148,6 +149,18 @@ class ConnGpib
 
 		// returns true if connection is not GPIB, but serial bridge for ex-GPIB devices
 		virtual bool isSerial () { return false; }
+
+		void setReplyWithValueName () { replyWithValueName = true; }
+
+	private:
+		// expect reply with value name
+		bool replyWithValueName;
+
+		/**
+		 * Returns value from read buffer. Value is preffixed
+		 * with buf (less end '?') if replyWithValueName is set to true.
+		 */
+		char *getValueBuffer (const char *buf, char *rb);
 };
 
 };
