@@ -39,7 +39,9 @@ END_TEST
 
 START_TEST(UPDATE)
 {
-	const char *fn = tmpnam (NULL);
+	const char *fn = "dut1_download";
+	unlink (fn);
+
 	updateDUT1 (fn, NULL);
 
 	time_t now = time (NULL);
