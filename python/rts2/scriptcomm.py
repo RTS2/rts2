@@ -149,7 +149,7 @@ class Rts2Comm:
 		sys.stdout.flush()
 	
 	def incrementValueType(self,device,name,new_value):
-		print("VT {0} {1} += {2}".format(device,name,'+=',new_value))
+		print("VT {0} {1} += {2}".format(device,name,new_value))
 		sys.stdout.flush()
 
 	def setValue(self, name, new_value, device = None):
