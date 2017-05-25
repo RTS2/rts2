@@ -86,6 +86,8 @@ class SitechAltAz:public AltAz
 		void scaleTrackingLook ();
 		void internalTracking (double sec_step, float speed_factor);
 
+		void updateTelTime ();
+
 		const char *tel_tty;
 		rts2core::ConnSitech *telConn;
 
@@ -862,6 +864,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	try
 	{
 		telConn->sendXAxisRequest (altaz_Xrequest);
+		updateTelTime ();
 		updateTrackingFrequency ();
 	}
 	catch (rts2core::Error &e)
@@ -875,8 +878,19 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		telConn->flushPortIO ();
 		telConn->getSiTechValue ('Y', "XY");
 		telConn->sendXAxisRequest (altaz_Xrequest);
+		updateTelTime ();
 		updateTrackingFrequency ();
 	}
+}
+
+void SitechAltAz::updateTelTime ()
+{
+#ifdef RTS2_LIBERFA
+	getEraUTC (getTelUTC1, getTelUTC2);
+#else
+	getTelUTC1 = ln_get_julian_from_sys ();
+	getTelUTC2 = 0;
+#endif
 }
 
 void SitechAltAz::getConfiguration ()
@@ -933,7 +947,10 @@ void SitechAltAz::getTel ()
 {
 	// update data only if telescope is not tracking - if it is tracking, commands to set target will return last_status
 	if (!isTracking ())
+	{
 		telConn->getAxisStatus ('X');
+		updateTelTime ();
+	}
 
 	az_enc->setValueLong (telConn->last_status.y_enc);
 	alt_enc->setValueLong (telConn->last_status.x_enc);
@@ -1078,12 +1095,6 @@ void SitechAltAz::getTel ()
 
 void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, double &un_telzd)
 {
-#ifdef RTS2_LIBERFA
-	getEraUTC (getTelUTC1, getTelUTC2);
-#else
-	getTelUTC1 = ln_get_julian_from_sys ();
-	getTelUTC2 = 0;
-#endif
 	getTel ();
 
 	counts2hrz (telConn->last_status.y_pos, telConn->last_status.x_pos, telaz, telalt, un_telaz, un_telzd);
