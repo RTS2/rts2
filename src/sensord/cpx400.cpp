@@ -58,7 +58,6 @@ CPX400::CPX400 (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	createValue (samps, "CURRENT", "[A] power source current", true, RTS2_VALUE_WRITABLE);
 	createValue (on, "ON", "power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
-	setReplyWithValueName ();
 	setBool01 ();
 }
 
@@ -98,6 +97,7 @@ int CPX400::info ()
 {
 	try
 	{
+		setReplyWithValueName (true);
 		readValue ("V1?", svolt);
 		readValue ("I1?", samps);
 		setReplyWithValueName (false);
@@ -106,10 +106,8 @@ int CPX400::info ()
 	catch (rts2core::Error er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
-		setReplyWithValueName (true);
 		return -1;
 	}
-	setReplyWithValueName (true);
 	return 0;
 }
 
