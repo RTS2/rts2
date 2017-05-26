@@ -150,7 +150,7 @@ class ConnGpib
 		// returns true if connection is not GPIB, but serial bridge for ex-GPIB devices
 		virtual bool isSerial () { return false; }
 
-		void setReplyWithValueName () { replyWithValueName = true; }
+		void setReplyWithValueName (bool on) { replyWithValueName = on; }
 
 	private:
 		// expect reply with value name

@@ -87,7 +87,7 @@ class Gpib:public Sensor
 
 		bool isSerial () { return connGpib->isSerial (); }
 
-		void setReplyWithValueName ();
+		void setReplyWithValueName (bool on = true);
 
 		/**
 		 * Bool values are send as 0/1 (not ON/OFF strings).

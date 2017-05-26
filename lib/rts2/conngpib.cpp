@@ -50,19 +50,19 @@ void ConnGpib::readValue (const char *buf, rts2core::Value * val)
 	switch (val->getValueType ())
 	{
 		case RTS2_VALUE_DOUBLE:
-			readValue (buf, (rts2core::ValueDouble *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueDouble *> (val));
 			return;
 		case RTS2_VALUE_FLOAT:
-			readValue (buf, (rts2core::ValueFloat *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueFloat *> (val));
 			return;
 		case RTS2_VALUE_BOOL:
-			readValue (buf, (rts2core::ValueBool *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueBool *> (val));
 			return;
 		case RTS2_VALUE_INTEGER:
-			readValue (buf, (rts2core::ValueInteger *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueInteger *> (val));
 			return;
 		case RTS2_VALUE_SELECTION:
-			readValue (buf, (rts2core::ValueSelection *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueSelection *> (val));
 			return;
 		default:
 			logStream (MESSAGE_ERROR) << "do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;

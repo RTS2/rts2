@@ -230,8 +230,7 @@ int Gpib::initHardware ()
 
 	try
 	{
-		if (replyWithValueName)
-			connGpib->setReplyWithValueName ();
+		connGpib->setReplyWithValueName (replyWithValueName);
 		connGpib->setDebug (debug);
 		connGpib->initGpib ();
 	}
@@ -243,9 +242,9 @@ int Gpib::initHardware ()
 	return 0;
 }
 
-void Gpib::setReplyWithValueName ()
+void Gpib::setReplyWithValueName (bool on)
 {
-	replyWithValueName = true;
+	replyWithValueName = on;
 	if (connGpib != NULL)
-		connGpib->setReplyWithValueName ();
+		connGpib->setReplyWithValueName (on);
 }

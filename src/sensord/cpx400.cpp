@@ -82,7 +82,7 @@ int CPX400::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		}
 		else if (old_value == on)
 		{
-			writeValue ("OP", new_value);
+			writeValue ("OP1", new_value);
 			return 0;
 		}
 	}
@@ -100,13 +100,16 @@ int CPX400::info ()
 	{
 		readValue ("V1?", svolt);
 		readValue ("I1?", samps);
+		setReplyWithValueName (false);
 		readValue ("OP1?", on);
 	}
 	catch (rts2core::Error er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
+		setReplyWithValueName (true);
 		return -1;
 	}
+	setReplyWithValueName (true);
 	return 0;
 }
 
