@@ -58,6 +58,7 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	connGpib = NULL;
 	debug = false;
 	replyWithValueName = false;
+	boolOnOff = true;
 
 	addOption ('m', NULL, 1, "board number (default to 0)");
 	addOption (OPT_SERIAL_SEP, "serial-sep", 1, "serial separator (default to LF)");
@@ -92,7 +93,10 @@ void Gpib::writeValue (const char *name, rts2core::Value *value)
 			switch (value->getValueType ())
 			{
 				case RTS2_VALUE_BOOL:
-					_os << (((rts2core::ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+					if (boolOnOff)
+						_os << (((rts2core::ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+					else
+						_os << (((rts2core::ValueBool *) value)->getValueBool () ? "1" : "0");
 					break;
 				default:
 					_os << value->getDisplayValue ();

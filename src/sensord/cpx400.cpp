@@ -26,7 +26,8 @@ namespace rts2sensord
 {
 
 /**
- * CPX 400 SCPI regulated power supply driver.
+ * CPX 400 SCPI regulated power supply driver. Manual available at
+ * http://labrf.av.it.pt/Data/Manuais%20&%20Tutoriais/33%20-%20Power%20Supply%20CPX400DP/CPX400D%20&%20DP%20Instruction%20Manual.pdf
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -43,6 +44,8 @@ class CPX400:public Gpib
 
 	private:
 		rts2core::ValueDoubleMinMax *svolt;
+		rts2core::ValueDoubleMinMax *samps;
+		rts2core::ValueBool *on;
 };
 
 }
@@ -51,9 +54,12 @@ using namespace rts2sensord;
 
 CPX400::CPX400 (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
-	createValue (svolt, "VOLTAGE", "V value", true, RTS2_VALUE_WRITABLE);
+	createValue (svolt, "VOLTAGE", "[V] power source voltage", true, RTS2_VALUE_WRITABLE);
+	createValue (samps, "CURRENT", "[A] power source current", true, RTS2_VALUE_WRITABLE);
+	createValue (on, "ON", "power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	setReplyWithValueName ();
+	setBool01 ();
 }
 
 CPX400::~CPX400 (void)
@@ -67,6 +73,16 @@ int CPX400::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		if (old_value == svolt)
 		{
 			writeValue ("V1", new_value);
+			return 0;
+		}
+		else if (old_value == samps)
+		{
+			writeValue ("I1", new_value);
+			return 0;
+		}
+		else if (old_value == on)
+		{
+			writeValue ("OP", new_value);
 			return 0;
 		}
 	}
@@ -83,6 +99,8 @@ int CPX400::info ()
 	try
 	{
 		readValue ("V1?", svolt);
+		readValue ("I1?", samps);
+		readValue ("OP1?", on);
 	}
 	catch (rts2core::Error er)
 	{

@@ -89,6 +89,11 @@ class Gpib:public Sensor
 
 		void setReplyWithValueName ();
 
+		/**
+		 * Bool values are send as 0/1 (not ON/OFF strings).
+		 */
+		void setBool01 () { boolOnOff = false; }
+
 		rts2core::ValueString *idn;
 
 	private:
@@ -112,6 +117,7 @@ class Gpib:public Sensor
 		bool debug;
 
 		bool replyWithValueName;
+		bool boolOnOff;
 };
 
 };
