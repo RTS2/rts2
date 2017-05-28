@@ -47,7 +47,8 @@ parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel
 parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
 parser.add_argument('--elipses', help=_('plot star fit elipsis parameters'), action='store_true', dest='elipses', default=False)
 parser.add_argument('--range', help=_('process given range of images'), action='store', dest='range', default=None)
-parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o'])
+parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o','+'])
+parser.add_argument('-o', help=_('save star data'), action='store', dest='data')
 
 options = parser.parse_args()
 
@@ -126,6 +127,7 @@ class ProcessFiles:
 					continue
 				self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['cxy']])
 				si += 1
+			return 0
 		else:
 			found_sb = []
 			for si in range(stars):
@@ -135,13 +137,16 @@ class ProcessFiles:
 				for star in objects:
 					dist = pixel_distance(b_x, b_y, star['x'], star['y'])
 					if verbose > 1:
-						print(_('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist))
+						print(_('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} flags {4} distance {5:.2f} tnpix {6}').format(si + 1, star['x'], star['y'], star['flux'], star['flag'], dist, star['tnpix']))
 					if dist < radius:
 						found_sb.append([star['x'], star['y'], star['flux'], star['a'], star['b'], star['theta']])
 						star_find = True
 						break
 				if star_find == False and verbose:
-					print((_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y)))
+					if ci is None:
+						print((_('file {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(fn, si + 1, b_x, b_y)))
+					else:
+						print((_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y)))
 			if len(found_sb) < stars:
 				if self.skipped < skip_clouds:
 					self.skipped += 1
@@ -321,7 +326,7 @@ if options.range is not None:
 imgn = 0 # image number
 
 for fn in options.files:
-	print(_('Processing {0}').format(fn))
+	print(_('Processing {0}').format(fn), end=' ')
 	hdu = fits.open(fn, mmap=True)
 
 	if options.verbose:
@@ -362,7 +367,13 @@ for fn in options.files:
 		imgn += 1
 		if imgranges is not None and imgn not in imgranges:
 			continue
-		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
+		ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
+		if ret == 0:
+			print(_('OK'))
+		elif ret > 0:
+			print(_('skipped'))
+		else:
+			print(_('failed'))
 
 	if options.cube:
 		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
