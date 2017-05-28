@@ -1090,6 +1090,10 @@ void Telescope::afterMovementStart ()
 	startCupolaSync ();
 }
 
+void Telescope::afterParkingStart ()
+{
+}
+
 void Telescope::incMoveNum ()
 {
 	if (diffTrackRaDec)
@@ -2448,6 +2452,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 
 		incMoveNum ();
 		setParkTimeNow ();
+		afterParkingStart ();
 		maskState (TEL_MASK_MOVING | TEL_MASK_TRACK | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
 	}
 

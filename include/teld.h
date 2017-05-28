@@ -1088,6 +1088,7 @@ class Telescope:public rts2core::Device
 		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		virtual void afterMovementStart ();
+		virtual void afterParkingStart ();
 
 	private:
 		rts2core::Connection * move_connection;
