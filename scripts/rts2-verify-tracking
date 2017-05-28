@@ -359,7 +359,7 @@ for fn in options.files:
 				pf = ProcessFiles(options.stars)
 
 	else:
-		img += 1
+		imgn += 1
 		if imgranges is not None and imgn not in imgranges:
 			continue
 		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
