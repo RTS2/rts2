@@ -97,7 +97,6 @@ class ProcessFiles:
 			else:
 				ftime = self.times[0]
 			ftime += datetime.timedelta(seconds=exp_time * ci)
-		self.times.append(ftime)
 		objects = rts2.brights.find_stars(fn, hdu, verbose, useDS9, ci)
 		if verbose > 1:
 			print(_('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y']))
@@ -127,7 +126,6 @@ class ProcessFiles:
 					continue
 				self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['cxy']])
 				si += 1
-			return 0
 		else:
 			found_sb = []
 			for si in range(stars):
@@ -158,7 +156,9 @@ class ProcessFiles:
 			for si in range(stars):
 				self.sb[si].append(found_sb[si])
 
-			return 0
+		# all done, stars found
+		self.times.append(ftime)
+		return 0
 
 	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses, markers):
 		if verbose == 0:
