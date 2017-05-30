@@ -117,9 +117,10 @@ class SitechAltAz:public AltAz
 		rts2core::ValueFloat *fastSyncSpeed;
 		rts2core::ValueFloat *trackingFactor;
 
-		rts2core::IntegerArray *PIDs;
+		rts2core::ValuePID *az_curr_PID;
 		rts2core::ValuePID *az_slew_PID;
 		rts2core::ValuePID *az_track_PID;
+		rts2core::ValuePID *alt_curr_PID;
 		rts2core::ValuePID *alt_slew_PID;
 		rts2core::ValuePID *alt_track_PID;
 
@@ -287,10 +288,10 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	createValue (az_pwm, "az_pwm", "[W?] AZ motor PWM output", false);
 	createValue (alt_pwm, "alt_pwm", "[W?] ALT motor PWM output", false);
 
-	createValue (PIDs, "pids", "axis PID values", false);
-
+	az_curr_PID = NULL;
 	az_slew_PID = NULL;
 	az_track_PID = NULL;
+	alt_curr_PID = NULL;
 	alt_slew_PID = NULL;
 	alt_track_PID = NULL;
 
@@ -364,8 +365,10 @@ int SitechAltAz::processOption (int in_opt)
 			break;
 
 		case OPT_SHOW_PID:
+			createValue (az_curr_PID, "PID_AZ", "Azimuth current PID", false);
 			createValue (az_slew_PID, "PID_az_slew", "AZ slew PID", false, RTS2_VALUE_WRITABLE);
 			createValue (az_track_PID, "PID_az_track", "AZ tracking PID", false, RTS2_VALUE_WRITABLE);
+			createValue (alt_curr_PID, "PID_ALT", "Altitude current PID", false);
 			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID", false, RTS2_VALUE_WRITABLE);
 			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID", false, RTS2_VALUE_WRITABLE);
 
@@ -414,6 +417,12 @@ int SitechAltAz::initHardware ()
 
 	sitechVersion->setValueDouble (telConn->version);
 	sitechSerial->setValueInteger (telConn->getSiTechValue ('Y', "V"));
+
+	if (az_curr_PID == NULL)
+		createValue (az_curr_PID, "PID_AZ", "Azimuth current PID", false);
+
+	if (alt_curr_PID == NULL)
+		createValue (alt_curr_PID, "PID_ALT", "Altitude current PID", false);
 
 	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
 	{
@@ -472,6 +481,13 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		telConn->siTechCommand ('X', "A");
 		telConn->siTechCommand ('Y', "A");
 		getConfiguration ();
+		return 0;
+	}
+	else if (conn->isCommand ("pids"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		getPIDs ();
 		return 0;
 	}
 	return AltAz::commandAuthorized (conn);
@@ -1138,16 +1154,7 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 
 void SitechAltAz::getPIDs ()
 {
-	PIDs->clear ();
-	
-	PIDs->addValue (telConn->getSiTechValue ('X', "PPP"));
-	PIDs->addValue (telConn->getSiTechValue ('X', "III"));
-	PIDs->addValue (telConn->getSiTechValue ('X', "DDD"));
-
-	PIDs->addValue (telConn->getSiTechValue ('Y', "PPP"));
-	PIDs->addValue (telConn->getSiTechValue ('Y', "III"));
-	PIDs->addValue (telConn->getSiTechValue ('Y', "DDD"));
-
+	alt_curr_PID->setPID (telConn->getSiTechValue ('X', "PPP"), telConn->getSiTechValue ('X', "III"), telConn->getSiTechValue ('X', "DDD"));
 	if (alt_slew_PID)
 	{
 		alt_slew_PID->setPID (telConn->getSiTechValue ('X', "PP"), telConn->getSiTechValue ('X', "II"), telConn->getSiTechValue ('X', "DD"));
@@ -1156,6 +1163,8 @@ void SitechAltAz::getPIDs ()
 	{
 		alt_track_PID->setPID (telConn->getSiTechValue ('X', "P"), telConn->getSiTechValue ('X', "I"), telConn->getSiTechValue ('X', "D"));
 	}
+
+	az_curr_PID->setPID (telConn->getSiTechValue ('Y', "PPP"), telConn->getSiTechValue ('Y', "III"), telConn->getSiTechValue ('Y', "DDD"));
 	if (az_slew_PID)
 	{
 		az_slew_PID->setPID (telConn->getSiTechValue ('Y', "PP"), telConn->getSiTechValue ('Y', "II"), telConn->getSiTechValue ('Y', "DD"));
