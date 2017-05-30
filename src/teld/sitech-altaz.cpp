@@ -343,7 +343,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	last_loop = 0;
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
-	addOption (OPT_SHOW_PID, "pid", 1, "allow PID read and edit");
+	addOption (OPT_SHOW_PID, "pid", 0, "allow PID read and edit");
 
 	addParkPosOption ();
 }
@@ -364,10 +364,10 @@ int SitechAltAz::processOption (int in_opt)
 			break;
 
 		case OPT_SHOW_PID:
-			createValue (az_slew_PID, "PID_az_slew", "AZ slew PID");
-			createValue (az_track_PID, "PID_az_track", "AZ tracking PID");
-			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID");
-			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID");
+			createValue (az_slew_PID, "PID_az_slew", "AZ slew PID", false, RTS2_VALUE_WRITABLE);
+			createValue (az_track_PID, "PID_az_track", "AZ tracking PID", false, RTS2_VALUE_WRITABLE);
+			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID", false, RTS2_VALUE_WRITABLE);
+			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID", false, RTS2_VALUE_WRITABLE);
 
 			updateMetaInformations (az_slew_PID);
 			updateMetaInformations (az_track_PID);
@@ -671,27 +671,27 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		telSetTarget (newValue->getValueLong (), t_alt_pos->getValueLong ());
 		return 0;
 	}
-	if (oldValue == t_alt_pos)
+	else if (oldValue == t_alt_pos)
 	{
 		telSetTarget (t_az_pos->getValueLong (), newValue->getValueLong ());
 		return 0;
 	}
-	if (oldValue == autoModeAz)
+	else if (oldValue == autoModeAz)
 	{
-		telConn->siTechCommand ('Y', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		telConn->siTechCommand ('Y', dynamic_cast <rts2core::ValueBool*> (newValue)->getValueBool () ? "A" : "M0");
 		return 0;
 	}
-	if (oldValue == autoModeAlt)
+	else if (oldValue == autoModeAlt)
 	{
-		telConn->siTechCommand ('X', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		telConn->siTechCommand ('X', dynamic_cast <rts2core::ValueBool*> (newValue)->getValueBool () ? "A" : "M0");
 		return 0;
 	}
-	if (oldValue == trackingLook)
+	else if (oldValue == trackingLook)
 	{
 		userTrackingLook->setValueBool (true);
 		return 0;
 	}
-	if (oldValue == sitechLogFile)
+	else if (oldValue == sitechLogFile)
 	{
 		if (strlen (newValue->getValue ()) > 0)
 			telConn->startLogging (newValue->getValue ());
@@ -699,6 +699,36 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			telConn->endLogging ();
 		return 0;
 	}
+	else if (oldValue == alt_slew_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('X', "PP", newP->getP ());
+		telConn->setSiTechValue ('X', "II", newP->getI ());
+		telConn->setSiTechValue ('X', "DD", newP->getD ());
+	}
+	else if (oldValue == alt_track_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('X', "P", newP->getP ());
+		telConn->setSiTechValue ('X', "I", newP->getI ());
+		telConn->setSiTechValue ('X', "D", newP->getD ());
+	}
+	else if (oldValue == az_slew_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('Y', "PP", newP->getP ());
+		telConn->setSiTechValue ('Y', "II", newP->getI ());
+		telConn->setSiTechValue ('Y', "DD", newP->getD ());
+	}
+	else if (oldValue == az_track_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('Y', "P", newP->getP ());
+		telConn->setSiTechValue ('Y', "I", newP->getI ());
+		telConn->setSiTechValue ('Y', "D", newP->getD ());
+	}
+
+
 
 	return AltAz::setValue (oldValue, newValue);
 }
