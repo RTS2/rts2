@@ -20,6 +20,7 @@
 #include "altaz.h"
 #include "configuration.h"
 #include "constsitech.h"
+#include "expander.h"
 
 #include "connection/sitech.h"
 
@@ -82,6 +83,8 @@ class SitechAltAz:public AltAz
 			return getTargetDistance () * 2.0;
 		}
 
+		virtual void changeIdleMovingTracking ();
+
 	private:
 		void scaleTrackingLook ();
 		void internalTracking (double sec_step, float speed_factor);
@@ -92,6 +95,7 @@ class SitechAltAz:public AltAz
 		rts2core::ConnSitech *telConn;
 
 		rts2core::ValueString *sitechLogFile;
+		rts2core::Expander *sitechLogExpander;
 
 		rts2core::SitechYAxisRequest altaz_Yrequest;
 		rts2core::SitechXAxisRequest altaz_Xrequest;
@@ -236,6 +240,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (sitechLogFile, "sitech_logfile", "SiTech logging file", false, RTS2_VALUE_WRITABLE);
 	sitechLogFile->setValueString ("");
+	sitechLogExpander = NULL;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -354,6 +359,9 @@ SitechAltAz::~SitechAltAz(void)
 {
 	delete telConn;
 	telConn = NULL;
+
+	delete sitechLogExpander;
+	sitechLogExpander = NULL;
 }
 
 int SitechAltAz::processOption (int in_opt)
@@ -710,9 +718,17 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	else if (oldValue == sitechLogFile)
 	{
 		if (strlen (newValue->getValue ()) > 0)
-			telConn->startLogging (newValue->getValue ());
+		{
+			delete sitechLogExpander;
+			sitechLogExpander = new rts2core::Expander ();
+			telConn->startLogging (sitechLogExpander->expand (newValue->getValue ()).c_str ());
+		}
 		else
+		{
 			telConn->endLogging ();
+			delete sitechLogExpander;
+			sitechLogExpander = NULL;
+		}
 		return 0;
 	}
 	else if (oldValue == alt_slew_PID)
@@ -747,6 +763,12 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 
 	return AltAz::setValue (oldValue, newValue);
+}
+
+void SitechAltAz::changeIdleMovingTracking ()
+{
+	if (sitechLogExpander)
+		telConn->startLogging (sitechLogExpander->expand (sitechLogFile->getValue ()).c_str ());
 }
 
 void SitechAltAz::scaleTrackingLook ()

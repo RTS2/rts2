@@ -1090,6 +1090,12 @@ class Telescope:public rts2core::Device
 		virtual void afterMovementStart ();
 		virtual void afterParkingStart ();
 
+		/**
+		 * Called when telescope state changes between idle, moving and tracking.
+		 * Great for changing recordings of some date at each occasion.
+		 */
+		virtual void changeIdleMovingTracking () {};
+
 	private:
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
