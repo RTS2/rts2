@@ -121,8 +121,8 @@ for fn in args.files:
 	print(_('Processing {0}'.format(fn)))
 	r_positions, r_commands = process_file(fn, args.d_from, args.d_to, args.fdump)
 
-	positions = numpy.rec.array(r_positions, dtype=[('date','datetime64[s]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i')])
-	commands = numpy.rec.array(r_commands, dtype=[('date','datetime64[s]'),('x_dest','>8i'),('y_dest','>8i'),('x_speed','5>i'),('y_speed','5>i')])
+	positions = numpy.rec.array(r_positions, dtype=[('date','datetime64[ms]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i')])
+	commands = numpy.rec.array(r_commands, dtype=[('date','datetime64[ms]'),('x_dest','>8i'),('y_dest','>8i'),('x_speed','5>i'),('y_speed','5>i')])
 
 	fig = pylab.figure()
 	gs = gridspec.GridSpec(6,1)
@@ -138,29 +138,31 @@ for fn in args.files:
 
 	first = -args.last
 
-	ax_pos_x.plot(positions[first:].date, positions[first:].x_pos, args.markers)
+	p_date = [x.astype(datetime.datetime) for x in positions[first:].date]
+	c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
+
+	ax_pos_x.plot(p_date, positions[first:].x_pos, args.markers)
 	ax_pos_x.set_ylabel('Alt pos')
 	ax_pos_x.grid(True)
 
 	ax_pos_y = add_plot(gs[1:2,0:1], ax_pos_x, 'Az pos')
-	ax_pos_y.plot(positions[first:].date, positions[first:].y_pos, 'g' + args.markers)
+	ax_pos_y.plot(p_date, positions[first:].y_pos, 'g' + args.markers)
 
 	ax_err_x = add_plot(gs[2:3,0:1], ax_pos_x, 'Alt err')
-	ax_err_x.plot(positions[first:].date, positions[first:].x_err, args.markers)
+	ax_err_x.plot(p_date, positions[first:].x_err, args.markers)
 
 	ax_err_y = add_plot(gs[3:4,0:1], ax_pos_x, 'Az err')
-	ax_err_y.plot(positions[first:].date, positions[first:].y_err, 'g' + args.markers)
+	ax_err_y.plot(p_date, positions[first:].y_err, 'g' + args.markers)
 
 	commd_x_speed = add_plot(gs[4:5,0:1], ax_pos_x, 'Alt speed')
-	commd_x_speed.plot(commands[first:].date, commands[first:].x_speed, args.markers)
+	commd_x_speed.plot(c_date, commands[first:].x_speed, args.markers)
 
 	commd_y_speed = add_plot(gs[5:6,0:1], ax_pos_x, 'Az speed')
-	commd_y_speed.plot(commands[first:].date, commands[first:].y_speed, 'g' + args.markers)
+	commd_y_speed.plot(c_date, commands[first:].y_speed, 'g' + args.markers)
 
 	fig.subplots_adjust(hspace=0)
 
-	#fig.autofmt_xdate()
-	fig.format_xdata = matplotlib.dates.DateFormatter('%h:%m')
+	fig.autofmt_xdate()
 
 	if args.save_plot is not None:
 		print(_('saving plot to {0}').format(args.save_plot, end=' '))
