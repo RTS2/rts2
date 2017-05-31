@@ -39,7 +39,7 @@ namespace rts2sensord
 class APMAux : public Sensor, rts2multidev::APMMultidev
 {
 	public:
-		APMAux (const char *name, rts2core::ConnAPM *apmConn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp);
+		APMAux (const char *name, rts2core::ConnAPM *apmConn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp, bool isControllino, bool opParaller);
 
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
@@ -67,6 +67,9 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		rts2core::ValueTime *baffleCommand;
 
 		enum {NONE, OPENING, CLOSING} commandInProgress;
+
+		bool controllino; // true for Controllino interface - allows for multi ops
+		bool paraller; // able to open/close in paraller
 	
 		int open ();
 		int close ();
