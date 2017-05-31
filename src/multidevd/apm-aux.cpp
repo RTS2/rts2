@@ -233,7 +233,7 @@ int APMAux::open ()
 int APMAux::close ()
 {
 	int ret = 0;
-	if (((baffle == NULL || baffle->getValueInteger () == 0) && coverState->getValueInteger () == 2) || paraller == true)
+	if (baffle == NULL || baffle->getValueInteger () == 0 || coverState->getValueInteger () == 2 || paraller == true)
 	{
 		commandInProgress = CLOSING;
 		maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
