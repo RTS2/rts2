@@ -45,6 +45,7 @@ parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type
 parser.add_argument('-d', dest='fdump', help=_('dump CSV to the file'), action='store', type=argparse.FileType('w+'), default=None)
 parser.add_argument('--save-plot', dest='save_plot', help=_('save plot to file'), action='store', default=None)
 parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o'])
+parser.add_argument('--last', help=_('plot only last points'), action='store', dest='last', default=0, type=int)
 parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
 
 args = parser.parse_args()
@@ -134,24 +135,26 @@ for fn in args.files:
 
 	ax_pos_x = fig.add_subplot(gs[0:1,0:1])
 
-	ax_pos_x.plot(positions[:,0], positions[:,1], args.markers)
+	first = -args.last
+
+	ax_pos_x.plot(positions[first:,0], positions[first:,1], args.markers)
 	ax_pos_x.set_ylabel('Alt pos')
 	ax_pos_x.grid(True)
 
 	ax_pos_y = add_plot(gs[1:2,0:1], ax_pos_x, 'Az pos')
-	ax_pos_y.plot(positions[:,0], positions[:,2], 'g' + args.markers)
+	ax_pos_y.plot(positions[first:,0], positions[first:,2], 'g' + args.markers)
 
 	ax_err_x = add_plot(gs[2:3,0:1], ax_pos_x, 'Alt err')
-	ax_err_x.plot(positions[:,0], positions[:,3], args.markers)
+	ax_err_x.plot(positions[first:,0], positions[first:,3], args.markers)
 
 	ax_err_y = add_plot(gs[3:4,0:1], ax_pos_x, 'Az err')
-	ax_err_y.plot(positions[:,0], positions[:,4], 'g' + args.markers)
+	ax_err_y.plot(positions[first:,0], positions[first:,4], 'g' + args.markers)
 
 	commd_x_speed = add_plot(gs[4:5,0:1], ax_pos_x, 'Alt speed')
-	commd_x_speed.plot(commands[:,0], commands[:,3], args.markers)
+	commd_x_speed.plot(commands[first:,0], commands[first:,3], args.markers)
 
 	commd_y_speed = add_plot(gs[5:6,0:1], ax_pos_x, 'Az speed')
-	commd_y_speed.plot(commands[:,0], commands[:,4], 'g' + args.markers)
+	commd_y_speed.plot(commands[first:,0], commands[first:,4], 'g' + args.markers)
 
 	fig.subplots_adjust(hspace=0)
 
