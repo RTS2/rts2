@@ -1962,7 +1962,7 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 
 	double tdist = getTargetDistance ();
 	targetDistance->setValueDouble (tdist);
-	targetDistanceStat->addValue (tdist, 20);
+	targetDistanceStat->addValue (tdist, trackingFSize->getValueInteger ());
 	targetDistanceStat->calculate ();
 
 	// check if we aren't bellow hard horizon - if yes, stop tracking..
