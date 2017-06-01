@@ -20,6 +20,7 @@
 #include "altaz.h"
 #include "configuration.h"
 #include "constsitech.h"
+#include "expander.h"
 
 #include "connection/sitech.h"
 
@@ -82,6 +83,8 @@ class SitechAltAz:public AltAz
 			return getTargetDistance () * 2.0;
 		}
 
+		virtual void changeIdleMovingTracking ();
+
 	private:
 		void scaleTrackingLook ();
 		void internalTracking (double sec_step, float speed_factor);
@@ -92,6 +95,7 @@ class SitechAltAz:public AltAz
 		rts2core::ConnSitech *telConn;
 
 		rts2core::ValueString *sitechLogFile;
+		rts2core::Expander *sitechLogExpander;
 
 		rts2core::SitechYAxisRequest altaz_Yrequest;
 		rts2core::SitechXAxisRequest altaz_Xrequest;
@@ -117,9 +121,10 @@ class SitechAltAz:public AltAz
 		rts2core::ValueFloat *fastSyncSpeed;
 		rts2core::ValueFloat *trackingFactor;
 
-		rts2core::IntegerArray *PIDs;
+		rts2core::ValuePID *az_curr_PID;
 		rts2core::ValuePID *az_slew_PID;
 		rts2core::ValuePID *az_track_PID;
+		rts2core::ValuePID *alt_curr_PID;
 		rts2core::ValuePID *alt_slew_PID;
 		rts2core::ValuePID *alt_track_PID;
 
@@ -235,6 +240,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (sitechLogFile, "sitech_logfile", "SiTech logging file", false, RTS2_VALUE_WRITABLE);
 	sitechLogFile->setValueString ("");
+	sitechLogExpander = NULL;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -287,10 +293,10 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	createValue (az_pwm, "az_pwm", "[W?] AZ motor PWM output", false);
 	createValue (alt_pwm, "alt_pwm", "[W?] ALT motor PWM output", false);
 
-	createValue (PIDs, "pids", "axis PID values", false);
-
+	az_curr_PID = NULL;
 	az_slew_PID = NULL;
 	az_track_PID = NULL;
+	alt_curr_PID = NULL;
 	alt_slew_PID = NULL;
 	alt_track_PID = NULL;
 
@@ -343,7 +349,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	last_loop = 0;
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
-	addOption (OPT_SHOW_PID, "pid", 1, "allow PID read and edit");
+	addOption (OPT_SHOW_PID, "pid", 0, "allow PID read and edit");
 
 	addParkPosOption ();
 }
@@ -353,6 +359,9 @@ SitechAltAz::~SitechAltAz(void)
 {
 	delete telConn;
 	telConn = NULL;
+
+	delete sitechLogExpander;
+	sitechLogExpander = NULL;
 }
 
 int SitechAltAz::processOption (int in_opt)
@@ -364,10 +373,12 @@ int SitechAltAz::processOption (int in_opt)
 			break;
 
 		case OPT_SHOW_PID:
-			createValue (az_slew_PID, "PID_az_slew", "AZ slew PID");
-			createValue (az_track_PID, "PID_az_track", "AZ tracking PID");
-			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID");
-			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID");
+			createValue (az_curr_PID, "PID_AZ", "Azimuth current PID", false);
+			createValue (az_slew_PID, "PID_az_slew", "AZ slew PID", false, RTS2_VALUE_WRITABLE);
+			createValue (az_track_PID, "PID_az_track", "AZ tracking PID", false, RTS2_VALUE_WRITABLE);
+			createValue (alt_curr_PID, "PID_ALT", "Altitude current PID", false);
+			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID", false, RTS2_VALUE_WRITABLE);
+			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID", false, RTS2_VALUE_WRITABLE);
 
 			updateMetaInformations (az_slew_PID);
 			updateMetaInformations (az_track_PID);
@@ -414,6 +425,12 @@ int SitechAltAz::initHardware ()
 
 	sitechVersion->setValueDouble (telConn->version);
 	sitechSerial->setValueInteger (telConn->getSiTechValue ('Y', "V"));
+
+	if (az_curr_PID == NULL)
+		createValue (az_curr_PID, "PID_AZ", "Azimuth current PID", false);
+
+	if (alt_curr_PID == NULL)
+		createValue (alt_curr_PID, "PID_ALT", "Altitude current PID", false);
 
 	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
 	{
@@ -472,6 +489,13 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		telConn->siTechCommand ('X', "A");
 		telConn->siTechCommand ('Y', "A");
 		getConfiguration ();
+		return 0;
+	}
+	else if (conn->isCommand ("pids"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		getPIDs ();
 		return 0;
 	}
 	return AltAz::commandAuthorized (conn);
@@ -671,36 +695,80 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		telSetTarget (newValue->getValueLong (), t_alt_pos->getValueLong ());
 		return 0;
 	}
-	if (oldValue == t_alt_pos)
+	else if (oldValue == t_alt_pos)
 	{
 		telSetTarget (t_az_pos->getValueLong (), newValue->getValueLong ());
 		return 0;
 	}
-	if (oldValue == autoModeAz)
+	else if (oldValue == autoModeAz)
 	{
-		telConn->siTechCommand ('Y', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		telConn->siTechCommand ('Y', dynamic_cast <rts2core::ValueBool*> (newValue)->getValueBool () ? "A" : "M0");
 		return 0;
 	}
-	if (oldValue == autoModeAlt)
+	else if (oldValue == autoModeAlt)
 	{
-		telConn->siTechCommand ('X', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		telConn->siTechCommand ('X', dynamic_cast <rts2core::ValueBool*> (newValue)->getValueBool () ? "A" : "M0");
 		return 0;
 	}
-	if (oldValue == trackingLook)
+	else if (oldValue == trackingLook)
 	{
 		userTrackingLook->setValueBool (true);
 		return 0;
 	}
-	if (oldValue == sitechLogFile)
+	else if (oldValue == sitechLogFile)
 	{
 		if (strlen (newValue->getValue ()) > 0)
-			telConn->startLogging (newValue->getValue ());
+		{
+			delete sitechLogExpander;
+			sitechLogExpander = new rts2core::Expander ();
+			telConn->startLogging (sitechLogExpander->expand (newValue->getValue ()).c_str ());
+		}
 		else
+		{
 			telConn->endLogging ();
+			delete sitechLogExpander;
+			sitechLogExpander = NULL;
+		}
 		return 0;
 	}
+	else if (oldValue == alt_slew_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('X', "PP", newP->getP ());
+		telConn->setSiTechValue ('X', "II", newP->getI ());
+		telConn->setSiTechValue ('X', "DD", newP->getD ());
+	}
+	else if (oldValue == alt_track_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('X', "P", newP->getP ());
+		telConn->setSiTechValue ('X', "I", newP->getI ());
+		telConn->setSiTechValue ('X', "D", newP->getD ());
+	}
+	else if (oldValue == az_slew_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('Y', "PP", newP->getP ());
+		telConn->setSiTechValue ('Y', "II", newP->getI ());
+		telConn->setSiTechValue ('Y', "DD", newP->getD ());
+	}
+	else if (oldValue == az_track_PID)
+	{
+		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
+		telConn->setSiTechValue ('Y', "P", newP->getP ());
+		telConn->setSiTechValue ('Y', "I", newP->getI ());
+		telConn->setSiTechValue ('Y', "D", newP->getD ());
+	}
+
+
 
 	return AltAz::setValue (oldValue, newValue);
+}
+
+void SitechAltAz::changeIdleMovingTracking ()
+{
+	if (sitechLogExpander)
+		telConn->startLogging (sitechLogExpander->expand (sitechLogFile->getValue ()).c_str ());
 }
 
 void SitechAltAz::scaleTrackingLook ()
@@ -1108,16 +1176,7 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 
 void SitechAltAz::getPIDs ()
 {
-	PIDs->clear ();
-	
-	PIDs->addValue (telConn->getSiTechValue ('X', "PPP"));
-	PIDs->addValue (telConn->getSiTechValue ('X', "III"));
-	PIDs->addValue (telConn->getSiTechValue ('X', "DDD"));
-
-	PIDs->addValue (telConn->getSiTechValue ('Y', "PPP"));
-	PIDs->addValue (telConn->getSiTechValue ('Y', "III"));
-	PIDs->addValue (telConn->getSiTechValue ('Y', "DDD"));
-
+	alt_curr_PID->setPID (telConn->getSiTechValue ('X', "PPP"), telConn->getSiTechValue ('X', "III"), telConn->getSiTechValue ('X', "DDD"));
 	if (alt_slew_PID)
 	{
 		alt_slew_PID->setPID (telConn->getSiTechValue ('X', "PP"), telConn->getSiTechValue ('X', "II"), telConn->getSiTechValue ('X', "DD"));
@@ -1126,6 +1185,8 @@ void SitechAltAz::getPIDs ()
 	{
 		alt_track_PID->setPID (telConn->getSiTechValue ('X', "P"), telConn->getSiTechValue ('X', "I"), telConn->getSiTechValue ('X', "D"));
 	}
+
+	az_curr_PID->setPID (telConn->getSiTechValue ('Y', "PPP"), telConn->getSiTechValue ('Y', "III"), telConn->getSiTechValue ('Y', "DDD"));
 	if (az_slew_PID)
 	{
 		az_slew_PID->setPID (telConn->getSiTechValue ('Y', "PP"), telConn->getSiTechValue ('Y', "II"), telConn->getSiTechValue ('Y', "DD"));

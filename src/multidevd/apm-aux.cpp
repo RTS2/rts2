@@ -39,7 +39,7 @@ using namespace rts2sensord;
  *  Arguments argc and argv has to be set to 0 and NULL respectively.
  *  See apm-multidev.cpp for example.
  */
-APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
+APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp, bool isControllino, bool opParaller): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
 {
 	fan = NULL;
 	baffle = NULL;
@@ -51,6 +51,9 @@ APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool has
 	baffleCommand = NULL;
 
 	commandInProgress = NONE;
+
+	controllino = isControllino;
+	paraller = opParaller;
 
 	createValue (autoOpen, "auto", "if true, opens automatically during night", false, RTS2_VALUE_WRITABLE);
 	autoOpen->setValueBool (!hasBaffle); // currently only models without baffle autoopens
@@ -214,27 +217,35 @@ int APMAux::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 
 int APMAux::open ()
 {
-	if (baffle == NULL || baffle->getValueInteger () == 2)
+	int ret = 0;
+	if (paraller == true)
+		ret += openCover ();
+	else if (baffle == NULL || baffle->getValueInteger () == 2) 
 		return openCover ();
-	if (baffleCommand->getValueInteger () > time (NULL))
+
+	if (controllino == false && baffleCommand->getValueInteger () > time (NULL))
 		return -2;
 	commandInProgress = OPENING;
 	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
-	return openBaffle ();
+	return ret + openBaffle ();
 }
 
 int APMAux::close ()
 {
-	if (baffle == NULL || baffle->getValueInteger () == 0 || coverState->getValueInteger () == 2)
+	int ret = 0;
+	if (baffle == NULL || baffle->getValueInteger () == 0 || coverState->getValueInteger () == 2 || paraller == true)
 	{
 		commandInProgress = CLOSING;
 		maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
-		return closeCover ();
+		if (paraller)
+			ret += closeCover ();
+		else
+			return closeCover ();
 	}
-	if (baffleCommand->getValueInteger () > time (NULL))
+	if (controllino == false && coverCommand->getValueInteger () > time (NULL))
 		return -2;
 	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
-	return closeBaffle ();
+	return ret + closeBaffle ();
 }
 
 int APMAux::openCover ()

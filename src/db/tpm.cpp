@@ -261,7 +261,7 @@ int TPM::printImage (rts2image::Image * image, WorldCoor * wcs, std::ostream & _
 	int num_pixels;
 	double x_pos, y_pos;
 
-	if (isnan (x_ref) || isnan (y_ref))
+	if (std::isnan (x_ref) || std::isnan (y_ref))
 		image->getCoordAstrometry (actual);
 	else
 	{
@@ -296,12 +296,12 @@ int TPM::printImage (rts2image::Image * image, WorldCoor * wcs, std::ostream & _
 	JD = ln_get_julian_from_timet (&ct);
 	mean_sidereal = ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) + obs.lng);
 
-	if (!isnan (ra_step))
+	if (!std::isnan (ra_step))
 	{
 		image->getValue ("MNT_AX0", aux0, true);
 		target.setRa (ln_range_degrees (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
 	}
-	if (!isnan (dec_step))
+	if (!std::isnan (dec_step))
 	{
 		image->getValue ("MNT_AX1", aux1, true);
 		target.setDec ((aux1 - dec_offset) / dec_step);

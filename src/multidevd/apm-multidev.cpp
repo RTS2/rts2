@@ -27,6 +27,8 @@
 #define OPT_BAFFLE         OPT_LOCAL + 53
 #define OPT_RELAYS         OPT_LOCAL + 54
 #define OPT_TEMPERATURE    OPT_LOCAL + 55
+#define OPT_CONTROLLINO    OPT_LOCAL + 56
+#define OPT_OP_PARALLER    OPT_LOCAL + 57
 
 using namespace rts2multidev;
 
@@ -43,6 +45,8 @@ APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::MultiBase (argc, ar
 	hasBaffle = false;
 	hasRelays = false;
 	hasTemp = false;
+	isControllino = false;
+	opParaller = false;
 
 	addOption ('e', NULL, 1, "IP and port (separated by :) of the APM box");
 	addOption (OPT_FILTER, "filter", 1, "filter wheel device name");
@@ -52,6 +56,8 @@ APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::MultiBase (argc, ar
 	addOption (OPT_BAFFLE, "baffle", 0, "auxiliary device with baffle (and mirror covers) control");
 	addOption (OPT_RELAYS, "relays", 0, "auxiliary device with relay control");
 	addOption (OPT_TEMPERATURE, "temperature", 0, "auxiliary device with temperature readout");
+	addOption (OPT_CONTROLLINO, "controllino", 0, "Controllino (allows for changing from open to close)");
+	addOption (OPT_OP_PARALLER, "paraller", 0, "close and open in paraller");
 }
 
 APMMultiBase::~APMMultiBase ()
@@ -98,6 +104,12 @@ int APMMultiBase::processOption (int opt)
 		case OPT_TEMPERATURE:
 			hasTemp = true;
 			break;
+		case OPT_CONTROLLINO:
+			isControllino = true;
+			break;
+		case OPT_OP_PARALLER:
+			opParaller = true;
+			break;
 		default:
 			return MultiBase::processOption (opt);
 	}
@@ -127,7 +139,7 @@ int APMMultiBase::initHardware ()
 	}
 
 	if (auxName != NULL)
-		md.push_back (new rts2sensord::APMAux (auxName, apmConn, hasFan, hasBaffle, hasRelays, hasTemp));
+		md.push_back (new rts2sensord::APMAux (auxName, apmConn, hasFan, hasBaffle, hasRelays, hasTemp, isControllino, opParaller));
 
 	return 0;
 }

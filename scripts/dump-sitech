@@ -44,7 +44,8 @@ parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store'
 parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
 parser.add_argument('-d', dest='fdump', help=_('dump CSV to the file'), action='store', type=argparse.FileType('w+'), default=None)
 parser.add_argument('--save-plot', dest='save_plot', help=_('save plot to file'), action='store', default=None)
-parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o'])
+parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o','+'])
+parser.add_argument('--last', help=_('plot only last points'), action='store', dest='last', default=0, type=int)
 parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
 
 args = parser.parse_args()
@@ -61,6 +62,7 @@ def sitech_checksum(s, invertH):
 def process_file(fn, d_from, d_to, fdump=None):
 	f = open(fn,'rb')
 
+	#positions = numpy.array([],dtype=[('date','datetime64[s]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i')])
 	positions = []
 	commands = []
 
@@ -90,7 +92,7 @@ def process_file(fn, d_from, d_to, fdump=None):
 				if sitech_checksum(data[:39],True) != checksum:
 					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:39],True), checksum)))
 				if do_append:
-					positions.append([date, x_pos, y_pos, x_err, y_err])
+					positions.append((date, x_pos, y_pos, x_err, y_err))
 			elif et == 'X':
 				data = f.read(21)
 				x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data)
@@ -117,10 +119,10 @@ def process_file(fn, d_from, d_to, fdump=None):
 
 for fn in args.files:
 	print(_('Processing {0}'.format(fn)))
-	positions, commands = process_file(fn, args.d_from, args.d_to, args.fdump)
+	r_positions, r_commands = process_file(fn, args.d_from, args.d_to, args.fdump)
 
-	positions = numpy.array(positions)
-	commands = numpy.array(commands)
+	positions = numpy.rec.array(r_positions, dtype=[('date','datetime64[ms]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i')])
+	commands = numpy.rec.array(r_commands, dtype=[('date','datetime64[ms]'),('x_dest','>8i'),('y_dest','>8i'),('x_speed','5>i'),('y_speed','5>i')])
 
 	fig = pylab.figure()
 	gs = gridspec.GridSpec(6,1)
@@ -134,29 +136,33 @@ for fn in args.files:
 
 	ax_pos_x = fig.add_subplot(gs[0:1,0:1])
 
-	ax_pos_x.plot(positions[:,0], positions[:,1], args.markers)
+	first = -args.last
+
+	p_date = [x.astype(datetime.datetime) for x in positions[first:].date]
+	c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
+
+	ax_pos_x.plot(p_date, positions[first:].x_pos, args.markers)
 	ax_pos_x.set_ylabel('Alt pos')
 	ax_pos_x.grid(True)
 
 	ax_pos_y = add_plot(gs[1:2,0:1], ax_pos_x, 'Az pos')
-	ax_pos_y.plot(positions[:,0], positions[:,2], 'g' + args.markers)
+	ax_pos_y.plot(p_date, positions[first:].y_pos, 'g' + args.markers)
 
 	ax_err_x = add_plot(gs[2:3,0:1], ax_pos_x, 'Alt err')
-	ax_err_x.plot(positions[:,0], positions[:,3], args.markers)
+	ax_err_x.plot(p_date, positions[first:].x_err, args.markers)
 
 	ax_err_y = add_plot(gs[3:4,0:1], ax_pos_x, 'Az err')
-	ax_err_y.plot(positions[:,0], positions[:,4], 'g' + args.markers)
+	ax_err_y.plot(p_date, positions[first:].y_err, 'g' + args.markers)
 
 	commd_x_speed = add_plot(gs[4:5,0:1], ax_pos_x, 'Alt speed')
-	commd_x_speed.plot(commands[:,0], commands[:,3], args.markers)
+	commd_x_speed.plot(c_date, commands[first:].x_speed, args.markers)
 
 	commd_y_speed = add_plot(gs[5:6,0:1], ax_pos_x, 'Az speed')
-	commd_y_speed.plot(commands[:,0], commands[:,4], 'g' + args.markers)
+	commd_y_speed.plot(c_date, commands[first:].y_speed, 'g' + args.markers)
 
 	fig.subplots_adjust(hspace=0)
 
-	#fig.autofmt_xdate()
-	fig.format_xdata = matplotlib.dates.DateFormatter('%h:%m')
+	fig.autofmt_xdate()
 
 	if args.save_plot is not None:
 		print(_('saving plot to {0}').format(args.save_plot, end=' '))

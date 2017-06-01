@@ -1149,6 +1149,7 @@ void Telescope::incMoveNum ()
 	wCorrImgId->setValueInteger (0);
 
 	trackingNum = 0;
+	changeIdleMovingTracking ();
 }
 
 void Telescope::recalculateMpecDIffs ()
@@ -1477,11 +1478,11 @@ void Telescope::checkMoves ()
 			if (ret)
 			{
 				failedMove ();
-
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
 			}
 			else
 			{
+				changeIdleMovingTracking ();
 				maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED, "park command finished without error");
 			}
 			if (move_connection)
@@ -2107,6 +2108,7 @@ int Telescope::endMove ()
 	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());
 
 	logStream (INFO_MOUNT_SLEW_END | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << tarRaDec->getRa () << " " << tarRaDec->getDec () << " " << telTargetRaDec->getRa () << " " << telTargetRaDec->getDec () << sendLog;
+	changeIdleMovingTracking ();
 	return 0;
 }
 
@@ -2114,11 +2116,13 @@ void Telescope::failedMove ()
 {
 	failedMoveNum->inc ();
 	lastFailedMove->setNow ();
+	changeIdleMovingTracking ();
 }
 
 int Telescope::abortMoveTracking ()
 {
 	stopTracking ("tracking below horizon");
+	changeIdleMovingTracking ();
 	return 0;
 }
 
@@ -2433,6 +2437,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	if (tarTelAltAz && parkPos)
 		tarTelAltAz->setFromValue (parkPos);
 	stopTracking ("parking telescope");
+	changeIdleMovingTracking ();
 	ret = startPark ();
 	if (ret < 0)
 	{
