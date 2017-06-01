@@ -212,7 +212,7 @@ int Fli::initHardware ()
 		return -1;
 	setFocusExtent (0, extent);
 
-	if (!isnan (defaultPosition->getValueFloat ()))
+	if (!std::isnan (defaultPosition->getValueFloat ()))
 	{
 		float def = defaultPosition->getValueFloat ();
 		if (def < 0)

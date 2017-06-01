@@ -321,9 +321,9 @@ void Fli::postEvent (rts2core::Event *event)
 	switch (event->getType ())
 	{
 		case EVENT_TE_RAMP:
-			if (isnan (tempTarget->getValueFloat ()))
+			if (std::isnan (tempTarget->getValueFloat ()))
 			{
-				if (isnan (tempCCD->getValueFloat ()))
+				if (std::isnan (tempCCD->getValueFloat ()))
 				{
 					addTimer (10, event);	// give info () time to get tempCCD
 					return;
@@ -655,9 +655,9 @@ int Fli::switchCooling (bool cooling)
 
 	if (cooling)
 	{
-		if (isnan (tempSet->getValueFloat ()))
+		if (std::isnan (tempSet->getValueFloat ()))
 		{
-			if (!nightCoolTemp || isnan (nightCoolTemp->getValueFloat ()))
+			if (!nightCoolTemp || std::isnan (nightCoolTemp->getValueFloat ()))
 			{
 				logStream (MESSAGE_ERROR) << "nightCoolTemp not defined" << sendLog;
 				ret = -1;
