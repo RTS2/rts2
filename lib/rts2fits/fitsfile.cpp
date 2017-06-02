@@ -718,30 +718,6 @@ void FitsFile::getValues (const char *name, char **values, int num, bool require
 	fitsStatusGetValue (name, required);
 }
 
-std::string FitsFile::expandPath (std::string pathEx, bool onlyAlNum)
-{
-	std::string ret = expand (pathEx, onlyAlNum);
-	if (num_pos >= 0)
-	{
-		for (int n = 1; n < INT_MAX; n++)
-		{
-			std::ostringstream os;
-			// construct new path..
-			os.fill (num_fill);
-			os << ret.substr (0, num_pos) << std::setw (num_lenght) << n << ret.substr (num_pos);
-			struct stat s;
-			if (stat (os.str ().c_str (), &s))
-			{
-				if (errno == ENOENT)
-					return os.str ();
-				throw rts2core::Error (std::string ("error when checking for ") + os.str() + ":" + strerror (errno));
-			}
-		}
-		throw rts2core::Error ("too many files with name matching " + ret);
-	}
-	return ret;
-}
-
 void FitsFile::writeTemplate (rts2core::IniSection *hc)
 {
 	for (rts2core::IniSection::iterator iter = hc->begin (); iter != hc->end (); iter++)

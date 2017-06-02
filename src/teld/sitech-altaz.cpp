@@ -211,6 +211,8 @@ class SitechAltAz:public AltAz
 
 		void getPIDs ();
 
+		void changeSitechLogFile ();
+
 		uint8_t xbits;
 		uint8_t ybits;
 
@@ -721,7 +723,7 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		{
 			delete sitechLogExpander;
 			sitechLogExpander = new rts2core::Expander ();
-			telConn->startLogging (sitechLogExpander->expand (newValue->getValue ()).c_str ());
+			changeSitechLogFile ();
 		}
 		else
 		{
@@ -767,8 +769,7 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 void SitechAltAz::changeIdleMovingTracking ()
 {
-	if (sitechLogExpander)
-		telConn->startLogging (sitechLogExpander->expand (sitechLogFile->getValue ()).c_str ());
+	changeSitechLogFile ();
 }
 
 void SitechAltAz::scaleTrackingLook ()
@@ -1194,6 +1195,22 @@ void SitechAltAz::getPIDs ()
 	if (az_track_PID)
 	{
 		az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
+	}
+}
+
+void SitechAltAz::changeSitechLogFile ()
+{
+	try
+	{
+		if (sitechLogExpander)
+		{
+			sitechLogExpander->setExpandDate ();
+			telConn->startLogging (sitechLogExpander->expandPath (sitechLogFile->getValue ()).c_str ());
+		}
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_WARNING) << "cannot expand " << sitechLogFile->getValue () << sendLog;
 	}
 }
 

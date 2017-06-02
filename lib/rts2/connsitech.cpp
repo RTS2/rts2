@@ -494,6 +494,7 @@ void ConnSitech::startLogging (const char *logFileName)
 		logStream (MESSAGE_WARNING) << "cannot start SiTech logging to " << logFileName << " " << strerror (errno);
 		return;
 	}
+	fchmod (logFile, 0644);
 }
 
 void ConnSitech::endLogging ()

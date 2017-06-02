@@ -22,6 +22,8 @@
 #include "configuration.h"
 #include "utilsfunc.h"
 
+#include <sys/stat.h>
+
 #include <iomanip>
 #include <sstream>
 
@@ -223,7 +225,7 @@ std::string Expander::expandVariable (char var, size_t beg, bool &replaceNonAlph
                         break;
 		case 'u':
 			if (num_pos >= 0)
-				throw rts2core::Error ("you cannot use multiple n strings");
+				throw rts2core::Error ("you cannot use multiple u strings");
 			num_pos = beg;
 			num_lenght = length;
 			num_fill = fill;
@@ -325,6 +327,30 @@ std::string Expander::expand (std::string expression, bool onlyAlphaNum)
 		}
 	}
 	return ret.str ();
+}
+
+std::string Expander::expandPath (std::string pathEx, bool onlyAlNum)
+{
+	std::string ret = expand (pathEx, onlyAlNum);
+	if (num_pos >= 0)
+	{
+		for (int n = 1; n < INT_MAX; n++)
+		{
+			std::ostringstream os;
+			// construct new path..
+			os.fill (num_fill);
+			os << ret.substr (0, num_pos) << std::setw (num_lenght) << n << ret.substr (num_pos);
+			struct stat s;
+			if (stat (os.str ().c_str (), &s))
+			{
+				if (errno == ENOENT)
+					return os.str ();
+				throw rts2core::Error (std::string ("error when checking for ") + os.str() + ":" + strerror (errno));
+			}
+		}
+		throw rts2core::Error ("too many files with name matching " + ret);
+	}
+	return ret;
 }
 
 void Expander::setExpandDate ()
