@@ -36,7 +36,6 @@ class GemTest(unittest.TestCase):
 		self.assertAlmostEqual(0.0001360438, self.model.best.params['fo'], delta=0.07/3600.0)
 
 	def testFitFixed(self):
-		print self.model_fix.best.params['id']
 		self.assertAlmostEqual(-1613.58/3600.0, numpy.degrees(self.model_fix.best.params['id'].value), delta=0.07/3600.0)
 		self.assertAlmostEqual(0, self.model_fix.best.params['me'])
 		self.assertAlmostEqual(0, self.model_fix.best.params['ma'])
