@@ -50,8 +50,8 @@ class AltAzTest(unittest.TestCase):
 			e_az = numpy.degrees(self.model.model_az(self.model.best.params,r_az,r_el))
 			e_el = numpy.degrees(self.model.model_el(self.model.best.params,r_az,r_el))
 			#print '{0:.10f},{1:.10f},   {2:.10f}, {3:.10f}'.format(azel[0], azel[1], e_az,e_el)
-			self.assertAlmostEqual(e_az, azel[2], delta=0.4/3600.0)
-			self.assertAlmostEqual(e_el, azel[3], delta=0.4/3600.0)
+			self.assertAlmostEqual(e_az, azel[2], delta=1/3600.0)
+			self.assertAlmostEqual(e_el, azel[3], delta=1/3600.0)
 
 	def testDuplicated(self):
 		try:
@@ -129,7 +129,7 @@ class AltAzTest(unittest.TestCase):
 			except gpoint.NonExistentExtra as ne:
 				self.assertTrue(True,'tested removal of non-existend argument'.format(ne.argument))
 
-			m.set_fixed(['tf','el_cos_el_1_0','az_sincos_el_az_1_0_1_0'])
+			m.set_fixed(['tf','el_cos_el_1_0','az_sincos_el_az_1_0_1_0','tn'])
 
 			m.fit()
 			m.fit_to_extra()
@@ -145,12 +145,12 @@ class AltAzTest(unittest.TestCase):
 
 			# expected result
 			expected = {
-				'ia':-72.54,
-				'tn':-0.43,
+				'ia':-72.53,
+				'tn':0,
 				'te':12.73,
-				'npae':-72.58,
-				'npoa':-12.80,
-				'ie':-47.57,
+				'npae':-72.51,
+				'npoa':-12.72,
+				'ie':-47.55,
 				'tf':-3.19,
 				'el_cos_el_1_0':1,
 				'az_sincos_el_az_1_0_1_0':0,
@@ -158,6 +158,7 @@ class AltAzTest(unittest.TestCase):
 			}
 		
 			for p in list(mtest.best.params.keys()):
+				#print p,numpy.degrees(mtest.best.params[p].value)*3600.0
 				self.assertAlmostEqual(numpy.degrees(mtest.best.params[p].value)*3600.0,expected[p],delta=0.07)
 		finally:
 			import shutil
