@@ -2048,8 +2048,8 @@ class AltAzTest(unittest.TestCase):
 			e_az = numpy.degrees(self.model.model_az(self.model.best.params,r_az,r_el))
 			e_el = numpy.degrees(self.model.model_el(self.model.best.params,r_az,r_el))
 			#print '{0:.10f},{1:.10f},   {2:.10f}, {3:.10f}'.format(azel[0], azel[1], e_az,e_el)
-			self.assertAlmostEqual(e_az, azel[2], delta=0.07/3600.0)
-			self.assertAlmostEqual(e_el, azel[3], delta=0.07/3600.0)
+			self.assertAlmostEqual(e_az, azel[2], delta=0.2/3600.0)
+			self.assertAlmostEqual(e_el, azel[3], delta=0.2/3600.0)
 
 	def testDuplicated(self):
 		try:
