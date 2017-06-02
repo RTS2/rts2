@@ -104,6 +104,12 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		}
 		return 0;
 	}
+	else if (conn->isCommand (COMMAND_ROTATOR_PARK))
+	{
+		maskState (ROT_MASK_PARK | ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PARKED, "parking rotator");
+		setTarget (0);
+		return 0;
+	}
 	return rts2core::Device::commandAuthorized (conn);
 }
 

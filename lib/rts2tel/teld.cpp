@@ -95,6 +95,11 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telDUT1, "DUT1", "[s] UT1 - UTC", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telDUT1->setValueDouble (0);
 
+	createValue (pointingModel, "MOUNT", "mount pointing model (equ, alt-az, ...)", false, 0, 0);
+	pointingModel->addSelVal ("EQU");
+	pointingModel->addSelVal ("ALT-AZ");
+	pointingModel->addSelVal ("ALT-ALT");
+
 	// object
 	createValue (oriRaDec, "ORI", "original position (epoch)", true, RTS2_VALUE_WRITABLE);
 	createValue (oriEpoch, "OEPOCH", "epoch (2000,..)", true);
@@ -256,11 +261,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	}
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true, RTS2_VALUE_WRITABLE);
-
-	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0);
-	pointingModel->addSelVal ("EQU");
-	pointingModel->addSelVal ("ALT-AZ");
-	pointingModel->addSelVal ("ALT-ALT");
 
 	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set)", false, RTS2_VALUE_WRITABLE);
 	createValue (mpec_refresh, "mpec_refresh", "refresh MPEC ra_diff and dec_diff every mpec_refresh seconds", false, RTS2_VALUE_WRITABLE);

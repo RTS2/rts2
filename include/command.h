@@ -194,6 +194,11 @@
 #define COMMAND_ROTATOR_AUTOSTOP     "autostop"
 
 /**
+ * Park derotators.
+ */
+#define COMMAND_ROTATOR_PARK         "park"
+
+/**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
  * to reach given state uses this to control their execution.
  */

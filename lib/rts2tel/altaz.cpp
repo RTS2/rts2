@@ -47,6 +47,8 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (azSlewMargin, "az_slew_margin", "[deg] azimuth slew margin", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	azSlewMargin->setValueDouble (0);
 
+	setPointingModel (1);
+
 	nextParUpdate = 0;
 }
 
@@ -412,6 +414,6 @@ void AltAz::afterMovementStart ()
 
 void AltAz::afterParkingStart ()
 {
-	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), 0, 0);
+	rts2core::Command cmd (this, COMMAND_ROTATOR_PARK);
 	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
 }

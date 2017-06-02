@@ -333,6 +333,8 @@ std::string Connection::getStateString ()
 						_os << "UNKNOWN";
 				}
 			}
+			if (real_state & ROT_PARKED)
+				_os << " | PARKED";
 			if (real_state & ROT_AUTO)
 				_os << " | AUTOROTATE";
 
