@@ -58,6 +58,7 @@ void updateDUT1 (const char *fn, const char *url)
 		goto failed;
 	}
 	write (fo, reply, reply_length);
+	fchmod (fo, 0644);
 	close (fo);
 
 failed:
