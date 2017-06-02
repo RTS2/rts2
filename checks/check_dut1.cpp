@@ -50,7 +50,7 @@ START_TEST(UPDATE)
 
 	double dut1 = getDUT1 (fn, gmt);
 	printf ("Current DUT1: %f\n", dut1);
-	ck_assert_msg (!isnan (dut1), "current data not found in uploaded time diff file!");
+	ck_assert_msg (!isnan (dut1), "current data not found in downloade time diff file!");
 
 	gmt->tm_year += 3;
 	ck_assert_msg (isnan (getDUT1 (fn, gmt)), "found data for DUT1 3 years from now!");
