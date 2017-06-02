@@ -173,8 +173,8 @@ START_TEST(test_altaz_1)
 	ck_assert_int_eq (azc, 16135692);
 	ck_assert_int_eq (altc, 27318632);
 #else
-	ck_assert_int_eq (azc, 16147947);
-	ck_assert_int_eq (altc, 27349159);
+	ck_assert_int_eq (azc, 16147941);
+	ck_assert_int_eq (altc, 27349158);
 #endif
 
 	altAzTest->test_counts2sky (JD, azc, altc, pos.ra, pos.dec);
@@ -199,8 +199,8 @@ START_TEST(test_altaz_1)
 	ck_assert_int_eq (azc, 49514704);
 	ck_assert_int_eq (altc, 12305112);
 #else
-	ck_assert_int_eq (azc, 49510274);
-	ck_assert_int_eq (altc, 12292285);
+	ck_assert_int_eq (azc, 49510278);
+	ck_assert_int_eq (altc, 12292286);
 #endif
 
 	// target
