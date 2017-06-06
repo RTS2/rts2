@@ -1,8 +1,9 @@
 # $Id$
 
 EXTRA_DIST = \
+    rts2.conf \
     rts2.ent.in \
-    rts2.xml \
+    rts2.txt \
     rts2.ini.xml \
     rts2-device.xml \
     rts2-mon.xml \
@@ -156,5 +157,26 @@ rts2-book.fop: rts2-book.xml
 
 rts2-book.pdf: rts2-book.fop
 	$(FOP) $< $@
+
+endif
+
+if HAVE_A2X
+
+A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+	--xsltproc-opts "--nonet" \
+	--attribute mansource="RTS2" \
+	--attribute manversion="@PACKAGE_VERSION@" \
+	--attribute manmanual="RTS2 Manual" \
+	--destination-dir=.
+
+.txt.1:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+
+.txt.7:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+
+else
+
+EXTRA_DIST += rts2.txt
 
 endif

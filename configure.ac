@@ -929,11 +929,21 @@ AS_IF([test "x$docbook" == 'xdetect'], [
 	])
 ])
 
+AC_ARG_WITH(a2x,
+[  --with-a2x             path to a2x executable],
+a2x="${withval}",
+a2x="a2x"
+)
+
+AC_CHECK_PROG(A2X, "$a2x", "$a2x", 'no')
+
 AC_SUBST(DB2MAN)
 AC_SUBST(DB2FOP)
+AC_SUBST(A2X)
 
 AM_CONDITIONAL(HAVE_DB2MAN, test x$DB2MAN != xno)
 AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
+AM_CONDITIONAL(HAVE_A2X, test x$A2X != xno)
 
 AC_CONFIG_SRCDIR(src)
 AM_CONFIG_HEADER(config.h)
@@ -1107,7 +1117,8 @@ SENSORs:
   log file      ${LOG_FILE}
   centrald port	${CENTRALD_PORT}
 
-DocBook stylesheets:
+Manpages, docbook stylesheets:
+  A2X           ${A2X}
   DB2MAN        ${DB2MAN}
   DB2FOP        ${DB2FOP}
 

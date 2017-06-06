@@ -1,0 +1,467 @@
+RTS2(7)
+=======
+
+NAME
+----
+
+rts2 - description of Remote Telescope System, 2nd version
+
+ABOUT
+-----
+
+RTS2, or Remote Telescope System, 2nd Version, is an integrated package for
+remote telescope control under the Linux operating system. It is designed to
+run in fully autonomous mode, picking targets from a database table, storing
+image meta data to the database, processing images and storing their WCS
+coordinates in the database and offering Virtual-Observatory enabled access to
+them. It is currently running on various telescope setups world-wide. For
+control of devices from various manufacturers RTS2 has an abstract device
+layer, enabling control of all possible combinations of mounts, CCDs,
+photometers, roof and cupola controllers.
+
+RTS2 COMPONENTS
+---------------
+
+RTS2 consists of four basic types of components:
+
+CENTRALD::
+    The name resolver and observatory housekeeper - this executable enables the
+    finding of devices in the observatory setup and keeps track of the
+    observatory state, e.g. whether observatory is in off, standby or on state,
+    and if it is day or night.
+
+DEVICES::
+    One executable serving one or multiple device(s). They share common code
+    for processing of TCP/IP commands (and registering to centrald), and
+    implement the HW interacting layer (either through their own code or
+    through some library).  Those include daemons to drive cameras, mounts,
+    roofs etc.
+
+SERVICES::
+    Those components implements processes needed for observation to run and expose external API.
+    There are services to provide HTTP/JSON API (linkman:rts2-httpd[7]), select
+    the next target (linkman:rts2-selector[7]), execute an observation
+    (linkman:rts2-executor[7]), process images (linkman:rts2-imgproc[7]), or
+    wait and process a GCN or other incoming messages (linkman:rts2-grbd[7] and
+    linkman:rts2-auger-shooter[7]).
+
+MONITORING PROGRAMS::
+    ncurses (3ncurses) based linkman:rts2-mon[1], console based linkman:rts2-cmon[1], X-Window image
+    grabber linkman:rts2-xfocusc[1], console grabber linkman:rts2-focusc[1],
+    JSON API linkman:rts2-json[1] and linkman:rts2-xmlrpcclient[1], which
+    enables access to the RTS2 system through the XML/RPC.
+
+IMAGE PROCESSING STATES
+-----------------------
+[[image_processing_states]]
+
+During image processing, various image kind are created. Depending on
+processing script configuration, following image kinds can be created:
+
+RA::
+    RAW images.
+DF::
+    RAW image, corrected by dark frame.
+FF::
+    RAW image, corrected by dark frame and flat frame.
+PR::
+    Processed image - image with astrometry etc..
+
+RTS2 STATES
+-----------
+
+OFF::
+    This is safe state from roof point of view. In OFF state, system will
+    never try to observe, will not open the dome. It might interact with
+    some devices in putting them to safe state (e.g. park the mount).
+
+    OFF state is your choice when you know that system will not observe,
+    e.g. when some components are broken. OFF state is also your choice in
+    case of bad weather - in OFF state, system make sure dome will remain
+    closed.
+
+STANDBY::
+    Standby state is between on and off state. In this state, cameras are
+    cooled, and telescope is prepared for observation.  But no observation
+    is performed, and dome remain closed, so telescope is protected from
+    the elements.
+
+    When running with meteo station, meteo station can trigger change of
+    state from on to standby in case of bad weather, and from standby to on
+    when weather is good. !!STANDBY STATE DOES NOT GUARANTEE THAT DOME WILL
+    REMAIN CLOSED!! When you need to be sure that dome remain closed,
+    please use off state.
+
+ON::
+    Dome is opened at evening and closed at morning, observations are
+    performed. That is main operating stat of the system.
+
+ON and STANDBY states can have following substates. They are changed during
+day by linkman:rts2-centrald[1].
+
+day::
+    During day, observatory is in idle state. CCDs are not cooled.  Imgproc
+    might run image and observation processing from last night.
+
+evening::
+    CCDs are cooled during evening. Light intensiti is still too high to
+    take images, and cameras are not cooled to take dark images.
+
+dusk::
+    Cooled CCDs are used to take flat frames.
+
+night::
+    Observations are performed out during night.
+
+dawn::
+    Similar to dusk. Flat frames and darks are taken.
+
+morning::
+    CCDs are tempered to ambient temperature.
+
+Time parameters input format
+----------------------------
+
+### IMAGE PATH EXPRESSION
+
+Image path expression is processed before it is used. This sectio0n describes
+rules how image name can be formed. 
+
+The path are formed from C printf-like expression. The important characters are
+% and @, which allows substitution of path values.
+
+You can try various substitution patterns using linkman:rts2-image[1] tool.
+
+### Example of the image path expression
+
+The next example works with the FITS file taken (based on RTS2 CTIME and USEC)
+on 2006-10-17 at 18:22:03.447s, with R filter (RTS2 FILTER keyword). Here we
+list few path expresions together with expected values.
+
+@DATE-OBS/%F/%04i/%f::
+    * 2006-10-17T18:22:03.447/R/0001/20061017182203-0447.fits, if DATE-OBS keyword is filled and image ID is 1.
+    * @DATE-OBS/R/0001/20061017182203-0447.fits, if DATE-OBS keyword cannot be found.
+
+%N%2F:
+	20061017 R
+
+Substrings begining with @ are escaped to keyword value with name equal to
+value characters and number only string which follows. If this value is not
+found in header, string @[name] will be put to path, where [name] is string
+after @.
+
+For example, string @DATE-OBS will be expanded to keyword value of DATE-OBS
+keyword. If DATE-OBS keyword cannot be found, it will be copied, e.g. remain
+@DATE-OBS.
+
+Substrings begining with % are expanded to various image-related values.  They
+list is provided bellow.
+
+### Formatting specifiers
+
+Users can specify minimum length of the expanded string. If length is prefixed
+with 0, the expand string will be right padded with 0 to specified length.
+
+_::
+    Original name of the image. Available only by renaming the image. Otherwise equals to %f.
+
+A::
+    Exposure start date
+
+a::
+    Exposure start day in the year
+
+b::
+    Image base path, ussually /images/[epoch].
+
+C::
+    ctime (seconds form 1-1-1970) of exposure start.
+
+c::
+    Camera name.
+
+D::
+    Exposure start night day of the month.
+
+d::
+    Exposure start day of the month.
+
+E::
+    CCD exposure in seconds.
+
+e::
+    Epoch of CCD observation.
+
+F::
+    Filter which was used for exposure name.
+
+f::
+    Standard filename (same as %y%m%d%H%M%S-%s-%p.fits).
+
+i::
+    Image ID. Each image have number, which increase from 1 during observation.
+
+J::
+    Julian date of exposure start.
+
+L::
+    Prints next times using local time zone.
+
+M::
+    Exposure start Minute - either local or UT time.
+
+m::
+    Exposure start month.
+
+N::
+    Night date -format as YYYYMMDD, e.g. when it is 2009-01-05 01:30 UT, %N is expanded to 20090430.
+
+n::
+    Exposure number. Counted from 1 when script starts. If you are looking for unique number, please look for <u> option.
+
+O::
+    Exposure start night month.
+
+o::
+    Observation ID.
+
+p::
+    Processing state of image. See list of procesing state strings in <image_processing_states>.
+
+R::
+    Executor (selector) target ID.
+
+S::
+    Exposure start seconds.
+
+s::
+    Exposure start miliseconds.
+
+T::
+    Target name.
+
+t::
+    Target ID.
+
+U::
+    Switch all next printed dates to UT time.
+
+u::
+    [[u]] Unique number incorporated into filename. Start number on 1, and increase
+    it as long as file with given name exists. Should be used to create
+    uninterupted ascension of filenames.
+
+Y::
+    Four digits night year of the start of exposure.
+
+y::
+    Four digits year of the start of exposure.
+
+X::
+    Two digits night year of the start of exposure.
+
+x::
+    Two digits year of the start of exposure.
+
+Z::
+    Exposure time zone.
+
+TARGET SCHEDULING
+-----------------
+
+RTS2 enables two basic modes of operation - dispatch scheduling and queue
+scheduling. Queue scheduling allows the observer to put a list of targets which
+he/she would like to observe to the database. It is convenient when the
+observer is at the telescope and can check local weather conditions.  Dispatch
+scheduling is ideal for an autonomous system where there is no human
+intervention.
+
+We regard this combination of both approaches in one system as quite unique -
+other systems have decided to use either dispatch or queue scheduling.
+
+We think that by facilitating both approaches users have a wider range of
+options at their disposal. Also, given the separation of the selection and
+execution components, it will be quite easy to implement other types of
+scheduling.
+
+### DISPATCH SCHEDULING
+
+Dispatch scheduling uses a target merit function to calculate merit for all
+currently observable targets, and then selects the target with the highest
+merit. The advantage of this approach is its self-drivenness.  Its major
+disadvantage is its inability to reasonably predict what will be observed
+during the night.
+
+### QUEUE SCHEDULING
+
+The plan is stored in a separate database table, which lists the target and
+starting time of the observation. The queue scheduling is actually implemented
+as a subclass of target which has its own merit function based on whether a
+plan is entered or not. The selector selects the queue scheduling based on
+merit as with every other observation, and puts it to the executor, which calls
+plan routines to select the actual observation.
+
+As queue scheduling is still merit-based, when a target with higher merit
+appears (usually a GRB}, queue scheduling will not be selected by selector and
+the GRB will be properly observed.
+
+### TARGET HIERARCHY
+
+To enable observation of different targets, a target hierarchy was created. Its
+parent object is Target, which provides the interface to various target-related
+calculations.
+
+There are various subclasses of Target. For example, there is a subclass for
+targets in solar orbit (comets and minor planets).
+
+### TARGET CHAINING
+
+Targets sometimes use "chaining". This is when one master target holds a list
+of possible targets, from which it selects the actual observation to be
+performed.
+
+Chaining was developed for observations of the INTEGRAL targets. The GCN sends
+information on the next INTEGRAL pointing to rts2-grbd.  Rts2-grbd stores this
+information to a database table.  When an instance of class IntegralFOV is
+created, it will hold coordinates of the last INTEGRAL target. When such an
+instance is created in selector, its merit function will be high when the last
+IntegralFOV is above the local horizon and low when it's below the local
+horizon.
+
+When IntegralFOV is created in the executor, its methods will give as a target
+the coordinates of the last INTEGRAL FOV. When rts2-grbd inserts new target
+coordinates to the database, the IntegralFOV object will retrieve them and use
+them for its coordinates. When the next target is below the horizon, the
+selector will select another target.
+
+Target chaining is also used for other special targets. The plan target is
+coded using chaining -- it holds a reference to the actual plan target, and
+provides its coordinates in overwritten methods for plan access. The plan
+target also holds information about the next plan entry, so queue targets get
+changed on time.
+
+Another use of chaining is for the airmass monitoring target. Here, the master
+target selects calibration stars at various airmass ranges in order to provide
+information about atmospheric conditions at the observation site.
+
+GENERAL MANUAL PAGES
+--------------------
+
+* linkman:rts2.fitskeys[5]
+* linkman:rts2.script[5]
+* linkman:rts2.target[5]
+
+DEVICES
+-------
+teld-*, camd-*, filterd-*, dome-*, focusd-*, mirrord-*
+
+### Cameras
+
+* linkman:rts2-camd[7]
+* linkman:rts2-camd-andor[7]
+* linkman:rts2-camd-reflex[7]
+
+### Domes
+
+* linkman:rts2-dome[7]
+
+### Mounts
+
+* linkman:rts2-teld[7]
+
+SERVICES
+--------
+
+* linkman:rts2-httpd[7]
+* linkman:rts2-executor[1]
+* linkman:rts2-selector[1]
+* linkman:rts2-imgproc[1]
+* linkman:rts2-grbd[1]
+* linkman:rts2-httpd[1]
+* linkman:rts2-xmlrpcclient[1]
+* linkman:rts2-augershooter[1]
+
+MONITORING AND MANAGING UTILITIES
+---------------------------------
+
+* linkman:rts2-mon[1]
+* linkman:rts2-target[1]
+* linkman:rts2-targetinfo[1]
+* linkman:rts2-focusc[1]
+* linkman:rts2-xfocusc[1]
+* linkman:rts2-seltest[1]
+* linkman:rts2-tpm[1]
+* linkman:rts2-logger[1]
+* linkman:rts2-image[1]
+* linkman:rts2-plan[1]
+
+FILES
+-----
+
+* linkman:rts2.ini[5]
+
+SEE ALSO
+
+<http://rts2.org>
+
+AUTONOMOUS OBSERVATORY SYSTEM
+-----------------------------
+
+Here is some theoretical background, please skip it if you are looking for
+description of system.
+
+It is widely accepted that full automated operation of telescopes not only
+enables observers to live life during the day, but also enables better use of
+telescope time and brings costs savings and better efficiency to the whole
+observational setup.
+
+If the observer's goal is to hunt for GRBs afterglows (the task for which RTS2
+was designed), it will be impractical for him/her to wait for a couple of
+months for a suitable GRB, in the meantime performing only routine night
+observations, and then to attempt to perform precise observations of a GRB
+location as quickly as possible (in minutes, preferably seconds) when a
+suitable GRB trigger arrives.  It will be even more difficult, if not
+impossible, for an observer to carry out these observations in remote places,
+such as middle of the South American Pampas.
+
+There are some remote observing solutions offered for amateur or
+semi-professional observers, primary focused on acquiring nice images of the
+night sky with a telescope under computer control. There are only a few
+complete packages capable of managing a whole integrated observatory which are
+targeted at the scientific community. RTS2 is to our knowledge the only one for
+which the complete source code is available, released under GNU General Public
+Licence, which allows the code to be modified.
+
+In addition, most of the imaging systems offered run on the Microsoft Windows
+platform, which is renowned in the industry for the instability of the
+operating system kernel, and which is, given its GUI-oriented nature, quite
+difficult to manage truly remotely over long distances.  RTS2 was primary
+developed on Linux OS, which is quite easily - even over long distances -
+controlled through various remote shell options, SSH now being the most widely
+used. An SSH session from Europe to say South America is easily conceivable due
+to its low bandwidth usage.
+
+That definitely is not true for GUI based remote access, which both Windows
+(usually as extra-paid service) and Linux/UNIX (as core of X Window System)
+allow.
+
+AUTHORS
+-------
+Petr Kubanek <petr@rts2.org> (main author),
+Markus Wildi (astrometry.net based astrometry, focusing routines and some drivers),
+Martin Jelinek (contributed with ideas, bug-fixes, gnuplotting commands. And do most of the image analysis),
+Stanislav Vitek (image processing, some focus deamons, web integration),
+John French (watcher dome controller),
+Ronan Cunniffe (changes to camd logic to support Andor CCDs, and to support fast-readout cameras),
+Michal Prouza (helped with manual pages, and a lot from LSST development)
+and many others providing ideas, bug-fixing, small changes
+
+ACKNOWLEDGMENTS
+---------------
+
+We would like to thank to GA AV CR for the support via grant A3003206 and ESA
+PECS Project 98023, the Spanish Ministry of Education and Science for the
+support via FPU grant AP2003-1407.
+
+We would like to acknowledge INTA for the hospitality provided at the
+INTA-CEDEA BOOTES-1 observing station.
