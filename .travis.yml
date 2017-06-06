@@ -28,7 +28,7 @@ matrix:
             libgraphicsmagick++1-dev
             libx11-dev
             docbook-xsl
-	    asciidoc
+            asciidoc
             xsltproc
             libxml2-dev
             libarchive-dev
@@ -56,7 +56,7 @@ matrix:
             libgraphicsmagick++1-dev
             libx11-dev
             docbook-xsl
-	    asciidoc
+            asciidoc
             xsltproc
             libxml2-dev
             libarchive-dev
