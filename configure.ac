@@ -935,7 +935,7 @@ a2x="${withval}",
 a2x="a2x"
 )
 
-AC_CHECK_PROG(A2X, "$a2x", "$a2x", 'no')
+AC_CHECK_PROG(A2X, "$a2x", "$a2x", "no")
 
 AC_SUBST(DB2MAN)
 AC_SUBST(DB2FOP)

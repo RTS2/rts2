@@ -166,8 +166,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
 	--attribute mansource="RTS2" \
 	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="RTS2 Manual" \
-	--destination-dir=.
+	--attribute manmanual="RTS2 Manual"
 
 .txt.1:
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
