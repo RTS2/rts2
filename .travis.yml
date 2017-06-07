@@ -13,8 +13,8 @@ addons:
 
 matrix:
   include:
-    - env: BUILD_TYPE=spellcheck
-      os: linux
+    - python: "3.4"
+      env: BUILD_TYPE=spellcheck
       addons:
         apt:
           packages:
@@ -23,7 +23,6 @@ matrix:
             libnova-dev
             libncurses5-dev
             pkg-config
-    - python: "3.4"
     - python: "3.5"
     - python: "3.6"
     - python: "2.7"
