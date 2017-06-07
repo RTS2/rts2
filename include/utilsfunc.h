@@ -193,13 +193,6 @@ int isinf(double x);
 	#endif
 #endif
 
-/**
- * Replacement for isfinite - on Solaris platform
- */
-#ifndef RTS2_HAVE_ISFINITE
-int isfinite(double x);
-#endif
-
 #ifndef timerisset
 #define timerisset(tvp)	((tvp)->tv_sec || (tvp)->tv_usec)
 #endif

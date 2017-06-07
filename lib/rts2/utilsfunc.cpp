@@ -366,13 +366,6 @@ int isinf(double x)
 }
 #endif
 
-#ifndef RTS2_HAVE_ISFINITE
-int isfinite(double x)
-{
-	return finite(x) && !isnan(x);
-}
-#endif
-
 #ifndef RTS2_HAVE_STRCASESTR
 char * strcasestr(const char * haystack, const char * needle)
 {
