@@ -196,7 +196,7 @@ int isinf(double x);
 /**
  * Replacement for isfinite - on Solaris platform
  */
-#ifndef isfinite
+#ifndef RTS2_HAVE_ISFINITE
 int isfinite(double x);
 #endif
 

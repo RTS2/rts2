@@ -366,7 +366,7 @@ int isinf(double x)
 }
 #endif
 
-#ifndef isfinite
+#ifndef RTS2_HAVE_ISFINITE
 int isfinite(double x)
 {
 	return finite(x) && !isnan(x);
