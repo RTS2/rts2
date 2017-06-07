@@ -29,6 +29,7 @@ matrix:
             libx11-dev
             docbook-xsl
             asciidoc
+            libxml2-utils
             xsltproc
             libxml2-dev
             libarchive-dev
@@ -57,6 +58,7 @@ matrix:
             libx11-dev
             docbook-xsl
             asciidoc
+            libxml2-utils
             xsltproc
             libxml2-dev
             libarchive-dev
