@@ -945,6 +945,16 @@ AM_CONDITIONAL(HAVE_DB2MAN, test x$DB2MAN != xno)
 AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
 AM_CONDITIONAL(HAVE_A2X, test x$A2X != xno)
 
+AC_ARG_WITH(aspell,
+[  --with-aspell           path to aspell executable],
+aspell="${withval}",
+aspell="aspell"
+)
+
+AC_CHECK_PROG(ASPELL, "$aspell", "$aspell", "no")
+
+AM_CONDITIONAL(HAVE_ASPELL, test x$ASPELL != xno)
+
 AC_CONFIG_SRCDIR(src)
 AM_CONFIG_HEADER(config.h)
 AX_PREFIX_CONFIG_H(include/rts2-config.h)
@@ -1119,6 +1129,7 @@ SENSORs:
 
 Manpages, docbook stylesheets:
   A2X           ${A2X}
+  ASPELL        ${ASPELL}
   DB2MAN        ${DB2MAN}
   DB2FOP        ${DB2FOP}
 

@@ -124,8 +124,8 @@ Time parameters input format
 
 ### IMAGE PATH EXPRESSION
 
-Image path expression is processed before it is used. This section0n describes
-rules how image name can be formed. 
+Image path expression is processed before it is used. This section describes
+rules how image name can be formed.
 
 The path are formed from C printf-like expression. The important characters are
 % and @, which allows substitution of path values.

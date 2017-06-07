@@ -1,9 +1,11 @@
-# $Id$
+MD_PAGES = \
+    rts2.txt
 
 EXTRA_DIST = \
     rts2.conf \
+    rts2.dict \
     rts2.ent.in \
-    rts2.txt \
+    ${MD_PAGES} \
     rts2.ini.xml \
     rts2-device.xml \
     rts2-mon.xml \
@@ -177,5 +179,21 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 else
 
 EXTRA_DIST += rts2.txt
+
+endif
+
+if HAVE_ASPELL
+
+ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	for doc in ${MD_PAGES}; do \
+		echo "  ASPELL   Spell checking on $$doc"; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $$doc | $(ASPELL) -a -t -p ./rts2.dict -d en check 2>&1`" && \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+			  test -z "$$OUT" ; } || \
+			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
+FAILED="$$FAILED $$doc"; } ; \
+	done
 
 endif

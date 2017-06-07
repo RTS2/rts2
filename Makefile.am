@@ -16,3 +16,6 @@ EXTRA_DIST = autogen.sh RUN rts2.initd.in \
 noinst_HEADERS = config.h
 
 ACLOCAL_AMFLAGS = -I m4
+
+spellcheck:
+	cd man && make $@
