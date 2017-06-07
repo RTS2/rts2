@@ -19,6 +19,10 @@ matrix:
         apt:
           packages:
             &deps_aspell
+            libcfitsio3-dev
+            libnova-dev
+            libncurses5-dev
+            pkg-config
     - python: "3.4"
     - python: "3.5"
     - python: "3.6"
