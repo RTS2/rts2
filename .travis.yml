@@ -27,6 +27,7 @@ matrix:
             libncurses5-dev
             libgraphicsmagick++1-dev
             libx11-dev
+            dblatex
             docbook-xsl
             docbook-xsl-ns
             asciidoc
@@ -57,6 +58,7 @@ matrix:
             libncurses5-dev
             libgraphicsmagick++1-dev
             libx11-dev
+            dblatex
             docbook-xsl
             docbook-xsl-ns
             asciidoc
