@@ -33,7 +33,7 @@ CENTRALD::
 DEVICES::
     One executable serving one or multiple device(s). They share common code
     for processing of TCP/IP commands (and registering to centrald), and
-    implement the HW interacting layer (either through their own code or
+    implement the hardware interacting layer (either through their own code or
     through some library).  Those include daemons to drive cameras, mounts,
     roofs etc.
 
@@ -104,7 +104,7 @@ day::
     might run image and observation processing from last night.
 
 evening::
-    CCDs are cooled during evening. Light intensiti is still too high to
+    CCDs are cooled during evening. Light intensity is still too high to
     take images, and cameras are not cooled to take dark images.
 
 dusk::
@@ -114,7 +114,7 @@ night::
     Observations are performed out during night.
 
 dawn::
-    Similar to dusk. Flat frames and darks are taken.
+    Similar to dusk. Flat frames and dark are taken.
 
 morning::
     CCDs are tempered to ambient temperature.
@@ -124,7 +124,7 @@ Time parameters input format
 
 ### IMAGE PATH EXPRESSION
 
-Image path expression is processed before it is used. This sectio0n describes
+Image path expression is processed before it is used. This section0n describes
 rules how image name can be formed. 
 
 The path are formed from C printf-like expression. The important characters are
@@ -136,7 +136,7 @@ You can try various substitution patterns using linkman:rts2-image[1] tool.
 
 The next example works with the FITS file taken (based on RTS2 CTIME and USEC)
 on 2006-10-17 at 18:22:03.447s, with R filter (RTS2 FILTER keyword). Here we
-list few path expresions together with expected values.
+list few path expressions together with expected values.
 
 @DATE-OBS/%F/%04i/%f::
     * 2006-10-17T18:22:03.447/R/0001/20061017182203-0447.fits, if DATE-OBS keyword is filled and image ID is 1.
@@ -145,7 +145,7 @@ list few path expresions together with expected values.
 %N%2F:
 	20061017 R
 
-Substrings begining with @ are escaped to keyword value with name equal to
+Substrings beginning with @ are escaped to keyword value with name equal to
 value characters and number only string which follows. If this value is not
 found in header, string @[name] will be put to path, where [name] is string
 after @.
@@ -154,7 +154,7 @@ For example, string @DATE-OBS will be expanded to keyword value of DATE-OBS
 keyword. If DATE-OBS keyword cannot be found, it will be copied, e.g. remain
 @DATE-OBS.
 
-Substrings begining with % are expanded to various image-related values.  They
+Substrings beginning with % are expanded to various image-related values.  They
 list is provided bellow.
 
 ### Formatting specifiers
@@ -172,7 +172,7 @@ a::
     Exposure start day in the year
 
 b::
-    Image base path, ussually /images/[epoch].
+    Image base path, usually /images/[epoch].
 
 C::
     ctime (seconds form 1-1-1970) of exposure start.
@@ -196,7 +196,7 @@ F::
     Filter which was used for exposure name.
 
 f::
-    Standard filename (same as %y%m%d%H%M%S-%s-%p.fits).
+    Standard file name (same as %y%m%d%H%M%S-%s-%p.fits).
 
 i::
     Image ID. Each image have number, which increase from 1 during observation.
@@ -226,7 +226,7 @@ o::
     Observation ID.
 
 p::
-    Processing state of image. See list of procesing state strings in <image_processing_states>.
+    Processing state of image. See list of processing state strings in <image_processing_states>.
 
 R::
     Executor (selector) target ID.
@@ -235,7 +235,7 @@ S::
     Exposure start seconds.
 
 s::
-    Exposure start miliseconds.
+    Exposure start milliseconds.
 
 T::
     Target name.
@@ -247,9 +247,9 @@ U::
     Switch all next printed dates to UT time.
 
 u::
-    [[u]] Unique number incorporated into filename. Start number on 1, and increase
+    [[u]] Unique number incorporated into file name. Start number on 1, and increase
     it as long as file with given name exists. Should be used to create
-    uninterupted ascension of filenames.
+    uninterrupted ascension of file names.
 
 Y::
     Four digits night year of the start of exposure.
@@ -288,7 +288,7 @@ scheduling.
 
 Dispatch scheduling uses a target merit function to calculate merit for all
 currently observable targets, and then selects the target with the highest
-merit. The advantage of this approach is its self-drivenness.  Its major
+merit. The advantage of this approach is its self-autonomy.  Its major
 disadvantage is its inability to reasonably predict what will be observed
 during the night.
 
@@ -311,7 +311,7 @@ To enable observation of different targets, a target hierarchy was created. Its
 parent object is Target, which provides the interface to various target-related
 calculations.
 
-There are various subclasses of Target. For example, there is a subclass for
+There are various sub classes of Target. For example, there is a subclass for
 targets in solar orbit (comets and minor planets).
 
 ### TARGET CHAINING
