@@ -600,7 +600,7 @@ void Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
 		for (iter = NSGAfronts[f].begin () + 1; iter != (NSGAfronts[f].end () - 1); iter++)
 		{
 			f_3 = (*(iter + 1))->getObjectiveFunction (objective);
-			if (std::finite ((*iter)->getNSGADistance ()))
+			if (finite ((*iter)->getNSGADistance ()))
 				(*iter)->incNSGADistance ((f_1 - f_3) / (f_max - f_min));
 			f_1 = f_2;
 			f_2 = f_3;

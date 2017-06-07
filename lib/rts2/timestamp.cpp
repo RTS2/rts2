@@ -40,7 +40,7 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 		_os << _ts.ts;
 		return _os;
 	}
-	if (!std::finite (_ts.ts))
+	if (!finite (_ts.ts))
 	{
 		_os << std::right << std::setw (22) << (std::isinf (_ts.ts) ? "infinite " : "---- ");
 		if (formatLocalTime (_os))
@@ -90,7 +90,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 		_os << _td.time_2 - _td.time_1;
 		return _os;
 	}
-	if (!std::finite (_td.time_1) || !std::finite (_td.time_2))
+	if (!finite (_td.time_1) || !finite (_td.time_2))
 	{
 		_os << ((std::isinf (_td.time_1) || std::isinf (_td.time_2)) ? "infinite" : "na (nan)");
 	}
@@ -192,7 +192,7 @@ std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd)
 
 std::ostream & operator << (std::ostream & _os, Percentage _per)
 {
-	if (!std::finite (_per.per) || !std::finite (_per.total) || _per.total == 0)
+	if (!finite (_per.per) || !finite (_per.total) || _per.total == 0)
 	{
 		_os << std::setw (6) << std::right  << ((std::isinf (_per.per) || std::isinf (_per.total)) ? "infinite" : "nan");
 	}
