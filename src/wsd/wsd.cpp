@@ -120,7 +120,7 @@ class WsD:public rts2core::Device
 		virtual int processOption (int opt);
 		virtual int initHardware ();
 #ifndef RTS2_HAVE_PGSQL
-		virtual int willConnect (NetworkAddress * _addr);
+		virtual int willConnect (rts2core::NetworkAddress * _addr);
 #endif
 
 	private:
@@ -131,7 +131,7 @@ class WsD:public rts2core::Device
 #ifdef RTS2_HAVE_PGSQL
 WsD::WsD (int argc, char **argv):rts2db::DeviceDb (argc, argv, DEVICE_TYPE_HTTPD, "WSD")
 #else
-WsD::WsD (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_XMLRPC, "WSD")
+WsD::WsD (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_HTTPD, "WSD")
 #endif
 {
 	memset (&info, 0, sizeof info);
@@ -198,7 +198,7 @@ int WsD::initHardware ()
 }
 
 #ifndef RTS2_HAVE_PGSQL
-int WsD::willConnect (NetworkAddress *_addr)
+int WsD::willConnect (rts2core::NetworkAddress *_addr)
 {
 	if (_addr->getType () < getDeviceType ()
 		|| (_addr->getType () == getDeviceType ()

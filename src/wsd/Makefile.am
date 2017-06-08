@@ -15,6 +15,7 @@ rts2_wsd_LDADD = -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb 
 else
 
 rts2_wsd_SOURCES = wsd.cpp http.c
+rts2_wsd_CXXFLAGS = ${AM_CXXFLAGS}
 rts2_wsd_LDADD = ${WSD_LDADD}
 
 endif
