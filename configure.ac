@@ -1065,8 +1065,8 @@ AC_OUTPUT([Makefile
 )
 
 echo "
-*********************************************************
- RTS2 build configuration for ${target_os} on ${build_os}
+****************************************************************************
+ RTS2 build configuration for ${target_os} on ${build_os}, CPU ${target_cpu}
 
   focusing      ${focusing}
   xfocusc       ${xfocusc}

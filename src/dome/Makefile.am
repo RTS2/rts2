@@ -35,6 +35,19 @@ rts2_dome_ahe_SOURCES = ahe.cpp
 
 rts2_cupola_maxdomeii_SOURCES = maxdomeii.cpp
 
+rts2_cupola_saao_SOURCES = saao.cpp
+
+if ARMCPU
+EXTRA_DIST += watcher.cpp
+bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-ahe
+
+rts2_cupola_vermes_SOURCES = vermes.cpp
+rts2_cupola_vermes_LDADD = -L../../lib/rts2/vermes/.libs -lrts2vermes  @LIB_PTHREAD@  ${LDADD} 
+
+rts2_dome_door_vermes_SOURCES =  door_vermes.cpp
+rts2_dome_door_vermes_LDADD =  -L../../lib/rts2/vermes/.libs -lrts2vermes   @LIB_PTHREAD@  ${LDADD} 
+
+else
 if SUNCYGMAC
 EXTRA_DIST +=  watcher.cpp serial_ahe.c
 else
@@ -50,8 +63,7 @@ rts2_dome_door_vermes_LDADD =  -L../../lib/rts2/vermes/.libs -lrts2vermes   @LIB
 
 rts2_dome_watcher_SOURCES = watcher.cpp
 
-rts2_cupola_saao_SOURCES = saao.cpp
-
+endif
 
 endif
 
