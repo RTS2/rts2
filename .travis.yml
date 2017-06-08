@@ -24,6 +24,7 @@ matrix:
             libnova-dev
             libncurses5-dev
             pkg-config
+            libwebsockets-dev
     - python: "3.5"
     - python: "3.6"
     - python: "2.7"
@@ -56,6 +57,7 @@ matrix:
             libecpg-dev
             wget
             check
+            libwebsockets-dev
       env: PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
     - python: "2.7"
       addons:
@@ -87,6 +89,7 @@ matrix:
             libecpg-dev
             wget
             check
+            libwebsockets-dev
       env: PKG_CONFIG_PATH=''
 
 install:
