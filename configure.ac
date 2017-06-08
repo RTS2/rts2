@@ -52,7 +52,7 @@ AS_IF([test "x$ERFA_LIBS" != x], [
 
 libwebsockets="no"
 
-PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.0],,AC_MSG_RESULT(not found))
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.7.0],,AC_MSG_RESULT(not found))
 AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
 AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
