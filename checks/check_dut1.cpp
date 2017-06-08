@@ -42,7 +42,12 @@ START_TEST(UPDATE)
 	const char *fn = "dut1_download";
 	unlink (fn);
 
-	updateDUT1 (fn, NULL);
+	int ret = updateDUT1 (fn, NULL);
+	if (ret < 0)
+	{
+		printf ("cannot download updated file, skipping update tests");
+		return;
+	}
 
 	time_t now = time (NULL);
 	struct tm *gmt;
