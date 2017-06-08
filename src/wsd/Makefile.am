@@ -16,7 +16,7 @@ else
 
 rts2_wsd_SOURCES = wsd.cpp http.c
 rts2_wsd_CXXFLAGS = ${AM_CXXFLAGS}
-rts2_wsd_LDADD = -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBXML_LIBS@ @MAGIC_LIBS@ @CFITSIO_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ ${WSD_LDADD}
+rts2_wsd_LDADD = -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBXML_LIBS@ @MAGIC_LIBS@ @CFITSIO_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ ${WSD_LDADD}
 
 endif
 
