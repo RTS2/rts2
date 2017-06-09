@@ -965,7 +965,8 @@ AM_CONDITIONAL(SUNOS, test x${target_os} = xsolaris2.8)
 AM_CONDITIONAL(CYGWIN, test x${target_os} = xcygwin)
 AM_CONDITIONAL(MACOSX, test x${target_os/darwin} != x${target_os})
 AM_CONDITIONAL(SUNCYGMAC, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8 -o x${target_os/darwin} != x${target_os})
-AM_CONDITIONAL(ARMCPU, test x${target_cpu/arm} != x${target_cpu})
+AM_CONDITIONAL(ARMCPU, test x${target_cpu/arm} != x${target_cpu} -o x${target_cpu/aarch64} != x${target_cpu})
+AM_CONDITIONAL(ARM64CPU, test x${target_cpu} != xaarch64)
 
 AC_OUTPUT([Makefile
 	   rts2-init
