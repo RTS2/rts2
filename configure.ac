@@ -1123,6 +1123,7 @@ SENSORs:
   K8055         ${K8055}
 
   prefix        ${prefix}
+  exec_prefix   ${exec_prefix}
   confdir	${CONFDIR}
   lock prefix   ${LOCK_PREFIX}
   log file      ${LOG_FILE}
