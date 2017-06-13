@@ -115,8 +115,8 @@ class SitechAltAz:public AltAz
 		rts2core::ValuePID *azErrPID;
 		rts2core::ValuePID *altErrPID;
 		int lastTrackingNum;
-		rts2core::ValueDoubleStat *trackingAngle;
 		rts2core::ValueDoubleStat *speedAngle;
+		rts2core::ValueDoubleStat *errorAngle;
 		rts2core::ValueDouble *slowSyncDistance;
 		rts2core::ValueFloat *fastSyncSpeed;
 		rts2core::ValueFloat *trackingFactor;
@@ -271,8 +271,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
 
-	createValue (trackingAngle, "tracking_angle", "[deg] tracking direction", false, RTS2_DT_DEG_DIST);
 	createValue (speedAngle, "speed_angle", "[deg] speed direction", false, RTS2_DT_DEG_DIST);
+	createValue (errorAngle, "error_angle", "[deg] error direction", false, RTS2_DT_DEG_DIST);
 
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	slowSyncDistance->setValueDouble (0.1);  // 6 arcmin
@@ -780,7 +780,7 @@ void SitechAltAz::scaleTrackingLook ()
 		float change = 0;
 
 		// scale trackingLook as needed
-		if (trackingAngle->getStdev () > 2 || speedAngle->getStdev () > 2)
+		if (speedAngle->getStdev () > 2)
 		{
 			if (trackingLook->getValueFloat () < 1)
 				change = 0.1;
@@ -827,9 +827,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t alte_speed = 0;
 
 	double speed_angle = 0;
-	double err_angle = 0;
+	double error_angle = 0;
 
-	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed, aze_speed, alte_speed, speed_angle, err_angle);
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed, aze_speed, alte_speed, speed_angle, error_angle);
 	if (ret)
 	{
 		if (ret < 0)
@@ -930,11 +930,11 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
 	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);
 
-	trackingAngle->addValue (-ln_rad_to_deg (atan2 (az_change, -alt_change)), 15);
 	speedAngle->addValue (speed_angle, 15);
+	errorAngle->addValue (error_angle, 15);
 
-	trackingAngle->calculate ();
 	speedAngle->calculate ();
+	errorAngle->calculate ();
 
 	try
 	{
