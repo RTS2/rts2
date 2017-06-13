@@ -60,7 +60,7 @@ ConnFork::~ConnFork ()
 
 int ConnFork::writeToProcess (const char *msg)
 {
-	if (sockwrite == -1)
+	if (sockwrite < 0)
 		return 0;
 
 	std::string completeMessage = input + msg + "\n";
