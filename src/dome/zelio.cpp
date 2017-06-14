@@ -817,9 +817,15 @@ int Zelio::info ()
 
 	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
 	if (timeoutOccured->getValueBool ())
+	{
+		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "timeout during closing");
 		valueError (timeoutOccured);
+	}
 	else
+	{
+		maskState (DEVICE_ERROR_MASK, DEVICE_NO_ERROR, "timeout cleared");
 		valueGood (timeoutOccured);
+	}
 
 	weather->setValueBool (regs[7] & ZS_WEATHER);
 	emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
