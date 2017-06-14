@@ -1124,6 +1124,7 @@ SENSORs:
 
   prefix        ${prefix}
   exec_prefix   ${exec_prefix}
+  bindir        ${bindir}
   confdir	${CONFDIR}
   lock prefix   ${LOCK_PREFIX}
   log file      ${LOG_FILE}
