@@ -1,0 +1,32 @@
+#!/usr/bin/python
+# vim: set fileencoding=utf-8 :
+
+import rts2.scriptcomm  
+import os
+import time
+import sys
+import smtplib
+from email.mime.text import MIMEText
+
+c=rts2.scriptcomm.Rts2Comm()
+
+to = 0
+
+try:
+        to = c.getValueInteger('timeout_occured','DOME')
+except Exception:
+        c.log('E','DOME cannout get timeout_occured')
+        sys.exit(1)
+
+if to > 0:
+        msg = MIMEText("Problem closing FRAM dome")
+        msg['Subject'] =  'KRYTICKÁ CHYBA: nezavřel se barák'
+
+	to = ['petr@kubanek.net']
+
+	msg['From'] = 'petr@kubanek.net'
+	msg['To'] = ','.join(to)
+
+	s = smtplib.SMTP('localhost')
+	s.sendmail('petr@kubanek.net', to, msg.as_string())
+	s.quit()
