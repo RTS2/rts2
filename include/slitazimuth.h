@@ -26,6 +26,15 @@
 #define __RTS_DOME_TARGET_AZIMUTH__
 
 struct geometry {
+  double  x_m;
+  double  y_m;
+  double  z_m;
+  double  p;
+  double  q;
+  double  r;
+  double r_D ;
+}  ;
+struct tk_geometry {
   double xd ;
   double zd ;
   double rdec ;
