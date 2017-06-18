@@ -45,7 +45,8 @@ struct tk_geometry {
 extern "C"
 {
 #endif
-double dome_target_az( struct ln_equ_posn tel_eq, struct ln_lnlat_posn obs_location, struct geometry obs) ;
+double    dome_target_az( struct ln_equ_posn tel_eq, struct ln_lnlat_posn obs_location, struct geometry obs) ;
+double TK_dome_target_az( struct ln_equ_posn tel_eq, struct ln_lnlat_posn obs_location, struct tk_geometry obs) ;
 #ifdef __cplusplus
 }
 #endif
