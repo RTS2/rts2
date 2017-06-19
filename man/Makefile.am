@@ -1,10 +1,12 @@
 MD_PAGES = \
-    rts2.txt
+    rts2.txt \
+    gpoint.txt
 
 EXTRA_DIST = \
     rts2.conf \
     rts2.dict \
     rts2.ent.in \
+    rts2.adoc \
     ${MD_PAGES} \
     rts2.ini.xml \
     rts2-device.xml \
@@ -57,8 +59,7 @@ EXTRA_DIST = \
     rts2.valuefile.xml \
     rts2-camd-reflex.xml \
     rts2pa_measurement.py.xml \
-    rts2-bb.xml \
-    gpoint.xml
+    rts2-bb.xml
 
 CLEANFILES = *.1 *.5 *.7
 

@@ -1,0 +1,8 @@
+# tag::optiongnu[]
+RTS2 follows the usual GNU command line syntax, with long options
+starting with two dashes (`--').  A summary of options is included below.
+
+You can use -- (two dashes with space) to escape arguments which start with
+'-'. So to run command with -1 as an argument, you must specify -- -1 on
+the command line.
+# end::optiongnu[]

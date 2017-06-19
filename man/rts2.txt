@@ -401,6 +401,7 @@ FILES
 * linkman:rts2.ini[5]
 
 SEE ALSO
+--------
 
 <http://rts2.org>
 
