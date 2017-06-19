@@ -6,3 +6,12 @@ You can use -- (two dashes with space) to escape arguments which start with
 '-'. So to run command with -1 as an argument, you must specify -- -1 on
 the command line.
 # end::optiongnu[]
+
+# tag::basicapplist[]
+* **--UT** prints all dates in UT time. The input parameters are not affected - the
+      UT vs. local time is distinguished by specifing T or L (U or G) in time
+      entry.
+
+* **--debug** prints out debugging messages. This is primary usefull for debugging
+      during system development.
+# end::basicapplist[]

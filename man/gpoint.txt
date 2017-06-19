@@ -79,9 +79,31 @@ telescope, and continues with the step number 4
 OPTIONS
 -------
 
-include::rts2.adoc[tags=optiongnu]
+RTS2 follows the usual GNU command line syntax, with long options
+starting with two dashes (`--').  A summary of options is included below.
+
+You can use \-- (two dashes with a space) to escape arguments which start with
+'-'. So to run command with -1 as an argument, you must specify \-- -1 on
+the command line.
+
+* **-h**,**\--help** show help message
 
 * **-o** output model file.
+
+* **-p** specify plots to generate. See <<plotting>> for detailed description
+
+* **-s** save plots to a file
+
+* **\--basic-plots** generate basic sets of plots
+
+* **\--stat-only** don't try to fit the model - only print statistics.
+  Useful if you don't have (yet) enough points for a complete fit
+
+* **\--altaz-plots** 
+
+* **\--model-input** existing model file(s) to load and investigate
+
+* **\--filter** filter outliers. Expect two values separated with : - the first is value name, second is value in arc-seconds
 
 Input file format
 -----------------
@@ -98,6 +120,7 @@ altitude (in meters above see level) of the telescope.
 
 Plotting options
 ----------------
+[[plotting]]
 
 Various plots can be generated. Moreover, the plots can include additional graphics.
 
@@ -105,7 +128,7 @@ Various plots can be generated. Moreover, the plots can include additional graph
 Input files examples
 --------------------
 
-### GEM
+=== GEM
 
 Following is an example of GEM file, where only offsets in RA and DEC are set:
 
@@ -124,7 +147,7 @@ Following is an example of GEM file, where only offsets in RA and DEC are set:
 10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
 ----
 
-### AltAz
+=== AltAz
 
 This is an example alt-az file, also with only offsets in AZ and ALT.
 
@@ -143,7 +166,7 @@ This is an example alt-az file, also with only offsets in AZ and ALT.
 10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
 ----
 
-### AltAz manual example
+=== AltAz manual example
 
 There is an example of altaz input file, acquired in manual mode. This differs
 from simple AltAz by listing RA DEC coordinates, skipping axis counts, and
