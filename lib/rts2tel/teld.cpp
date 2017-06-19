@@ -318,7 +318,10 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (targetDistance, "target_distance", "distance to the target in degrees", false, RTS2_DT_DEG_DIST);
 	createValue (targetStarted, "move_started", "time when movement was started", false);
 	createValue (targetReached, "move_end", "expected time when telescope will reach the destination", false);
-	createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false, RTS2_DT_DEG_DIST);
+	if (hasTracking)
+		createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false, RTS2_DT_DEG_DIST);
+	else
+		targetDistanceStat = NULL;
 
 	targetDistance->setValueDouble (NAN);
 	targetStarted->setValueDouble (NAN);
@@ -436,7 +439,7 @@ Telescope::~Telescope (void)
 int Telescope::checkTracking (double maxDist)
 {
 	// check tracking stability
-	if ((getState () & (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_OFFSETING)) == TEL_OBSERVING)
+	if (targetDistanceStat != NULL && (getState () & (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_OFFSETING)) == TEL_OBSERVING)
 	{
 		if ((getState () & TEL_MASK_UNSTABLE) == TEL_UNSTABLE)
 		{
@@ -1498,7 +1501,8 @@ void Telescope::checkMoves ()
 		ret = isOffseting();
 		if (ret < 0)
 		{
-			targetDistanceStat->clearStat ();
+			if (targetDistanceStat != NULL)
+				targetDistanceStat->clearStat ();
 			maskState (TEL_MASK_OFFSETING, TEL_NO_OFFSETING, "offseting finished");
 		}
 	}
@@ -1963,8 +1967,11 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 
 	double tdist = getTargetDistance ();
 	targetDistance->setValueDouble (tdist);
-	targetDistanceStat->addValue (tdist, trackingFSize->getValueInteger ());
-	targetDistanceStat->calculate ();
+	if (targetDistanceStat != NULL)
+	{
+		targetDistanceStat->addValue (tdist, trackingFSize->getValueInteger ());
+		targetDistanceStat->calculate ();
+	}
 
 	// check if we aren't bellow hard horizon - if yes, stop tracking..
 	if (hardHorizon)
@@ -2101,7 +2108,8 @@ void Telescope::startCupolaSync ()
 
 int Telescope::endMove ()
 {
-	targetDistanceStat->clearStat ();
+	if (targetDistanceStat != NULL)
+		targetDistanceStat->clearStat ();
 	startTracking ();
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
 	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
@@ -2203,7 +2211,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		offsRaDec->setValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
 
-	targetDistanceStat->clearStat ();
+	if (targetDistanceStat != NULL)
+		targetDistanceStat->clearStat ();
 
 	// update total_offsets
 	total_offsets->setValueRaDec (offsRaDec->getRa () - corrRaDec->getRa (), offsRaDec->getDec () - corrRaDec->getDec ());
