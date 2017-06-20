@@ -971,8 +971,6 @@ AM_CONDITIONAL(ARM64CPU, test x${target_cpu} != xaarch64)
 AC_OUTPUT([Makefile
 	   rts2-init
 	   rts2.initd
-	   scripts/rts2-start
-	   scripts/rts2-stop
 	   man/Makefile
 	   man/rts2.ent
 	   include/Makefile
