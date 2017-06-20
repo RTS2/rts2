@@ -63,10 +63,11 @@ EXTRA_DIST = \
 
 CLEANFILES = *.1 *.5 *.7
 
+man_MANS =
+
 if HAVE_DB2MAN
 
-man_MANS = \
-    rts2.7 \
+man_MANS += \
     rts2.ini.5 \
     rts2-device.7 \
     rts2-mon.1 \
@@ -118,8 +119,7 @@ man_MANS = \
     rts2.valuefile.5 \
     rts2-camd-reflex.7 \
     rts2pa_measurement.py.1 \
-    rts2-bb.7 \
-    gpoint.1
+    rts2-bb.7
 
 XP=xsltproc --nonet
 
@@ -164,6 +164,10 @@ rts2-book.pdf: rts2-book.fop
 endif
 
 if HAVE_A2X
+
+man_MANS += \
+    rts2.7 \
+    gpoint.1
 
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
