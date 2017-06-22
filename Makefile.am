@@ -11,7 +11,8 @@ SUBDIRS =	include \
 
 EXTRA_DIST = autogen.sh RUN rts2.initd.in \
 	INSTALL INSTALL.alta INSTALL.fli INSTALL.paramount INSTALL.andor \
-	INSTALL.comedi INSTALL.miccd INSTALL.sbig INSTALL.gpib rts2-init.in
+	INSTALL.comedi INSTALL.miccd INSTALL.sbig INSTALL.gpib rts2-init.in \
+	README.md
 
 noinst_HEADERS = config.h
 
