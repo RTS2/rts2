@@ -87,8 +87,13 @@ class ProcessFiles:
         self.skipped = 0
         self.ftime = None
         # save skipped images as extension to multiple FITS file
-        self.save_skipped = save_skipped
-        self.skipped_data = []
+        if save_skipped:
+            self.skipped_hdu = fits.open(save_skipped, "append")
+        else:
+            self.skipped_hdu = None
+
+        # skipped file + frame names
+        self.skipped_fn = []
 
         for si in range(nstars):
             self.sb.append([])
@@ -171,19 +176,26 @@ class ProcessFiles:
 
     def append_skipped(self, fn, ci, hdu):
             if ci is None:
-                self.skipped_data.append(fn)
-                if self.save_skipped:
-                    fits.append(self.save_skipped, hdu[0].data)
+                self.skipped_fn.append(fn)
+                if self.skipped_hdu is not None:
+                    self.skipped_hdu.append(hdu)
             else:
-                self.skipped_data.append('{0}[{1}]'.format(fn, ci))
-                if self.save_skipped:
-                    fits.append(self.save_skipped, hdu[0].data[ci], fits.Header({'DATEFRAME':ci}))
+                self.skipped_fn.append('{0}[{1}]'.format(fn, ci))
+                if self.skipped_hdu is not None:
+                    self.skipped_hdu.append(fits.ImageHDU(hdu[0].data[ci], fits.Header({'FRAME':ci, 'EXPOSURE':float(hdu[0].header['EXPOSURE'])})))
+
+            if self.skipped_hdu is not None:
+                self.skipped_hdu.flush()
 
     def print_skipped(self):
-        if len(self.skipped_data):
-            print(_('Skipped {0}'.format(' '.join(self.skipped_data))))
+        if len(self.skipped_fn):
+            print(_('Skipped {0}'.format(' '.join(self.skipped_fn))))
+            if self.skipped_hdu is not None:
+                self.skipped_hdu.close()
         else:
             print(_('All frames processed'))
+            if self.skipped_hdu is not None:
+                del self.skipped_hdu
 
     def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses, markers):
         if verbose == 0:
