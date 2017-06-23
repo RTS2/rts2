@@ -39,6 +39,12 @@ parser = argparse.ArgumentParser(description=_('Dumps data from SiTech log.\n\nE
 def valid_date(d):
     return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
 
+def verify_plot_extra(pe):
+    for x in pe:
+        if x not in 'ECSTP':
+            raise argparse.ArgumentTypeError(_('type must contain only ECSTP characters'))
+    return pe
+
 parser.add_argument('files', help=_('Trace logs to process'), action='append')
 parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store', type=valid_date, default=None)
 parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
@@ -48,7 +54,7 @@ parser.add_argument('--markers', help=_('markers - , for pixels, . for points, -
 parser.add_argument('--last', help=_('plot only last points'), action='store', dest='last', default=0, type=int)
 parser.add_argument('--axis', help=_('plot only give axis'), action='store', dest='axis', default='both', choices=['both','x','y','alt','az'])
 parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
-parser.add_argument('--extra', dest='plot_extra', help=_('plot extra values([ECSTP])'), action='store', default='')
+parser.add_argument('--extra', dest='plot_extra', help=_('plot extra values([ECSTP])'), action='store', default='', type=verify_plot_extra)
 
 args = parser.parse_args()
 
@@ -206,11 +212,11 @@ for fn in args.files:
                 ax_current.plot([x.astype(datetime.datetime) for x in pid_data.date], pid_data.y_val, 'g' + args.markers)
                 gs_index += 1
 
-    plot_extra('E', 'errors')
+    plot_extra('E', 'error')
     plot_extra('C', 'current')
     plot_extra('S', 'supply')
     plot_extra('T', 'temperature')
-    plot_extra('P', 'PID outputs')
+    plot_extra('P', 'PID output')
 
     fig.subplots_adjust(hspace=0)
 
