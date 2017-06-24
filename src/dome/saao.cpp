@@ -331,6 +331,8 @@ int SAAO::initHardware ()
 	else if (reg[0] & STATUS_SHUTTER_OPENED)
 		maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENED | DEVICE_BLOCK_CLOSE, "initial dome state is opened");
 
+	resetPower (0);
+
 	return 0;
 }
 
@@ -435,29 +437,26 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	}
 	if (oldValue == resetAG1)
 	{
-		if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
-		{
+		if (dynamic_cast <rts2core::ValueBool *> (newValue)->getValueBool () == true)
 			resetPower (RESET_AG1);
-			resetAG1->setValueBool (false);
-		}
+		else
+			resetPower (0);
 		return 0;
 	}
 	if (oldValue == resetAG2)
 	{
-		if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
-		{
+		if (dynamic_cast <rts2core::ValueBool *> (newValue)->getValueBool () == true)
 			resetPower (RESET_AG2);
-			resetAG2->setValueBool (false);
-		}
+		else
+			resetPower (0);
 		return 0;
 	}
 	if (oldValue == resetAPM)
 	{
-		if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
-		{
+		if (dynamic_cast <rts2core::ValueBool *> (newValue)->getValueBool () == true)
 			resetPower (RESET_APM);
-			resetAPM->setValueBool (false);
-		}
+		else
+			resetPower (0);
 		return 0;
 	}
 	return Cupola::setValue (oldValue, newValue);
