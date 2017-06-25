@@ -71,7 +71,7 @@ class TPVP:
 				raise Exception(_('cannot find any telescope'))
 		else:
 			self.telescope = telescope
-		self.mount_type = self.j.getValue(self.telescope, 'MOUNT')
+		self.mount_type = self.j.getValue(self.telescope, 'MOUNT', True)
 		print(_('Telescope type {0} (0-GEM, 1-AltAz, 2-AltAlt)'.format(self.mount_type)))
 		if self.mount_type not in [0,1]:
 			raise Exception(_('Unsuported mount type: {0}').format(self.mount_type))	
@@ -90,6 +90,12 @@ class TPVP:
 		print(_('Telescope still unstable                        '))
 		time.sleep(st - int(st))
 
+	def zero_offsets(self):
+		if self.mount_type == 0:
+			self.j.setValue(self.telescope,'OFFS','0 0')
+		elif self.mount_type == 1:
+			self.j.setValue(self.telescope,'AZALOFFS','0 0')
+
 	def set_mags(self,mmax,mmin):
 		self.__mag_max = mmax
 		self.__mag_min = mmin
@@ -107,7 +113,7 @@ class TPVP:
 		radec = self.j.getValue(self.telescope,'TEL')
 		lst = self.j.getValue(self.telescope,'LST')
 		offs = self.j.getValue(self.telescope,'OFFS')
-		return '\t'.join(map(str,[jd,lst,ori['ra'],ori['dec'],offs['ra'],offs['dec'],radec['ra'],radec['dec']]))
+		return '\t'.join(map(str,[jd,lst,ori['ra'],ori['dec'],radec['ra'],radec['dec'],ori['ra'] + offs['ra'],ori['dec'] + offs['dec']]))
 
 	def get_altazm_line(self):
 		self.j.refresh()
@@ -278,8 +284,7 @@ class TPVP:
 		while next_please == False:
 			skip_spiral = False
 			if last_step <= 0:
-				self.j.setValue(self.telescope,'OFFS','0 0')
-				self.j.setValue(self.telescope,'AZALOFFS','0 0')
+				self.zero_offsets()
 				skip_spiral = wait_for_key(7)
 				last_step = 0
 			if skip_spiral == False:
@@ -317,8 +322,7 @@ class TPVP:
 					break
 				elif ans == 'z':
 					print(_('zeroing offsets'))
-					self.j.setValue(self.telescope,'OFFS','0 0')
-					self.j.setValue(self.telescope,'AZALOFFS','0 0')
+					self.zero_offsets()
 					break
 				try:
 					azo,alto = ans.split()
@@ -430,8 +434,7 @@ class TPVP:
 		return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 
 	def run_verify_brigths(self,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius,maxspiral,minflux,minalt):
-		self.j.setValue(self.telescope,'OFFS','0 0')
-		self.j.setValue(self.telescope,'AZALOFFS','0 0')
+		selr.zero_offsets()
 		for p in path:
 			if type(p) == int:
 				fn,mn,bsc = self.run_manual_bsc(p,timeout,None,-1,imagescript,None,useDS9)
