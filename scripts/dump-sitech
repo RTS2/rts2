@@ -67,6 +67,7 @@ parser.add_argument('--last', help=_('plot only last points'), action='store', d
 parser.add_argument('--axis', help=_('plot only give axis'), action='store', dest='axis', default='both', choices=['both','x','y','alt','az'])
 parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
 parser.add_argument('--extra', dest='plot_extra', help=_('plot extra values([ECSTP])'), action='store', default='', type=verify_plot_extra)
+parser.add_argument('--speed-dif', dest='speed_dif', help=_('plot speed difference'), action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -157,12 +158,14 @@ for fn in args.files:
 
     first = -args.last
 
-    positions = numpy.rec.array(r_positions[first:], dtype=[('date','datetime64[ms]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i'),('x_type','>c'),('x_val','>2i'),('y_type','>c'),('y_val','>2i')])
-    commands = numpy.rec.array(r_commands[first:], dtype=[('date','datetime64[ms]'),('x_dest','>8i'),('y_dest','>8i'),('x_speed','5>i'),('y_speed','5>i')])
+    positions = numpy.rec.array(r_positions[first:], dtype=[('date','datetime64[ms]'),('x_pos','>i'),('y_pos','>i'),('x_err','>i'),('y_err','>i'),('x_type','>c'),('x_val','>i'),('y_type','>c'),('y_val','>i')])
+    commands = numpy.rec.array(r_commands[first:], dtype=[('date','datetime64[ms]'),('x_dest','>i'),('y_dest','>i'),('x_speed','>i'),('y_speed','>i')])
 
     fig = pylab.figure()
 
     bpn = 3 + len(args.plot_extra)
+    if args.speed_dif:
+        bpn += 1
 
     if args.axis == 'both':
         gs = gridspec.GridSpec(bpn * 2,1)
@@ -215,6 +218,17 @@ for fn in args.files:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az speed')
         ax_current.plot(c_date, commands[:].y_speed, 'g' + args.markers)
         gs_index += 1
+
+    if args.speed_dif and plot_x:
+        ax_current = add_plot(gs, gs_index, ax_current, 'Alt sp dif')
+        ax_current.plot(c_date[1:], numpy.diff(commands[:].x_speed), 'b' + args.markers)
+        gs_index += 1
+
+    if args.speed_dif and plot_y:
+        ax_current = add_plot(gs, gs_index, ax_current, 'Az sp dif')
+        ax_current.plot(c_date[1:], numpy.diff(commands[:].y_speed), 'g' + args.markers)
+        gs_index += 1
+
 
     def plot_extra(extra, label):
         global gs_index
