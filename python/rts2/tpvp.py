@@ -1,6 +1,6 @@
 # Tracking & Pointing Verification and Performance
 #
-# (C) 2016 Petr Kubanek <petr@kubanek.net>
+# (C) 2016-2017 Petr Kubanek <petr@rts2.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ from . import altazpath
 from . import brights
 from . import libnova
 from . import spiral
-import rts2.json
+import rts2.rtsapi
 from . import kmparse
 import time
 import os.path
@@ -66,11 +66,15 @@ class TPVP:
 			self.hipparcos = rts2.scat.Hipparcos('/home/petr/hipparcos/hipparcos')
 		if telescope is None:
 			try:
-				self.telescope = self.j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)[0]
+				self.telescope = self.j.getDevicesByType(rts2.rtsapi.DEVICE_TYPE_MOUNT)[0]
 			except IndexError as ie:
 				raise Exception(_('cannot find any telescope'))
 		else:
 			self.telescope = telescope
+		self.mount_type = self.j.getValue(self.telescope, 'MOUNT', True)
+		print(_('Telescope type {0} (0-GEM, 1-AltAz, 2-AltAlt)'.format(self.mount_type)))
+		if self.mount_type not in [0,1]:
+			raise Exception(_('Unsuported mount type: {0}').format(self.mount_type))	
 
 	def __stable(self,st):
 		if st <= 0:
@@ -86,6 +90,12 @@ class TPVP:
 		print(_('Telescope still unstable                        '))
 		time.sleep(st - int(st))
 
+	def zero_offsets(self):
+		if self.mount_type == 0:
+			self.j.setValue(self.telescope,'OFFS','0 0')
+		elif self.mount_type == 1:
+			self.j.setValue(self.telescope,'AZALOFFS','0 0')
+
 	def set_mags(self,mmax,mmin):
 		self.__mag_max = mmax
 		self.__mag_min = mmin
@@ -96,6 +106,15 @@ class TPVP:
 		self.__verifywcs_rotang = rotang
 		self.__verifywcs_flip = flip
 
+	def get_radec_line(self):
+		self.j.refresh()
+		jd = self.j.getValue(self.telescope,'JD')
+		ori = self.j.getValue(self.telescope,'ORI')
+		radec = self.j.getValue(self.telescope,'TEL')
+		lst = self.j.getValue(self.telescope,'LST')
+		offs = self.j.getValue(self.telescope,'OFFS')
+		return '\t'.join(map(str,[jd,lst,ori['ra'],ori['dec'],radec['ra'],radec['dec'],ori['ra'] + offs['ra'],ori['dec'] + offs['dec']]))
+
 	def get_altazm_line(self):
 		self.j.refresh()
 		jd = self.j.getValue(self.telescope,'JD')
@@ -103,8 +122,32 @@ class TPVP:
 		altaz = self.j.getValue(self.telescope,'TEL_')
 		offs = self.j.getValue(self.telescope,'AZALOFFS')
 		return '\t'.join(map(str,[jd,ori['ra'],ori['dec'],offs['alt'],offs['az'],altaz['alt'],altaz['az']]))
+
+	def __run_spiral_gem(self,timeout,last_step=0,maxsteps=500):
+		"""Runs spiral pointing to find the star."""
+		s = spiral.Spiral(1,1)
+		x = 0
+		y = 0
+		step_ra = 0.08
+		step_dec = 0.08
+		dec=self.j.getValue(self.telescope,"TEL",refresh_not_found=True)['dec']
+		cosd = math.cos(math.radians(dec))
+		step_ra /= cosd
+		print(_('Scaling RA by factor {0:.10f} to {1:.2f}').format(cosd,step_ra))
+		for i in range(maxsteps):
+			a,e = s.get_next_step()
+			x += a
+			y += e
+			if i < last_step:
+				continue
+			print(_('step {0} next {1} {2} radec {3:.3f} {4:.3f}').format(i,x,y,x*step_ra,y*step_dec))
+			self.j.setValue(self.telescope, 'OFFS', '{0} {1}'.format(x*step_ra,y*step_dec))
+			if wait_for_key(timeout):
+				return i
+		print(_('spiral ends..'))
+		return i
 	
-	def run_spiral(self,timeout,last_step=0,maxsteps=500):
+	def __run_spiral_altaz(self,timeout,last_step=0,maxsteps=500):
 		"""Runs spiral pointing to find the star."""
 		s = spiral.Spiral(1,1)
 		x = 0
@@ -127,6 +170,12 @@ class TPVP:
 				return i
 		print(_('spiral ends..'))
 		return i
+
+	def run_spiral(self,timeout,last_step=0,maxsteps=500):
+		if self.mount_type == 0:
+			self.__run_spiral_gem(timeout,last_step,maxsteps)
+		elif self.mount_type == 1:
+			self.__run_spiral_altaz(timeout,last_step,maxsteps)
 	
 	def tel_hrz_to_equ(self,alt,az):
 		self.j.refresh()
@@ -163,12 +212,18 @@ class TPVP:
 			lat = self.j.getValue(self.telescope,'LATITUDE')
 			lng = self.j.getValue(self.telescope,'LONGITUD')
 			alt = self.j.getValue(self.telescope,'ALTITUDE')
-			oa.write('# altaz-manual {0} {1} {2}\n'.format(lng,lat,alt))
+			if self.mount_type == 0:
+				oa.write('# gem {0} {1} {2}\n'.format(lng,lat,alt))
+			elif self.mount_type == 1:
+				oa.write('# altaz-manual {0} {1} {2}\n'.format(lng,lat,alt))
 			oa.flush()
 		oa.close()
 	
 	def __save_modeline(self,modelname,mn):
-		modline = self.get_altazm_line()
+		if self.mount_type == 0:
+			modline = self.get_radec_line()
+		elif self.mount_type == 1:
+			modline = self.get_altazm_line()
 		if modelname is None:
 			print(_('model line {0}').format(modline))
 			return
@@ -229,7 +284,7 @@ class TPVP:
 		while next_please == False:
 			skip_spiral = False
 			if last_step <= 0:
-				self.j.setValue(self.telescope,'AZALOFFS','0 0')
+				self.zero_offsets()
 				skip_spiral = wait_for_key(7)
 				last_step = 0
 			if skip_spiral == False:
@@ -267,12 +322,16 @@ class TPVP:
 					break
 				elif ans == 'z':
 					print(_('zeroing offsets'))
-					self.j.setValue(self.telescope,'AZALOFFS','0 0')
+					self.zero_offsets()
 					break
 				try:
 					azo,alto = ans.split()
-					print(_('offseting ALT {0} AZ {1} arcmin').format(azo,alto))
-					self.j.executeCommand(self.telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
+					if self.mount_type == 0:
+						print(_('offseting RA {0} DEC {1} arcmin').format(azo,alto))
+						self.j.executeCommand(self.telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
+					elif self.mount_type == 1:
+						print(_('offseting AZ {0} ALT {1} arcmin').format(azo,alto))
+						self.j.executeCommand(self.telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
 	
 				except Exception as ex:
 					print(_('unknow command {0}, please try again').format(ans))
@@ -365,13 +424,17 @@ class TPVP:
 			if pixdist < verifyradius:
 				print(_('converged'))
 				return True,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
-			print(_('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600))
-			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+			if self.mount_type == 0:
+				print(_('Incrementing offset by RA {0:.3f} DEC {1:.3f} arcsec').format(off_radec[0] * 3600, off_radec[1] * 3600))
+				self.j.incValue(self.telescope,'OFFS','{0} {1}'.format(off_radec[0], off_radec[1]))
+			elif self.mount_type == 1:
+				print(_('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600))
+				self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 	
 		return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 
 	def run_verify_brigths(self,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius,maxspiral,minflux,minalt):
-		self.j.setValue(self.telescope,'AZALOFFS','0 0')
+		selr.zero_offsets()
 		for p in path:
 			if type(p) == int:
 				fn,mn,bsc = self.run_manual_bsc(p,timeout,None,-1,imagescript,None,useDS9)
@@ -406,9 +469,13 @@ class TPVP:
 						modelf.write('# bright star not found on image - continue, target ALT {0:.2f} AZ {1:.2f} BS RA {2:.2f} DEC {3:.2f} mag {4:.2f}\n'.format(p[0],p[1],bsc[1],bsc[2],bsc[3]))
 					modelf.close()
 				continue
-	
-			print(_('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600))
-			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+
+			if self.mount_type == 0:
+				print(_('Will offset by RA {0:.3f} DEC {1:.3f} arcsec').format(off_radec[0] * 3600, off_radec[1] * 3600))
+				self.j.incValue(self.telescope,'OFFS','{0} {1}'.format(off_radec[0], off_radec[1]))
+			elif self.mount_type == 1:
+				print(_('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600))
+				self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 			ver,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az = self.__verify(mn,timeout,imagescript,useDS9,maxverify,verifyradius,minflux)
 			if modelname is not None:
 				self.__check_model_firstline(modelname)

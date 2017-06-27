@@ -39,6 +39,12 @@ parser = argparse.ArgumentParser(description=_('Dumps data from SiTech log.\n\nE
 def valid_date(d):
     return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
 
+def verify_plot_extra(pe):
+    for x in pe:
+        if x not in 'ECSTP':
+            raise argparse.ArgumentTypeError(_('type must contain only ECSTP characters'))
+    return pe
+
 parser.add_argument('files', help=_('Trace logs to process'), action='append')
 parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store', type=valid_date, default=None)
 parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
@@ -48,6 +54,7 @@ parser.add_argument('--markers', help=_('markers - , for pixels, . for points, -
 parser.add_argument('--last', help=_('plot only last points'), action='store', dest='last', default=0, type=int)
 parser.add_argument('--axis', help=_('plot only give axis'), action='store', dest='axis', default='both', choices=['both','x','y','alt','az'])
 parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
+parser.add_argument('--extra', dest='plot_extra', help=_('plot extra values([ECSTP])'), action='store', default='', type=verify_plot_extra)
 
 args = parser.parse_args()
 
@@ -69,7 +76,7 @@ def process_file(fn, d_from, d_to, fdump=None):
 
     if fdump:
         # write header to csv dump
-        fdump.write('A/Y/X,position date,X position,Y position,X error,Y error,command date,X target,Y target,X speed,Y speed\n')
+        fdump.write('A/Y/X,position date,X position,Y position,X error,Y error,X extra,X extra value(Error/Current/Supply/Temperature/PID output),Y extra,Y extra value(Error/Current/Supply/Temperature/PID output),command date,X target,Y target,X speed,Y speed\n')
 
     while True:
         d = f.read(17)
@@ -86,6 +93,8 @@ def process_file(fn, d_from, d_to, fdump=None):
         if args.verbose:
             print('{0} {1}'.format(date, et))
 
+        types = ['E', 'C', 'S', 'T' , 'P']
+
         try:
             if et == 'A':
                 data = f.read(41)
@@ -93,7 +102,11 @@ def process_file(fn, d_from, d_to, fdump=None):
                 if sitech_checksum(data[:39],True) != checksum:
                     sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:39],True), checksum)))
                 if do_append:
-                    positions.append((date, x_pos, y_pos, x_err, y_err))
+                    x_type = types[x_last & 0x000F]
+                    y_type = types[y_last & 0x000F]
+		    x_val = x_last >> 4
+		    y_val = y_last >> 4
+                    positions.append((date, x_pos, y_pos, x_err, y_err, x_type, x_val, y_type, y_val))
             elif et == 'X':
                 data = f.read(21)
                 x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data)
@@ -122,15 +135,19 @@ for fn in args.files:
     print(_('Processing {0}'.format(fn)))
     r_positions, r_commands = process_file(fn, args.d_from, args.d_to, args.fdump)
 
-    positions = numpy.rec.array(r_positions, dtype=[('date','datetime64[ms]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i')])
-    commands = numpy.rec.array(r_commands, dtype=[('date','datetime64[ms]'),('x_dest','>8i'),('y_dest','>8i'),('x_speed','5>i'),('y_speed','5>i')])
+    first = -args.last
+
+    positions = numpy.rec.array(r_positions[first:], dtype=[('date','datetime64[ms]'),('x_pos','>8i'),('y_pos','>8i'),('x_err','5>i'),('y_err','5>i'),('x_type','>c'),('x_val','>2i'),('y_type','>c'),('y_val','>2i')])
+    commands = numpy.rec.array(r_commands[first:], dtype=[('date','datetime64[ms]'),('x_dest','>8i'),('y_dest','>8i'),('x_speed','5>i'),('y_speed','5>i')])
 
     fig = pylab.figure()
 
+    bpn = 3 + len(args.plot_extra)
+
     if args.axis == 'both':
-        gs = gridspec.GridSpec(6,1)
+        gs = gridspec.GridSpec(bpn * 2,1)
     else:
-        gs = gridspec.GridSpec(3,1)
+        gs = gridspec.GridSpec(bpn,1)
 
     def add_plot(gs, index, xaxis, ylabel):
         ret = fig.add_subplot(gs[index:index+1,0:1], sharex=xaxis)
@@ -140,43 +157,66 @@ for fn in args.files:
         ret.grid(True)
         return ret
 
-    first = -args.last
-
     p_date = [x.astype(datetime.datetime) for x in positions[first:].date]
     c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
 
     ax_current = None
     gs_index = 0
 
-    if args.axis in ['both','x','alt']:
+    plot_x = args.axis in ['both','x','alt']
+    plot_y = args.axis in ['both','y','az']
+
+    if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
-        ax_current.plot(p_date, positions[first:].x_pos, args.markers)
+        ax_current.plot(p_date, positions[:].x_pos, args.markers)
         gs_index += 1
 
-    if args.axis in ['both','y','az']:
+    if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az pos')
-        ax_current.plot(p_date, positions[first:].y_pos, 'g' + args.markers)
+        ax_current.plot(p_date, positions[:].y_pos, 'g' + args.markers)
         gs_index += 1
 
-    if args.axis in ['both','x','alt']:
+    if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
-        ax_current.plot(p_date, positions[first:].x_err, args.markers)
+        ax_current.plot(p_date, positions[:].x_err, args.markers)
         gs_index += 1
 
-    if args.axis in ['both','y','az']:
+    if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
-        ax_current.plot(p_date, positions[first:].y_err, 'g' + args.markers)
+        ax_current.plot(p_date, positions[:].y_err, 'g' + args.markers)
         gs_index += 1
 
-    if args.axis in ['both','x','alt']:
+    if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
-        ax_current.plot(c_date, commands[first:].x_speed, args.markers)
+        ax_current.plot(c_date, commands[:].x_speed, args.markers)
         gs_index += 1
 
-    if args.axis in ['both','y','az']:
+    if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az speed')
-        ax_current.plot(c_date, commands[first:].y_speed, 'g' + args.markers)
+        ax_current.plot(c_date, commands[:].y_speed, 'g' + args.markers)
         gs_index += 1
+
+    def plot_extra(extra, label):
+        global gs_index
+        global ax_current
+        global positions
+        if extra in args.plot_extra:
+            if plot_x:
+                pid_data = positions[positions.x_type == extra]
+                ax_current = add_plot(gs, gs_index, ax_current, 'Alt ' + label)
+                ax_current.plot([x.astype(datetime.datetime) for x in pid_data.date], pid_data.x_val, 'b' + args.markers)
+                gs_index += 1
+            if plot_y:
+                pid_data = positions[positions.y_type == extra]
+                ax_current = add_plot(gs, gs_index, ax_current, 'Az ' + label)
+                ax_current.plot([x.astype(datetime.datetime) for x in pid_data.date], pid_data.y_val, 'g' + args.markers)
+                gs_index += 1
+
+    plot_extra('E', 'error')
+    plot_extra('C', 'current')
+    plot_extra('S', 'supply')
+    plot_extra('T', 'temperature')
+    plot_extra('P', 'PID output')
 
     fig.subplots_adjust(hspace=0)
 
