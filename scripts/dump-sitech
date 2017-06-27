@@ -37,7 +37,19 @@ gettext.install('dump-sitech')
 parser = argparse.ArgumentParser(description=_('Dumps data from SiTech log.\n\nExample use:\n\n\tdump-sitech track.log'))
 
 def valid_date(d):
-    return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
+    try:
+        return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
+    except ValueError,ve:
+        try:
+            return datetime.datetime.strptime(d, '%H:%M:%S')
+        except ValueError,ve:
+            try:
+                return datetime.datetime.strptime(d, '%H:%M')
+            except ValueError,ve:
+                try:
+                    return int(d)
+                except ValueError,ve:
+                    raise argparse.ArgumentTypeError(_('invalid date - {0}').format(d))
 
 def verify_plot_extra(pe):
     for x in pe:
@@ -50,7 +62,7 @@ parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store'
 parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
 parser.add_argument('-d', dest='fdump', help=_('dump CSV to the file'), action='store', type=argparse.FileType('w+'), default=None)
 parser.add_argument('--save-plot', dest='save_plot', help=_('save plot to file'), action='store', default=None)
-parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o','+'])
+parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','X','x','-','|','o','+'])
 parser.add_argument('--last', help=_('plot only last points'), action='store', dest='last', default=0, type=int)
 parser.add_argument('--axis', help=_('plot only give axis'), action='store', dest='axis', default='both', choices=['both','x','y','alt','az'])
 parser.add_argument('-v', dest='verbose', help=_('increase verbosity'), action='count')
@@ -85,6 +97,14 @@ def process_file(fn, d_from, d_to, fdump=None):
         et,t,usec = struct.unpack('=cqq',d)
 
         date = datetime.datetime.utcfromtimestamp(t + float(usec) / 1e6)
+
+        if d_from is not None and d_from.year == 1900:
+            d_from = d_from.replace(year = date.year, month = date.month, day = date.day)
+
+        if d_to is not None and d_to.year == 1900:
+            d_to = d_to.replace(year = date.year, month = date.month, day = date.day)
+            if d_to < d_from:
+                d_to += datetime.timedelta(days=1)
 
         if d_to is not None and date > d_to:
             return positions, commands
