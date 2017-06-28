@@ -155,6 +155,14 @@ parser.add_argument(
     default=False
 )
 
+parser.add_argument(
+    '--separate-plot',
+    dest='separate_plot',
+    help=_('separate error and extra plots'),
+    action='store_true',
+    default=False
+)
+
 args = parser.parse_args()
 
 
@@ -336,7 +344,9 @@ for fn in args.files:
                 ('y_speed', '>i')
             ]
         )
-        bpn = 3 + len(args.plot_extra)
+        bpn = 3
+	if args.separate_plot:
+	    bpn + len(args.plot_extra)
 
     fig = pylab.figure()
 
@@ -365,6 +375,8 @@ for fn in args.files:
 
     plot_x = args.axis in ['both', 'x', 'alt']
     plot_y = args.axis in ['both', 'y', 'az']
+    axis_x = None
+    axis_y = None
 
     if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
@@ -380,11 +392,15 @@ for fn in args.files:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
         ax_current.plot(p_date, positions.x_err, args.markers)
         gs_index += 1
+	if args.separate_plot == False:
+	   axis_x = ax_current
 
     if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
         ax_current.plot(p_date, positions.y_err, 'g' + args.markers)
         gs_index += 1
+	if args.separate_plot == False:
+	   axis_y = ax_current
 
     if plot_x and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
@@ -412,35 +428,49 @@ for fn in args.files:
         )
         gs_index += 1
 
-    def plot_extra(extra, label):
+    def plot_extra(extra, label, in_axis_x, in_axis_y):
         global gs_index
         global ax_current
         global positions
         if extra in args.plot_extra:
             if plot_x:
                 pid_data = positions[positions.x_type == extra]
-                ax_current = add_plot(gs, gs_index, ax_current, 'Alt ' + label)
-                ax_current.plot([
+		if in_axis_x is None:
+                    axis = add_plot(gs, gs_index, ax_current, 'Alt ' + label)
+		    mark = 'b' + args.markers
+                else:
+                    axis = in_axis_x.twinx()
+                    axis.set_ylabel('Alt ' + label)
+		    mark = args.markers
+                axis.plot([
                     x.astype(datetime.datetime) for x in pid_data.date],
                     pid_data.x_val,
-                    'b' + args.markers
+                    mark
                 )
+		axis.legend(['Alt ' + label])
                 gs_index += 1
             if plot_y:
                 pid_data = positions[positions.y_type == extra]
-                ax_current = add_plot(gs, gs_index, ax_current, 'Az ' + label)
-                ax_current.plot([
+		if in_axis_y is None:
+                    axis = add_plot(gs, gs_index, ax_current, 'Az ' + label)
+		    mark = 'g' + args.markers
+                else:
+                    axis = in_axis_y.twinx()
+                    axis.set_ylabel('Az ' + label)
+		    mark = args.markers
+                axis.plot([
                     x.astype(datetime.datetime) for x in pid_data.date],
                     pid_data.y_val,
-                    'g' + args.markers
+                    mark
                 )
+		axis.legend(['Az ' + label])
                 gs_index += 1
 
-    plot_extra('E', 'error')
-    plot_extra('C', 'current')
-    plot_extra('S', 'supply')
-    plot_extra('T', 'temperature')
-    plot_extra('P', 'PID output')
+    plot_extra('E', 'error', axis_x, axis_y)
+    plot_extra('C', 'current', axis_x, axis_y)
+    plot_extra('S', 'supply', axis_x, axis_y)
+    plot_extra('T', 'temperature', axis_x, axis_y)
+    plot_extra('P', 'PID output', axis_x, axis_y)
 
     fig.subplots_adjust(hspace=0)
 
