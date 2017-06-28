@@ -76,6 +76,8 @@ class TPVP:
 		if self.mount_type not in [0,1]:
 			raise Exception(_('Unsuported mount type: {0}').format(self.mount_type))	
 
+		print(_('using telescope {0} for pointing').format(self.telescope))
+
 	def __stable(self,st):
 		if st <= 0:
 			return
