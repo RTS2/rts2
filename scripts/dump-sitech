@@ -316,21 +316,27 @@ for fn in args.files:
             ('y_val', '>i')
         ]
     )
-    commands = numpy.rec.array(
-        r_commands[first:],
-        dtype=[
-            ('date', 'datetime64[ms]'),
-            ('x_dest', '>i'),
-            ('y_dest', '>i'),
-            ('x_speed', '>i'),
-            ('y_speed', '>i')
-        ]
-    )
+
+    if len(r_commands) == 0:
+        commands = None
+        bpn = 2
+	print(_('Empty commands, plotting only positions'))
+    else:
+        commands = numpy.rec.array(
+	    r_commands[first:],
+            dtype=[
+                ('date', 'datetime64[ms]'),
+                ('x_dest', '>i'),
+                ('y_dest', '>i'),
+                ('x_speed', '>i'),
+                ('y_speed', '>i')
+            ]
+        )
+        bpn = 3 + len(args.plot_extra)
 
     fig = pylab.figure()
 
-    bpn = 3 + len(args.plot_extra)
-    if args.speed_dif:
+    if args.speed_dif and commands is not None:
         bpn += 1
 
     if args.axis == 'both':
@@ -347,7 +353,8 @@ for fn in args.files:
         return ret
 
     p_date = [x.astype(datetime.datetime) for x in positions[first:].date]
-    c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
+    if commands is not None:
+        c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
 
     ax_current = None
     gs_index = 0
@@ -357,46 +364,46 @@ for fn in args.files:
 
     if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
-        ax_current.plot(p_date, positions[:].x_pos, args.markers)
+        ax_current.plot(p_date, positions.x_pos, args.markers)
         gs_index += 1
 
     if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az pos')
-        ax_current.plot(p_date, positions[:].y_pos, 'g' + args.markers)
+        ax_current.plot(p_date, positions.y_pos, 'g' + args.markers)
         gs_index += 1
 
     if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
-        ax_current.plot(p_date, positions[:].x_err, args.markers)
+        ax_current.plot(p_date, positions.x_err, args.markers)
         gs_index += 1
 
     if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
-        ax_current.plot(p_date, positions[:].y_err, 'g' + args.markers)
+        ax_current.plot(p_date, positions.y_err, 'g' + args.markers)
         gs_index += 1
 
-    if plot_x:
+    if plot_x and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
-        ax_current.plot(c_date, commands[:].x_speed, args.markers)
+        ax_current.plot(c_date, commands.x_speed, args.markers)
         gs_index += 1
 
-    if plot_y:
+    if plot_y and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az speed')
-        ax_current.plot(c_date, commands[:].y_speed, 'g' + args.markers)
+        ax_current.plot(c_date, commands.y_speed, 'g' + args.markers)
         gs_index += 1
 
-    if args.speed_dif and plot_x:
+    if args.speed_dif and plot_x and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt sp dif')
         ax_current.plot(c_date[1:], numpy.diff(
-            commands[:].x_speed),
+            commands.x_speed),
             'b' + args.markers
         )
         gs_index += 1
 
-    if args.speed_dif and plot_y:
+    if args.speed_dif and plot_y and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az sp dif')
         ax_current.plot(c_date[1:], numpy.diff(
-            commands[:].y_speed),
+            commands.y_speed),
             'g' + args.markers
         )
         gs_index += 1
