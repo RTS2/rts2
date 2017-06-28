@@ -299,6 +299,10 @@ for fn in args.files:
     r_positions, r_commands = process_file(
         fn, args.d_from, args.d_to, args.fdump
     )
+    print(_('Retrieved {0} positions and {1} commands records').format(
+        len(r_positions),
+        len(r_commands)
+    ))
 
     first = -args.last
 
@@ -320,10 +324,10 @@ for fn in args.files:
     if len(r_commands) == 0:
         commands = None
         bpn = 2
-	print(_('Empty commands, plotting only positions'))
+        print(_('Empty commands, plotting only positions'))
     else:
         commands = numpy.rec.array(
-	    r_commands[first:],
+            r_commands[first:],
             dtype=[
                 ('date', 'datetime64[ms]'),
                 ('x_dest', '>i'),
