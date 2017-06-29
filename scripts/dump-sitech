@@ -346,7 +346,7 @@ for fn in args.files:
                 ('y_speed', '>i')
             ]
         )
-        if args.plot == 'separate':
+        if args.plot == 'separated':
             bpn = 3 + len(args.plot_extra)
         elif args.plot == 'errors':
             bpn = 1
@@ -382,6 +382,9 @@ for fn in args.files:
     axis_x = None
     axis_y = None
 
+    lines_x = []
+    lines_y = []
+
     if plot_x and not(args.plot in ['errors']):
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
         ax_current.plot(p_date, positions.x_pos, args.markers)
@@ -394,17 +397,29 @@ for fn in args.files:
 
     if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
-        ax_current.plot(p_date, positions.x_err, args.markers)
+        p, = ax_current.plot(
+            p_date,
+            positions.x_err,
+            args.markers,
+            label='Alt err'
+        )
         gs_index += 1
         if not(args.plot in ['separated']):
             axis_x = ax_current
+            lines_x.append(p)
 
     if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
-        ax_current.plot(p_date, positions.y_err, 'g' + args.markers)
+        p, = ax_current.plot(
+            p_date,
+            positions.y_err,
+            'g' + args.markers,
+            label='Az err'
+        )
         gs_index += 1
         if not(args.plot in ['separated']):
             axis_y = ax_current
+            lines_y.append(p)
 
     if plot_x and commands is not None and not(args.plot in ['errors']):
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
@@ -436,38 +451,54 @@ for fn in args.files:
         global gs_index
         global ax_current
         global positions
+        global lines_x
+        global lines_y
         if extra in args.plot_extra:
             if plot_x:
-                pid_data = positions[positions.x_type == extra]
+                extra_data = positions[positions.x_type == extra]
+                lab = 'Alt ' + label
                 if in_axis_x is None:
-                    axis = add_plot(gs, gs_index, ax_current, 'Alt ' + label)
+                    axis = add_plot(gs, gs_index, ax_current, lab)
                     mark = 'b' + args.markers
                 else:
                     axis = in_axis_x.twinx()
-                    axis.set_ylabel('Alt ' + label)
+                    axis.set_ylabel(lab)
+                    axis.spines["right"].set_position((
+                        "axes",
+                        1 + args.plot_extra.index(extra) * 0.1
+                    ))
+                    axis.yaxis.label.set_color(color)
                     mark = color + args.markers
-                axis.plot([
-                    x.astype(datetime.datetime) for x in pid_data.date],
-                    pid_data.x_val,
-                    mark
+                p, = axis.plot([
+                    x.astype(datetime.datetime) for x in extra_data.date],
+                    extra_data.x_val,
+                    mark,
+                    label=lab
                 )
-                axis.legend(['Alt ' + label])
+                lines_x.append(p)
                 gs_index += 1
             if plot_y:
-                pid_data = positions[positions.y_type == extra]
+                extra_data = positions[positions.y_type == extra]
+                lab = 'Az ' + label
                 if in_axis_y is None:
-                    axis = add_plot(gs, gs_index, ax_current, 'Az ' + label)
+                    axis = add_plot(gs, gs_index, ax_current, lab)
                     mark = 'g' + args.markers
                 else:
                     axis = in_axis_y.twinx()
-                    axis.set_ylabel('Az ' + label)
+                    axis.set_ylabel(lab)
+                    axis.spines["right"].set_position((
+                        "axes",
+                        1 + args.plot_extra.index(extra) * 0.1
+                    ))
+                    axis.yaxis.label.set_color(color)
                     mark = color + args.markers
-                axis.plot([
-                    x.astype(datetime.datetime) for x in pid_data.date],
-                    pid_data.y_val,
-                    mark
+                p, = axis.plot([
+                    x.astype(datetime.datetime) for x in extra_data.date],
+                    extra_data.y_val,
+                    mark,
+                    label=lab
                 )
-                axis.legend(['Az ' + label])
+                lines_y.append(p)
                 gs_index += 1
 
     plot_extra('E', 'error', axis_x, axis_y, 'y')
@@ -476,7 +507,16 @@ for fn in args.files:
     plot_extra('T', 'temperature', axis_x, axis_y, 'm')
     plot_extra('P', 'PID output', axis_x, axis_y, 'r')
 
+    # add labels, if needed
+    if axis_x is not None:
+        axis_x.legend(lines_x, [l.get_label() for l in lines_x])
+    if axis_y is not None:
+        axis_y.legend(lines_y, [l.get_label() for l in lines_y])
+
     fig.subplots_adjust(hspace=0)
+
+    if not(args.plot in ['separated']):
+        fig.subplots_adjust(right=1-0.07*len(args.plot_extra))
 
     fig.autofmt_xdate()
 
