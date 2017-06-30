@@ -44,8 +44,8 @@
 const char *type_names[] = 
 {
   "UNKNOWN", "SERVERD", "MOUNT", "CCD", "DOME", "WEATHER", "ARCH", "PHOT", "PLAN", "GRB", "FOCUS", // 10
-  "MIRROR", "CUPOLA", "FILTER", "AUGERSH", "SENSOR", "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN" // 20
-  "EXEC", "IMGP", "SELECTOR", "XMLRPC", "INDI", "LOGD", "SCRIPTOR", NULL
+  "MIRROR", "CUPOLA", "FILTER", "AUGERSH", "SENSOR", "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN"    // 20
+  "EXEC", "IMGP", "SELECTOR", "HTTP", "INDI", "LOGD", "SCRIPTOR", "REDIS", "THRIFT", NULL          // 30
 };
 
 //* Size of pollfd descriptors allocated
