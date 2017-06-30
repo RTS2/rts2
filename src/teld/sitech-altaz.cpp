@@ -938,6 +938,17 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	try
 	{
+		if (telConn == NULL)
+		{
+			telConn = new rts2core::ConnSitech (tel_tty, this);
+			telConn->setDebug (getDebug ());
+			telConn->init ();
+
+			telConn->flushPortIO ();
+			telConn->getSiTechValue ('Y', "XY");
+			getConfiguration ();
+		}
+
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTelTime ();
 		updateTrackingFrequency ();
@@ -945,16 +956,10 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	catch (rts2core::Error &e)
 	{
 		delete telConn;
+		telConn = NULL;
 
-		telConn = new rts2core::ConnSitech (tel_tty, this);
-		telConn->setDebug (getDebug ());
-		telConn->init ();
-
-		telConn->flushPortIO ();
-		telConn->getSiTechValue ('Y', "XY");
-		telConn->sendXAxisRequest (altaz_Xrequest);
-		updateTelTime ();
-		updateTrackingFrequency ();
+		logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
+		usleep (USEC_SEC / 15);
 	}
 }
 
@@ -970,6 +975,8 @@ void SitechAltAz::updateTelTime ()
 
 void SitechAltAz::getConfiguration ()
 {
+	if (telConn == NULL)
+		return;
 	az_acceleration->setValueDouble (telConn->getSiTechValue ('Y', "R"));
 	alt_acceleration->setValueDouble (telConn->getSiTechValue ('X', "R"));
 
@@ -1023,8 +1030,28 @@ void SitechAltAz::getTel ()
 	// update data only if telescope is not tracking - if it is tracking, commands to set target will return last_status
 	if (!isTracking ())
 	{
-		telConn->getAxisStatus ('X');
-		updateTelTime ();
+		try
+		{
+			if (telConn == NULL)
+			{
+				telConn = new rts2core::ConnSitech (tel_tty, this);
+				telConn->setDebug (getDebug ());
+				telConn->init ();
+
+				telConn->flushPortIO ();
+				telConn->getSiTechValue ('Y', "XY");
+				getConfiguration ();
+			}
+			telConn->getAxisStatus ('X');
+			updateTelTime ();
+		} catch (rts2core::Error &e)
+		{
+			delete telConn;
+			telConn = NULL;
+
+			logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
+			usleep (USEC_SEC / 15);
+		}
 	}
 
 	az_enc->setValueLong (telConn->last_status.y_enc);
