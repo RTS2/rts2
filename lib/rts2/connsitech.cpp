@@ -488,12 +488,15 @@ void ConnSitech::startLogging (const char *logFileName)
 {
 	endLogging ();
 
+	mkpath (logFileName, 0777);
 	logFile = open (logFileName, O_APPEND | O_WRONLY | O_CREAT);
 	if (logFile < 0)
 	{
-		logStream (MESSAGE_WARNING) << "cannot start SiTech logging to " << logFileName << " " << strerror (errno);
+		logStream (MESSAGE_WARNING) << "cannot start SiTech logging to " << logFileName << " " << strerror (errno) << sendLog;
 		return;
 	}
+	fchmod (logFile, 0644);
+	logStream (MESSAGE_DEBUG) << "logging to " << logFileName << sendLog;
 }
 
 void ConnSitech::endLogging ()

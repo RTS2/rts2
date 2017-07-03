@@ -51,7 +51,7 @@ def find_star(ccd):
 		d.set('frame 0')
 		d.set_np2arr(data)
 
-	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, exclusion=30, minarea=10)
+	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, exclusion=30)
 	print _('Found star: {0} {1} {2:.1}').format(x, y, flux)
 	if x is None or flux < options.min_flux:
 		sys.exit(_('No suitable guiding star'))

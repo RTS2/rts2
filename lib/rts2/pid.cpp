@@ -46,7 +46,7 @@ void PID::setPID(double p, double i, double d)
 double PID::loop(double error, double step)
 {
 	integral += error;
-	derivative += (error - p_error) / step;
+	derivative = (error - p_error) / step;
 	p_error = error;
 
 	return kP * error + kI * integral + kD * derivative;

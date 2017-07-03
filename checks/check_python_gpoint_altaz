@@ -1,0 +1,167 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.append('../python/rts2')
+
+import gpoint
+import unittest
+import numpy
+
+class AltAzTest(unittest.TestCase):
+	def setUp(self):
+		self.model = gpoint.GPoint(0)
+		self.model.process_files(['gpoint_in_altaz'],None)
+		self.model.add_extra('az', 'sincos', 'az;el', '2;2')
+		self.model.add_extra('az', 'sincos', 'el;az', '5;3')
+		self.model.add_extra('el', 'sincos', 'az;el', '4;4')
+		self.model.add_extra('el', 'sin', 'az' , '1')
+
+		self.model.set_fixed(['tn','el_sincos_az_el_4_0_4_0','el_sin_az_1_0','az_sincos_el_az_5_0_3_0','npoa'])
+		
+		self.model.fit()
+
+		#for bp in self.model.best.params.keys():
+		#	print bp, self.model.best.params[bp].value
+
+		#self.model.save('a.model')
+
+		self.tps = numpy.loadtxt('altaz_check', delimiter=',')
+
+
+	def testFit(self):
+		self.assertAlmostEqual(-28.72, numpy.degrees(self.model.best.params['ia'].value)*3600.0, delta=0.07)
+		self.assertAlmostEqual(0, self.model.best.params['tn'])
+		self.assertAlmostEqual(4.63, numpy.degrees(self.model.best.params['te'].value)*3600.0, delta=0.07)
+		self.assertAlmostEqual(-17.18, numpy.degrees(self.model.best.params['npae'].value)*3600.0, delta=0.07)
+		self.assertAlmostEqual(0, self.model.best.params['npoa'])
+		self.assertAlmostEqual(-15.86, numpy.degrees(self.model.best.params['ie'].value)*3600.0, delta=0.07)
+		self.assertAlmostEqual(9.86, numpy.degrees(self.model.best.params['tf'].value)*3600.0, delta=0.07)
+
+		self.assertAlmostEqual(6.84, numpy.degrees(self.model.best.params['az_sincos_az_el_2_0_2_0'].value)*3600.0, delta=0.07)
+		self.assertAlmostEqual(0, self.model.best.params['az_sincos_el_az_5_0_3_0'])
+		self.assertAlmostEqual(0, self.model.best.params['el_sincos_az_el_4_0_4_0'])
+		self.assertAlmostEqual(0, self.model.best.params['el_sin_az_1_0'])
+
+	def testPoints(self):
+		for azel in self.tps:
+			r_az = numpy.radians(azel[0])
+			r_el = numpy.radians(azel[1])
+
+			e_az = numpy.degrees(self.model.model_az(self.model.best.params,r_az,r_el))
+			e_el = numpy.degrees(self.model.model_el(self.model.best.params,r_az,r_el))
+			#print '{0:.10f},{1:.10f},   {2:.10f}, {3:.10f}'.format(azel[0], azel[1], e_az,e_el)
+			self.assertAlmostEqual(e_az, azel[2], delta=2.0/3600.0)
+			self.assertAlmostEqual(e_el, azel[3], delta=2.0/3600.0)
+
+	def testDuplicated(self):
+		try:
+			self.model.add_extra('az', 'sincos', 'az;el', '2;2')
+			self.fail('added duplicated argument')
+		except gpoint.DuplicatedExtra as de:
+			self.assertTrue(True,'raised DuplicatedExtra as expected on argument {0}'.format(de.argument))
+
+	def testPlot(self):
+		import os
+		try:
+			os.mkdir('plots')
+		except Exception as ex:
+			pass
+
+		try:
+			p = ['alt-err:az-corr-err@c10@c20@x0:0:200%0:0@c5.5,alt-merr:az-corr-merr@c10@c20@x0:0:200%0:1', 'paz:contor-model-err']
+			for i in range(len(p)):
+				of = 'plots/plot{0:02d}.pdf'.format(i)
+				print('plotting {0} to {1}'.format(p[i], of))
+				self.model.plot(p[i], of)
+		except ImportError:
+			pass
+
+	def testReport(self):
+		import os
+		try:
+			os.mkdir('reports')
+		except Exception:
+			pass
+		try:
+			self.model.pdf_report('reports/all.pdf')
+			self.model.pdf_report('reports/template.pdf','gpoint_template')
+		except ImportError:
+			pass
+
+	def testAdd(self):
+		import tempfile
+		td = tempfile.mkdtemp()
+		try:
+			mf = td + '/model'
+			self.model.save(mf)
+			m1 = gpoint.GPoint(0)
+			m1.load(mf)
+			m2 = gpoint.GPoint(0)
+			m2.load(mf)
+			# self-adding; result should be original multiplied by 2
+			m1.add_model(m2)
+			m1.save(td + '/model_added')
+			for p in list(m1.best.params.keys()):
+				self.assertAlmostEqual(m1.best.params[p].value, m2.best.params[p].value * 2)
+
+		finally:
+			import shutil
+			shutil.rmtree(td)
+
+	def testRefine(self):
+		import tempfile
+		td = tempfile.mkdtemp()
+		try:
+			# create test model file
+			modelin = td + '/test.modelin'
+			f = open(modelin, 'w')
+			f.write('RTS2_ALTAZ -35.731063627" 0" 8.26451233274" -44.4864702882" 0" -25.4325872048" -3.19003461643"\naz	1"	sincos	az;el	1;1\nel	1"	cos	el	1\n')
+
+			f.close()
+
+			m = gpoint.GPoint(0)
+			m.load(modelin)
+			m.process_files(['gpoint_in_altaz'],None)
+			m.add_extra('az','sincos','el;az','1;1')
+			m.remove_extra('az_sincos_az_el_1_0_1_0')
+			try:
+				m.remove_extra('az_sincos_az_el_2_0_1_0')
+			except gpoint.NonExistentExtra as ne:
+				self.assertTrue(True,'tested removal of non-existend argument'.format(ne.argument))
+
+			m.set_fixed(['tf','el_cos_el_1_0','az_sincos_el_az_1_0_1_0','tn'])
+
+			m.fit()
+			m.fit_to_extra()
+			morig = gpoint.GPoint(0)
+			morig.load(modelin)
+			m.add_model(morig)
+
+			modelout = td + '/out.gpm'
+			m.save(modelout)
+
+			mtest = gpoint.GPoint(0)
+			mtest.load(modelout)
+
+			# expected result
+			expected = {
+				'ia':-72.53,
+				'tn':0,
+				'te':12.73,
+				'npae':-72.51,
+				'npoa':-12.72,
+				'ie':-47.55,
+				'tf':-3.19,
+				'el_cos_el_1_0':1,
+				'az_sincos_el_az_1_0_1_0':0,
+				'az_sincos_az_el_1_0_1_0':1
+			}
+		
+			for p in list(mtest.best.params.keys()):
+				#print p,numpy.degrees(mtest.best.params[p].value)*3600.0
+				self.assertAlmostEqual(numpy.degrees(mtest.best.params[p].value)*3600.0,expected[p],delta=0.2)
+		finally:
+			import shutil
+			shutil.rmtree(td)
+
+unittest.main()

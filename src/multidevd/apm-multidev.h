@@ -59,6 +59,8 @@ class APMMultiBase:public rts2core::MultiBase
 		bool hasBaffle;
 		bool hasRelays;
 		bool hasTemp;
+		bool isControllino;
+		bool opParaller;
 
 		HostString *host;
 		rts2core::ConnAPM *apmConn;

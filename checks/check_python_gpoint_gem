@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.append('../python/rts2')
+
+import gpoint
+import unittest
+import numpy
+
+class GemTest(unittest.TestCase):
+	def setUp(self):
+		self.model = gpoint.GPoint(0)
+		self.model.process_files(['gpoint_in_gem'],None)
+		self.model.fit()
+
+		#for bp in self.model.best.params.keys():
+		#	print bp, self.model.best.params[bp].value
+
+		#self.model.save('g.model')
+
+		# this is model with fixed terms
+		self.model_fix = gpoint.GPoint(0)
+		self.model_fix.process_files(['gpoint_in_gem'],None)
+		self.model_fix.set_fixed(['me','daf','ma','tf','ih'])
+		self.model_fix.fit()
+
+	def testFit(self):
+		# this is unfixed tests, will be low quality
+		self.assertAlmostEqual(-0.0077215222, self.model.best.params['id'], delta=1/3600.0)
+		#self.assertAlmostEqual(0.0001348661, self.model.best.params['me'], delta=0.07/3600.0)
+		#self.assertAlmostEqual(0.0000774638, self.model.best.params['ma'], delta=0.07/3600.0)
+		#self.assertAlmostEqual(0.0005952019, self.model.best.params['tf'], delta=0.07/3600.0)
+		#self.assertAlmostEqual(-0.0001478327, self.model.best.params['ih'], delta=0.07/3600.0)
+		self.assertAlmostEqual(-0.0007575423, self.model.best.params['ch'], delta=1/3600.0)
+		self.assertAlmostEqual(0.0015116117, self.model.best.params['np'], delta=1/3600.0)
+		#self.assertAlmostEqual(-0.0003465422, self.model.best.params['daf'], delta=0.07/3600.0)
+		self.assertAlmostEqual(0.0001360438, self.model.best.params['fo'], delta=1/3600.0)
+
+	def testFitFixed(self):
+		self.assertAlmostEqual(-1613.58/3600.0, numpy.degrees(self.model_fix.best.params['id'].value), delta=0.07/3600.0)
+		self.assertAlmostEqual(0, self.model_fix.best.params['me'])
+		self.assertAlmostEqual(0, self.model_fix.best.params['ma'])
+		self.assertAlmostEqual(0, self.model_fix.best.params['tf'])
+		self.assertAlmostEqual(0, self.model_fix.best.params['ih'])
+		self.assertAlmostEqual(-216.39/3600.0, numpy.degrees(self.model_fix.best.params['ch'].value), delta=0.07/3600.0)
+		self.assertAlmostEqual(444.38/3600.0, numpy.degrees(self.model_fix.best.params['np'].value), delta=0.07/3600.0)
+		self.assertAlmostEqual(0, self.model_fix.best.params['daf'])
+		self.assertAlmostEqual(143.16/3600.0, numpy.degrees(self.model_fix.best.params['fo'].value), delta=0.07/3600.0)
+
+unittest.main()

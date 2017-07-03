@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.9.5, petr@kubanek.net)
+AC_INIT(rts2, 0.9.5, petr@rts2.org)
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
@@ -36,7 +36,7 @@ libjsoncpp="no"
 
 PKG_CHECK_MODULES([JSONCPP],[jsoncpp >= 0.9.6],,AC_MSG_RESULT(not found))
 AM_CONDITIONAL(LIBJSONCPP, test "x$JSONCPP_LIBS" != x)
-AS_IF([test "x$CHECK_LIBS" != x], [
+AS_IF([test "x$JSONCPP_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBJSONCPP, "1", [use libjsoncpp])
   libjsoncpp="yes"
 ])
@@ -52,7 +52,7 @@ AS_IF([test "x$ERFA_LIBS" != x], [
 
 libwebsockets="no"
 
-PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.0],,AC_MSG_RESULT(not found))
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.7.0],,AC_MSG_RESULT(not found))
 AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
 AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
@@ -73,7 +73,7 @@ AC_LANG_CPLUSPLUS
 
 CFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g -std=c++11 -lm"
+CXXFLAGS="-Wall -Wshadow -g -std=gnu++11 -lm"
 AC_SUBST(CXXFLAGS)
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -929,11 +929,31 @@ AS_IF([test "x$docbook" == 'xdetect'], [
 	])
 ])
 
+AC_ARG_WITH(a2x,
+[  --with-a2x             path to a2x executable],
+a2x="${withval}",
+a2x="a2x"
+)
+
+AC_CHECK_PROG(A2X, "$a2x", "$a2x", "no")
+
 AC_SUBST(DB2MAN)
 AC_SUBST(DB2FOP)
+AC_SUBST(A2X)
 
 AM_CONDITIONAL(HAVE_DB2MAN, test x$DB2MAN != xno)
 AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
+AM_CONDITIONAL(HAVE_A2X, test x$A2X != xno)
+
+AC_ARG_WITH(aspell,
+[  --with-aspell           path to aspell executable],
+aspell="${withval}",
+aspell="aspell"
+)
+
+AC_CHECK_PROG(ASPELL, "$aspell", "$aspell", "no")
+
+AM_CONDITIONAL(HAVE_ASPELL, test x$ASPELL != xno)
 
 AC_CONFIG_SRCDIR(src)
 AM_CONFIG_HEADER(config.h)
@@ -945,13 +965,12 @@ AM_CONDITIONAL(SUNOS, test x${target_os} = xsolaris2.8)
 AM_CONDITIONAL(CYGWIN, test x${target_os} = xcygwin)
 AM_CONDITIONAL(MACOSX, test x${target_os/darwin} != x${target_os})
 AM_CONDITIONAL(SUNCYGMAC, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8 -o x${target_os/darwin} != x${target_os})
-AM_CONDITIONAL(ARMCPU, test x${target_cpu/arm} != x${target_cpu})
+AM_CONDITIONAL(ARMCPU, test x${target_cpu/arm} != x${target_cpu} -o x${target_cpu/aarch64} != x${target_cpu})
+AM_CONDITIONAL(ARM64CPU, test x${target_cpu} != xaarch64)
 
 AC_OUTPUT([Makefile
 	   rts2-init
 	   rts2.initd
-	   scripts/rts2-start
-	   scripts/rts2-stop
 	   man/Makefile
 	   man/rts2.ent
 	   include/Makefile
@@ -1045,8 +1064,8 @@ AC_OUTPUT([Makefile
 )
 
 echo "
-*********************************************************
- RTS2 build configuration for ${target_os} on ${build_os}
+****************************************************************************
+ RTS2 build configuration for ${target_os} on ${build_os}, CPU ${target_cpu}
 
   focusing      ${focusing}
   xfocusc       ${xfocusc}
@@ -1102,12 +1121,16 @@ SENSORs:
   K8055         ${K8055}
 
   prefix        ${prefix}
+  exec_prefix   ${exec_prefix}
+  bindir        ${bindir}
   confdir	${CONFDIR}
   lock prefix   ${LOCK_PREFIX}
   log file      ${LOG_FILE}
   centrald port	${CENTRALD_PORT}
 
-DocBook stylesheets:
+Manpages, docbook stylesheets:
+  A2X           ${A2X}
+  ASPELL        ${ASPELL}
   DB2MAN        ${DB2MAN}
   DB2FOP        ${DB2FOP}
 

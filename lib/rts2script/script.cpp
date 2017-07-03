@@ -713,7 +713,7 @@ Element *Script::parseBuf (Rts2Target * target)
 			*close_b = '\0';
 			args = SplitStr (std::string (open_b), std::string (","));
 		}
-		return new ElementCommand (this, cmd, args);
+		return new ElementCommand (this, new_device, cmd, args);
 	}
 
 	// setValue fallback

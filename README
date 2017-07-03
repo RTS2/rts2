@@ -13,13 +13,22 @@ header of source files for details.
 
 RTS2 is not an interactive planetarium. RTS2 provides various interfaces which
 third parties can use to access system functionalities. Probably the best is
-JSON API.
+JSON API. [Stellarium](http://stellarium.org) has plugin to interact with RTS2
+telescopes.
 
 For further details, please visit:
 
-  http://www.rts2.org
+  [http://www.rts2.org](http://www.rts2.org)
 
 For questions, comments, suggestions and problems, please send emails to petr
-(at) kubanek [dot] net or to the RTS2 developer list rts-2-devel (at) lists
+(at) rts2 [dot] org or to the RTS2 developer list rts-2-devel (at) lists
 [dot] sourceforge [dot] net. Please be aware that support is first provided
 to parties sharing development and implementation costs.
+
+How to install RTS2
+===================
+
+The easiest way on Ubuntu/debian based distributions is to install RTS2 from packages.
+The packages are available from [Launchpad](https://launchpad.net/~rts2/+archive/ubuntu/daily).
+
+If you want to install from the source code, please see the [INSTALL](./INSTALL) file.

@@ -264,7 +264,7 @@ int Fli::initHardware ()
 	focusingOffset->setMin( OFFSET_MIN) ;
 	tempOffset->setMin(OFFSET_MIN) ;
 
-	if (!isnan (defaultPosition->getValueFloat ()))
+	if (!std::isnan (defaultPosition->getValueFloat ()))
 	{
 		float def = defaultPosition->getValueFloat ();
 		if (def < 0)
@@ -418,10 +418,10 @@ double Fli::tcOffset ()
 	  // get the temperature from meteo device
 	  meteo();
 
-	  if( !( isnan(temperatureMeteo->getValueDouble()) || 
-		 isnan(TCtemperatureRef->getValueDouble()) ||
-		 isnan(TCoffset->getValueDouble()) ||
-		 isnan(TCslope->getValueDouble()) ||
+	  if( !( std::isnan(temperatureMeteo->getValueDouble()) ||
+		 std::isnan(TCtemperatureRef->getValueDouble()) ||
+		 std::isnan(TCoffset->getValueDouble()) ||
+		 std::isnan(TCslope->getValueDouble()) ||
 		 TCslope->getValueDouble()==0.))
 	  {
 	    if( TCmode->getValueInteger ()== ABSOLUTE_TC) {

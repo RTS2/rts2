@@ -39,9 +39,9 @@ from . import scriptcomm
 import smtplib
 # try pre 4.0 email version
 try:
-        from email.mime.text import MIMEText
+	from email.mime.text import MIMEText
 except:
-        from email.MIMEText import MIMEText
+	from email.MIMEText import MIMEText
 
 from datetime import datetime
 
@@ -275,7 +275,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 			ret = -1
 		elif (abs(1.0 - ratio) <= self.optimalRange): # Images within optimalRange of the optimal flux value
 			ret = 0
-		  	if (self.isSubWindow):
+			if (self.isSubWindow):
 				self.fullWindow()
 				self.unusableImage(img)
 			else:
@@ -375,7 +375,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 	
 	def takeFlats(self, evening):
 		for self.flatNum in range(0,len(self.usedFlats)): # starting from the bluest and ending with the redest
-		  	self.flat = self.usedFlats[self.flatNum]
+			self.flat = self.usedFlats[self.flatNum]
 			self.flatImages.append([])
 			self.setConfiguration()
 			self.execute(evening)
@@ -385,9 +385,9 @@ class FlatScript (scriptcomm.Rts2Comm):
 		self.setValue('exposure',0)
 		i = 0
 		while i < self.maxBias:
-		  	i += 1
-		  	for x in usedConfigs:
-			  	if x[0] is None:
+			i += 1
+			for x in usedConfigs:
+				if x[0] is None:
 					self.setValue('binning',0)
 				else:
 					self.setValue('binning',x[0])
@@ -428,10 +428,10 @@ class FlatScript (scriptcomm.Rts2Comm):
 		d = numpy.empty([len(files),len(f[0].data),len(f[0].data[0])])
 		d[0] = f[0].data / numpy.mean(f[0].data)
 		for x in range(1,len(files)):
-		  	f = pyfits.open(files[x])
+			f = pyfits.open(files[x])
 			d[x] = f[0].data / numpy.mean(f[0].data)
 		if (os.path.exists(of)):
-	  		self.log('I',"removing {0}".format(of))
+			self.log('I',"removing {0}".format(of))
 			os.unlink(of)
 		f = pyfits.open(of,mode='append')
 		m = numpy.median(d,axis=0)
@@ -447,11 +447,11 @@ class FlatScript (scriptcomm.Rts2Comm):
 		self.setValue('SHUTTER','LIGHT')
 		# choose filter sequence..
 		if self.is_evening:
-		  	self.usedFlats = self.eveningFlats
+			self.usedFlats = self.eveningFlats
 			self.takeFlats(True)
 			self.log('I','finished skyflats')
 		else:
-		  	self.usedFlats = self.morningFlats
+			self.usedFlats = self.morningFlats
 			self.takeFlats(False)
 			if domeDevice:
 				self.log('I','finished skyflats, closing dome')
@@ -463,14 +463,14 @@ class FlatScript (scriptcomm.Rts2Comm):
 		usedConfigs = []
 		for i in range(0,len(self.flatImages)):
 			if len(self.flatImages[i]) >= 3:
-			  	conf = [self.usedFlats[i].binning,self.usedFlats[i].window]
+				conf = [self.usedFlats[i].binning,self.usedFlats[i].window]
 				try:
 					i = usedConfigs.index(conf)
 				except ValueError as v:
 					usedConfigs.append(conf)
 		
 		if self.maxBias > 0:
-		  	self.log('I','taking calibration bias')
+			self.log('I','taking calibration bias')
 			self.takeBias(usedConfigs)
 
 		if self.maxDarks > 0:
@@ -482,13 +482,13 @@ class FlatScript (scriptcomm.Rts2Comm):
 
 		# basic processing of taken flats..
 		for i in range(0,len(self.flatImages)):
-		  	sig = self.usedFlats[i].signature()
-		  	if len(self.flatImages[i]) >= 3:
-			  	self.log('I',"creating master flat for {0}".format(sig))
+			sig = self.usedFlats[i].signature()
+			if len(self.flatImages[i]) >= 3:
+				self.log('I',"creating master flat for {0}".format(sig))
 				self.createMasterFits(tmpDirectory + '/master_{0}.fits'.format(sig), self.flatImages[i])
 				self.goodFlats.append(self.usedFlats[i])
 			else:
-			  	self.badFlats.append(self.usedFlats[i])
+				self.badFlats.append(self.usedFlats[i])
 
 	def run(self, domeDevice='DOME', tmpDirectory='/tmp/', receivers=None, subject='Skyflats report'):
 		try:

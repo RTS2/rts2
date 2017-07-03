@@ -30,7 +30,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/XmlRpcClient.h"
 
-void updateDUT1 (const char *fn, const char *url)
+int updateDUT1 (const char *fn, const char *url)
 {
 	if (url == NULL)
 		url = "http://maia.usno.navy.mil/ser7/finals2000A.daily";
@@ -48,15 +48,24 @@ void updateDUT1 (const char *fn, const char *url)
 	{
 		logStream (MESSAGE_ERROR) << "cannot resolve URL " << url << ":" << ret << sendLog;
 		delete client;
-		return;
+		return -1;
 	}
 
 	int fo = open (fn, O_CREAT | O_TRUNC | O_WRONLY);
+	if (fo < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create file to write DUT1 " << fn << ":" << strerror (errno) << sendLog;
+		ret = -2;
+		goto failed;
+	}
 	write (fo, reply, reply_length);
+	fchmod (fo, 0644);
 	close (fo);
 
+failed:
 	delete[] reply;
 	delete client;
+	return ret;
 }
 
 double getDUT1 (const char *fn, struct tm *gmdate)

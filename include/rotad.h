@@ -104,6 +104,7 @@ class Rotator:public rts2core::Device
 		rts2core::ValueDouble *paOffset;
 
 		rts2core::ValueBool *paTracking;
+		rts2core::ValueBool *negatePA;
 		rts2core::ValueDoubleStat *trackingFrequency;
 		rts2core::ValueInteger *trackingFSize;
 		rts2core::ValueFloat *trackingWarning;

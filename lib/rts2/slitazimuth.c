@@ -1,6 +1,11 @@
 /* Library to calculate dome target AZ and ZD  */
-/* Copyright (C) 2006-2010, Markus Wildi */
+/* Copyright (C) 2006-2017, Markus Wildi */
 
+/* DOME PREDICTIONS FOR AN EQUATORIAL TELESCOPE */
+/* Patrick Wallace */
+/* http://www.tpointsw.uk/edome.pdf */
+
+/* Former version: */
 /* The transformations are based on the paper Matrix Method for  */
 /* Coodinates Transformation written by Toshimi Taki  */
 /* (http://www.asahi-net.or.jp/~zs3t-tk).  */
@@ -29,6 +34,78 @@
 #include <libnova/libnova.h>
 #include <slitazimuth.h>
 
+double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct geometry obs)
+{
+  double target_az ;
+  double target_ZD ;
+  struct ln_equ_posn tmp_equ ;
+
+  tmp_equ.ra = tel_equ.ra * M_PI/180. ;
+  tmp_equ.dec= tel_equ.dec* M_PI/180. ;
+  double dec=tmp_equ.dec;
+
+  obs_location.lng *= M_PI/180. ;
+  obs_location.lat *= M_PI/180. ;
+  
+  double HA ;
+  double JD ;
+  double theta_0 ;
+    
+  JD=  ln_get_julian_from_sys();
+  theta_0= 15./180.*M_PI*ln_get_mean_sidereal_time(JD);
+  
+  if((tel_equ.dec > 90.) && (tel_equ.dec <= 270.)) { // WEST: DECaxis==HA + M_PI/2
+    HA =  -(fmod(M_PI -(theta_0 + obs_location.lng - tmp_equ.ra) + 2. * M_PI,  2. * M_PI)) ;
+  } else {
+    HA =  fmod(theta_0 + obs_location.lng - tmp_equ.ra + 2. * M_PI,  2. * M_PI) ;
+  }
+  //fprintf( stderr, "XX HA: %+010.5f deg\n", HA * 180./ M_PI) ;
+  // DOME PREDICTIONS FOR AN EQUATORIAL TELESCOPE
+  // Patrick Wallace
+  // http://www.tpointsw.uk/edome.pdf
+
+  double y_0=  obs.p + obs.r*sin(dec);
+  double x_mo= obs.q*cos(HA) + y_0*sin(HA);
+  double y_mo=-obs.q*sin(HA) + y_0*cos(HA);
+  double z_mo= obs.r*cos(dec);
+    
+  double x_do= obs.x_m+x_mo;
+  double y_do= obs.y_m+y_mo*sin(obs_location.lat)+z_mo*cos(obs_location.lat);
+  double z_do= obs.z_m-y_mo*cos(obs_location.lat)+z_mo*sin(obs_location.lat);
+  // HA,dec
+  double x=-sin(HA)*cos(dec);
+  double y=-cos(HA)*cos(dec);
+  double z= sin(dec);
+  // transform from HA,dec to AltAz
+  double x_s= x;
+  double y_s= y*sin(obs_location.lat)+z*cos(obs_location.lat);
+  double z_s=-y*cos(obs_location.lat)+z*sin(obs_location.lat);
+
+  double s_dt= x_s*x_do+y_s*y_do+z_s*z_do;
+  double t2_m= pow(x_do,2)+pow(y_do,2)+pow(z_do,2) ;
+  double w= pow(s_dt,2)-t2_m+pow(obs.r_D,2);
+  if( w < 0.){
+    return NAN; 
+  }
+    
+  double f=-s_dt + sqrt(w);
+  double x_da= x_do+f*x_s;
+  double y_da= y_do+f*y_s;
+  double z_da= z_do+f*z_s;
+  // The dome (A, E) that the algorithm delivers follows the normal convention. Azimuth A
+  // increases clockwise from zero in the north, through 90◦ (π/2 radians) in the east.
+  if( x_da==0 && y_da==0){
+    return NAN;
+  }
+  double A= atan2(x_da,y_da);
+  double E= atan2(z_da,sqrt(pow(x_da,2)+pow(y_da,2)));
+  //E= arcsin(z_da/sqrt(pow(x_da,2)+pow(y_da,2)+pow(z_da,2)));
+  return A*180./M_PI;
+}
+
+
+
+/* 2017-06-18 will go away*/
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
 
@@ -37,31 +114,32 @@
 
 
 double LDRAtoHA( double RA, double longitude) ;
-int    LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) ;
-int    LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) ;
-int    LDHAtoDomeAZ( double latitude, double HA, double dec, struct geometry obs, double *Az, double *ZD) ;
+int    LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct tk_geometry obs, double *Az, double *ZD) ;
+int    LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct tk_geometry obs, double *Az, double *ZD) ;
+int    LDHAtoDomeAZ( double latitude, double HA, double dec, struct tk_geometry obs, double *Az, double *ZD) ;
 int    LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
 double LDStarOnDomeTX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 double LDStarOnDomeTY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 int    LDCheckHorizon( double HA, double dec, double phi) ;
 
-
 /* the main entry function */
 /* longitude positive to the East */
-/* West: DECaxis== HA + M_PI/2  RA=RA, DEC=DEC  */
-/* East: DECaxis== HA - M_PI/2, RA=RA, DEC= DEC + M_PI */
-double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct geometry obs)
+/* West: DECaxis== HA + M_PI/2  */
+/* East: DECaxis== HA - M_PI/2 */
+
+
+double TK_dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct tk_geometry obs)
 {
   double target_az ;
   double target_ZD ;
   struct ln_equ_posn tmp_equ ;
 
-  if(( tel_equ.dec > 90.) && (  tel_equ.dec <= 270.)) { // EAST: DECaxis==HA - M_PI/2
-
+  if(( tel_equ.dec > 90.) && (  tel_equ.dec <= 270.)) { // WEST: DECaxis==HA + M_PI/2
+    //ToDo check that
     tmp_equ.ra =  tel_equ.ra - 180. ;
     tmp_equ.dec= -tel_equ.dec  ;
-  } else {// WEST: DECaxis==HA + M_PI/2
+  } else {// EAST: DECaxis==HA - M_PI/2
     
     tmp_equ.ra =  tel_equ.ra ;
     tmp_equ.dec=  tel_equ.dec  ;
@@ -75,10 +153,11 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   LDRAtoDomeAZ( tmp_equ, obs_location, obs, &target_az, &target_ZD) ;
 
   // This call is for a quick check
-  //double star_az ;
-  //double star_ZD ;
-  //ret= LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
-
+  double star_az ;
+  double star_ZD ;
+  int ret;
+  ret= LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
+  //fprintf( stderr, "LDRAtoStarAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", star_az, star_ZD, obs.rdome) ;
   return target_az ;
 }
 
@@ -92,6 +171,8 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
 /* center to the intersection point of the polar and the declination */
 /* axis.       */
 /* I copied the whole expressions from the Mathematica notebook */
+
+
 
 double LDStarOnDomeTX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
@@ -134,7 +215,7 @@ double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double R
   return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
 }
 
-int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
+int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct tk_geometry obs, double *Az, double *ZD) 
 {
     double HA ;
 
@@ -143,7 +224,7 @@ int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location,
     LDHAtoDomeAZ( obs_location.lat, HA, tmp_equ.dec, obs, Az, ZD) ;
     return 0 ;
 }
-int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
+int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct tk_geometry obs, double *Az, double *ZD) 
 {
     double HA ;
 
@@ -162,12 +243,12 @@ double LDRAtoHA( double RA, double longitude)
     JD=  ln_get_julian_from_sys() ;
 
     theta_0= 15./180. * M_PI * ln_get_mean_sidereal_time( JD) ; 
-/* negative to the West, Kstars neg., XEpehem pos */
     HA =  fmod(theta_0 + longitude - RA + 2. * M_PI,  2. * M_PI) ;
+    //fprintf( stderr, "LDRAtoHA HA: %+010.5f\n", HA * 180./ M_PI) ;
 
     return HA ;
 } 
-int LDHAtoDomeAZ( double latitude, double HA, double dec, struct geometry obs, double *Az, double *ZD)
+int LDHAtoDomeAZ( double latitude, double HA, double dec, struct tk_geometry obs, double *Az, double *ZD)
 {
   *Az= -atan2( LDStarOnDomeTY( HA, dec, latitude, obs.rdome,  obs.rdec, obs.xd, obs.zd), LDStarOnDomeTX( HA, dec, latitude, obs.rdome,  obs.rdec, obs.xd, obs.zd)) ;
 
@@ -217,3 +298,4 @@ int LDCheckHorizon( double HA, double dec, double latitude)
       return BELOW_HORIZON ;
     }
 }
+

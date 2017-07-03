@@ -1,8 +1,13 @@
-# $Id$
+MD_PAGES = \
+    rts2.txt \
+    gpoint.txt
 
 EXTRA_DIST = \
+    rts2.conf \
+    rts2.dict \
     rts2.ent.in \
-    rts2.xml \
+    rts2.adoc \
+    ${MD_PAGES} \
     rts2.ini.xml \
     rts2-device.xml \
     rts2-mon.xml \
@@ -54,15 +59,15 @@ EXTRA_DIST = \
     rts2.valuefile.xml \
     rts2-camd-reflex.xml \
     rts2pa_measurement.py.xml \
-    rts2-bb.xml \
-    gpoint.xml
+    rts2-bb.xml
 
 CLEANFILES = *.1 *.5 *.7
 
+man_MANS =
+
 if HAVE_DB2MAN
 
-man_MANS = \
-    rts2.7 \
+man_MANS += \
     rts2.ini.5 \
     rts2-device.7 \
     rts2-mon.1 \
@@ -114,8 +119,7 @@ man_MANS = \
     rts2.valuefile.5 \
     rts2-camd-reflex.7 \
     rts2pa_measurement.py.1 \
-    rts2-bb.7 \
-    gpoint.1
+    rts2-bb.7
 
 XP=xsltproc --nonet
 
@@ -156,5 +160,45 @@ rts2-book.fop: rts2-book.xml
 
 rts2-book.pdf: rts2-book.fop
 	$(FOP) $< $@
+
+endif
+
+if HAVE_A2X
+
+man_MANS += \
+    rts2.7 \
+    gpoint.1
+
+A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+	--xsltproc-opts "--nonet" \
+	--attribute mansource="RTS2" \
+	--attribute manversion="@PACKAGE_VERSION@" \
+	--attribute manmanual="RTS2 Manual"
+
+.txt.1:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+
+.txt.7:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+
+else
+
+EXTRA_DIST += rts2.txt
+
+endif
+
+if HAVE_ASPELL
+
+ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	for doc in ${MD_PAGES}; do \
+		echo "  ASPELL   Spell checking on $$doc"; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $$doc | $(ASPELL) -a -t -p ./rts2.dict -d en check 2>&1`" && \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+			  test -z "$$OUT" ; } || \
+			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
+FAILED="$$FAILED $$doc"; } ; \
+	done
 
 endif

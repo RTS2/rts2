@@ -231,16 +231,6 @@ class FitsFile: public rts2core::Expander
 		void getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
 		/**
-		 * Expand FITS path.
-		 *
-		 * @param pathEx      Path expansion string.
-		 * @param onlyAlNum   If true, replace non-path character in expansion
-		 *
-		 * @return Expanded path.
-		 */
-		std::string expandPath (std::string pathEx, bool onlyAlNum = true);
-
-		/**
 		 * Write header template to FITS headers. Current frame in
 		 * multichannel/extensions image is used.
 		 *

@@ -44,6 +44,8 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	createValue (paOffset, "PA", "[deg] target parallactic angle offset", true, RTS2_DT_DEGREES);
 	createValue (toGo, "TAR_DIFF", "[deg] difference between target and current position", false, RTS2_DT_DEG_DIST);
 	createValue (paTracking, "parangle_track", "run parralactic tracking code", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (negatePA, "negate_PA", "negate paralactic angle", false, RTS2_VALUE_WRITABLE);
+	negatePA->setValueBool (false);
 	createValue (parallacticAngleRef, "parangle_ref", "time when parallactic angle was calculated", false);
 	createValue (parallacticAngle, "PARANGLE", "[deg] telescope parallactic angle", false, RTS2_DT_DEGREES);
 	createValue (parallacticAngleRate, "PARATE", "[deg/hour] calculated change of parallactic angle", false, RTS2_DT_DEGREES);
@@ -100,6 +102,12 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		{
 			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PA_NOT, "restarted tracking");
 		}
+		return 0;
+	}
+	else if (conn->isCommand (COMMAND_ROTATOR_PARK))
+	{
+		maskState (ROT_MASK_PARK | ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PARKED, "parking rotator");
+		setTarget (0);
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
@@ -231,7 +239,10 @@ void Rotator::setCurrentPosition (double cp)
 
 double Rotator::getPA (double t)
 {
-	return parallacticAngle->getValueDouble () + (parallacticAngleRate->getValueDouble () / 3600.0) * (t - parallacticAngleRef->getValueDouble ());
+	double ret = parallacticAngle->getValueDouble () + (parallacticAngleRate->getValueDouble () / 3600.0) * (t - parallacticAngleRef->getValueDouble ());
+	if (negatePA->getValueBool ())
+		return -ret;
+	return ret;
 }
 
 void Rotator::setPAOffset (double paOff)

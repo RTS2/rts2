@@ -1190,7 +1190,7 @@ class ValuePID:public Value
 		/**
 		 * Runs PID loop.
 		 */
-		virtual int32_t loop (int32_t error, double step = 1) { return pid.loop ((double) error / factor, step) * factor; }
+		virtual int32_t loop (int32_t error, double step = 1) { return pid.loop (error, step); }
 
 	private:
 		PID pid;

@@ -1068,7 +1068,7 @@ Value *newValue (int rts2Type, std::string name, std::string desc)
 		case RTS2_VALUE_ALTAZ:
 			return new ValueAltAz (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_PID:
-			return new ValuePID (name, desc, rts2Type & RTS2_VALUE_FLOAT, rts2Type);
+			return new ValuePID (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 	}
 	logStream (MESSAGE_ERROR) << "unknow value name: " << name << " type: " << rts2Type << sendLog;
 	return NULL;

@@ -1,3 +1,7 @@
+// WARNING - this code is not working on Watcher, as its dome control was repleced
+// with ZELIO PLC in ~2011. Probably will not work, leave as reference for possible
+// similar implementations
+
 /* 
  * Driver for Watcher dome board.
  * Copyright (C) 2005-2008 John French

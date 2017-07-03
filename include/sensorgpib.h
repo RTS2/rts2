@@ -87,6 +87,13 @@ class Gpib:public Sensor
 
 		bool isSerial () { return connGpib->isSerial (); }
 
+		void setReplyWithValueName (bool on = true);
+
+		/**
+		 * Bool values are send as 0/1 (not ON/OFF strings).
+		 */
+		void setBool01 () { boolOnOff = false; }
+
 		rts2core::ValueString *idn;
 
 	private:
@@ -108,6 +115,9 @@ class Gpib:public Sensor
 		rts2core::ConnGpib *connGpib;
 		
 		bool debug;
+
+		bool replyWithValueName;
+		bool boolOnOff;
 };
 
 };

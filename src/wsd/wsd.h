@@ -2,7 +2,6 @@
 #define __RTS2_WSD__
 
 #include <libwebsockets.h>
-#include <lws_config.h>
 
 #define resource_path "/usr/share/rts2"
 

@@ -1,0 +1,191 @@
+GPOINT(1)
+=========
+
+NAME
+----
+gpoint - GPL (Telescope) Pointing error modelling and corrections
+
+SYNOPSIS
+--------
+
+*gpoint* [--refine 'model'] [--latitude 'latitude'] [-p 'plots'] [-v] [--basic-plots] [--altaz-plots] [--altaz-heat-maps] [--flip 'both|west|east'] [-o 'output'] 'input file'
+
+*gpoint* [-v] [--latitude 'latitude'] [--plot-offsets 'ha:from-dec:to-dec'] --model-file 'model file'
+
+*gpoint* [-o 'model file'] --add-models 'model1' 'model2' ...
+
+DESCRIPTION
+-----------
+
+This manual page contains description of gpoint, a script to generate
+pointing model. The gpoint is capable to both build new models, as well
+as to add two models together or plot model corrections on given hour angle.
+
+Purpose of the pointing model is to correct for various misalignment, caused
+either by mechanical or electronic components of the telescope.  GPoint is a
+tool to generate and verify such pointing model.
+
+For model generation, input file is needed. This can be prepared from pointing
+run images, where correct WCS is recorded, or from run pointing and centering
+bright stars.  GPoint itself cannot prepare the input file.  Input file must
+contain local sidereal time, relevant RA and DEC of the telescope (in telescope
+coordinates, where e.g. on GEM DEC axis values continue to count above 90/below
+-90) and true RA DEC coordinates (of center pixel on camera).
+
+RTS2 provides a way to run pointing model target. Either by getting offsets
+through astrometry, or better by getting offsets from astrometry of bright
+stars with a given proper motion. The paragraph *Acquiring data*
+describes those procedures in a slightly bigger detail.
+
+Input data are fit with least square method. The program provides ways to
+plot various graphs, limit and discards bad lines in the input and bad
+pointing terms, and save various results.
+
+GPoint can be run in interactive mode, so the user can modify model fitting
+parameters and see the results.a
+
+Acquiring data
+--------------
+
+In scripts/build-model.py is a Python script, which if executed as exe (*exe
+/etc/rts2/build-model.py*) will take exposures distributed on the sky. If those
+files are processed by for example linkman:astrometry.net[1] to obtain true WCS
+coordinates, they can be used as GPoint input. For this,
+linkman:rts2-fits2gpoint[1] is provided.
+
+To build model from bright stars, use linkman:rts2-built-model-tool[1]. Various input parameters
+govern the script use, please consult program help for details. In a nutshell, the script:
+
+1. picks a alt-az coordinates (either random, or from a given path)
+
+2. finds closest bright star above minimal altitude limit (defaults to 15
+degrees, as only fanatic GRB observers look for object below that limit).
+
+3. points telescope to the bright star
+
+4. takes image of the field
+
+5. finds stars on the image. If there isn't a star with flux above the flux
+limit, continues with the step number 1
+
+6. select the brightest star, calculate its X Y coordinates
+
+7. if the star is closer to specified center than specified limit
+distance, record az alt offsets, and continues with the step number 1
+
+8. otherwise computes alt/az or ha/dec offsets, feeds those to
+telescope, and continues with the step number 4
+
+OPTIONS
+-------
+
+RTS2 follows the usual GNU command line syntax, with long options
+starting with two dashes (`--').  A summary of options is included below.
+
+You can use \-- (two dashes with a space) to escape arguments which start with
+'-'. So to run command with -1 as an argument, you must specify \-- -1 on
+the command line.
+
+* **-h**,**\--help** show help message
+
+* **-o** output model file.
+
+* **-p** specify plots to generate. See <<plotting>> for detailed description
+
+* **-s** save plots to a file
+
+* **\--basic-plots** generate basic sets of plots
+
+* **\--stat-only** don't try to fit the model - only print statistics.
+  Useful if you don't have (yet) enough points for a complete fit
+
+* **\--altaz-plots** 
+
+* **\--model-input** existing model file(s) to load and investigate
+
+* **\--filter** filter outliers. Expect two values separated with : - the first is value name, second is value in arc-seconds
+
+Input file format
+-----------------
+
+Input file is a text file, with format slightly different for GEM (German
+Equatorial Mount) and Alt-Az (Altitude-azimuth) mounts. Single measurements
+of stars positions are put into single line in predefined format.
+
+Lines starting with # are treated as comments and are ignored. The only exception is for
+lines providing telescope type (gem or altaz) and observatory coordinates. Those are identified by
+starting #, followed by either "gem", "altaz" or "altaz-manual" and then
+followed by longitude, latitude (in degrees east / toward north) and
+altitude (in meters above see level) of the telescope.
+
+Plotting options
+----------------
+[[plotting]]
+
+Various plots can be generated. Moreover, the plots can include additional graphics.
+
+
+Input files examples
+--------------------
+
+=== GEM
+
+Following is an example of GEM file, where only offsets in RA and DEC are set:
+
+----
+# 15 degrees E, 50 degrees N, 600 m altitude
+# gem 15 50 600
+1    50000.0 280.000  10.000  20.000 -55000 55000 11.000   19.000
+2    50000.1 280.100  50.000  30.000 -55100 55010 51.000   29.000
+3    50000.2 280.200  90.000  40.000 -55200 55020 91.000   39.000
+4    50000.3 280.300  140.000 50.000 -55300 55030 141.000  49.000
+5    50000.4 280.400  180.000 60.000 -55400 55040 181.000  59.000
+6    50000.5 280.500  220.000 70.000 -55500 55050 221.000  69.000
+7    50000.6 280.600  260.000 80.000 -55600 55060 261.000  79.000
+8    50000.7 280.700  300.000 70.000 -55700 55070 301.000  69.000
+9    50000.8 280.800  340.000 60.000 -55800 55080 341.000  59.000
+10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
+----
+
+=== AltAz
+
+This is an example alt-az file, also with only offsets in AZ and ALT.
+
+----
+# 15 degrees E, 50 degrees N, 600 m altitude
+# altaz 15 50 600
+1    50000.0 280.000  10.000  20.000 -55000 55000 11.000   19.000
+2    50000.1 280.100  50.000  30.000 -55100 55010 51.000   29.000
+3    50000.2 280.200  90.000  40.000 -55200 55020 91.000   39.000
+4    50000.3 280.300  140.000 50.000 -55300 55030 141.000  49.000
+5    50000.4 280.400  180.000 60.000 -55400 55040 181.000  59.000
+6    50000.5 280.500  220.000 70.000 -55500 55050 221.000  69.000
+7    50000.6 280.600  260.000 80.000 -55600 55060 261.000  79.000
+8    50000.7 280.700  300.000 70.000 -55700 55070 301.000  69.000
+9    50000.8 280.800  340.000 60.000 -55800 55080 341.000  59.000
+10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
+----
+
+=== AltAz manual example
+
+There is an example of altaz input file, acquired in manual mode. This differs
+from simple AltAz by listing RA DEC coordinates, skipping axis counts, and
+listing azimuth and altitude errors instead of real altitude and azimuth.
+
+----
+# observatory 20.8 degrees W, 32.53 degrees S, 1850 m altitude
+# altaz-manual -20.8 -32.53 1850.0
+1    50000.0 356.214  -23.34 1.000 1.000 10.000 20.000
+----
+
+
+SEE ALSO
+--------
+
+* linkman:rts2[7]
+* linkman:rts2-telmodeltest[1]
+
+AUTHORS
+-------
+
+Petr Kubanek <petr@rts2.org>

@@ -39,8 +39,15 @@ END_TEST
 
 START_TEST(UPDATE)
 {
-	const char *fn = tmpnam (NULL);
-	updateDUT1 (fn, NULL);
+	const char *fn = "dut1_download";
+	unlink (fn);
+
+	int ret = updateDUT1 (fn, NULL);
+	if (ret < 0)
+	{
+		printf ("cannot download updated file, skipping update tests");
+		return;
+	}
 
 	time_t now = time (NULL);
 	struct tm *gmt;
@@ -48,7 +55,7 @@ START_TEST(UPDATE)
 
 	double dut1 = getDUT1 (fn, gmt);
 	printf ("Current DUT1: %f\n", dut1);
-	ck_assert_msg (!isnan (dut1), "current data not found in uploaded time diff file!");
+	ck_assert_msg (!isnan (dut1), "current data not found in downloade time diff file!");
 
 	gmt->tm_year += 3;
 	ck_assert_msg (isnan (getDUT1 (fn, gmt)), "found data for DUT1 3 years from now!");

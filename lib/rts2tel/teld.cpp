@@ -95,6 +95,11 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telDUT1, "DUT1", "[s] UT1 - UTC", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telDUT1->setValueDouble (0);
 
+	createValue (pointingModel, "MOUNT", "mount pointing model (equ, alt-az, ...)", false, 0, 0);
+	pointingModel->addSelVal ("EQU");
+	pointingModel->addSelVal ("ALT-AZ");
+	pointingModel->addSelVal ("ALT-ALT");
+
 	// object
 	createValue (oriRaDec, "ORI", "original position (epoch)", true, RTS2_VALUE_WRITABLE);
 	createValue (oriEpoch, "OEPOCH", "epoch (2000,..)", true);
@@ -257,11 +262,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true, RTS2_VALUE_WRITABLE);
 
-	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0);
-	pointingModel->addSelVal ("EQU");
-	pointingModel->addSelVal ("ALT-AZ");
-	pointingModel->addSelVal ("ALT-ALT");
-
 	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set)", false, RTS2_VALUE_WRITABLE);
 	createValue (mpec_refresh, "mpec_refresh", "refresh MPEC ra_diff and dec_diff every mpec_refresh seconds", false, RTS2_VALUE_WRITABLE);
 	mpec_refresh->setValueDouble (3600);
@@ -318,7 +318,10 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (targetDistance, "target_distance", "distance to the target in degrees", false, RTS2_DT_DEG_DIST);
 	createValue (targetStarted, "move_started", "time when movement was started", false);
 	createValue (targetReached, "move_end", "expected time when telescope will reach the destination", false);
-	createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false, RTS2_DT_DEG_DIST);
+	if (hasTracking)
+		createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false, RTS2_DT_DEG_DIST);
+	else
+		targetDistanceStat = NULL;
 
 	targetDistance->setValueDouble (NAN);
 	targetStarted->setValueDouble (NAN);
@@ -436,7 +439,7 @@ Telescope::~Telescope (void)
 int Telescope::checkTracking (double maxDist)
 {
 	// check tracking stability
-	if ((getState () & (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_OFFSETING)) == TEL_OBSERVING)
+	if (targetDistanceStat != NULL && (getState () & (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_OFFSETING)) == TEL_OBSERVING)
 	{
 		if ((getState () & TEL_MASK_UNSTABLE) == TEL_UNSTABLE)
 		{
@@ -1090,6 +1093,10 @@ void Telescope::afterMovementStart ()
 	startCupolaSync ();
 }
 
+void Telescope::afterParkingStart ()
+{
+}
+
 void Telescope::incMoveNum ()
 {
 	if (diffTrackRaDec)
@@ -1145,6 +1152,7 @@ void Telescope::incMoveNum ()
 	wCorrImgId->setValueInteger (0);
 
 	trackingNum = 0;
+	changeIdleMovingTracking ();
 }
 
 void Telescope::recalculateMpecDIffs ()
@@ -1473,11 +1481,11 @@ void Telescope::checkMoves ()
 			if (ret)
 			{
 				failedMove ();
-
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
 			}
 			else
 			{
+				changeIdleMovingTracking ();
 				maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED, "park command finished without error");
 			}
 			if (move_connection)
@@ -1493,7 +1501,8 @@ void Telescope::checkMoves ()
 		ret = isOffseting();
 		if (ret < 0)
 		{
-			targetDistanceStat->clearStat ();
+			if (targetDistanceStat != NULL)
+				targetDistanceStat->clearStat ();
 			maskState (TEL_MASK_OFFSETING, TEL_NO_OFFSETING, "offseting finished");
 		}
 	}
@@ -1958,8 +1967,11 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 
 	double tdist = getTargetDistance ();
 	targetDistance->setValueDouble (tdist);
-	targetDistanceStat->addValue (tdist, 20);
-	targetDistanceStat->calculate ();
+	if (targetDistanceStat != NULL)
+	{
+		targetDistanceStat->addValue (tdist, trackingFSize->getValueInteger ());
+		targetDistanceStat->calculate ();
+	}
 
 	// check if we aren't bellow hard horizon - if yes, stop tracking..
 	if (hardHorizon)
@@ -2096,13 +2108,15 @@ void Telescope::startCupolaSync ()
 
 int Telescope::endMove ()
 {
-	targetDistanceStat->clearStat ();
+	if (targetDistanceStat != NULL)
+		targetDistanceStat->clearStat ();
 	startTracking ();
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
 	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
 	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());
 
 	logStream (INFO_MOUNT_SLEW_END | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << tarRaDec->getRa () << " " << tarRaDec->getDec () << " " << telTargetRaDec->getRa () << " " << telTargetRaDec->getDec () << sendLog;
+	changeIdleMovingTracking ();
 	return 0;
 }
 
@@ -2110,11 +2124,13 @@ void Telescope::failedMove ()
 {
 	failedMoveNum->inc ();
 	lastFailedMove->setNow ();
+	changeIdleMovingTracking ();
 }
 
 int Telescope::abortMoveTracking ()
 {
 	stopTracking ("tracking below horizon");
+	changeIdleMovingTracking ();
 	return 0;
 }
 
@@ -2195,7 +2211,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		offsRaDec->setValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
 
-	targetDistanceStat->clearStat ();
+	if (targetDistanceStat != NULL)
+		targetDistanceStat->clearStat ();
 
 	// update total_offsets
 	total_offsets->setValueRaDec (offsRaDec->getRa () - corrRaDec->getRa (), offsRaDec->getDec () - corrRaDec->getDec ());
@@ -2429,6 +2446,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	if (tarTelAltAz && parkPos)
 		tarTelAltAz->setFromValue (parkPos);
 	stopTracking ("parking telescope");
+	changeIdleMovingTracking ();
 	ret = startPark ();
 	if (ret < 0)
 	{
@@ -2448,6 +2466,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 
 		incMoveNum ();
 		setParkTimeNow ();
+		afterParkingStart ();
 		maskState (TEL_MASK_MOVING | TEL_MASK_TRACK | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
 	}
 

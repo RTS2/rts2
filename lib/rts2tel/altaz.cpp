@@ -47,6 +47,8 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (azSlewMargin, "az_slew_margin", "[deg] azimuth slew margin", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	azSlewMargin->setValueDouble (0);
 
+	setPointingModel (1);
+
 	nextParUpdate = 0;
 }
 
@@ -389,7 +391,6 @@ int AltAz::setTracking (int track, bool addTrackingTimer, bool send)
 	{
 		rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), 0);
 		queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
-		parallacticTracking ();
 	}
 	return Telescope::setTracking (track, addTrackingTimer, send);
 }
@@ -409,4 +410,10 @@ void AltAz::afterMovementStart ()
 	Telescope::afterMovementStart ();
 	nextParUpdate = 0;
 	parallacticTracking ();
+}
+
+void AltAz::afterParkingStart ()
+{
+	rts2core::Command cmd (this, COMMAND_ROTATOR_PARK);
+	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
 }

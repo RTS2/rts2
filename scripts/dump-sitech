@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Dumps various SiTech data from serial log
-# 
+#
 # (C) 2017 Petr Kubanek <petr@kubanek.net>
 #
 # This program is free software; you can redistribute it and/or
@@ -26,125 +26,608 @@ import struct
 import sys
 import matplotlib
 import pylab
+import math
 import matplotlib.dates
 import matplotlib.gridspec as gridspec
 import datetime
 import numpy
+import astropy.units
+import astropy.coordinates
 
 import gettext
 gettext.install('dump-sitech')
 
-parser = argparse.ArgumentParser(description=_('Dumps data from SiTech log.\n\nExample use:\n\n\tdump-sitech track.log'))
+parser = argparse.ArgumentParser(description=_(
+    'Dumps data from SiTech log.\n\nExample use:\n\n\tdump-sitech track.log'))
+
 
 def valid_date(d):
-	return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
+    try:
+        return datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
+    except ValueError, ve:
+        try:
+            return datetime.datetime.strptime(d, '%H:%M:%S')
+        except ValueError, ve:
+            try:
+                return datetime.datetime.strptime(d, '%H:%M')
+            except ValueError, ve:
+                try:
+                    return int(d)
+                except ValueError, ve:
+                    raise argparse.ArgumentTypeError(
+                        _('invalid date - {0}').format(d))
 
-parser.add_argument('files', help=_('Trace logs to process'), action='append')
-parser.add_argument('--from', dest='d_from', help=_('Date from'), action='store', type=valid_date, default=None)
-parser.add_argument('--to', dest='d_to', help=_('Date to'), action='store', type=valid_date, default=None)
-parser.add_argument('-d', dest='fdump', help=_('dump CSV to the file'), action='store', type=argparse.FileType('w+'), default=None)
+
+def verify_plot_extra(pe):
+    for x in pe:
+        if x not in 'ECSTP':
+            raise argparse.ArgumentTypeError(
+                _('type must contain only ECSTP characters'))
+    return pe
+
+
+parser.add_argument(
+    'files',
+    help=_('Trace logs to process'),
+    action='append'
+)
+
+parser.add_argument(
+    '--from',
+    dest='d_from',
+    help=_('Date from'),
+    action='store',
+    type=valid_date,
+    default=None
+)
+
+parser.add_argument(
+    '--to',
+    dest='d_to',
+    help=_('Date to'),
+    action='store',
+    type=valid_date,
+    default=None
+)
+
+parser.add_argument(
+    '-d',
+    dest='fdump',
+    help=_('dump CSV to the file'),
+    action='store',
+    type=argparse.FileType('w+'),
+    default=None
+)
+
+parser.add_argument(
+    '--save-plot',
+    dest='save_plot',
+    help=_('save plot to file'),
+    action='store',
+    default=None
+)
+
+parser.add_argument(
+    '--markers',
+    help=_('markers - , for pixels, . for points, - for line, x for crosses'),
+    action='store',
+    dest='markers',
+    default=',',
+    choices=[',', '.', 'X', 'x', '-', '_', '|', 'o', '+', '1', '2', '3', '4',
+             '8', '^', '<', '>', 'v', 's', 'p', 'P', '*', 'h', 'H', 'd', 'D']
+)
+
+parser.add_argument(
+    '--last',
+    help=_('plot only last points'),
+    action='store',
+    dest='last',
+    default=0,
+    type=int
+)
+
+parser.add_argument(
+    '--axis',
+    help=_('plot only give axis'),
+    action='store',
+    dest='axis',
+    default='both',
+    choices=['both', 'x', 'y', 'alt', 'az']
+)
+
+parser.add_argument(
+    '-v',
+    dest='verbose',
+    help=_('increase verbosity'),
+    action='count'
+)
+
+parser.add_argument(
+    '--extra',
+    dest='plot_extra',
+    help=_('plot extra values([ECSTP])'),
+    action='store',
+    default='',
+    type=verify_plot_extra
+)
+
+parser.add_argument(
+    '--speed-dif',
+    dest='speed_dif',
+    help=_('plot speed difference'),
+    action='store_true',
+    default=False
+)
+
+parser.add_argument(
+    '--plot',
+    dest='plot',
+    help=_('plot all graphs with mixed extra and error,\
+ separated extra(s), or only errors'),
+    action='store',
+    default='mixed',
+    choices=['mixed', 'separated', 'errors']
+)
+
+parser.add_argument(
+    '-e',
+    dest='error_limit',
+    help=_('error above this value will be recorded,\
+ together with distance from previous error'),
+    action='store',
+    default=None,
+    type=int
+)
+
+parser.add_argument(
+    '--error-band',
+    dest='error_band',
+    help=_('consider error as the same if error does \
+not drop bellow -e limit for --error-band seconds'),
+    action='store',
+    default=200,
+    type=float
+)
 
 args = parser.parse_args()
 
+
 def sitech_checksum(s, invertH):
-	"""Calculates sitech checksum from byte array"""
-	checksum = 0
-	for x in s:
-		checksum = (checksum + ord(x)) & 0xFFFF
-	if invertH:
-		return checksum ^ 0xFF00
-	return checksum
+    """Calculates sitech checksum from byte array"""
+    checksum = 0
+    for x in s:
+        checksum = (checksum + ord(x)) & 0xFFFF
+    if invertH:
+        return checksum ^ 0xFF00
+    return checksum
 
-def process_file(fn, d_from, d_to, fdump=None):
-	f = open(fn,'rb')
 
-	positions = []
-	commands = []
+class ProcessSitech:
+    """Process SiTech file. Contains methods to process file."""
+    def __init__(self):
+        self.positions = []
+        self.commands = []
+        self.last_error = None
+        # positions indices of errors
+        self.x_errors = []
+        self.y_errors = []
+        self.last_x_error = None
+        self.last_y_error = None
+        self.types = ['E', 'C', 'S', 'T', 'P']
 
-	if fdump:
-		# write header to csv dump
-		fdump.write('A/Y/X,position date,X position,Y position,X error,Y error,command date,X target,Y target,X speed,Y speed\n')
+    def process_A(self, f, date, do_append):
+        data = f.read(41)
+        address, x_pos, y_pos, x_enc, y_enc, keypad, x_bit, y_bit,\
+            extra_bits, ain_1, ain_2, mclock, temperature,\
+            y_worm_phase, x_last, x_err, y_last, y_err,\
+            checksum =\
+            struct.unpack(
+                '<biiii bbbbhh IbbhhhhH',
+                data
+            )
+        if sitech_checksum(data[:39], True) != checksum:
+            sys.exit(_(
+                'invalid checksum: {0:04X} expected {1:04X}'.format(
+                    sitech_checksum(data[:39], True),
+                    checksum)
+            ))
+        if do_append:
+            x_type = self.types[x_last & 0x000F]
+            y_type = self.types[y_last & 0x000F]
+            x_val = x_last >> 4
+            y_val = y_last >> 4
+            self.positions.append((
+                date,
+                x_pos,
+                y_pos,
+                x_err,
+                y_err,
+                x_type,
+                x_val,
+                y_type,
+                y_val
+            ))
+        if args.error_limit is not None:
+            i = len(self.positions) - 1
+            if abs(x_err) > args.error_limit:
+                if self.last_x_error is None:
+                    self.x_errors.append([i, None])
+                self.last_x_error = i
+            else:
+                if self.last_x_error is not None and (
+                    date -
+                    self.positions[self.last_x_error][0]
+                ).total_seconds() > args.error_band:
+                    ts = (
+                        self.positions[self.last_x_error][0] -
+                        self.positions[self.x_errors[-1][0]][0]
+                    ).total_seconds()
+                    c = self.positions[self.x_errors[-1][0]][1]
+                    a = astropy.coordinates.Angle(
+                        math.pi * c / float(2**26),
+                        unit=astropy.units.radian
+                    )
+                    print(_('Alt error from {0} \
+counts {1:>9} angle {2} \
+for {3:.3f} seconds').format(
+                        self.positions[self.x_errors[-1][0]][0],
+                        c,
+                        a.to_string(unit=astropy.units.degree),
+                        ts
+                    ))
+                    self.x_errors[-1][1] = i
+                    self.last_x_error = None
 
-	while True:
-		d = f.read(17)
-		if len(d) != 17:
-			return positions, commands
-		et,t,usec = struct.unpack('=cqq',d)
+            if abs(y_err) > args.error_limit:
+                if self.last_y_error is None:
+                    self.y_errors.append([i, None])
+                self.last_y_error = i
+            else:
+                if self.last_y_error is not None and (
+                    date -
+                    self.positions[self.last_y_error][0]
+                ).total_seconds() > args.error_band:
+                    ts = (
+                        self.positions[self.last_y_error][0] -
+                        self.positions[self.y_errors[-1][0]][0]
+                    ).total_seconds()
+                    c = self.positions[self.y_errors[-1][0]][1]
+                    a = astropy.coordinates.Angle(
+                        math.pi * c / float(2**26),
+                        unit=astropy.units.radian
+                    )
+                    print(_('Az error from {0} \
+counts {1:>9} angle {2} \
+for {3:.3f} seconds').format(
+                        self.positions[self.y_errors[-1][0]][0],
+                        c,
+                        a.to_string(unit=astropy.units.degree),
+                        ts
+                    ))
+                    self.y_errors[-1][1] = i
+                    self.last_y_error = None
 
-		date = datetime.datetime.fromtimestamp(t + float(usec) / 1e6)
+    def process_X(self, f, date, do_append):
+        data = f.read(21)
+        x_dest, x_speed, y_dest, y_speed, not_used,\
+            x_bits, y_bits, checksum = struct.unpack(
+                '<iIiI3bH',
+                data
+            )
+        if sitech_checksum(data[:19], True) != checksum:
+            sys.exit(_(
+                'invalid checksum: {0:04X} expected {1:04X}'.format(
+                    sitech_checksum(data[:19], True),
+                    checksum
+                )
+            ))
+        if do_append:
+            self.commands.append([date, x_dest, y_dest, x_speed, y_speed])
 
-		if d_to is not None and date > d_to:
-			return positions, commands
-		if d_from is not None and date < d_from:
-			continue
+    def process_Y(self, f, date, do_append):
+        data = f.read(34)
+        x_dest, x_speed, y_dest, y_speed, x_rate_adder, y_rate_adder,\
+            x_rate_adder_t, y_rate_adder_t, checksum = struct.unpack(
+                '<8iH',
+                data
+            )
+        if sitech_checksum(data[:32], True) != checksum:
+            sys.exit(_(
+                'invalid checksum: {0:04X} expected {1:04X}'.format(
+                    sitech_checksum(data[:32], True),
+                    checksum
+                )
+            ))
+        if do_append:
+            self.commands.append([date, x_dest, y_dest, x_speed, y_speed])
 
-		print('{0} {1} {2}'.format(time.ctime(t), usec, et))
+    def process_file(self, fn, d_from, d_to, fdump=None):
+        f = open(fn, 'rb')
 
-		try:
-			if et == 'A':
-				data = f.read(41)
-				address,x_pos,y_pos,x_enc,y_enc,keypad,x_bit,y_bit,extra_bits,ain_1,ain_2,mclock,temperature,y_worm_phase,x_last,x_err,y_last,y_err,checksum = struct.unpack('<biiii bbbbhh IbbhhhhH',data)
-				if sitech_checksum(data[:39],True) != checksum:
-					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:39],True), checksum)))
-				positions.append([date, x_pos, y_pos, x_err, y_err])
-			elif et == 'X':
-				data = f.read(21)
-				x_dest,x_speed,y_dest,y_speed,not_used,x_bits,y_bits,checksum=struct.unpack('<iIiI3bH',data)
-				if sitech_checksum(data[:19],True) != checksum:
-					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:19],True), checksum)))
-				commands.append([date, x_dest, y_dest, x_speed, y_speed])
-			elif et == 'Y':
-				data = f.read(34)
-				x_dest,x_speed,y_dest,y_speed,x_rate_adder,y_rate_adder,x_rate_adder_t,y_rate_adder_t,checksum=struct.unpack('<8iH',data)
-				if sitech_checksum(data[:32],True) != checksum:
-					sys.exit(_('invalid checksum: {0:04X} expected {1:04X}'.format(sitech_checksum(data[:32],True), checksum)))
-				commands.append([date, x_dest, y_dest, x_speed, y_speed])
-			else:
-				sys.exit(_('Unknow entry type: {0}'.format(et)))
-		except ValueError, ve:
-			print(ve)
+        if fdump:
+            # write header to csv dump
+            fdump.write('A/Y/X,position date,X position,Y position,\
+X error,Y error,\
+X extra,X extra value(Error/Current/Supply/Temperature/PID output),\
+Y extra,Y extra value(Error/Current/Supply/Temperature/PID output),\
+command date,X target,Y target,X speed,Y speed\n')
 
-		if fdump and len(positions) > 0 and len(commands) > 0:
-			fdump.write('{0},{1},{2}\n'.format(et,','.join(map(str,positions[-1])),','.join(map(str,commands[-1]))))
-	f.close()
-	return positions, commands
+        while True:
+            d = f.read(17)
+            if len(d) != 17:
+                return self.positions, self.commands
+            et, t, usec = struct.unpack('=cqq', d)
+
+            date = datetime.datetime.utcfromtimestamp(t + float(usec) / 1e6)
+
+            if d_from is not None and d_from.year == 1900:
+                d_from = d_from.replace(
+                    year=date.year,
+                    month=date.month,
+                    day=date.day
+                )
+
+            if d_to is not None and d_to.year == 1900:
+                d_to = d_to.replace(
+                    year=date.year,
+                    month=date.month,
+                    day=date.day
+                )
+                if d_to < d_from:
+                    d_to += datetime.timedelta(days=1)
+
+            if d_to is not None and date > d_to:
+                return self.positions, self.commands
+            do_append = d_from is None or date > d_from
+
+            if args.verbose:
+                print('{0} {1}'.format(date, et))
+
+            try:
+                if et == 'A':
+                    self.process_A(f, date, do_append)
+                elif et == 'X':
+                    self.process_X(f, date, do_append)
+                elif et == 'Y':
+                    self.process_Y(f, date, do_append)
+                else:
+                    sys.exit(_('Unknow entry type: {0}'.format(et)))
+            except ValueError, ve:
+                print(ve)
+
+            if fdump and len(self.positions) > 0 and len(self.commands) > 0:
+                fdump.write('{0},{1},{2}\n'.format(
+                    et,
+                    ','.join(map(str, self.positions[-1])),
+                    ','.join(map(str, self.commands[-1])))
+                )
+        f.close()
+        return self.positions, self.commands
+
+
+ps = ProcessSitech()
 
 for fn in args.files:
-	print(_('Processing {0}'.format(fn)))
-	positions, commands = process_file(fn, args.d_from, args.d_to, args.fdump)
+    print(_('Processing {0}'.format(fn)))
+    r_positions, r_commands = ps.process_file(
+        fn, args.d_from, args.d_to, args.fdump
+    )
+    print(_('Retrieved {0} positions and {1} commands records').format(
+        len(r_positions),
+        len(r_commands)
+    ))
 
-	positions = numpy.array(positions)
-	commands = numpy.array(commands)
+    first = -args.last
 
-	fig = pylab.figure()
-	gs = gridspec.GridSpec(6,1)
+    positions = numpy.rec.array(
+        r_positions[first:],
+        dtype=[
+            ('date', 'datetime64[ms]'),
+            ('x_pos', '>i'),
+            ('y_pos', '>i'),
+            ('x_err', '>i'),
+            ('y_err', '>i'),
+            ('x_type', '>c'),
+            ('x_val', '>i'),
+            ('y_type', '>c'),
+            ('y_val', '>i')
+        ]
+    )
 
-	def add_plot(index,xaxis,ylabel):
-		ret = fig.add_subplot(index, sharex=xaxis)
-		ret.set_xlim(xaxis.get_xlim())
-		ret.set_ylabel(ylabel)
-		return ret
+    if len(r_commands) == 0:
+        commands = None
+        bpn = 2
+        print(_('Empty commands, plotting only positions'))
+    else:
+        commands = numpy.rec.array(
+            r_commands[first:],
+            dtype=[
+                ('date', 'datetime64[ms]'),
+                ('x_dest', '>i'),
+                ('y_dest', '>i'),
+                ('x_speed', '>i'),
+                ('y_speed', '>i')
+            ]
+        )
+        if args.plot == 'separated':
+            bpn = 3 + len(args.plot_extra)
+        elif args.plot == 'errors':
+            bpn = 1
+        else:
+            bpn = 3
+    fig = pylab.figure()
 
-	ax_pos_x = fig.add_subplot(gs[0:1,0:1])
+    if args.speed_dif and commands is not None:
+        bpn += 1
 
-	ax_pos_x.plot(positions[:,0], positions[:,1], ',')
-	ax_pos_x.set_ylabel('Alt pos')
+    if args.axis == 'both':
+        gs = gridspec.GridSpec(bpn * 2, 1)
+    else:
+        gs = gridspec.GridSpec(bpn, 1)
 
-	ax_pos_y = add_plot(gs[1:2,0:1], ax_pos_x, 'Az pos')
-	ax_pos_y.plot(positions[:,0], positions[:,2], 'g,')
+    def add_plot(gs, index, xaxis, ylabel):
+        ret = fig.add_subplot(gs[index:index+1, 0:1], sharex=xaxis)
+        if xaxis:
+            ret.set_xlim(xaxis.get_xlim())
+        ret.set_ylabel(ylabel)
+        ret.grid(True)
+        return ret
 
-	ax_err_x = add_plot(gs[2:3,0:1], ax_pos_x, 'Alt err')
-	ax_err_x.plot(positions[:,0], positions[:,3], ',')
+    p_date = [x.astype(datetime.datetime) for x in positions[first:].date]
+    if commands is not None:
+        c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
 
-	ax_err_y = add_plot(gs[3:4,0:1], ax_pos_x, 'Az err')
-	ax_err_y.plot(positions[:,0], positions[:,4], 'g,')
+    ax_current = None
+    gs_index = 0
 
-	commd_x_speed = add_plot(gs[4:5,0:1], ax_pos_x, 'Alt speed')
-	commd_x_speed.plot(commands[:,0], commands[:,3], ',')
+    plot_x = args.axis in ['both', 'x', 'alt']
+    plot_y = args.axis in ['both', 'y', 'az']
+    axis_x = None
+    axis_y = None
 
-	commd_y_speed = add_plot(gs[5:6,0:1], ax_pos_x, 'Az speed')
-	commd_y_speed.plot(commands[:,0], commands[:,4], 'g,')
+    lines_x = []
+    lines_y = []
 
-	fig.subplots_adjust(hspace=0)
+    if plot_x and not(args.plot in ['errors']):
+        ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
+        ax_current.plot(p_date, positions.x_pos, args.markers)
+        gs_index += 1
 
-	pylab.show()
+    if plot_y and not(args.plot in ['errors']):
+        ax_current = add_plot(gs, gs_index, ax_current, 'Az pos')
+        ax_current.plot(p_date, positions.y_pos, 'g' + args.markers)
+        gs_index += 1
+
+    if plot_x:
+        ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
+        p, = ax_current.plot(
+            p_date,
+            positions.x_err,
+            args.markers,
+            label='Alt err'
+        )
+        gs_index += 1
+        if not(args.plot in ['separated']):
+            axis_x = ax_current
+            lines_x.append(p)
+
+    if plot_y:
+        ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
+        p, = ax_current.plot(
+            p_date,
+            positions.y_err,
+            'g' + args.markers,
+            label='Az err'
+        )
+        gs_index += 1
+        if not(args.plot in ['separated']):
+            axis_y = ax_current
+            lines_y.append(p)
+
+    if plot_x and commands is not None and not(args.plot in ['errors']):
+        ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
+        ax_current.plot(c_date, commands.x_speed, args.markers)
+        gs_index += 1
+
+    if plot_y and commands is not None and not(args.plot in ['errors']):
+        ax_current = add_plot(gs, gs_index, ax_current, 'Az speed')
+        ax_current.plot(c_date, commands.y_speed, 'g' + args.markers)
+        gs_index += 1
+
+    if args.speed_dif and plot_x and commands is not None:
+        ax_current = add_plot(gs, gs_index, ax_current, 'Alt sp dif')
+        ax_current.plot(c_date[1:], numpy.diff(
+            commands.x_speed),
+            'b' + args.markers
+        )
+        gs_index += 1
+
+    if args.speed_dif and plot_y and commands is not None:
+        ax_current = add_plot(gs, gs_index, ax_current, 'Az sp dif')
+        ax_current.plot(c_date[1:], numpy.diff(
+            commands.y_speed),
+            'g' + args.markers
+        )
+        gs_index += 1
+
+    def plot_extra(extra, label, in_axis_x, in_axis_y, color):
+        global gs_index
+        global ax_current
+        global positions
+        global lines_x
+        global lines_y
+        if extra in args.plot_extra:
+            if plot_x:
+                extra_data = positions[positions.x_type == extra]
+                lab = 'Alt ' + label
+                if in_axis_x is None:
+                    axis = add_plot(gs, gs_index, ax_current, lab)
+                    mark = 'b' + args.markers
+                else:
+                    axis = in_axis_x.twinx()
+                    axis.set_ylabel(lab)
+                    axis.spines["right"].set_position((
+                        "axes",
+                        1 + args.plot_extra.index(extra) * 0.1
+                    ))
+                    axis.yaxis.label.set_color(color)
+                    mark = color + args.markers
+                p, = axis.plot([
+                    x.astype(datetime.datetime) for x in extra_data.date],
+                    extra_data.x_val,
+                    mark,
+                    label=lab
+                )
+                lines_x.append(p)
+                gs_index += 1
+            if plot_y:
+                extra_data = positions[positions.y_type == extra]
+                lab = 'Az ' + label
+                if in_axis_y is None:
+                    axis = add_plot(gs, gs_index, ax_current, lab)
+                    mark = 'g' + args.markers
+                else:
+                    axis = in_axis_y.twinx()
+                    axis.set_ylabel(lab)
+                    axis.spines["right"].set_position((
+                        "axes",
+                        1 + args.plot_extra.index(extra) * 0.1
+                    ))
+                    axis.yaxis.label.set_color(color)
+                    mark = color + args.markers
+                p, = axis.plot([
+                    x.astype(datetime.datetime) for x in extra_data.date],
+                    extra_data.y_val,
+                    mark,
+                    label=lab
+                )
+                lines_y.append(p)
+                gs_index += 1
+
+    plot_extra('E', 'error', axis_x, axis_y, 'y')
+    plot_extra('C', 'current', axis_x, axis_y, 'k')
+    plot_extra('S', 'supply', axis_x, axis_y, 'c')
+    plot_extra('T', 'temperature', axis_x, axis_y, 'm')
+    plot_extra('P', 'PID output', axis_x, axis_y, 'r')
+
+    # add labels, if needed
+    if axis_x is not None:
+        axis_x.legend(lines_x, [l.get_label() for l in lines_x])
+    if axis_y is not None:
+        axis_y.legend(lines_y, [l.get_label() for l in lines_y])
+
+    fig.subplots_adjust(hspace=0)
+
+    if not(args.plot in ['separated']):
+        fig.subplots_adjust(right=1-0.07*len(args.plot_extra))
+
+    fig.autofmt_xdate()
+
+    if args.save_plot is not None:
+        print(_('saving plot to {0}').format(args.save_plot, end=' '))
+        pylab.savefig(args.save_plot)
+        print(_('done'))
+    else:
+        pylab.show()
+
+    pylab.close(fig)

@@ -83,7 +83,7 @@ void *move_to_target_azimuth( void *value)
   int ret ;
   double abs_az_diff = -1 ;
   double curAzimutDifference ;
-  static double lastSetPoint=0., curSetPoint=0. ;
+  static double curSetPoint=0. ;
   static double lastSetPointSign=0., curSetPointSign=0. ;
   double tmpSetPoint= 0. ;
   double lastRa=-9999., lastDec=-9999. ;
@@ -193,7 +193,6 @@ void *move_to_target_azimuth( void *value)
 
 	curSetPoint= 0. ;
 	set_setpoint( curSetPoint) ;
-	lastSetPoint= 0. ;
 	lastSetPointSign= 0. ;
 	if( motorState== SSD650V_MS_STOPPED) {
 	  is_synced= SYNCED ;
@@ -224,7 +223,6 @@ void *move_to_target_azimuth( void *value)
 	    fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (ON)\n") ;
 	  } 
 	}
-	lastSetPoint    =  curSetPoint ;
 	lastSetPointSign=  curSetPointSign ;
       }
       if(( motorState== SSD650V_MS_RUNNING) || (( abs_az_diff= fabs( curAzimutDifference/180. * M_PI)) >= limit)) {

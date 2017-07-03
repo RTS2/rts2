@@ -54,6 +54,16 @@ class Expander
 		virtual std::string expand (std::string expression, bool onlyAlphaNum = false);
 
 		/**
+		 * Expand file path.
+		 *
+		 * @param pathEx      Path expansion string.
+		 * @param onlyAlNum   If true, replace non-path character in expansion
+		 *
+		 * @return Expanded path.
+		 */
+		virtual std::string expandPath (std::string pathEx, bool onlyAlNum = true);
+
+		/**
 		 * Sets expanding date to current sysdate.
 		 */
 		void setExpandDate ();

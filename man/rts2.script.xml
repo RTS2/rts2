@@ -1083,7 +1083,6 @@ echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
 	</listitem>
       </varlistentry>
     </variablelist>
-  </refsect1>
     <refsect2>
       <title>Array indexing</title>
       <para>
@@ -1093,6 +1092,45 @@ echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
         has index equal to array size. Please see example section for some exampls.
       </para>
     </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>Runing scripts</title>
+
+    <para>
+      Script can be run using
+      <citerefentry><refentrytitle>rts2-scriptexec</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      command, or autonomously as part of execution of target through
+      <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+    </para>
+
+    <para>
+      Please be aware that scripts can be run only on camera or photometers
+      devices. So for example, to move the telescope, one need to execute <emphasis>in systems with C0 camera</emphasis>:
+    </para>
+
+    <literallayout>
+rts2-scriptexec -d C0 -s 'T0.cmd hadec(-15,60)'
+    </literallayout>
+
+    <para>
+      Or even better, using TX to address any telescope:
+    </para>
+
+    <literallayout>
+rts2-scriptexec -d C0 -s 'TX.cmd hadec(-15,60)'
+    </literallayout>
+
+    <para>
+      To attach script for a target, use:
+    </para>
+
+    <literallayout>
+rts2-target -c C0 -s 'for 10 { E 10 filter+=1 }' 1002
+    </literallayout>
+
+  </refsect1>
+ 
   <refsect1>
     <title>EXAMPLES</title>
 
@@ -1229,6 +1267,10 @@ done
       </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-target</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-scriptexec</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
     </para>

@@ -112,6 +112,7 @@ class AltAz: public Telescope
 		rts2core::ValueLong *altMax;
 
 		virtual void afterMovementStart ();
+		virtual void afterParkingStart ();
 
 	private:
 		double nextParUpdate;

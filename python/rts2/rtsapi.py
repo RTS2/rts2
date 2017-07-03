@@ -327,7 +327,7 @@ class JSONProxy(Rts2JSON):
 		ret = self.loadJson('/api/cmd', {'d':device, 'c':command, 'e':1, 'async':1 if async else 0})
 		if async:
 			return 0
-	 	self.devices[device] = ret['d']
+		self.devices[device] = ret['d']
 		return ret['ret']
 	
 	def getDevicesByType(self,device_type):

@@ -178,7 +178,7 @@ class MaxDomeII:public Cupola
                 rts2core::ValueDouble *parkAz;
                 rts2core::ValueBool *shutterOperAtAnyAZ;
                 double domeTargetAz( ln_equ_posn tel_equ);
-                struct geometry domeMountGeometry ;
+                struct tk_geometry domeMountGeometry ;
                 // see Toshimi Taki's paper: Matrix Method for Coodinates Transformation
                 rts2core::ValueDouble *xd ;
                 rts2core::ValueDouble *zd ;
@@ -844,7 +844,7 @@ double MaxDomeII::domeTargetAz( ln_equ_posn tel_equ)
       obs_location.lng= obs_loc_tmp->lng;
 
       // dome slit azimuth as function of telescope position and dome/mount geometry 
-      return dome_target_az( tel_equ, obs_location, domeMountGeometry) ; 
+      return TK_dome_target_az( tel_equ, obs_location, domeMountGeometry) ; 
 }
 
 int MaxDomeII::parkCupola ()

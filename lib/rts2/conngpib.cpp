@@ -41,7 +41,7 @@ void ConnGpib::readDouble (const char *buf, double &val)
 	char *sep = strchr (rb, '\n');
 	if (sep)
 		*sep = '\0';
-	val = atof (rb);
+	val = atof (getValueBuffer (buf, rb));
 }
 
 
@@ -50,19 +50,19 @@ void ConnGpib::readValue (const char *buf, rts2core::Value * val)
 	switch (val->getValueType ())
 	{
 		case RTS2_VALUE_DOUBLE:
-			readValue (buf, (rts2core::ValueDouble *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueDouble *> (val));
 			return;
 		case RTS2_VALUE_FLOAT:
-			readValue (buf, (rts2core::ValueFloat *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueFloat *> (val));
 			return;
 		case RTS2_VALUE_BOOL:
-			readValue (buf, (rts2core::ValueBool *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueBool *> (val));
 			return;
 		case RTS2_VALUE_INTEGER:
-			readValue (buf, (rts2core::ValueInteger *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueInteger *> (val));
 			return;
 		case RTS2_VALUE_SELECTION:
-			readValue (buf, (rts2core::ValueSelection *) val);
+			readValue (buf, dynamic_cast <rts2core::ValueSelection *> (val));
 			return;
 		default:
 			logStream (MESSAGE_ERROR) << "do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;
@@ -121,8 +121,9 @@ void ConnGpib::readValue (const char *subsystem, std::list < rts2core::Value * >
 
 void ConnGpib::readValue (const char *buf, rts2core::ValueString * val)
 {
-	char rb[200];
-	gpibWriteRead (buf, rb, 200);
+	char rmb[200];
+	gpibWriteRead (buf, rmb, 200);
+	char *rb = getValueBuffer (buf, rmb);
 	char *sep = strchr (rb, '\n');
 	if (sep)
 		*sep = '\0';
@@ -137,7 +138,7 @@ void ConnGpib::readValue (const char *buf, rts2core::ValueDouble * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueCharArr (rb);
+	val->setValueCharArr (getValueBuffer (buf, rb));
 }
 
 
@@ -145,13 +146,14 @@ void ConnGpib::readValue (const char *buf, rts2core::ValueFloat * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueCharArr (rb);
+	val->setValueCharArr (getValueBuffer (buf, rb));
 }
 
 void ConnGpib::readValue (const char *buf, rts2core::ValueBool * val)
 {
-	char rb[50];
-	gpibWriteRead (buf, rb, 50);
+	char rmb[50];
+	gpibWriteRead (buf, rmb, 50);
+	const char *rb = getValueBuffer (buf, rmb);
 	val->setValueBool (!strncmp (rb, "ON", 2) || !strncmp (rb, "1", 1));
 }
 
@@ -159,14 +161,14 @@ void ConnGpib::readValue (const char *buf, rts2core::ValueInteger * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueCharArr (rb);
+	val->setValueCharArr (getValueBuffer (buf, rb));
 }
 
 void ConnGpib::readValue (const char *buf, rts2core::ValueSelection * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	if (val->setValueCharArr (rb))
+	if (val->setValueCharArr (getValueBuffer (buf, rb)))
 		throw rts2core::Error (std::string ("unknow value for selection ") + val->getName () + " " + rb);
 }
 
@@ -209,4 +211,19 @@ char ConnGpib::getTimeoutTmo (float &_sec)
 	}
 	_sec = NAN;
 	return 0;
+}
+
+char * ConnGpib::getValueBuffer (const char *buf, char *rb)
+{
+	if (replyWithValueName)
+	{
+		if (strncasecmp (rb, buf, strlen (buf) - 1) == 0)
+			return rb + strlen (buf);
+		else
+			return "";
+	}
+	else
+	{
+		return rb;
+	}
 }

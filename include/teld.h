@@ -330,9 +330,9 @@ class Telescope:public rts2core::Device
 		void setIgnoreCorrection (double new_ign) { ignoreCorrection->setValueDouble (new_ign); }
 
 		/**
-		 * Set ponting model. 0 is EQU, 1 is ALT-AZ
+		 * Set ponting model.
 		 *
-		 * @param pModel 0 for EQU, 1 for ALT-AZ.
+		 * @param pModel 0 for EQU, 1 for ALT-AZ, 2 for ALT-ALT
 		 */
 		void setPointingModel (int pModel) { pointingModel->setValueInteger (pModel); }
 
@@ -434,6 +434,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *telHumidity;
 		rts2core::ValueFloat *telWavelength;
 		rts2core::ValueDouble *telDUT1;
+
+		/**
+		 * Which coordinates are used for pointing (eq, alt-az,..)
+		 */
+		rts2core::ValueSelection *pointingModel;
 
 		/**
 		 * Precalculated latitude values..
@@ -1088,6 +1093,13 @@ class Telescope:public rts2core::Device
 		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		virtual void afterMovementStart ();
+		virtual void afterParkingStart ();
+
+		/**
+		 * Called when telescope state changes between idle, moving and tracking.
+		 * Great for changing recordings of some date at each occasion.
+		 */
+		virtual void changeIdleMovingTracking () {};
 
 	private:
 		rts2core::Connection * move_connection;
@@ -1363,11 +1375,6 @@ class Telescope:public rts2core::Device
 		 * Zero's all corrections, increment move count. Called before move.
 		 */
 		void incMoveNum ();
-
-		/** 
-		 * Which coordinates are used for pointing (eq, alt-az,..)
-		 */
-		rts2core::ValueSelection *pointingModel;
 
 		struct ln_ell_orbit mpec_orbit;
 

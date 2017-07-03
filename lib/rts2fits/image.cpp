@@ -2383,8 +2383,11 @@ void Image::writeConnBaseValue (const std::string sname, rts2core::Value * val, 
 				delete[] v_desc;
 			}
 			break;
+		case RTS2_VALUE_PID:
+			setValue (name, val->getDisplayValue (), desc);
+			break;
 		default:
-			logStream (MESSAGE_ERROR) << "Don't know how to write to FITS file header value '" << name << "' of type " << val->getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "unable to write to FITS file header value '" << name << "' of type " << val->getValueType () << sendLog;
 			break;
 	}
 }

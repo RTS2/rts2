@@ -42,6 +42,7 @@ class Dummy:public SensorWeather
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_AUTOSAVE, 0);
 			createValue (testDouble, "TEST_DOUBLE", "test double value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (testDoubleLimit, "test_limit", "test value for double; if < TEST_DOUBLE, weather will be swicthed to bad", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			createValue (testString, "test_string", "test string", false, RTS2_VALUE_WRITABLE);
 			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (randomInterval, "random_interval", "[s] time interval between generating two random doubles", false, RTS2_VALUE_WRITABLE);
 			randomInterval->setValueFloat (1.0);
@@ -199,6 +200,7 @@ class Dummy:public SensorWeather
 		rts2core::ValueInteger *testInt;
 		rts2core::ValueDouble *testDouble;
 		rts2core::ValueDouble *testDoubleLimit;
+		rts2core::ValueString *testString;
 		rts2core::ValueDouble *randomDouble;
 		rts2core::ValueFloat *randomInterval;
 		rts2core::ValueSelection *openClose;

@@ -40,7 +40,7 @@ NWindowEdit::~NWindowEdit (void)
 
 bool NWindowEdit::passKey (int key)
 {
-	return isalnum (key) || isspace (key) || key == '+'  || key == '-' || key == '.' || key == ',' || key == '_' || key == '/' || key == '\\';
+	return isprint (key);
 }
 
 keyRet NWindowEdit::injectKey (int key)
@@ -69,7 +69,7 @@ keyRet NWindowEdit::injectKey (int key)
 				wmove (getWriteWindow (), getCurY (), x + 1);
 			break;
 		default:
-			if (isalnum (key) || isspace (key) || key == '+' || key == '-' || key == '.' || key == ',' || key == '_' || key == '/' || key == '\\' || key == '"' || key == '\'')
+			if (isprint (key))
 			{
 				if (passKey (key))
 				{

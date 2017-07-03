@@ -563,6 +563,14 @@ int ElementCommand::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 	return 0;
 }
 
+ElementCommand::ElementCommand (Script * _script, const char *new_device, const char *_cmd, std::vector <std::string> _args):Element (_script)
+{
+	cmd = std::string (_cmd);
+	deviceName = new char[strlen (new_device) + 1];
+	strcpy (deviceName, new_device);
+	args = _args;
+}
+
 void ElementCommand::printScript (std::ostream &os)
 {
 	os << COMMAND_COMMAND " " << cmd;
