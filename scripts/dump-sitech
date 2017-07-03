@@ -300,8 +300,8 @@ for {3:.3f} seconds').format(
 counts {1:>9} angle {2} \
 for {3:.3f} seconds').format(
                         self.positions[self.y_errors[-1][0]][0],
-			c,
-			a.to_string(unit=astropy.units.degree),
+                        c,
+                        a.to_string(unit=astropy.units.degree),
                         ts
                     ))
                     self.y_errors[-1][1] = i
