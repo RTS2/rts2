@@ -291,7 +291,7 @@ for {3:.3f} seconds').format(
                         self.positions[self.last_y_error][0] -
                         self.positions[self.y_errors[-1][0]][0]
                     ).total_seconds()
-                    c = self.positions[self.y_errors[-1][0]][1]
+                    c = self.positions[self.y_errors[-1][0]][2]
                     a = astropy.coordinates.Angle(
                         math.pi * c / float(2**26),
                         unit=astropy.units.radian
