@@ -20,6 +20,7 @@
 #include "camd.h"
 #include "gxccd.h"
 #include "utilsfunc.h"
+#include <iomanip>
 
 #define EVENT_TE_RAMP	      RTS2_LOCAL_EVENT + 678
 
@@ -393,7 +394,7 @@ int GXCCD::setFilterNum (int new_filter, const char *fn)
 	if (fn != NULL)
 		return Camera::setFilterNum (new_filter, fn);
 	logStream (MESSAGE_INFO) << "moving filter from #" << camFilterVal->getValueInteger () << " (" << camFilterVal->getSelName () << ")" << " to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << sendLog;
-	last_filter_move = getNow ();
+	double last_filter_move = getNow ();
 	int ret = gxccd_set_filter (camera, new_filter) ? -1 : 0;
 	last_filter_move = getNow () - last_filter_move;
 	if (ret == 0)
