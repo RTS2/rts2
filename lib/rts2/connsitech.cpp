@@ -488,6 +488,7 @@ void ConnSitech::startLogging (const char *logFileName)
 {
 	endLogging ();
 
+	mkpath (logFileName, 0777);
 	logFile = open (logFileName, O_APPEND | O_WRONLY | O_CREAT);
 	if (logFile < 0)
 	{
