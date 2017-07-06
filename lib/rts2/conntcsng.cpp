@@ -39,6 +39,7 @@ const char * ConnTCSNG::runCommand (const char *cmd, const char *req)
 	receiveTillEnd (ngbuf, NGMAXSIZE, 3);
 
 	close (sock);
+	sock = -1;
 
 	wlen = snprintf (wbuf, 200, "%s %s %d ", obsID, subID, reqCount);
 
