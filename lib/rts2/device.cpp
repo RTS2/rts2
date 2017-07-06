@@ -742,7 +742,8 @@ int Device::init ()
 	}
 
 	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
-	ret = checkLockFile (s.c_str ());
+	setLockFile (s.c_str ());
+	ret = checkLockFile ();
 	if (ret < 0)
 		exit (ret);
 

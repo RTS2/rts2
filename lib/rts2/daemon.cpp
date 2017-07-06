@@ -64,10 +64,9 @@ void Daemon::addConnectionSock (int in_sock)
 	addConnection (conn);
 }
 
-Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc, _argv)
+Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc, _argv), lock_fname ("")
 {
 	lockPrefix = NULL;
-	lock_fname = NULL;
 	lock_file = 0;
 	runAs = NULL;
 
@@ -177,14 +176,16 @@ int Daemon::processArgs (const char *arg)
 	return 0;
 }
 
-int Daemon::checkLockFile (const char *_lock_fname)
+int Daemon::checkLockFile ()
 {
+	// either don't create lock file, or lock_file already created
+	if (lock_file > 0)
+		return lock_file;
 	if (lock_file == -2)
 		return 0;
 	int ret;
-	lock_fname = _lock_fname;
 	mode_t old_mask = umask (022);
-	lock_file = open (lock_fname, O_RDWR | O_CREAT, 0666);
+	lock_file = open (lock_fname.c_str (), O_RDWR | O_CREAT | O_TRUNC, 0666);
 	umask (old_mask);
 	if (lock_file == -1)
 	{
@@ -293,15 +294,14 @@ int Daemon::lockFile ()
 		return 0;
 	if (!lock_file)
 		return -1;
-	FILE *fd = fdopen (lock_file, "w");
-	if (fd == NULL)
-		return -1;
-	if (fprintf (fd, "%i\n", getpid ()) <= 0)
+	char buf[20];
+	size_t bs = snprintf (buf, 20, "%i\n", getpid ());
+	if (write (lock_file, buf, bs) <= 0)
 	{
 	  	logStream (MESSAGE_ERROR) << "Cannot write PID to lock file!" << sendLog;
 		return -1;
 	}
-	fflush (fd);
+	syncfs (lock_file);
 	return 0;
 }
 
@@ -488,10 +488,13 @@ void Daemon::endRunLoop ()
 {
 	if (watched_child > 0)
 	{
-		kill (SIGINT, watched_child);
+		kill (-watched_child, SIGINT);
+		kill (watched_child, SIGINT);
+		kill (-getpid (), SIGINT);
 		autorestart = -1;
 	}
 	Block::endRunLoop ();
+	exit (0);
 }
 
 int Daemon::idle ()

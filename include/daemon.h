@@ -232,7 +232,18 @@ class Daemon:public Block
 		 */
 		void sendProgressAll (double start, double end, Connection *except);
 
-		int checkLockFile (const char *_lock_fname);
+		/**
+		 * Sets lock filename.
+		 */
+		void setLockFile (const char *_lock_fname) { lock_fname = std::string (_lock_fname); }
+
+		/**
+		 * Checks lockfile existence.
+		 *
+		 * @return >0 if lock file is already created, 0 when lock
+		 * file should not be created, and -1 on error.
+		 */
+		int checkLockFile ();
 
 
 		void setNotDaemonize ()
@@ -655,7 +666,7 @@ class Daemon:public Block
 		pid_t watched_child;
 		int listen_sock;
 		void addConnectionSock (int in_sock);
-		const char * lock_fname;
+		std::string lock_fname;
 
 		// lock file FD. -2 signals device does not create lock file (usually part of multidev, where only master creates lock file)
 		int lock_file;
