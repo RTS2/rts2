@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
-#include <stdio.h>
 #include <syslog.h>
 #include <sys/fcntl.h>
 #include <sys/types.h>
