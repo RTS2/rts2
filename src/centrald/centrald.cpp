@@ -579,7 +579,8 @@ int Centrald::init ()
 
 	std::ostringstream _os;
 	_os << getLockPrefix () << "centrald_" << getPort ();
-	ret = checkLockFile (_os.str ().c_str ());
+	setLockFile (_os.str ().c_str ());
+	ret = checkLockFile ();
 	if (ret)
 		return ret;
 	ret = doDaemonize ();
@@ -588,7 +589,7 @@ int Centrald::init ()
 
 #ifndef RTS2_HAVE_FLOCK
 	// reopen..
-	ret = checkLockFile (_os.str ().c_str ());
+	ret = checkLockFile ();
 	if (ret)
 		return ret;
 #endif
