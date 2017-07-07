@@ -189,6 +189,15 @@ not drop bellow -e limit for --error-band seconds'),
     type=float
 )
 
+parser.add_argument(
+    '-x',
+    dest='x_axis',
+    help=_('X axis value. Defaults to time.'),
+    action='store',
+    default='time',
+    choices=['time', 'az-counts', 'az-deg', 'alt-counts', 'alt-deg']
+)
+
 args = parser.parse_args()
 
 
@@ -473,9 +482,32 @@ for fn in args.files:
         ret.grid(True)
         return ret
 
-    p_date = [x.astype(datetime.datetime) for x in positions[first:].date]
-    if commands is not None:
-        c_date = [x.astype(datetime.datetime) for x in commands[first:].date]
+    if args.x_axis == 'time':
+        p_x = [x.astype(datetime.datetime) for x in positions.date]
+        if commands is not None:
+            c_x = [x.astype(datetime.datetime) for x in commands.date]
+    elif args.x_axis == 'az-counts':
+        p_x = positions.y_pos
+        if commands is not None:
+            c_x = commands.y_dest
+    elif args.x_axis == 'az-deg':
+        p_x = [360.0 * float(y) / 2**26 for y in positions.y_pos]
+        if commands is not None:
+            c_x = [
+                360.0 * float(y) / 2**26 for y in
+                commands.y_dest
+            ]
+    elif args.x_axis == 'alt-counts':
+        p_x = positions.x_pos
+        if commands is not None:
+            c_x = commands.x_dest
+    elif args.x_axis == 'alt-deg':
+        p_x = [360.0 * float(y) / 2**26 for y in positions.x_pos]
+        if commands is not None:
+            c_x = [
+                360.0 * float(y) / 2**26 for y in
+                commands.x_dest
+            ]
 
     ax_current = None
     gs_index = 0
@@ -490,18 +522,18 @@ for fn in args.files:
 
     if plot_x and not(args.plot in ['errors']):
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
-        ax_current.plot(p_date, positions.x_pos, args.markers)
+        ax_current.plot(p_x, positions.x_pos, args.markers)
         gs_index += 1
 
     if plot_y and not(args.plot in ['errors']):
         ax_current = add_plot(gs, gs_index, ax_current, 'Az pos')
-        ax_current.plot(p_date, positions.y_pos, 'g' + args.markers)
+        ax_current.plot(p_x, positions.y_pos, 'g' + args.markers)
         gs_index += 1
 
     if plot_x:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
         p, = ax_current.plot(
-            p_date,
+            p_x,
             positions.x_err,
             args.markers,
             label='Alt err'
@@ -514,7 +546,7 @@ for fn in args.files:
     if plot_y:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
         p, = ax_current.plot(
-            p_date,
+            p_x,
             positions.y_err,
             'g' + args.markers,
             label='Az err'
@@ -526,17 +558,17 @@ for fn in args.files:
 
     if plot_x and commands is not None and not(args.plot in ['errors']):
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
-        ax_current.plot(c_date, commands.x_speed, args.markers)
+        ax_current.plot(c_x, commands.x_speed, args.markers)
         gs_index += 1
 
     if plot_y and commands is not None and not(args.plot in ['errors']):
         ax_current = add_plot(gs, gs_index, ax_current, 'Az speed')
-        ax_current.plot(c_date, commands.y_speed, 'g' + args.markers)
+        ax_current.plot(c_x, commands.y_speed, 'g' + args.markers)
         gs_index += 1
 
     if args.speed_dif and plot_x and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Alt sp dif')
-        ax_current.plot(c_date[1:], numpy.diff(
+        ax_current.plot(c_x[1:], numpy.diff(
             commands.x_speed),
             'b' + args.markers
         )
@@ -544,7 +576,7 @@ for fn in args.files:
 
     if args.speed_dif and plot_y and commands is not None:
         ax_current = add_plot(gs, gs_index, ax_current, 'Az sp dif')
-        ax_current.plot(c_date[1:], numpy.diff(
+        ax_current.plot(c_x[1:], numpy.diff(
             commands.y_speed),
             'g' + args.markers
         )
@@ -611,9 +643,9 @@ for fn in args.files:
     plot_extra('P', 'PID output', axis_x, axis_y, 'r')
 
     # add labels, if needed
-    if axis_x is not None:
+    if axis_x is not None and len(args.plot_extra) > 0:
         axis_x.legend(lines_x, [l.get_label() for l in lines_x])
-    if axis_y is not None:
+    if axis_y is not None and len(args.plot_extra) > 0:
         axis_y.legend(lines_y, [l.get_label() for l in lines_y])
 
     fig.subplots_adjust(hspace=0)
