@@ -786,7 +786,7 @@ void SelectorDev::message (Message & msg)
 	{
 		case INFO_OBSERVATION_SLEW:
 		case INFO_OBSERVATION_LOOP:
-			updateNext (true, msg.getMessageArgInt (1), msg.getMessageArgInt (0));
+			updateNext (true, msg.getMessageArgInt (2), msg.getMessageArgInt (1));
 			break;
 		case INFO_OBSERVATION_INTERRUPTED:
 			if (current_queue->getValueInteger () > 0 && current_target->getValueInteger () == msg.getMessageArgInt (1))
