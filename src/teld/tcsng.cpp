@@ -237,24 +237,33 @@ int TCSNG::initHardware ()
 
 int TCSNG::info ()
 {
-	setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
-	double nglst = ngconn->getSexadecimalTime ("ST");
-
-	systemEnable->setValueBool (ngconn->getInteger ("DISABLE") == 0);
-
-	const char * domest = ngconn->request ("DOME");
-	double del,telaz,az;
-	int mod, in, home;
-	size_t slen = sscanf (domest, "%lf %d %d %lf %lf %d", &del, &mod, &in, &telaz, &az, &home);
-	if (slen == 6)
+	double nglst;
+	try
 	{
-		domeAuto->setValueBool (mod == 1);
-		domeInit->setValueBool (in == 1);
-		domeAz->setValueDouble (az);
-		domeHome->setValueBool (home == 1);
-	}
+		setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
+		nglst = ngconn->getSexadecimalTime ("ST");
 
-	reqcount->setValueInteger (ngconn->getReqCount ());
+		systemEnable->setValueBool (ngconn->getInteger ("DISABLE") == 0);
+
+		const char * domest = ngconn->request ("DOME");
+		double del,telaz,az;
+		int mod, in, home;
+		size_t slen = sscanf (domest, "%lf %d %d %lf %lf %d", &del, &mod, &in, &telaz, &az, &home);
+		if (slen == 6)
+		{
+			domeAuto->setValueBool (mod == 1);
+			domeInit->setValueBool (in == 1);
+			domeAz->setValueDouble (az);
+			domeHome->setValueBool (home == 1);
+		}
+
+		reqcount->setValueInteger (ngconn->getReqCount ());
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "info " << er << sendLog;
+		return -1;
+	}
 
 	return Telescope::infoLST (nglst);
 }
@@ -299,7 +308,16 @@ int TCSNG::startPark ()
 
 int TCSNG::isMoving ()
 {
-	int mot = atoi (ngconn->request ("MOTION"));
+	int mot = 0;
+	try
+	{
+		mot = atoi (ngconn->request ("MOTION"));
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "isMoving " << er << sendLog;
+		return -1;
+	}
 	motionState->setValueInteger (mot);
 	switch (tcsngmoveState->getValueInteger ())
 	{
