@@ -13,35 +13,37 @@ try:
 except:
     raise
 
+
 class JSONTest(unittest.TestCase):
 
     def setUp(self):
-        lock_prefix='--lock-prefix=./rts2_test_'
-	server = '--server=localhost:6167'
-	config = '--config=rts2.ini'
+        lock_prefix = '--lock-prefix=./rts2_test_'
+        server = '--server=localhost:6167'
+        config = '--config=rts2.ini'
         self.centrald = subprocess.Popen([
-	    '../src/centrald/rts2-centrald',
-	    '-i' , '--debug',
-	    lock_prefix, config,
-	    '--local-port=6167'
-	])
+            '../src/centrald/rts2-centrald',
+            '-i', '--debug',
+            lock_prefix, config,
+            '--local-port=6167'
+        ])
         self.httpd = subprocess.Popen([
-	    '../src/httpd/rts2-httpd',
-	    '-i' , '--debug',
-	    lock_prefix, server, config,
-	    '-p 8889', '--user=pytest:pytest'
-	])
+            '../src/httpd/rts2-httpd',
+            '-i', '--debug',
+            lock_prefix, server, config,
+            '-p 8889', '--user=pytest:pytest'
+        ])
         self.camd_nf = subprocess.Popen([
-	    '../src/camd/rts2-camd-dummy',
-	    '-i' , '--debug', '-d NF',
-	    lock_prefix, server,
-	    '--width=5000', '--height=5000'
-	])
-	time.sleep(5)
-	self.j = rtsapi.createProxy('http://localhost:8889', 'pytest', 'pytest')
+            '../src/camd/rts2-camd-dummy',
+            '-i', '--debug', '-d NF',
+            lock_prefix, server,
+            '--width=5000', '--height=5000'
+        ])
+        time.sleep(5)
+        self.j = rtsapi.createProxy(
+            'http://localhost:8889', 'pytest', 'pytest')
 
     def tearDown(self):
-    	self.camd_nf.terminate()
+        self.camd_nf.terminate()
         self.httpd.terminate()
         self.centrald.terminate()
 
@@ -50,8 +52,9 @@ class JSONTest(unittest.TestCase):
         self.assertEqual(self.j.getValue('centrald', 'latitude'), 50)
 
         self.assertEqual(self.j.getValue('NF', 'chips', True), 1)
-	data = self.j.takeImage('NF')
-	self.j.refresh()
-	self.assertEqual(self.j.getValue('NF', 'average'), numpy.average(data))
+        data = self.j.takeImage('NF')
+        self.j.refresh()
+        self.assertEqual(self.j.getValue('NF', 'average'), numpy.average(data))
+
 
 unittest.main()
