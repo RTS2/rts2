@@ -118,6 +118,11 @@ int DeviceDb::initDB (const char *conn_name)
 
 	if (connectString)
 	{
+		if (strlen(connectString) == 0)
+		{
+			logStream (MESSAGE_WARNING) << "starting without DB" << sendLog;
+			return 0;
+		}
 		c_db = connectString;
 	}
 	else

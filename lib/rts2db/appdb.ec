@@ -359,7 +359,7 @@ AppDb::AppDb (int in_argc, char **in_argv) : rts2core::CliApp (in_argc, in_argv)
 AppDb::~AppDb ()
 {
 	if (connectString)
-		delete connectString;
+		delete[] connectString;
 }
 
 int AppDb::processOption (int in_opt)

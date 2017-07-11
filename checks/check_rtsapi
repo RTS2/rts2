@@ -30,7 +30,8 @@ class JSONTest(unittest.TestCase):
             '../src/httpd/rts2-httpd',
             '-i', '--debug',
             lock_prefix, server, config,
-            '-p 8889', '--user=pytest:pytest'
+            '-p 8889', '--user=pytest:pytest',
+	    '--database='
         ])
         self.camd_nf = subprocess.Popen([
             '../src/camd/rts2-camd-dummy',
