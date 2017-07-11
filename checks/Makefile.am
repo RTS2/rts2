@@ -6,7 +6,7 @@ EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template alt
 
 if LIBCHECK
 TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi
-check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi
+check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
 
