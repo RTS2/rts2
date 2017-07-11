@@ -49,6 +49,7 @@ using namespace Magick;
 #define OPT_BB_QUEUE            OPT_LOCAL + 80
 #define OPT_SSL_CERT            OPT_LOCAL + 81
 #define OPT_SSL_KEY             OPT_LOCAL + 82
+#define OPT_USER_PASSWORD       OPT_LOCAL + 83
 
 using namespace XmlRpc;
 
@@ -496,6 +497,14 @@ int HttpD::processOption (int in_opt)
 			sslKey = optarg;
 			break;
 #endif
+		case OPT_USER_PASSWORD:
+		{
+			std::string ts = std::string(optarg);
+			size_t dc = ts.find(':');
+			cliUsername = ts.substr(0, dc);
+			cliPassword = ts.substr(dc + 1);
+			break;
+		}
 		case OPT_STATE_CHANGE:
 			stateChangeFile = optarg;
 			break;
@@ -814,6 +823,7 @@ HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_
 	addOption (OPT_SSL_CERT, "ssl-cert", 1, "OpenSSL ca certification file");
 	addOption (OPT_SSL_KEY, "ssl-key", 1, "OpenSSL private key file");
 #endif
+	addOption (OPT_USER_PASSWORD, "user", 1, "username and password, : separated - primarly for testing, overrides events file");
 	XmlRpc::setVerbosity (0);
 }
 
@@ -1126,11 +1136,15 @@ void HttpD::reloadEventsFile ()
 #ifdef RTS2_HAVE_PGSQL
 bool HttpD::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
+	if (cliUsername != "" && username == cliUsername && pass == cliPassword)
+		return true;
 	return verifyUser (username, pass, userPermissions);
 }
 #else
 bool HttpD::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
+	if (cliUsername != "" && username == cliUsername && pass == cliPassword)
+		return true;
 	return userLogins.verifyUser (username, pass);
 }
 

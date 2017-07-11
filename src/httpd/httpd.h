@@ -614,6 +614,8 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		std::string sslCert;
 		std::string sslKey;
 #endif
+		std::string cliUsername;
+		std::string cliPassword;
 };
 
 
