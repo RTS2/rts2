@@ -4,6 +4,7 @@ import sys
 import unittest
 import subprocess
 import time
+import numpy
 
 sys.path.append('../python/rts2')
 
@@ -30,15 +31,27 @@ class JSONTest(unittest.TestCase):
 	    lock_prefix, server, config,
 	    '-p 8889', '--user=pytest:pytest'
 	])
+        self.camd_nf = subprocess.Popen([
+	    '../src/camd/rts2-camd-dummy',
+	    '-i' , '--debug', '-d NF',
+	    lock_prefix, server,
+	    '--width=5000', '--height=5000'
+	])
 	time.sleep(5)
 	self.j = rtsapi.createProxy('http://localhost:8889', 'pytest', 'pytest')
 
     def tearDown(self):
+    	self.camd_nf.terminate()
         self.httpd.terminate()
         self.centrald.terminate()
 
     def testCentrald(self):
         self.assertEqual(self.j.getValue('centrald', 'longitude', True), -15)
         self.assertEqual(self.j.getValue('centrald', 'latitude'), 50)
+
+        self.assertEqual(self.j.getValue('NF', 'chips', True), 1)
+	data = self.j.takeImage('NF')
+	self.j.refresh()
+	self.assertEqual(self.j.getValue('NF', 'average'), numpy.average(data))
 
 unittest.main()
