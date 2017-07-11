@@ -750,17 +750,23 @@ void APGTO::startCupolaSync ()
     logStream (MESSAGE_INFO) << "APGTO::startCupolaSync DO NOT sync cupola, while move is blocked" << sendLog;
     return;
   }
+  struct ln_equ_posn tel_equ;
   struct ln_equ_posn target_equ;
-  getTarget(&target_equ);
-  double dec_offset_east=0.;
-  
-  target_equ.ra = fmod(target_equ.ra+360.,360.) ;
-  target_equ.dec= fmod(target_equ.dec,90.) ;
-    
+  getTarget(&tel_equ);
+ 
   if(!(strcmp("East", DECaxis_HAcoordinate->getValue()))){
-    dec_offset_east=180.;  
-  }
-  rts2core::CommandCupolaSyncTel cmd (this, target_equ.ra, target_equ.dec+dec_offset_east);
+    //Taki: target_equ.ra = fmod(target_equ.ra+360.,360.) ;
+    //Taki: target_equ.dec= fmod(target_equ.dec,90.) + 0.;
+
+  } else if (!(strcmp("West", DECaxis_HAcoordinate->getValue()))){
+    //Taki: target_equ.ra = fmod(target_equ.ra+360.,360.) ;
+    //Taki: target_equ.dec= fmod(target_equ.dec,90.)+180. ;
+    // P.T. Wallace see DOME PREDICTIONS FOR AN EQUATORIAL TELESCOPE
+    // or dome_target_az.py
+    target_equ.ra= fmod(tel_equ.ra+360.,360.); // done in slitazimuth.c 
+    target_equ.dec= 180. - fmod(tel_equ.dec,90.); 
+  } 
+  rts2core::CommandCupolaSyncTel cmd (this, target_equ.ra, target_equ.dec);
   queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
   logStream (MESSAGE_INFO) << "APGTO::startCupolaSync sync cupola" << sendLog;
 }
