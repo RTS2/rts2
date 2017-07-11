@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import sys
+import unittest
+import subprocess
+import time
+
+sys.path.append('../python/rts2')
+
+try:
+    import rtsapi
+except:
+    raise
+
+class JSONTest(unittest.TestCase):
+
+    def setUp(self):
+        lock_prefix='--lock-prefix=./rts2_test_'
+	server = '--server=localhost:6167'
+	config = '--config=rts2.ini'
+        self.centrald = subprocess.Popen([
+	    '../src/centrald/rts2-centrald',
+	    '-i' , '--debug',
+	    lock_prefix, config,
+	    '--local-port=6167'
+	])
+        self.httpd = subprocess.Popen([
+	    '../src/httpd/rts2-httpd',
+	    '-i' , '--debug',
+	    lock_prefix, server, config,
+	    '-p 8889', '--user=pytest:pytest'
+	])
+	time.sleep(5)
+	self.j = rtsapi.createProxy('http://localhost:8889', 'pytest', 'pytest')
+
+    def tearDown(self):
+        self.httpd.terminate()
+        self.centrald.terminate()
+
+    def testCentrald(self):
+        self.assertEqual(self.j.getValue('centrald', 'longitude', True), -15)
+        self.assertEqual(self.j.getValue('centrald', 'latitude'), 50)
+
+unittest.main()
