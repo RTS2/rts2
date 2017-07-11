@@ -53,6 +53,7 @@ matrix:
             pkg-config
             postgresql-server-dev-all
             postgresql
+            python-future
             libecpg-dev
             wget
             check
@@ -84,6 +85,7 @@ matrix:
             pkg-config
             postgresql-server-dev-all
             postgresql
+            python-future
             libecpg-dev
             wget
             check
