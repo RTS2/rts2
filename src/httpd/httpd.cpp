@@ -511,13 +511,14 @@ int HttpD::processOption (int in_opt)
 		case OPT_BB_QUEUE:
 			bbQueueName = optarg;
 			break;
+#ifdef RTS2_HAVE_PGSQL
+		default:
+			return DeviceDb::processOption (in_opt);
+#else
 		case OPT_CONFIG:
 			config_file = optarg;
 			break;
 		default:
-#ifdef RTS2_HAVE_PGSQL
-			return DeviceDb::processOption (in_opt);
-#else
 			return rts2core::Device::processOption (in_opt);
 #endif
 	}
@@ -598,13 +599,13 @@ int HttpD::init ()
 
 #ifndef RTS2_HAVE_PGSQL
 	{ // always load for non-DB build
+		ret = Configuration::instance ()->loadFile (config_file);
+		if (ret)
+			return ret;
 #else
 	if (emptyConnectString())
 	{
 #endif
-		ret = Configuration::instance ()->loadFile (config_file);
-		if (ret)
-			return ret;
 		// load users-login pairs
 		std::string lf;
 		Configuration::instance ()->getString ("observatory", "logins", lf, RTS2_CONFDIR "/rts2/logins");
@@ -803,9 +804,12 @@ HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_
 
 	bbQueueName = NULL;
 
+#ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
+#endif
+
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
 	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");

@@ -528,8 +528,9 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		rts2core::ValueInteger *messageBufferSize;
 
+#ifndef RTS2_HAVE_PGSQL
 		const char *config_file;
-
+#endif
 		// user - login fields
 		rts2core::UserLogins userLogins;
 
