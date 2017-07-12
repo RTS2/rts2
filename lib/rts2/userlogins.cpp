@@ -52,8 +52,6 @@ void UserLogins::load (const char *filename)
 	{
 		std::string line;
 		getline (ifs, line);
-		if (ifs.eof())
-			break;
 		if (ifs.fail ())
 		{
 			std::ostringstream os;

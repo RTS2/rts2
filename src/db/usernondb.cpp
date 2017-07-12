@@ -25,6 +25,7 @@
 #include <iostream>
 
 #define OPT_PASSWORD   OPT_LOCAL + 321
+#define OPT_USER_FILE  OPT_LOCAL + 322
 
 /**
  * Application for user management.
@@ -42,19 +43,19 @@ class UserApp:public rts2core::App
 		virtual void usage ();
 		virtual int processOption (int in_opt);
 	private:
-		enum {NOT_SET, LIST_USER, NEW_USER, DELETE_USER, USER_PASSWORD} op;
+		enum {NOT_SET, LIST_USER, NEW_USER, DELETE_USER, USER_PASSWORD, USER_VERIFY} op;
 		const char *user;
 		const char *password;
 
 		char *userfile;
 
 		rts2core::UserLogins logins;
-		
 
 		int listUser ();
 		int newUser ();
 		int deleteUser ();
 		int userPassword ();
+		int verifyPassword();
 };
 
 UserApp::UserApp (int in_argc, char **in_argv): rts2core::App (in_argc, in_argv)
@@ -65,18 +66,17 @@ UserApp::UserApp (int in_argc, char **in_argv): rts2core::App (in_argc, in_argv)
 
 	userfile = NULL;
 
-	//r2user = User ();
-
 	addOption ('l', NULL, 0, "list user stored in user file");
 	addOption ('a', NULL, 1, "add new user");
 	addOption ('d', NULL, 1, "delete user");
 	addOption ('p', NULL, 1, "set user password");
+	addOption ('v', NULL, 1, "verify user password");
 	addOption (OPT_PASSWORD, "password", 1, "user password");
+	addOption (OPT_USER_FILE, "userfile", 1, "user file");
 }
 
 UserApp::~UserApp (void)
 {
-	delete[] userfile;
 }
 
 void UserApp::usage ()
@@ -94,6 +94,7 @@ int UserApp::processOption (int in_opt)
 		case 'a':
 		case 'd':
 		case 'p':
+		case 'v':
 			if (op != NOT_SET)
 			{
 				std::cerr << "multiple operations are not allowed" << std::endl;
@@ -116,10 +117,17 @@ int UserApp::processOption (int in_opt)
 					user = optarg;
 					op = USER_PASSWORD;
 					break;
+				case 'v':
+					user = optarg;
+					op = USER_VERIFY;
+					break;
 			}
 			return 0;
 		case OPT_PASSWORD:
 			password = optarg;
+			return 0;
+		case OPT_USER_FILE:
+			userfile = optarg;
 			return 0;
 	}
 	return rts2core::App::processOption (in_opt);
@@ -140,7 +148,6 @@ int UserApp::newUser ()
 	}
 	catch (rts2core::Error &er)
 	{
-		std::cerr << er << std::endl;
 	}
 
 	std::string passwd;
@@ -187,14 +194,44 @@ int UserApp::userPassword ()
 
 	std::string passwd;
 
-	int ret;
-
-	ret = askForPassword ("New user password", passwd);
-	if (ret)
-		return ret;
+	if (password)
+	{
+		passwd = std::string(password);
+	}
+	else
+	{
+		int ret = askForPassword ("New user password", passwd);
+		if (ret)
+			return ret;
+	}
 
 	logins.setUserPassword (std::string (user), passwd);
 	logins.save (userfile);
+	return 0;
+}
+
+int UserApp::verifyPassword()
+{
+	logins.load(userfile);
+
+	std::string passwd;
+
+	if (password)
+	{
+		passwd = std::string(password);
+	}
+	else
+	{
+		int ret = askForPassword("New user password", passwd);
+		if (ret)
+			return ret;
+	}
+
+	bool res = logins.verifyUser(user, passwd);
+	if (res)
+		std::cout << "password verified" << std::endl;
+	else
+		std::cout << "wrong username or password" << std::endl;
 	return 0;
 }
 
@@ -226,6 +263,8 @@ int UserApp::run ()
 			return deleteUser ();
 		case USER_PASSWORD:
 			return userPassword ();
+		case USER_VERIFY:
+			return verifyPassword();
 	}
 	return -1;
 }

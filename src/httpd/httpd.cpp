@@ -49,7 +49,6 @@ using namespace Magick;
 #define OPT_BB_QUEUE            OPT_LOCAL + 80
 #define OPT_SSL_CERT            OPT_LOCAL + 81
 #define OPT_SSL_KEY             OPT_LOCAL + 82
-#define OPT_USER_PASSWORD       OPT_LOCAL + 83
 
 using namespace XmlRpc;
 
@@ -497,14 +496,6 @@ int HttpD::processOption (int in_opt)
 			sslKey = optarg;
 			break;
 #endif
-		case OPT_USER_PASSWORD:
-		{
-			std::string ts = std::string(optarg);
-			size_t dc = ts.find(':');
-			cliUsername = ts.substr(0, dc);
-			cliPassword = ts.substr(dc + 1);
-			break;
-		}
 		case OPT_STATE_CHANGE:
 			stateChangeFile = optarg;
 			break;
@@ -520,14 +511,13 @@ int HttpD::processOption (int in_opt)
 		case OPT_BB_QUEUE:
 			bbQueueName = optarg;
 			break;
-#ifdef RTS2_HAVE_PGSQL
-		default:
-			return DeviceDb::processOption (in_opt);
-#else
 		case OPT_CONFIG:
 			config_file = optarg;
 			break;
 		default:
+#ifdef RTS2_HAVE_PGSQL
+			return DeviceDb::processOption (in_opt);
+#else
 			return rts2core::Device::processOption (in_opt);
 #endif
 	}
@@ -607,15 +597,20 @@ int HttpD::init ()
 		exit (1);	
 
 #ifndef RTS2_HAVE_PGSQL
-	ret = Configuration::instance ()->loadFile (config_file);
-	if (ret)
-		return ret;
-	// load users-login pairs
-	std::string lf;
-	Configuration::instance ()->getString ("xmlrpcd", "logins", lf, RTS2_CONFDIR "/rts2/logins");
-
-	userLogins.load (lf.c_str ());
+	{ // always load for non-DB build
+#else
+	if (emptyConnectString())
+	{
 #endif
+		ret = Configuration::instance ()->loadFile (config_file);
+		if (ret)
+			return ret;
+		// load users-login pairs
+		std::string lf;
+		Configuration::instance ()->getString ("observatory", "logins", lf, RTS2_CONFDIR "/rts2/logins");
+
+		userLogins.load (lf.c_str ());
+	}
 	// get page prefix
 	Configuration::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
 
@@ -808,11 +803,9 @@ HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_
 
 	bbQueueName = NULL;
 
-#ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
-#endif
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
 	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");
@@ -823,7 +816,6 @@ HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_
 	addOption (OPT_SSL_CERT, "ssl-cert", 1, "OpenSSL ca certification file");
 	addOption (OPT_SSL_KEY, "ssl-key", 1, "OpenSSL private key file");
 #endif
-	addOption (OPT_USER_PASSWORD, "user", 1, "username and password, : separated - primarly for testing, overrides events file");
 	XmlRpc::setVerbosity (0);
 }
 
@@ -1136,15 +1128,13 @@ void HttpD::reloadEventsFile ()
 #ifdef RTS2_HAVE_PGSQL
 bool HttpD::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	if (cliUsername != "" && username == cliUsername && pass == cliPassword)
-		return true;
+	if (emptyConnectString())
+		return userLogins.verifyUser(username, pass);
 	return verifyUser (username, pass, userPermissions);
 }
 #else
 bool HttpD::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	if (cliUsername != "" && username == cliUsername && pass == cliPassword)
-		return true;
 	return userLogins.verifyUser (username, pass);
 }
 

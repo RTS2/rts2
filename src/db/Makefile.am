@@ -1,12 +1,15 @@
 LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @CFITSIO_LIBS@ @MAGIC_LIBS@
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
 
-bin_PROGRAMS = rts2-image rts2-user rts2-horizon
+bin_PROGRAMS = rts2-image rts2-user rts2-user-nondb rts2-horizon
 
 rts2_image_SOURCES = appimagemanip.cpp
 rts2_image_CXXFLAGS = ${AM_CXXFLAGS} @MAGIC_CFLAGS@
 
 rts2_horizon_SOURCES = horizonapp.cpp
+
+rts2_user_nondb_SOURCES = usernondb.cpp
+rts2_user_nondb_LDADD = -lrts2users ${LDADD} @LIB_CRYPT@
 
 EXTRA_DIST = airmasscale.ec
 CLEANFILES = airmasscale.cpp
@@ -63,8 +66,6 @@ rts2_airmasscale_LDADD = ${PG_LDADD}
 
 .ec.cpp:
 	@ECPG@ -o $@ $^
-
-EXTRA_DIST += usernondb.cpp
 
 else
 

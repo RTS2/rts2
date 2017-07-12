@@ -33,9 +33,9 @@
 #else
 #include "configuration.h"
 #include "device.h"
-#include "userlogins.h"
 #endif /* RTS2_HAVE_PGSQL */
 
+#include "userlogins.h"
 #include "graphreq.h"
 #include "rts2json/directory.h"
 #include "events.h"
@@ -528,12 +528,10 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		rts2core::ValueInteger *messageBufferSize;
 
-#ifndef RTS2_HAVE_PGSQL
 		const char *config_file;
 
 		// user - login fields
 		rts2core::UserLogins userLogins;
-#endif
 
 		std::string page_prefix;
 
@@ -614,8 +612,6 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		std::string sslCert;
 		std::string sslKey;
 #endif
-		std::string cliUsername;
-		std::string cliPassword;
 };
 
 

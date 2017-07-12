@@ -66,6 +66,8 @@ class DeviceDb:public rts2core::Device
 
 		rts2core::Configuration *config;
 
+		bool emptyConnectString () { return connectString != NULL && strlen(connectString) == 0; }
+
 	private:
 		char *connectString;
 		char *configFile;

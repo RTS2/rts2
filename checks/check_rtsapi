@@ -5,6 +5,7 @@ import unittest
 import subprocess
 import time
 import numpy
+import os
 
 sys.path.append('../python/rts2')
 
@@ -20,6 +21,14 @@ class JSONTest(unittest.TestCase):
         lock_prefix = '--lock-prefix=./rts2_test_'
         server = '--server=localhost:6167'
         config = '--config=rts2.ini'
+        try:
+            os.unlink('logins')
+        except OSError:
+            pass
+        subprocess.call([
+            '../src/db/rts2-user-nondb', '--userfile', 'logins',
+            '-a', 'pytest', '--password', 'pytest',
+        ])
         self.centrald = subprocess.Popen([
             '../src/centrald/rts2-centrald',
             '-i', '--debug',
@@ -30,8 +39,7 @@ class JSONTest(unittest.TestCase):
             '../src/httpd/rts2-httpd',
             '-i', '--debug',
             lock_prefix, server, config,
-            '-p 8889', '--user=pytest:pytest',
-	    '--database='
+            '-p 8889', '--database='
         ])
         self.camd_nf = subprocess.Popen([
             '../src/camd/rts2-camd-dummy',
@@ -39,7 +47,7 @@ class JSONTest(unittest.TestCase):
             lock_prefix, server,
             '--width=5000', '--height=5000'
         ])
-        time.sleep(5)
+        time.sleep(10)
         self.j = rtsapi.createProxy(
             'http://localhost:8889', 'pytest', 'pytest')
 
