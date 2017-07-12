@@ -55,6 +55,7 @@ class JSONTest(unittest.TestCase):
         self.camd_nf.terminate()
         self.httpd.terminate()
         self.centrald.terminate()
+        os.unlink('logins')
 
     def testCentrald(self):
         self.assertEqual(self.j.getValue('centrald', 'longitude', True), -15)
