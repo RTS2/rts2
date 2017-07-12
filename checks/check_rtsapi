@@ -56,7 +56,7 @@ class JSONTest(unittest.TestCase):
         if havedb:
             httpd_args.append('--database=')
 
-	print('starting httpd with', httpd_args)
+        print('starting httpd with', httpd_args)
         self.httpd = subprocess.Popen(httpd_args)
         self.camd_nf = subprocess.Popen([
             '../src/camd/rts2-camd-dummy',
