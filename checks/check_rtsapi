@@ -25,6 +25,7 @@ class JSONTest(unittest.TestCase):
             os.unlink('logins')
         except OSError:
             pass
+        havedb = False
         subprocess.call([
             '../src/db/rts2-user-nondb', '--userfile', 'logins',
             '-a', 'pytest', '--password', 'pytest',
@@ -35,12 +36,28 @@ class JSONTest(unittest.TestCase):
             lock_prefix, config,
             '--local-port=6167'
         ])
-        self.httpd = subprocess.Popen([
+        out, err = subprocess.Popen([
+            '../src/httpd/rts2-httpd', '--version'
+        ], stdout=subprocess.PIPE).communicate()
+        for l in out.splitlines():
+            try:
+                if l.index('pgsql'):
+                    havedb = True
+                    break
+            except ValueError:
+                pass
+
+        httpd_args = [
             '../src/httpd/rts2-httpd',
             '-i', '--debug',
             lock_prefix, server, config,
-            '-p 8889', '--database='
-        ])
+            '-p 8889'
+        ]
+        if havedb:
+            httpd_args.append('--database=')
+
+	print('starting httpd with', httpd_args)
+        self.httpd = subprocess.Popen(httpd_args)
         self.camd_nf = subprocess.Popen([
             '../src/camd/rts2-camd-dummy',
             '-i', '--debug', '-d NF',

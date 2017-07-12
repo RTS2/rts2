@@ -232,15 +232,42 @@ int App::processOption (int in_opt)
 			useLocalTime = false;
 			break;
 		case OPT_VERSION:
-			std::cout << "Part of RTS2 version: " << RTS2_VERSION << std::endl
+			std::cout << "Part of RTS2 version " << RTS2_VERSION << std::endl
 				<< std::endl
-				<< "(C) 2001-2013 Petr Kubanek and others, see AUTHORS file for complete list"
+				<< "(C) 2001-2017 Petr Kubanek and others, see AUTHORS file for complete list"
 				<< std::endl
 				<< std::endl
 				<< "This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org. \
 This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for details."
 				<< std::endl
 				<< "See http://rts2.org for news and more."
+				<< std::endl
+				<< std::endl
+				<< "Compiled with" 
+#ifdef RTS2_HAVE_PGSQL
+				<< " pgsql"
+#endif
+#ifdef RTS2_HAVE_CRYPT
+				<< " crypt"
+#endif
+#ifdef RTS2_LIBERFA
+				<< " erfa/sofa"
+#endif
+#ifdef RTS2_LIBCHECK
+				<< " libcheck"
+#endif
+#ifdef RTS2_HAVE_LIBJPEG
+				<< " libjpeg"
+#endif
+#ifdef RTS2_HAVE_LIBARCHIVE
+				<< " libarchive"
+#endif
+#ifdef RTS2_HAVE_CXX11
+				<< " c++11"
+#endif
+#ifdef RTS2_LIBUSB1
+				<< " libusb1"
+#endif
 				<< std::endl;
 
 			exit (EXIT_SUCCESS);
