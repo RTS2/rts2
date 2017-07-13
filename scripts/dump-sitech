@@ -190,6 +190,15 @@ not drop bellow -e limit for --error-band seconds'),
 )
 
 parser.add_argument(
+    '--errors-save',
+    dest='errors_save',
+    help=_('save error plots ({i} will be replaced with \
+index)'),
+    action='store',
+    default=None
+)
+
+parser.add_argument(
     '-x',
     dest='x_axis',
     help=_('X axis value. Defaults to time.'),
@@ -271,20 +280,20 @@ class ProcessSitech:
                         self.positions[self.last_x_error][0] -
                         self.positions[self.x_errors[-1][0]][0]
                     ).total_seconds()
+                    self.x_errors[-1][1] = i
                     c = self.positions[self.x_errors[-1][0]][1]
+                    ct = self.positions[self.x_errors[-1][1]][1]
                     a = astropy.coordinates.Angle(
                         math.pi * c / float(2**26),
                         unit=astropy.units.radian
                     )
-                    print(_('Alt error from {0} \
-counts {1:>9} angle {2} \
-for {3:.3f} seconds').format(
+                    print(_('Alt error from {0} counts {1:>9}..{2:>9} angle {3} \
+for {4:.3f} seconds').format(
                         self.positions[self.x_errors[-1][0]][0],
-                        c,
+                        c, ct,
                         a.to_string(unit=astropy.units.degree),
                         ts
                     ))
-                    self.x_errors[-1][1] = i
                     self.last_x_error = None
 
             if abs(y_err) > args.error_limit:
@@ -300,20 +309,20 @@ for {3:.3f} seconds').format(
                         self.positions[self.last_y_error][0] -
                         self.positions[self.y_errors[-1][0]][0]
                     ).total_seconds()
+                    self.y_errors[-1][1] = i
                     c = self.positions[self.y_errors[-1][0]][2]
+                    ct = self.positions[self.y_errors[-1][1]][2]
                     a = astropy.coordinates.Angle(
                         math.pi * c / float(2**26),
                         unit=astropy.units.radian
                     )
-                    print(_('Az error from {0} \
-counts {1:>9} angle {2} \
-for {3:.3f} seconds').format(
+                    print(_('Az error from {0} counts {1:>9}..{2:>9} angle {3} \
+for {4:.3f} seconds').format(
                         self.positions[self.y_errors[-1][0]][0],
-                        c,
+                        c, ct,
                         a.to_string(unit=astropy.units.degree),
                         ts
                     ))
-                    self.y_errors[-1][1] = i
                     self.last_y_error = None
 
     def process_X(self, f, date, do_append):
@@ -413,6 +422,210 @@ command date,X target,Y target,X speed,Y speed\n')
         f.close()
         return self.positions, self.commands
 
+    def __add_plot(self, gs, ylabel):
+        ret = self.fig.add_subplot(
+            gs[self.gs_index:self.gs_index+1, 0:1],
+            sharex=self.ax_current
+        )
+        if self.ax_current:
+            ret.set_xlim(self.ax_current.get_xlim())
+        ret.set_ylabel(ylabel)
+        ret.grid(True)
+        self.ax_current = ret
+        return ret
+
+    def __plot_extra(
+        self, positions, lines_x, lines_y,
+        extra, label, in_axis_x, in_axis_y, color
+    ):
+        if extra in args.plot_extra:
+            if self.plot_x:
+                extra_data = positions[positions.x_type == extra]
+                lab = 'Alt ' + label
+                if in_axis_x is None:
+                    axis = self.__add_plot(gs, lab)
+                    mark = 'b' + args.markers
+                else:
+                    axis = in_axis_x.twinx()
+                    axis.set_ylabel(lab)
+                    axis.spines["right"].set_position((
+                        "axes",
+                        1 + args.plot_extra.index(extra) * 0.1
+                    ))
+                    axis.yaxis.label.set_color(color)
+                    mark = color + args.markers
+                p, = axis.plot([
+                    x.astype(datetime.datetime) for x in extra_data.date],
+                    extra_data.x_val,
+                    mark,
+                    label=lab
+                )
+                lines_x.append(p)
+                self.gs_index += 1
+            if self.plot_y:
+                extra_data = positions[positions.y_type == extra]
+                lab = 'Az ' + label
+                if in_axis_y is None:
+                    axis = self.__add_plot(gs, lab)
+                    mark = 'g' + args.markers
+                else:
+                    axis = in_axis_y.twinx()
+                    axis.set_ylabel(lab)
+                    axis.spines["right"].set_position((
+                        "axes",
+                        1 + args.plot_extra.index(extra) * 0.1
+                    ))
+                    axis.yaxis.label.set_color(color)
+                    mark = color + args.markers
+                p, = axis.plot([
+                    x.astype(datetime.datetime) for x in extra_data.date],
+                    extra_data.y_val,
+                    mark,
+                    label=lab
+                )
+                lines_y.append(p)
+                self.gs_index += 1
+
+    def plot(self, bpn):
+        if args.speed_dif and commands is not None:
+            bpn += 1
+
+        self.fig = pylab.figure()
+
+        if args.axis == 'both':
+            gs = gridspec.GridSpec(bpn * 2, 1)
+        else:
+            gs = gridspec.GridSpec(bpn, 1)
+
+        if args.x_axis == 'time':
+            p_x = [x.astype(datetime.datetime) for x in positions.date]
+            if commands is not None:
+                c_x = [x.astype(datetime.datetime) for x in commands.date]
+        elif args.x_axis == 'az-counts':
+            p_x = positions.y_pos
+            if commands is not None:
+                c_x = commands.y_dest
+        elif args.x_axis == 'az-deg':
+            p_x = [360.0 * float(y) / 2**26 for y in positions.y_pos]
+            if commands is not None:
+                c_x = [
+                    360.0 * float(y) / 2**26 for y in
+                    commands.y_dest
+                ]
+        elif args.x_axis == 'alt-counts':
+            p_x = positions.x_pos
+            if commands is not None:
+                c_x = commands.x_dest
+        elif args.x_axis == 'alt-deg':
+            p_x = [360.0 * float(y) / 2**26 for y in positions.x_pos]
+            if commands is not None:
+                c_x = [
+                    360.0 * float(y) / 2**26 for y in
+                    commands.x_dest
+                ]
+
+        self.ax_current = None
+        self.gs_index = 0
+
+        self.plot_x = args.axis in ['both', 'x', 'alt']
+        self.plot_y = args.axis in ['both', 'y', 'az']
+        axis_x = None
+        axis_y = None
+
+        lines_x = []
+        lines_y = []
+
+        if self.plot_x and not(args.plot in ['errors']):
+            self.__add_plot(gs, 'Alt pos')
+            self.ax_current.plot(p_x, positions.x_pos, args.markers)
+            self.gs_index += 1
+
+        if self.plot_y and not(args.plot in ['errors']):
+            self.__add_plot(gs, 'Az pos')
+            self.ax_current.plot(p_x, positions.y_pos, 'g' + args.markers)
+            self.gs_index += 1
+
+        if self.plot_x:
+            self.__add_plot(gs, 'Alt err')
+            p, = self.ax_current.plot(
+                p_x,
+                positions.x_err,
+                args.markers,
+                label='Alt err'
+            )
+            self.gs_index += 1
+            if not(args.plot in ['separated']):
+                axis_x = self.ax_current
+                lines_x.append(p)
+
+        if self.plot_y:
+            self.__add_plot(gs, 'Az err')
+            p, = self.ax_current.plot(
+                p_x,
+                positions.y_err,
+                'g' + args.markers,
+                label='Az err'
+            )
+            self.gs_index += 1
+            if not(args.plot in ['separated']):
+                axis_y = self.ax_current
+                lines_y.append(p)
+
+        if self.plot_x and commands is not None and not(args.plot in ['errors']):
+            self.__add_plot(gs, 'Alt speed')
+            self.ax_current.plot(c_x, commands.x_speed, args.markers)
+            self.gs_index += 1
+
+        if self.plot_y and commands is not None and not(args.plot in ['errors']):
+            self.__add_plot(gs, 'Az speed')
+            self.ax_current.plot(c_x, commands.y_speed, 'g' + args.markers)
+            self.gs_index += 1
+
+        if args.speed_dif and self.plot_x and commands is not None:
+            self.__add_plot(gs, 'Alt sp dif')
+            self.ax_current.plot(c_x[1:], numpy.diff(
+                commands.x_speed),
+                'b' + args.markers
+            )
+            self.gs_index += 1
+
+        if args.speed_dif and self.plot_y and commands is not None:
+            self.__add_plot(gs, 'Az sp dif')
+            self.ax_current.plot(c_x[1:], numpy.diff(
+                commands.y_speed),
+                'g' + args.markers
+            )
+            self.gs_index += 1
+
+
+        self.__plot_extra(positions, lines_x, lines_y, 'E', 'error', axis_x, axis_y, 'y')
+        self.__plot_extra(positions, lines_x, lines_y, 'C', 'current', axis_x, axis_y, 'k')
+        self.__plot_extra(positions, lines_x, lines_y, 'S', 'supply', axis_x, axis_y, 'c')
+        self.__plot_extra(positions, lines_x, lines_y, 'T', 'temperature', axis_x, axis_y, 'm')
+        self.__plot_extra(positions, lines_x, lines_y, 'P', 'PID output', axis_x, axis_y, 'r')
+
+        # add labels, if needed
+        if axis_x is not None and len(args.plot_extra) > 0:
+            axis_x.legend(lines_x, [l.get_label() for l in lines_x])
+        if axis_y is not None and len(args.plot_extra) > 0:
+            axis_y.legend(lines_y, [l.get_label() for l in lines_y])
+
+        self.fig.subplots_adjust(hspace=0)
+
+        if not(args.plot in ['separated']):
+            self.fig.subplots_adjust(right=1-0.07*len(args.plot_extra))
+
+        self.fig.autofmt_xdate()
+
+        if args.save_plot is not None:
+            print(_('saving plot to {0}').format(args.save_plot, end=' '))
+            pylab.savefig(args.save_plot)
+            print(_('done'))
+        else:
+            pylab.show()
+
+        pylab.close(self.fig)
+
 
 ps = ProcessSitech()
 
@@ -464,202 +677,7 @@ for fn in args.files:
             bpn = 1
         else:
             bpn = 3
-    fig = pylab.figure()
 
-    if args.speed_dif and commands is not None:
-        bpn += 1
+    ps.plot(bpn)
 
-    if args.axis == 'both':
-        gs = gridspec.GridSpec(bpn * 2, 1)
-    else:
-        gs = gridspec.GridSpec(bpn, 1)
 
-    def add_plot(gs, index, xaxis, ylabel):
-        ret = fig.add_subplot(gs[index:index+1, 0:1], sharex=xaxis)
-        if xaxis:
-            ret.set_xlim(xaxis.get_xlim())
-        ret.set_ylabel(ylabel)
-        ret.grid(True)
-        return ret
-
-    if args.x_axis == 'time':
-        p_x = [x.astype(datetime.datetime) for x in positions.date]
-        if commands is not None:
-            c_x = [x.astype(datetime.datetime) for x in commands.date]
-    elif args.x_axis == 'az-counts':
-        p_x = positions.y_pos
-        if commands is not None:
-            c_x = commands.y_dest
-    elif args.x_axis == 'az-deg':
-        p_x = [360.0 * float(y) / 2**26 for y in positions.y_pos]
-        if commands is not None:
-            c_x = [
-                360.0 * float(y) / 2**26 for y in
-                commands.y_dest
-            ]
-    elif args.x_axis == 'alt-counts':
-        p_x = positions.x_pos
-        if commands is not None:
-            c_x = commands.x_dest
-    elif args.x_axis == 'alt-deg':
-        p_x = [360.0 * float(y) / 2**26 for y in positions.x_pos]
-        if commands is not None:
-            c_x = [
-                360.0 * float(y) / 2**26 for y in
-                commands.x_dest
-            ]
-
-    ax_current = None
-    gs_index = 0
-
-    plot_x = args.axis in ['both', 'x', 'alt']
-    plot_y = args.axis in ['both', 'y', 'az']
-    axis_x = None
-    axis_y = None
-
-    lines_x = []
-    lines_y = []
-
-    if plot_x and not(args.plot in ['errors']):
-        ax_current = add_plot(gs, gs_index, ax_current, 'Alt pos')
-        ax_current.plot(p_x, positions.x_pos, args.markers)
-        gs_index += 1
-
-    if plot_y and not(args.plot in ['errors']):
-        ax_current = add_plot(gs, gs_index, ax_current, 'Az pos')
-        ax_current.plot(p_x, positions.y_pos, 'g' + args.markers)
-        gs_index += 1
-
-    if plot_x:
-        ax_current = add_plot(gs, gs_index, ax_current, 'Alt err')
-        p, = ax_current.plot(
-            p_x,
-            positions.x_err,
-            args.markers,
-            label='Alt err'
-        )
-        gs_index += 1
-        if not(args.plot in ['separated']):
-            axis_x = ax_current
-            lines_x.append(p)
-
-    if plot_y:
-        ax_current = add_plot(gs, gs_index, ax_current, 'Az err')
-        p, = ax_current.plot(
-            p_x,
-            positions.y_err,
-            'g' + args.markers,
-            label='Az err'
-        )
-        gs_index += 1
-        if not(args.plot in ['separated']):
-            axis_y = ax_current
-            lines_y.append(p)
-
-    if plot_x and commands is not None and not(args.plot in ['errors']):
-        ax_current = add_plot(gs, gs_index, ax_current, 'Alt speed')
-        ax_current.plot(c_x, commands.x_speed, args.markers)
-        gs_index += 1
-
-    if plot_y and commands is not None and not(args.plot in ['errors']):
-        ax_current = add_plot(gs, gs_index, ax_current, 'Az speed')
-        ax_current.plot(c_x, commands.y_speed, 'g' + args.markers)
-        gs_index += 1
-
-    if args.speed_dif and plot_x and commands is not None:
-        ax_current = add_plot(gs, gs_index, ax_current, 'Alt sp dif')
-        ax_current.plot(c_x[1:], numpy.diff(
-            commands.x_speed),
-            'b' + args.markers
-        )
-        gs_index += 1
-
-    if args.speed_dif and plot_y and commands is not None:
-        ax_current = add_plot(gs, gs_index, ax_current, 'Az sp dif')
-        ax_current.plot(c_x[1:], numpy.diff(
-            commands.y_speed),
-            'g' + args.markers
-        )
-        gs_index += 1
-
-    def plot_extra(extra, label, in_axis_x, in_axis_y, color):
-        global gs_index
-        global ax_current
-        global positions
-        global lines_x
-        global lines_y
-        if extra in args.plot_extra:
-            if plot_x:
-                extra_data = positions[positions.x_type == extra]
-                lab = 'Alt ' + label
-                if in_axis_x is None:
-                    axis = add_plot(gs, gs_index, ax_current, lab)
-                    mark = 'b' + args.markers
-                else:
-                    axis = in_axis_x.twinx()
-                    axis.set_ylabel(lab)
-                    axis.spines["right"].set_position((
-                        "axes",
-                        1 + args.plot_extra.index(extra) * 0.1
-                    ))
-                    axis.yaxis.label.set_color(color)
-                    mark = color + args.markers
-                p, = axis.plot([
-                    x.astype(datetime.datetime) for x in extra_data.date],
-                    extra_data.x_val,
-                    mark,
-                    label=lab
-                )
-                lines_x.append(p)
-                gs_index += 1
-            if plot_y:
-                extra_data = positions[positions.y_type == extra]
-                lab = 'Az ' + label
-                if in_axis_y is None:
-                    axis = add_plot(gs, gs_index, ax_current, lab)
-                    mark = 'g' + args.markers
-                else:
-                    axis = in_axis_y.twinx()
-                    axis.set_ylabel(lab)
-                    axis.spines["right"].set_position((
-                        "axes",
-                        1 + args.plot_extra.index(extra) * 0.1
-                    ))
-                    axis.yaxis.label.set_color(color)
-                    mark = color + args.markers
-                p, = axis.plot([
-                    x.astype(datetime.datetime) for x in extra_data.date],
-                    extra_data.y_val,
-                    mark,
-                    label=lab
-                )
-                lines_y.append(p)
-                gs_index += 1
-
-    plot_extra('E', 'error', axis_x, axis_y, 'y')
-    plot_extra('C', 'current', axis_x, axis_y, 'k')
-    plot_extra('S', 'supply', axis_x, axis_y, 'c')
-    plot_extra('T', 'temperature', axis_x, axis_y, 'm')
-    plot_extra('P', 'PID output', axis_x, axis_y, 'r')
-
-    # add labels, if needed
-    if axis_x is not None and len(args.plot_extra) > 0:
-        axis_x.legend(lines_x, [l.get_label() for l in lines_x])
-    if axis_y is not None and len(args.plot_extra) > 0:
-        axis_y.legend(lines_y, [l.get_label() for l in lines_y])
-
-    fig.subplots_adjust(hspace=0)
-
-    if not(args.plot in ['separated']):
-        fig.subplots_adjust(right=1-0.07*len(args.plot_extra))
-
-    fig.autofmt_xdate()
-
-    if args.save_plot is not None:
-        print(_('saving plot to {0}').format(args.save_plot, end=' '))
-        pylab.savefig(args.save_plot)
-        print(_('done'))
-    else:
-        pylab.show()
-
-    pylab.close(fig)
