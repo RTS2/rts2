@@ -434,6 +434,41 @@ command date,X target,Y target,X speed,Y speed\n')
         self.ax_current = ret
         return ret
 
+    def get_x_data(self, x_axis, positions, commands=None):
+        "Retuns X axis for given position and command data"""
+        c_x = None
+        if x_axis == 'time':
+            p_x = [x.astype(datetime.datetime) for x in positions.date]
+            if commands is not None:
+                c_x = [x.astype(datetime.datetime) for x in commands.date]
+        elif x_axis == 'az-counts':
+            p_x = positions.y_pos
+            if commands is not None:
+                c_x = commands.y_dest
+        elif x_axis == 'az-deg':
+            p_x = [360.0 * float(y) / 2**26 for y in positions.y_pos]
+            if commands is not None:
+                c_x = [
+                    360.0 * float(y) / 2**26 for y in
+                    commands.y_dest
+                ]
+        elif x_axis == 'alt-counts':
+            p_x = positions.x_pos
+            if commands is not None:
+                c_x = commands.x_dest
+        elif x_axis == 'alt-deg':
+            p_x = [360.0 * float(y) / 2**26 for y in positions.x_pos]
+            if commands is not None:
+                c_x = [
+                    360.0 * float(y) / 2**26 for y in
+                    commands.x_dest
+                ]
+        else:
+            return None, None
+
+        return p_x, c_x
+
+
     def __plot_extra(
         self, positions, lines_x, lines_y,
         extra, label, in_axis_x, in_axis_y, color
@@ -454,8 +489,8 @@ command date,X target,Y target,X speed,Y speed\n')
                     ))
                     axis.yaxis.label.set_color(color)
                     mark = color + args.markers
-                p, = axis.plot([
-                    x.astype(datetime.datetime) for x in extra_data.date],
+                p, = axis.plot(
+                    self.get_x_data(args.x_axis, extra_data)[0],
                     extra_data.x_val,
                     mark,
                     label=lab
@@ -477,8 +512,8 @@ command date,X target,Y target,X speed,Y speed\n')
                     ))
                     axis.yaxis.label.set_color(color)
                     mark = color + args.markers
-                p, = axis.plot([
-                    x.astype(datetime.datetime) for x in extra_data.date],
+                p, = axis.plot(
+                    self.get_x_data(args.x_axis, extra_data)[0],
                     extra_data.y_val,
                     mark,
                     label=lab
@@ -497,32 +532,7 @@ command date,X target,Y target,X speed,Y speed\n')
         else:
             gs = gridspec.GridSpec(bpn, 1)
 
-        if args.x_axis == 'time':
-            p_x = [x.astype(datetime.datetime) for x in positions.date]
-            if commands is not None:
-                c_x = [x.astype(datetime.datetime) for x in commands.date]
-        elif args.x_axis == 'az-counts':
-            p_x = positions.y_pos
-            if commands is not None:
-                c_x = commands.y_dest
-        elif args.x_axis == 'az-deg':
-            p_x = [360.0 * float(y) / 2**26 for y in positions.y_pos]
-            if commands is not None:
-                c_x = [
-                    360.0 * float(y) / 2**26 for y in
-                    commands.y_dest
-                ]
-        elif args.x_axis == 'alt-counts':
-            p_x = positions.x_pos
-            if commands is not None:
-                c_x = commands.x_dest
-        elif args.x_axis == 'alt-deg':
-            p_x = [360.0 * float(y) / 2**26 for y in positions.x_pos]
-            if commands is not None:
-                c_x = [
-                    360.0 * float(y) / 2**26 for y in
-                    commands.x_dest
-                ]
+        p_x, c_x = ps.get_x_data(args.x_axis, positions, commands)
 
         self.ax_current = None
         self.gs_index = 0
