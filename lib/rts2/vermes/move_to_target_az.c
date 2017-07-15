@@ -56,13 +56,21 @@ struct ln_equ_posn   tel_equ ;
 
 void getSexComponents(double value, int *d, int *m, int *s) ;
 
-const struct geometry obsvermes = {
+const struct tk_geometry tk_obsvermes = {
   -0.0684, // xd [m]
   -0.1934, // zd [m]
    0.338,  // rdec [m]
    1.265   // rdome [m]
 } ;
-
+const struct geometry obsvermes = {
+  0.0,     //  x_m [m]
+  0.0684,  //  y_m [m]
+ -0.1934,  //  z_m [m]
+  0.,      //  p [m]
+  0.338,   //  q [m]
+  0.,      //  r [m]
+  1.265,   //  r_D [m]
+} ;
 //It is not the fastest dome, one revolution in 5 minutes
 #define AngularSpeed 2. * M_PI/ 98. 
 #define POLLMICROS 1. * 1000. * 1000. 
@@ -103,6 +111,7 @@ void *move_to_target_azimuth( void *value)
       lastDec = tel_equ.dec ;
       target_coordinate_changed++ ;
     }
+    fprintf( stderr, "move_to_target_azimuth: MAY BE target_coordinate_changed, now %8.5f, %8.5f\n", tel_equ.ra, tel_equ.dec) ;
     if(target_coordinate_changed) {
       fprintf( stderr, "move_to_target_azimuth: target_coordinate_changed, now %8.5f, %8.5f\n", tel_equ.ra, tel_equ.dec) ;
       double HA, HA_h ;
@@ -128,8 +137,12 @@ void *move_to_target_azimuth( void *value)
       snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
       //fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
     }
+    //fprintf( stderr, "move_to_target_azimuth: sync enabled\n") ;
     if ( movementState == SYNCHRONIZATION_ENABLED) {
+      //fprintf( stderr, "move_to_target_azimuth: sync enabled: yes\n") ;
       target_az= dome_target_az( tel_equ, obs_location, obsvermes) ;
+      //fprintf( stderr, "move_to_target_azimuth: target_az: %8.5f\n",target_az) ;
+      
       curAzimutDifference=  barcodereader_az- target_az;
       // fmod is here just in case if there is something out of bounds
       curAzimutDifference= fmod( curAzimutDifference, 360.) ;

@@ -81,7 +81,8 @@ namespace rts2dome
     virtual int startClose (){return 0;}
     virtual long isClosed (){return -2;}
     virtual int endClose (){return 0;}
-
+    virtual int stop (){return 0;};
+    
   public:
     Vermes (int argc, char **argv) ;
     virtual int initValues () ;
@@ -150,6 +151,7 @@ int Vermes::moveStart ()
 
   tel_equ.ra= getTargetRa() ;
   tel_equ.dec= getTargetDec() ;
+  logStream (MESSAGE_ERROR) << "Vermes::moveStart new RA " << tel_equ.ra  << " Dec " << tel_equ.dec << sendLog ;
 
   if( lastRa != tel_equ.ra) {
     lastRa = tel_equ.ra ;

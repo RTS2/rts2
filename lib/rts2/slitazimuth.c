@@ -37,7 +37,7 @@
 double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct geometry obs)
 {
   double target_az ;
-  double target_ZD ;
+  //double target_ZD ;
   struct ln_equ_posn tmp_equ ;
 
   tmp_equ.ra = tel_equ.ra * M_PI/180. ;
@@ -46,6 +46,9 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
 
   obs_location.lng *= M_PI/180. ;
   obs_location.lat *= M_PI/180. ;
+  //fprintf( stderr, "dome_target_az: obs lon: %+010.5f, lat:%+010.5f [rad]\n", obs_location.lng, obs_location.lat) ;
+  //fprintf( stderr, "dome_target_az: RA: %+010.5f, dec:%+010.5f [deg]\n", tel_equ.ra, tel_equ.dec) ;
+  //fprintf( stderr, "dome_target_az: obs.x_m: %+010.5f, y_m:%+010.5f, z_m:%+010.5f, q:%+010.5f, r_D:%+010.5f\n", obs.x_m, obs.y_m, obs.z_m, obs.q, obs.r_D);
   
   double HA ;
   double JD ;
@@ -59,7 +62,7 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   } else {
     HA =  fmod(theta_0 + obs_location.lng - tmp_equ.ra + 2. * M_PI,  2. * M_PI) ;
   }
-  //fprintf( stderr, "XX HA: %+010.5f deg\n", HA * 180./ M_PI) ;
+  //fprintf( stderr, "dome_target_az: HA: %+010.5f deg\n", HA * 180./ M_PI) ;
   // DOME PREDICTIONS FOR AN EQUATORIAL TELESCOPE
   // Patrick Wallace
   // http://www.tpointsw.uk/edome.pdf
@@ -85,6 +88,7 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   double t2_m= pow(x_do,2)+pow(y_do,2)+pow(z_do,2) ;
   double w= pow(s_dt,2)-t2_m+pow(obs.r_D,2);
   if( w < 0.){
+    fprintf( stderr, "dome_target_az: w: %f negative, returning NAN", w) ;
     return NAN; 
   }
     
@@ -95,11 +99,17 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   // The dome (A, E) that the algorithm delivers follows the normal convention. Azimuth A
   // increases clockwise from zero in the north, through 90◦ (π/2 radians) in the east.
   if( x_da==0 && y_da==0){
+    fprintf( stderr, "dome_target_az: x_da==0 and  y_da==0, returning NAN") ;
     return NAN;
   }
   double A= atan2(x_da,y_da);
+  target_az=A *180./M_PI; // it is external to vermes.cpp 
+  // avoid warnings
   double E= atan2(z_da,sqrt(pow(x_da,2)+pow(y_da,2)));
   //E= arcsin(z_da/sqrt(pow(x_da,2)+pow(y_da,2)+pow(z_da,2)));
+  if(1==0) {
+    fprintf( stderr, "dome_target_az: domeAZ: %+010.5f, el: %+010.5f\n", target_az, E) ;
+  }
   return A*180./M_PI;
 }
 
@@ -156,7 +166,7 @@ double TK_dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_l
   double star_az ;
   double star_ZD ;
   int ret;
-  ret= LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
+  ret=LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
   //fprintf( stderr, "LDRAtoStarAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", star_az, star_ZD, obs.rdome) ;
   return target_az ;
 }

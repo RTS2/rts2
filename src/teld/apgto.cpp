@@ -757,13 +757,15 @@ void APGTO::startCupolaSync ()
   if(!(strcmp("East", DECaxis_HAcoordinate->getValue()))){
     //Taki: target_equ.ra = fmod(target_equ.ra+360.,360.) ;
     //Taki: target_equ.dec= fmod(target_equ.dec,90.) + 0.;
-
+    target_equ.ra= fmod(tel_equ.ra+360.,360.); // dome in slitazimuth.c 
+    target_equ.dec= fmod(tel_equ.dec,90.); 
   } else if (!(strcmp("West", DECaxis_HAcoordinate->getValue()))){
     //Taki: target_equ.ra = fmod(target_equ.ra+360.,360.) ;
     //Taki: target_equ.dec= fmod(target_equ.dec,90.)+180. ;
     // P.T. Wallace see DOME PREDICTIONS FOR AN EQUATORIAL TELESCOPE
     // or dome_target_az.py
-    target_equ.ra= fmod(tel_equ.ra+360.,360.); // done in slitazimuth.c 
+    // HA is calculated within slitazimuth.c
+    target_equ.ra= fmod(tel_equ.ra+360.,360.); // dome in slitazimuth.c 
     target_equ.dec= 180. - fmod(tel_equ.dec,90.); 
   } 
   rts2core::CommandCupolaSyncTel cmd (this, target_equ.ra, target_equ.dec);
