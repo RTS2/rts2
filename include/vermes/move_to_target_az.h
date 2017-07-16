@@ -25,6 +25,8 @@
 #ifndef  __RTS_MOVE_TO_TARGET_AZ_VERMES__
 #define __RTS_MOVE_TO_TARGET_AZ_VERMES__
 
+#define UNDEFINED -9999
+
 #ifdef __cplusplus
 extern "C"
 {

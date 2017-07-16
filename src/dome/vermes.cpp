@@ -21,7 +21,6 @@
 #include "cupola.h"
 #include "configuration.h" 
 
-
 // Obs. Vermes specific 
 #include <vermes.h> 
 #include <slitazimuth.h>
@@ -35,6 +34,7 @@ extern int barcodereader_state ;
 extern double barcodereader_az ;
 extern double barcodereader_dome_azimut_offset ; 
 extern double target_az ;
+extern double manual_target_az ;
 extern struct ln_lnlat_posn obs_location ;
 extern struct ln_equ_posn   tel_equ ;
 extern double curMaxSetPoint ;
@@ -43,10 +43,7 @@ extern int movementState ;
 extern double current_percentage ;
 extern double readSetPoint ;
 
-
-
 using namespace rts2dome;
-
 namespace rts2dome
 {
 /**
@@ -86,16 +83,17 @@ namespace rts2dome
   public:
     Vermes (int argc, char **argv) ;
     virtual int initValues () ;
-    virtual double getSlitWidth (double alt) ;
+    virtual double getSlitWidth (double alt) { return 1;}; //not used
     virtual int info () ;
     virtual int idle ();
     virtual void valueChanged (rts2core::Value * changed_value) ;
     // park copula
     virtual int standby ();
     virtual int off ();
+    // done in thread void *move_to_target_azimuth, bypassing rts2  
+    virtual bool needSlitChange () { return true;}; 
   };
 }
-
 int Vermes::moveEnd ()
 {
   logStream (MESSAGE_DEBUG) << "Vermes::moveEnd "<< sendLog ;
@@ -169,31 +167,22 @@ int Vermes::moveStart ()
   logStream (MESSAGE_DEBUG) << "Vermes::moveStart synchronization of the telescope enabled"<< sendLog ;
   return Cupola::moveStart ();
 }
-
-double Vermes::getSlitWidth (double alt)
-{
-  return -1;
-}
-
 void Vermes::parkCupola ()
 {
   movementState= SYNCHRONIZATION_DISABLED ; 
   logStream (MESSAGE_DEBUG) << "Vermes::parkCupola synchronization disabled"<< sendLog ;
 }
-
 int Vermes::standby ()
 {
   parkCupola ();
   return Cupola::standby ();
 }
-
 int Vermes::off ()
 {
   logStream (MESSAGE_INFO) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
   parkCupola ();
   return Cupola::off ();
 }
-
 void Vermes::valueChanged (rts2core::Value * changed_value)
 {
   int ret ;
@@ -201,6 +190,7 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
   if (changed_value == ssd650v_setpoint) {
  
     if( ssd650v_setpoint->getValueDouble() != 0.) {
+      manual_target_az= UNDEFINED;
       lastMovementState= movementState ;
       movementState= SYNCHRONIZATION_DISABLED ;
       if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
@@ -234,7 +224,9 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
     return ; // ask Petr what to do in general if something fails within ::valueChanged
   } else   if (changed_value == synchronizeTelescope) {
     if( synchronizeTelescope->getValueBool()) {
-      movementState= SYNCHRONIZATION_ENABLED ; 
+      movementState= SYNCHRONIZATION_ENABLED ;
+      manual_target_az=UNDEFINED;
+
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola starts, synchronization of the telescope enabled"<< sendLog ;
     } else {
       // motor is turned off in thread
@@ -248,6 +240,13 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
   } else if (changed_value == ssd650v_max_setpoint) {
 
     curMaxSetPoint= ssd650v_max_setpoint->getValueDouble() ;
+  } else if (changed_value == target_azimut_cupola) {
+    if ( movementState == SYNCHRONIZATION_ENABLED) {
+      logStream (MESSAGE_ERROR) << "Vermes::valueChanged target az can not be changed while: SYNCHRONIZATION_ENABLED"<< sendLog ;
+    } else {
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged target az changed"<< sendLog ;
+      manual_target_az=target_azimut_cupola->getValueDouble();
+    }
   }
   Cupola::valueChanged (changed_value);
 }
@@ -258,7 +257,7 @@ int Vermes::idle ()
 int Vermes::info ()
 {
   barcode_reader_state->setValueInteger( barcodereader_state) ; 
-  setCurrentAz (barcodereader_az);
+  setCurrentAz(barcodereader_az);
   setTargetAz(target_az) ;
   target_azimut_cupola->setValueDouble( target_az) ;
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
@@ -267,9 +266,7 @@ int Vermes::info ()
   maskState (DOME_DOME_MASK, DOME_OPENED, "Dome is opened");
 
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
-
     logStream (MESSAGE_WARNING) << "Vermes::info current exceeding limit: "<<  ssd650v_current->getValueDouble() << sendLog ;
-
   }
   if( movementState == SYNCHRONIZATION_ENABLED) {
     synchronizeTelescope->setValueBool(true) ;
@@ -347,7 +344,7 @@ int Vermes::initValues ()
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
 {
   // since this driver is Obs. Vermes specific no options are really required
-  createValue (target_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES  );
+  createValue (target_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
   createValue (azimut_difference,    "AZdiff",          "(cupola - target) AZ reading",       false, RTS2_DT_DEGREES  );
   createValue (synchronizeTelescope, "Synchronize",     "synchronize with telescope (true: enabled, false:manual mode)", false, RTS2_VALUE_WRITABLE);
   createValue (barcode_reader_state, "BCRstate",        "barcodereader status (0: CUP_AZ valid, 1:invalid)", false);
