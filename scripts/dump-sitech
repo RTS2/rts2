@@ -225,8 +225,8 @@ class ProcessSitech:
     """Process SiTech file. Contains methods to process file."""
 
     def __init__(self):
-        self.positions = []
-        self.commands = []
+        self.a_pos = []
+        self.a_cmd = []
         self.last_error = None
         # positions indices of errors
         self.x_errors = []
@@ -256,7 +256,7 @@ class ProcessSitech:
             y_type = self.types[y_last & 0x000F]
             x_val = x_last >> 4
             y_val = y_last >> 4
-            self.positions.append((
+            self.a_pos.append((
                 date,
                 x_pos,
                 y_pos,
@@ -268,7 +268,7 @@ class ProcessSitech:
                 y_val
             ))
         if args.error_limit is not None:
-            i = len(self.positions) - 1
+            i = len(self.a_pos) - 1
             if abs(x_err) > args.error_limit:
                 if self.last_x_error is None:
                     self.x_errors.append([i, None])
@@ -276,22 +276,22 @@ class ProcessSitech:
             else:
                 if self.last_x_error is not None and (
                     date -
-                    self.positions[self.last_x_error][0]
+                    self.a_pos[self.last_x_error][0]
                 ).total_seconds() > args.error_band:
                     ts = (
-                        self.positions[self.last_x_error][0] -
-                        self.positions[self.x_errors[-1][0]][0]
+                        self.a_pos[self.last_x_error][0] -
+                        self.a_pos[self.x_errors[-1][0]][0]
                     ).total_seconds()
                     self.x_errors[-1][1] = i
-                    c = self.positions[self.x_errors[-1][0]][1]
-                    ct = self.positions[self.x_errors[-1][1]][1]
+                    c = self.a_pos[self.x_errors[-1][0]][1]
+                    ct = self.a_pos[self.x_errors[-1][1]][1]
                     a = astropy.coordinates.Angle(
                         math.pi * c / float(2**26),
                         unit=astropy.units.radian
                     )
                     print(_('Alt error from {0} counts {1:>9}..{2:>9} angle {3} \
 for {4:.3f} seconds').format(
-                        self.positions[self.x_errors[-1][0]][0],
+                        self.a_pos[self.x_errors[-1][0]][0],
                         c, ct,
                         a.to_string(unit=astropy.units.degree),
                         ts
@@ -305,22 +305,22 @@ for {4:.3f} seconds').format(
             else:
                 if self.last_y_error is not None and (
                     date -
-                    self.positions[self.last_y_error][0]
+                    self.a_pos[self.last_y_error][0]
                 ).total_seconds() > args.error_band:
                     ts = (
-                        self.positions[self.last_y_error][0] -
-                        self.positions[self.y_errors[-1][0]][0]
+                        self.a_pos[self.last_y_error][0] -
+                        self.a_pos[self.y_errors[-1][0]][0]
                     ).total_seconds()
                     self.y_errors[-1][1] = i
-                    c = self.positions[self.y_errors[-1][0]][2]
-                    ct = self.positions[self.y_errors[-1][1]][2]
+                    c = self.a_pos[self.y_errors[-1][0]][2]
+                    ct = self.a_pos[self.y_errors[-1][1]][2]
                     a = astropy.coordinates.Angle(
                         math.pi * c / float(2**26),
                         unit=astropy.units.radian
                     )
                     print(_('Az error from {0} counts {1:>9}..{2:>9} angle {3} \
 for {4:.3f} seconds').format(
-                        self.positions[self.y_errors[-1][0]][0],
+                        self.a_pos[self.y_errors[-1][0]][0],
                         c, ct,
                         a.to_string(unit=astropy.units.degree),
                         ts
@@ -342,7 +342,7 @@ for {4:.3f} seconds').format(
                 )
             ))
         if do_append:
-            self.commands.append([date, x_dest, y_dest, x_speed, y_speed])
+            self.a_cmd.append([date, x_dest, y_dest, x_speed, y_speed])
 
     def process_Y(self, f, date, do_append):
         data = f.read(34)
@@ -359,10 +359,13 @@ for {4:.3f} seconds').format(
                 )
             ))
         if do_append:
-            self.commands.append([date, x_dest, y_dest, x_speed, y_speed])
+            self.a_cmd.append([date, x_dest, y_dest, x_speed, y_speed])
 
     def process_file(self, fn, d_from, d_to, fdump=None):
         f = open(fn, 'rb')
+
+        orig_pos = len(self.a_pos)
+        orig_cmd = len(self.a_cmd)
 
         if fdump:
             # write header to csv dump
@@ -375,7 +378,7 @@ command date,X target,Y target,X speed,Y speed\n')
         while True:
             d = f.read(17)
             if len(d) != 17:
-                return self.positions, self.commands
+                return len(self.a_pos) - orig_pos, len(self.a_cmd) - orig_cmd
             et, t, usec = struct.unpack('=cqq', d)
 
             date = datetime.datetime.utcfromtimestamp(t + float(usec) / 1e6)
@@ -397,7 +400,7 @@ command date,X target,Y target,X speed,Y speed\n')
                     d_to += datetime.timedelta(days=1)
 
             if d_to is not None and date > d_to:
-                return self.positions, self.commands
+                return len(self.a_pos) - orig_pos, len(self.a_cmd) - orig_cmd
             do_append = d_from is None or date > d_from
 
             if args.verbose:
@@ -415,14 +418,52 @@ command date,X target,Y target,X speed,Y speed\n')
             except ValueError, ve:
                 print(ve)
 
-            if fdump and len(self.positions) > 0 and len(self.commands) > 0:
+            if fdump and len(self.a_pos) > 0 and len(self.a_cmd) > 0:
                 fdump.write('{0},{1},{2}\n'.format(
                     et,
-                    ','.join(map(str, self.positions[-1])),
-                    ','.join(map(str, self.commands[-1])))
+                    ','.join(map(str, self.a_pos[-1])),
+                    ','.join(map(str, self.a_cmd[-1])))
                 )
         f.close()
-        return self.positions, self.commands
+        return len(self.a_pos) - orig_pos, len(self.a_cmd) - orig_cmd
+
+    def convert_arrays(self, first):
+        self.positions = numpy.rec.array(
+            self.a_pos[first:],
+            dtype=[
+                ('date', 'datetime64[ms]'),
+                ('x_pos', '>i'),
+                ('y_pos', '>i'),
+                ('x_err', '>i'),
+                ('y_err', '>i'),
+                ('x_type', '>c'),
+                ('x_val', '>i'),
+                ('y_type', '>c'),
+                ('y_val', '>i')
+            ]
+        )
+
+        if len(self.a_cmd) == 0:
+            self.commands = None
+            self.bpn = 2
+            print(_('Empty commands, plotting only positions'))
+        else:
+            self.commands = numpy.rec.array(
+                self.a_cmd[first:],
+                dtype=[
+                    ('date', 'datetime64[ms]'),
+                    ('x_dest', '>i'),
+                    ('y_dest', '>i'),
+                    ('x_speed', '>i'),
+                    ('y_speed', '>i')
+                ]
+            )
+            if args.plot == 'separated':
+                self.bpn = 3 + len(args.plot_extra)
+            elif args.plot == 'errors':
+                self.bpn = 1
+            else:
+                self.bpn = 3
 
     def __add_plot(self, gs, ylabel):
         ret = self.fig.add_subplot(
@@ -461,7 +502,7 @@ command date,X target,Y target,X speed,Y speed\n')
             if commands is not None:
                 c_x = commands.x_dest
         elif x_axis == 'alt-deg':
-            p_x = [360.0 * float(y) / 2**26 for y in positions.x_pos]
+            p_x = [360.0 * float(y) / 2**26 for y in self.positions.x_pos]
             if commands is not None:
                 c_x = [
                     360.0 * float(y) / 2**26 for y in
@@ -473,12 +514,12 @@ command date,X target,Y target,X speed,Y speed\n')
         return p_x, c_x
 
     def __plot_extra(
-        self, positions, lines_x, lines_y,
+        self, lines_x, lines_y,
         extra, label, color
     ):
         if extra in args.plot_extra:
             if self.plot_x:
-                extra_data = positions[positions.x_type == extra]
+                extra_data = self.positions[self.positions.x_type == extra]
                 lab = 'Alt ' + label
                 if self.axis_x is None:
                     axis = self.__add_plot(gs, lab)
@@ -501,7 +542,7 @@ command date,X target,Y target,X speed,Y speed\n')
                 lines_x.append(p)
                 self.gs_index += 1
             if self.plot_y:
-                extra_data = positions[positions.y_type == extra]
+                extra_data = self.positions[self.positions.y_type == extra]
                 lab = 'Az ' + label
                 if self.axis_y is None:
                     axis = self.__add_plot(gs, lab)
@@ -524,18 +565,18 @@ command date,X target,Y target,X speed,Y speed\n')
                 lines_y.append(p)
                 self.gs_index += 1
 
-    def plot(self, bpn):
-        if args.speed_dif and commands is not None:
-            bpn += 1
+    def plot(self):
+        if args.speed_dif and self.commands is not None:
+            self.bpn += 1
 
         self.fig = pylab.figure()
 
         if args.axis == 'both':
-            gs = gridspec.GridSpec(bpn * 2, 1)
+            gs = gridspec.GridSpec(self.bpn * 2, 1)
         else:
-            gs = gridspec.GridSpec(bpn, 1)
+            gs = gridspec.GridSpec(self.bpn, 1)
 
-        p_x, c_x = ps.get_x_data(args.x_axis, positions, commands)
+        p_x, c_x = ps.get_x_data(args.x_axis, self.positions, self.commands)
 
         self.ax_current = None
         self.gs_index = 0
@@ -551,19 +592,19 @@ command date,X target,Y target,X speed,Y speed\n')
 
         if self.plot_x and not(self.plot_errors):
             self.__add_plot(gs, 'Alt pos')
-            self.ax_current.plot(p_x, positions.x_pos, args.markers)
+            self.ax_current.plot(p_x, self.positions.x_pos, args.markers)
             self.gs_index += 1
 
         if self.plot_y and not(self.plot_errors):
             self.__add_plot(gs, 'Az pos')
-            self.ax_current.plot(p_x, positions.y_pos, 'g' + args.markers)
+            self.ax_current.plot(p_x, self.positions.y_pos, 'g' + args.markers)
             self.gs_index += 1
 
         if self.plot_x:
             self.__add_plot(gs, 'Alt err')
             p, = self.ax_current.plot(
                 p_x,
-                positions.x_err,
+                self.positions.x_err,
                 args.markers,
                 label='Alt err'
             )
@@ -576,7 +617,7 @@ command date,X target,Y target,X speed,Y speed\n')
             self.__add_plot(gs, 'Az err')
             p, = self.ax_current.plot(
                 p_x,
-                positions.y_err,
+                self.positions.y_err,
                 'g' + args.markers,
                 label='Az err'
             )
@@ -585,37 +626,38 @@ command date,X target,Y target,X speed,Y speed\n')
                 self.axis_y = self.ax_current
                 lines_y.append(p)
 
-        if self.plot_x and commands is not None and not(self.plot_errors):
+        if self.plot_x and self.commands is not None and not(self.plot_errors):
             self.__add_plot(gs, 'Alt speed')
-            self.ax_current.plot(c_x, commands.x_speed, args.markers)
+            self.ax_current.plot(c_x, self.commands.x_speed, args.markers)
             self.gs_index += 1
 
-        if self.plot_y and commands is not None and not(self.plot_errors):
+        if self.plot_y and self.commands is not None and not(self.plot_errors):
             self.__add_plot(gs, 'Az speed')
-            self.ax_current.plot(c_x, commands.y_speed, 'g' + args.markers)
+            self.ax_current.plot(
+                c_x, self.commands.y_speed, 'g' + args.markers)
             self.gs_index += 1
 
-        if args.speed_dif and self.plot_x and commands is not None:
+        if args.speed_dif and self.plot_x and self.commands is not None:
             self.__add_plot(gs, 'Alt sp dif')
             self.ax_current.plot(c_x[1:], numpy.diff(
-                commands.x_speed),
+                self.commands.x_speed),
                 'b' + args.markers
             )
             self.gs_index += 1
 
-        if args.speed_dif and self.plot_y and commands is not None:
+        if args.speed_dif and self.plot_y and self.commands is not None:
             self.__add_plot(gs, 'Az sp dif')
             self.ax_current.plot(c_x[1:], numpy.diff(
-                commands.y_speed),
+                self.commands.y_speed),
                 'g' + args.markers
             )
             self.gs_index += 1
 
-        self.__plot_extra(positions, lines_x, lines_y, 'E', 'error', 'y')
-        self.__plot_extra(positions, lines_x, lines_y, 'C', 'current', 'k')
-        self.__plot_extra(positions, lines_x, lines_y, 'S', 'supply', 'c')
-        self.__plot_extra(positions, lines_x, lines_y, 'T', 'temperature', 'm')
-        self.__plot_extra(positions, lines_x, lines_y, 'P', 'PID output', 'r')
+        self.__plot_extra(lines_x, lines_y, 'E', 'error', 'y')
+        self.__plot_extra(lines_x, lines_y, 'C', 'current', 'k')
+        self.__plot_extra(lines_x, lines_y, 'S', 'supply', 'c')
+        self.__plot_extra(lines_x, lines_y, 'T', 'temperature', 'm')
+        self.__plot_extra(lines_x, lines_y, 'P', 'PID output', 'r')
 
         # add labels, if needed
         if self.axis_x is not None and len(args.plot_extra) > 0:
@@ -645,51 +687,11 @@ ps = ProcessSitech()
 
 for fn in args.files:
     print(_('Processing {0}'.format(fn)))
-    r_positions, r_commands = ps.process_file(
-        fn, args.d_from, args.d_to, args.fdump
-    )
+    len_p, len_c = ps.process_file(
+        fn, args.d_from, args.d_to, args.fdump)
     print(_('Retrieved {0} positions and {1} commands records').format(
-        len(r_positions),
-        len(r_commands)
-    ))
+        len_p, len_c))
 
-    first = -args.last
+    ps.convert_arrays(-args.last)
 
-    positions = numpy.rec.array(
-        r_positions[first:],
-        dtype=[
-            ('date', 'datetime64[ms]'),
-            ('x_pos', '>i'),
-            ('y_pos', '>i'),
-            ('x_err', '>i'),
-            ('y_err', '>i'),
-            ('x_type', '>c'),
-            ('x_val', '>i'),
-            ('y_type', '>c'),
-            ('y_val', '>i')
-        ]
-    )
-
-    if len(r_commands) == 0:
-        commands = None
-        bpn = 2
-        print(_('Empty commands, plotting only positions'))
-    else:
-        commands = numpy.rec.array(
-            r_commands[first:],
-            dtype=[
-                ('date', 'datetime64[ms]'),
-                ('x_dest', '>i'),
-                ('y_dest', '>i'),
-                ('x_speed', '>i'),
-                ('y_speed', '>i')
-            ]
-        )
-        if args.plot == 'separated':
-            bpn = 3 + len(args.plot_extra)
-        elif args.plot == 'errors':
-            bpn = 1
-        else:
-            bpn = 3
-
-    ps.plot(bpn)
+    ps.plot()
