@@ -1999,7 +1999,8 @@ int Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
-	tracking->setValueInteger (1);
+	if (tracking)
+		tracking->setValueInteger (1);
 
 	tle_freeze->setValueBool (false);
 
