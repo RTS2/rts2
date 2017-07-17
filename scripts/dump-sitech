@@ -689,5 +689,3 @@ for fn in args.files:
             bpn = 3
 
     ps.plot(bpn)
-
-
