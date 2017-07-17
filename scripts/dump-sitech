@@ -221,7 +221,9 @@ def sitech_checksum(s, invertH):
 
 
 class ProcessSitech:
+
     """Process SiTech file. Contains methods to process file."""
+
     def __init__(self):
         self.positions = []
         self.commands = []
@@ -424,13 +426,15 @@ command date,X target,Y target,X speed,Y speed\n')
 
     def __add_plot(self, gs, ylabel):
         ret = self.fig.add_subplot(
-            gs[self.gs_index:self.gs_index+1, 0:1],
+            gs[self.gs_index:self.gs_index + 1, 0:1],
             sharex=self.ax_current
         )
         if self.ax_current:
             ret.set_xlim(self.ax_current.get_xlim())
         ret.set_ylabel(ylabel)
-        ret.grid(True)
+        ret.minorticks_on()
+        ret.grid(True, 'major')
+        # ret.grid(True, 'minor', linestyle='dotted')
         self.ax_current = ret
         return ret
 
@@ -467,7 +471,6 @@ command date,X target,Y target,X speed,Y speed\n')
             return None, None
 
         return p_x, c_x
-
 
     def __plot_extra(
         self, positions, lines_x, lines_y,
@@ -539,18 +542,19 @@ command date,X target,Y target,X speed,Y speed\n')
 
         self.plot_x = args.axis in ['both', 'x', 'alt']
         self.plot_y = args.axis in ['both', 'y', 'az']
+        self.plot_errors = args.plot in ['errors']
         axis_x = None
         axis_y = None
 
         lines_x = []
         lines_y = []
 
-        if self.plot_x and not(args.plot in ['errors']):
+        if self.plot_x and not(self.plot_errors):
             self.__add_plot(gs, 'Alt pos')
             self.ax_current.plot(p_x, positions.x_pos, args.markers)
             self.gs_index += 1
 
-        if self.plot_y and not(args.plot in ['errors']):
+        if self.plot_y and not(self.plot_errors):
             self.__add_plot(gs, 'Az pos')
             self.ax_current.plot(p_x, positions.y_pos, 'g' + args.markers)
             self.gs_index += 1
@@ -581,12 +585,12 @@ command date,X target,Y target,X speed,Y speed\n')
                 axis_y = self.ax_current
                 lines_y.append(p)
 
-        if self.plot_x and commands is not None and not(args.plot in ['errors']):
+        if self.plot_x and commands is not None and not(self.plot_errors):
             self.__add_plot(gs, 'Alt speed')
             self.ax_current.plot(c_x, commands.x_speed, args.markers)
             self.gs_index += 1
 
-        if self.plot_y and commands is not None and not(args.plot in ['errors']):
+        if self.plot_y and commands is not None and not(self.plot_errors):
             self.__add_plot(gs, 'Az speed')
             self.ax_current.plot(c_x, commands.y_speed, 'g' + args.markers)
             self.gs_index += 1
@@ -607,12 +611,18 @@ command date,X target,Y target,X speed,Y speed\n')
             )
             self.gs_index += 1
 
-
-        self.__plot_extra(positions, lines_x, lines_y, 'E', 'error', axis_x, axis_y, 'y')
-        self.__plot_extra(positions, lines_x, lines_y, 'C', 'current', axis_x, axis_y, 'k')
-        self.__plot_extra(positions, lines_x, lines_y, 'S', 'supply', axis_x, axis_y, 'c')
-        self.__plot_extra(positions, lines_x, lines_y, 'T', 'temperature', axis_x, axis_y, 'm')
-        self.__plot_extra(positions, lines_x, lines_y, 'P', 'PID output', axis_x, axis_y, 'r')
+        self.__plot_extra(
+            positions, lines_x, lines_y, 'E', 'error', axis_x, axis_y, 'y')
+        self.__plot_extra(
+            positions, lines_x, lines_y, 'C', 'current', axis_x, axis_y, 'k')
+        self.__plot_extra(
+            positions, lines_x, lines_y, 'S', 'supply', axis_x, axis_y, 'c')
+        self.__plot_extra(
+            positions, lines_x, lines_y, 'T', 'temperature',
+            axis_x, axis_y, 'm')
+        self.__plot_extra(
+            positions, lines_x, lines_y, 'P', 'PID output',
+            axis_x, axis_y, 'r')
 
         # add labels, if needed
         if axis_x is not None and len(args.plot_extra) > 0:
@@ -623,9 +633,10 @@ command date,X target,Y target,X speed,Y speed\n')
         self.fig.subplots_adjust(hspace=0)
 
         if not(args.plot in ['separated']):
-            self.fig.subplots_adjust(right=1-0.07*len(args.plot_extra))
+            self.fig.subplots_adjust(right=1 - 0.07 * len(args.plot_extra))
 
-        self.fig.autofmt_xdate()
+        if args.x_axis == 'time':
+            self.fig.autofmt_xdate()
 
         if args.save_plot is not None:
             print(_('saving plot to {0}').format(args.save_plot, end=' '))
