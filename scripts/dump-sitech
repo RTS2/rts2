@@ -474,17 +474,17 @@ command date,X target,Y target,X speed,Y speed\n')
 
     def __plot_extra(
         self, positions, lines_x, lines_y,
-        extra, label, in_axis_x, in_axis_y, color
+        extra, label, color
     ):
         if extra in args.plot_extra:
             if self.plot_x:
                 extra_data = positions[positions.x_type == extra]
                 lab = 'Alt ' + label
-                if in_axis_x is None:
+                if self.axis_x is None:
                     axis = self.__add_plot(gs, lab)
                     mark = 'b' + args.markers
                 else:
-                    axis = in_axis_x.twinx()
+                    axis = self.axis_x.twinx()
                     axis.set_ylabel(lab)
                     axis.spines["right"].set_position((
                         "axes",
@@ -503,11 +503,11 @@ command date,X target,Y target,X speed,Y speed\n')
             if self.plot_y:
                 extra_data = positions[positions.y_type == extra]
                 lab = 'Az ' + label
-                if in_axis_y is None:
+                if self.axis_y is None:
                     axis = self.__add_plot(gs, lab)
                     mark = 'g' + args.markers
                 else:
-                    axis = in_axis_y.twinx()
+                    axis = self.axis_y.twinx()
                     axis.set_ylabel(lab)
                     axis.spines["right"].set_position((
                         "axes",
@@ -543,8 +543,8 @@ command date,X target,Y target,X speed,Y speed\n')
         self.plot_x = args.axis in ['both', 'x', 'alt']
         self.plot_y = args.axis in ['both', 'y', 'az']
         self.plot_errors = args.plot in ['errors']
-        axis_x = None
-        axis_y = None
+        self.axis_x = None
+        self.axis_y = None
 
         lines_x = []
         lines_y = []
@@ -569,7 +569,7 @@ command date,X target,Y target,X speed,Y speed\n')
             )
             self.gs_index += 1
             if not(args.plot in ['separated']):
-                axis_x = self.ax_current
+                self.axis_x = self.ax_current
                 lines_x.append(p)
 
         if self.plot_y:
@@ -582,7 +582,7 @@ command date,X target,Y target,X speed,Y speed\n')
             )
             self.gs_index += 1
             if not(args.plot in ['separated']):
-                axis_y = self.ax_current
+                self.axis_y = self.ax_current
                 lines_y.append(p)
 
         if self.plot_x and commands is not None and not(self.plot_errors):
@@ -611,24 +611,17 @@ command date,X target,Y target,X speed,Y speed\n')
             )
             self.gs_index += 1
 
-        self.__plot_extra(
-            positions, lines_x, lines_y, 'E', 'error', axis_x, axis_y, 'y')
-        self.__plot_extra(
-            positions, lines_x, lines_y, 'C', 'current', axis_x, axis_y, 'k')
-        self.__plot_extra(
-            positions, lines_x, lines_y, 'S', 'supply', axis_x, axis_y, 'c')
-        self.__plot_extra(
-            positions, lines_x, lines_y, 'T', 'temperature',
-            axis_x, axis_y, 'm')
-        self.__plot_extra(
-            positions, lines_x, lines_y, 'P', 'PID output',
-            axis_x, axis_y, 'r')
+        self.__plot_extra(positions, lines_x, lines_y, 'E', 'error', 'y')
+        self.__plot_extra(positions, lines_x, lines_y, 'C', 'current', 'k')
+        self.__plot_extra(positions, lines_x, lines_y, 'S', 'supply', 'c')
+        self.__plot_extra(positions, lines_x, lines_y, 'T', 'temperature', 'm')
+        self.__plot_extra(positions, lines_x, lines_y, 'P', 'PID output', 'r')
 
         # add labels, if needed
-        if axis_x is not None and len(args.plot_extra) > 0:
-            axis_x.legend(lines_x, [l.get_label() for l in lines_x])
-        if axis_y is not None and len(args.plot_extra) > 0:
-            axis_y.legend(lines_y, [l.get_label() for l in lines_y])
+        if self.axis_x is not None and len(args.plot_extra) > 0:
+            self.axis_x.legend(lines_x, [l.get_label() for l in lines_x])
+        if self.axis_y is not None and len(args.plot_extra) > 0:
+            self.axis_y.legend(lines_y, [l.get_label() for l in lines_y])
 
         self.fig.subplots_adjust(hspace=0)
 
