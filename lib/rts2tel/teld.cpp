@@ -2832,7 +2832,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		}
 		else
 		{
-			if (tracking->getValueInteger () == 0)
+			if (tracking != NULL && tracking->getValueInteger () == 0)
 				tracking->setValueInteger (1);
 			ret = setTracking (tracking->getValueInteger (), true);
 		}
