@@ -1732,7 +1732,7 @@ int Connection::sendValue (std::string val_name, int val1, double val2)
 
 int Connection::sendValue (std::string val_name, const char *value)
 {
-	if (getConnState () == CONN_INPROGRESS)
+	if (getConnState () == CONN_INPROGRESS || getConnState () == CONN_UNKNOW)
 	{
 		return -1;
 	}
