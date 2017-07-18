@@ -156,6 +156,7 @@ ImageProc::ImageProc (int _argc, char **_argv)
 #endif
 {
 	last_processed_jpeg = last_good_jpeg = last_trash_jpeg = NULL;
+	runningImage = NULL;
 
 	createValue (applyCorrections, "apply_corrections", "apply corrections from astrometry", false, RTS2_VALUE_WRITABLE);
 	applyCorrections->setValueBool (true);
