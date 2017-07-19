@@ -69,7 +69,7 @@ def verify_plot_extra(pe):
 parser.add_argument(
     'files',
     help=_('Trace logs to process'),
-    action='append'
+    nargs='*'
 )
 
 parser.add_argument(
@@ -207,6 +207,42 @@ parser.add_argument(
     choices=['time', 'az-counts', 'az-deg', 'alt-counts', 'alt-deg']
 )
 
+parser.add_argument(
+    '--az-cpr',
+    dest='az_cpr',
+    help=_('Azimuth counts per rotation'),
+    action='store',
+    type=int,
+    default=2**26
+)
+
+parser.add_argument(
+    '--az-offset',
+    dest='az_offset',
+    help=_('Azimuth offset (in degrees)'),
+    action='store',
+    default=0,
+    type=float
+)
+
+parser.add_argument(
+    '--az-from',
+    dest='az_from',
+    help=_('X range in degrees'),
+    action='store',
+    default=None,
+    type=float
+)
+
+parser.add_argument(
+    '--az-to',
+    dest='az_to',
+    help=_('X range in degrees'),
+    action='store',
+    default=None,
+    type=float
+)
+
 args = parser.parse_args()
 
 
@@ -286,7 +322,7 @@ class ProcessSitech:
                     c = self.a_pos[self.x_errors[-1][0]][1]
                     ct = self.a_pos[self.x_errors[-1][1]][1]
                     a = astropy.coordinates.Angle(
-                        math.pi * c / float(2**26),
+                        math.pi * c / float(args.az_cpr),
                         unit=astropy.units.radian
                     )
                     print(_('Alt error from {0} counts {1:>9}..{2:>9} angle {3} \
@@ -315,7 +351,7 @@ for {4:.3f} seconds').format(
                     c = self.a_pos[self.y_errors[-1][0]][2]
                     ct = self.a_pos[self.y_errors[-1][1]][2]
                     a = astropy.coordinates.Angle(
-                        math.pi * c / float(2**26),
+                        math.pi * c / float(2**args.az_cpr),
                         unit=astropy.units.radian
                     )
                     print(_('Az error from {0} counts {1:>9}..{2:>9} angle {3} \
@@ -464,6 +500,8 @@ command date,X target,Y target,X speed,Y speed\n')
                 self.bpn = 1
             else:
                 self.bpn = 3
+        print(_('Converted {0} positions and {1} commands').format(
+            len(self.positions), len(self.commands)))
 
     def __add_plot(self, gs, ylabel):
         ret = self.fig.add_subplot(
@@ -491,10 +529,10 @@ command date,X target,Y target,X speed,Y speed\n')
             if commands is not None:
                 c_x = commands.y_dest
         elif x_axis == 'az-deg':
-            p_x = [360.0 * float(y) / 2**26 for y in positions.y_pos]
+            p_x = [360.0 * float(y) / args.az_cpr for y in positions.y_pos]
             if commands is not None:
                 c_x = [
-                    360.0 * float(y) / 2**26 for y in
+                    360.0 * float(y) / args.az_cpr for y in
                     commands.y_dest
                 ]
         elif x_axis == 'alt-counts':
@@ -502,10 +540,10 @@ command date,X target,Y target,X speed,Y speed\n')
             if commands is not None:
                 c_x = commands.x_dest
         elif x_axis == 'alt-deg':
-            p_x = [360.0 * float(y) / 2**26 for y in self.positions.x_pos]
+            p_x = [360.0 * float(y) / args.az_cpr for y in positions.x_pos]
             if commands is not None:
                 c_x = [
-                    360.0 * float(y) / 2**26 for y in
+                    360.0 * float(y) / args.az_cpr for y in
                     commands.x_dest
                 ]
         else:
@@ -692,6 +730,5 @@ for fn in args.files:
     print(_('Retrieved {0} positions and {1} commands records').format(
         len_p, len_c))
 
-    ps.convert_arrays(-args.last)
-
-    ps.plot()
+ps.convert_arrays(-args.last)
+ps.plot()
