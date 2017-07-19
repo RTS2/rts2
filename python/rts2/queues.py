@@ -25,7 +25,7 @@ class Queues:
 		self.queues = {}
 	
 	def load(self):
-		for d in self.jsonProxy.getDevicesByType(json.DEVICE_TYPE_SELECTOR):
+		for d in self.jsonProxy.getDevicesByType(rtsapi.DEVICE_TYPE_SELECTOR):
 			for q in self.jsonProxy.getValue(d, 'queue_names', refresh_not_found=True)[:-1]:
 				if q not in list(self.queues.keys()):
 					self.queues[q] = queue.Queue(self.jsonProxy, q, service=d)

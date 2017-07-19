@@ -115,7 +115,7 @@ class Queue:
 		self.queueType = queueType
 
 		if service is None:
-			self.service = self.jsonProxy.getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
+			self.service = self.jsonProxy.getDevicesByType(rtsapi.DEVICE_TYPE_SELECTOR)[0]
 
 	def clear(self):
 		"""Clear the queue."""
