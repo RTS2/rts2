@@ -529,12 +529,13 @@ command date,X target,Y target,X speed,Y speed\n')
             if commands is not None:
                 c_x = commands.y_dest
         elif x_axis == 'az-deg':
-            p_x = [360.0 * float(y) / args.az_cpr for y in positions.y_pos]
+            p_x = numpy.array([360.0 * float(y) / args.az_cpr for y in
+                positions.y_pos]) + args.az_offset
             if commands is not None:
-                c_x = [
+                c_x = numpy.array([
                     360.0 * float(y) / args.az_cpr for y in
                     commands.y_dest
-                ]
+                ]) + args.az_offset
         elif x_axis == 'alt-counts':
             p_x = positions.x_pos
             if commands is not None:
