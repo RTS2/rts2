@@ -17,6 +17,7 @@
 
 from . import queue
 from . import rtsapi
+import rts2.json
 import xml.dom.minidom
 
 class Queues:
