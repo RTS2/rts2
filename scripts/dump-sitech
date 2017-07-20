@@ -261,6 +261,7 @@ class ProcessSitech:
     """Process SiTech file. Contains methods to process file."""
 
     def __init__(self):
+        self.fns = 0
         self.a_pos = []
         self.a_cmd = []
         self.last_error = None
@@ -293,6 +294,7 @@ class ProcessSitech:
             x_val = x_last >> 4
             y_val = y_last >> 4
             self.a_pos.append((
+                self.fns,
                 date,
                 x_pos,
                 y_pos,
@@ -378,7 +380,8 @@ for {4:.3f} seconds').format(
                 )
             ))
         if do_append:
-            self.a_cmd.append([date, x_dest, y_dest, x_speed, y_speed])
+            self.a_cmd.append([
+                self.fns, date, x_dest, y_dest, x_speed, y_speed])
 
     def process_Y(self, f, date, do_append):
         data = f.read(34)
@@ -395,9 +398,11 @@ for {4:.3f} seconds').format(
                 )
             ))
         if do_append:
-            self.a_cmd.append([date, x_dest, y_dest, x_speed, y_speed])
+            self.a_cmd.append([
+                self.fns, date, x_dest, y_dest, x_speed, y_speed])
 
     def process_file(self, fn, d_from, d_to, fdump=None):
+        self.fns += 1
         f = open(fn, 'rb')
 
         orig_pos = len(self.a_pos)
@@ -467,6 +472,7 @@ command date,X target,Y target,X speed,Y speed\n')
         self.positions = numpy.rec.array(
             self.a_pos[first:],
             dtype=[
+                ('fn', '>i'),
                 ('date', 'datetime64[ms]'),
                 ('x_pos', '>i'),
                 ('y_pos', '>i'),
@@ -487,6 +493,7 @@ command date,X target,Y target,X speed,Y speed\n')
             self.commands = numpy.rec.array(
                 self.a_cmd[first:],
                 dtype=[
+                    ('fn', '>i'),
                     ('date', 'datetime64[ms]'),
                     ('x_dest', '>i'),
                     ('y_dest', '>i'),
@@ -726,8 +733,7 @@ ps = ProcessSitech()
 
 for fn in args.files:
     print(_('Processing {0}'.format(fn)))
-    len_p, len_c = ps.process_file(
-        fn, args.d_from, args.d_to, args.fdump)
+    len_p, len_c = ps.process_file(fn, args.d_from, args.d_to, args.fdump)
     print(_('Retrieved {0} positions and {1} commands records').format(
         len_p, len_c))
 
