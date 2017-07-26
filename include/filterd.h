@@ -50,6 +50,7 @@ class Filterd:public rts2core::Device
 		int setFilters (const char *filters);
 
 		virtual int info ();
+		virtual int scriptEnds ();
 
 		int setFilterNum (rts2core::Connection * conn, int new_filter);
 
@@ -83,6 +84,8 @@ class Filterd:public rts2core::Device
 
 	private:
 		rts2core::ValueSelection *filter;
+		rts2core::ValueSelection *defaultFilter;
+		const char *arg_defaultFilter;
 
 		int setFilterNumMask (int new_filter);
 };

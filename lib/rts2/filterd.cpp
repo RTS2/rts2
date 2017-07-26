@@ -20,13 +20,18 @@
 
 #include "filterd.h"
 
+#define OPT_DEFAULT_FILTER         OPT_LOCAL + 430
+
 using namespace rts2filterd;
 
 Filterd::Filterd (int in_argc, char **in_argv, const char *defName):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_FW, defName)
 {
 	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
+	defaultFilter = NULL;
+	arg_defaultFilter = NULL;
 
 	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
+	addOption (OPT_DEFAULT_FILTER, "default-filter", 1, "default filter (name or number)");
 }
 
 Filterd::~Filterd (void)
@@ -39,6 +44,10 @@ int Filterd::processOption (int in_opt)
 	{
 		case 'F':
 			return setFilters (optarg);
+		case OPT_DEFAULT_FILTER:
+			createValue(defaultFilter, "def_filter", "default filter", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			arg_defaultFilter = optarg;
+			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
 	}
@@ -47,6 +56,11 @@ int Filterd::processOption (int in_opt)
 
 int Filterd::initValues ()
 {
+	if (defaultFilter && arg_defaultFilter)
+	{
+		defaultFilter->copySel(filter);	
+		defaultFilter->setValueCharArr(arg_defaultFilter);
+	}
 	return rts2core::Device::initValues ();
 }
 
@@ -54,6 +68,13 @@ int Filterd::info ()
 {
 	filter->setValueInteger (getFilterNum ());
 	return rts2core::Device::info ();
+}
+
+int Filterd::scriptEnds()
+{
+	if (defaultFilter)
+		setFilterNumMask(defaultFilter->getValueInteger());
+	return rts2core::Device::scriptEnds();
 }
 
 int Filterd::setFilterNum (int new_filter)
