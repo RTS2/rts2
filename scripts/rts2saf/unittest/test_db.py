@@ -112,7 +112,7 @@ class TestDatabase(unittest.TestCase):
 
     def test_dbReadAccessCCDScript(self):
         logger.info('== {} =='.format(self._testMethodName))
-        entry=(' exe /usr/local/bin/rts2saf_focus.py E 1 ')
+        entry=('exe /usr/local/bin/rts2saf_focus.py')
 
         conn = psycopg2.connect('dbname={} user={} password={}'.format(self.dbName, self.dbUser, self.dbPasswd))
         crsr = conn.cursor()

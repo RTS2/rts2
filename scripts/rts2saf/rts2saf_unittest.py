@@ -71,7 +71,10 @@ def userInConfigFile():
         sys.exit(1)
 
 def sextractor_version():
-    if os.path.isfile(sex) and os.access(sex, os.X_OK):
+    global sex
+    sex=sex.strip()
+
+    if (os.path.islink(sex) or os.path.isfile(sex)) and os.access(sex, os.X_OK):
         cmd= [sex, '--version']
         versionStr= subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
         version = versionStr[0].split(' ')[2].split('.')
@@ -81,7 +84,7 @@ def sextractor_version():
             return True 
         else:
             print 'rts2saf_unittest.py: SExtractor: {}, has version {}.{}.{}, required is 2.8.6, exiting'.format(sex, version[0], version[1], version[2])
-            #sys.exit(1)
+            sys.exit(1)
             
     else:
         print 'rts2saf_unittest.py: SExtractor: {}, is not present or not executable, exiting'.format(sex)

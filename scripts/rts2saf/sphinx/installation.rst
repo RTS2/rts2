@@ -30,27 +30,34 @@ followed by installation and configuration of the ``Postgres`` DB including the 
 
 Update to Python 2.7.x (mandatory) and various Python packages (use ``pip`` or ``easy_install`` from your distro, or follow the installation package instructions):
 
-3) ``SciPy`` from your distro
-4) ``matplotlib`` from your distro
-5) ``pyds9`` form http://ds9.si.edu/download/pyds9/pyds9-1.7.tar.gz, for latest version check http://ds9.si.edu/site/Download.html
-6) ``numpy``, ``numpy-devel`` from your distro
-7) ``psutil`` from your distro or https://pypi.python.org/pypi?:action=display&name=psutil#downloads
-8) ``astropy`` see http://docs.astropy.org/en/stable/install.html
-9) ``astrometry.net`` http://astrometry.net/use.html
-10) ``pyfits`` version >= 3.2,  see http://www.stsci.edu/institute/software_hardware/pyfits/Download
-11) ``python-pytest`` from your distro
-12) ``python-psycopg2`` from your distro
+3) ``python-future`` from your distro
+4) ``SciPy`` from your distro
+5) ``matplotlib`` from your distro
+6) ``pyds9`` form http://ds9.si.edu/download/pyds9/pyds9-1.7.tar.gz, for latest version check http://ds9.si.edu/site/Download.html
+7) ``numpy``, ``numpy-devel`` from your distro
+8) ``psutil`` from your distro or https://pypi.python.org/pypi?:action=display&name=psutil#downloads
+9) ``astropy`` see http://docs.astropy.org/en/stable/install.html
+10) ``astrometry.net`` http://astrometry.net/use.html
+11) ``pyfits`` version >= 3.2,  see http://www.stsci.edu/institute/software_hardware/pyfits/Download
+12) ``python-pytest`` from your distro
+13) ``python-psycopg2`` from your distro
 
 For the documentation install ``sphinx`` and
 
-13) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
+14) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
 
 
 Recommended but not necessary install
 
-14) ``coverage`` from https://pypi.python.org/pypi/coverage
-15) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
+15) ``coverage`` from https://pypi.python.org/pypi/coverage
+16) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
 
+In case ``astrometry.net`` is not compiled from source, change in ``rts2-astrometry.net``
+
+ ``-   a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)``
+ ``+   a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir,astrometry_bin='/usr/bin/')``
+and in case version ``0.67``or later is used remove in ``atsrometry.py`` option ``'--no-fits2fits``.
+		 
 
 RTS2 configuration
 ------------------
