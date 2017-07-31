@@ -66,12 +66,14 @@ class FlatAttempt:
 
 class Flat:
 
-    """Flat class. It holds system configuration for skyflats."""
-
+    """Flat class. It holds system configuration for skyflats.
+    :param filters Filter (single string) or filters (FILTA, FILTB.. array)
+        for flats to expose
+    """
     def __init__(
-        self, filter, binning=None, ngood=None, window=None, expTimes=None
+        self, filters, binning=None, ngood=None, window=None, expTimes=None
     ):
-        self.filter = filter
+        self.filters = filters
         self.binning = binning
         self.ngood = ngood
         self.window = window
@@ -89,9 +91,13 @@ class Flat:
 
     def signature(self):
         """Return signature string of given flat image configuration."""
+        if type(self.filters) == 'str':
+            fs = '_'.join(self.filters)
+        else:
+            fs = self.filters
         if (self.binning is None and self.window is None):
-            return self.filter
-        return '{0}_{1}_{2}'.format(self.filter, self.binning, self.window)
+            return fs
+        return '{0}_{1}_{2}'.format(fs, self.binning, self.window)
 
 
 class FlatScript (scriptcomm.Rts2Comm):
@@ -400,14 +406,20 @@ class FlatScript (scriptcomm.Rts2Comm):
             '''run ratio {0} avrg {1} ngood {2} filter {3} next\
  exptime {4} ret {5}'''.format(
                 ratio, avrg, len(self.flatImages[self.flatNum]),
-                self.flat.filter, self.exptime, brightness)
+                str(self.flat.filters), self.exptime, brightness)
         )
         self.flat.attempt(self.exptime, ratio, avrg, brightness)
         return ret
 
     def setConfiguration(self):
-        if self.flat.filter is not None:
-            self.setValue('filter', self.flat.filter)
+        if self.flat.filters is not None:
+            if type(self.flat.filters) == 'str':
+                fn = 'A'
+                for f in self.flat.filters:
+                    self.setValue('FILT' + fn, f)
+                    fn = chr(ord(fn) + 1)
+            else:
+                self.setValue('filter', self.flat.filters)
         if self.flat.binning is not None:
             self.setValue('binning', self.flat.binning)
         else:
