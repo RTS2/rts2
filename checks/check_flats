@@ -4,6 +4,7 @@ import subprocess
 import unittest
 import os
 
+
 class FLATStest(unittest.TestCase):
 
     def __check_lines(self, lines, write=None):
@@ -54,12 +55,14 @@ class FLATStest(unittest.TestCase):
         self.__check_lines(
             [
                 'delete /tmp/flat1.fits',
-                'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0 filter i next exptime 5 ret bright',
+                'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0'
+                ' filter i next exptime 5 ret bright',
                 'value exposure = 5',
                 'value SHUTTER = LIGHT',
                 'exposure'
             ]
         )
         self.flatS.terminate()
+
 
 unittest.main()

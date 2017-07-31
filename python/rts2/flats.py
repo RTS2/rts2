@@ -67,7 +67,7 @@ class FlatAttempt:
 class Flat:
 
     """Flat class. It holds system configuration for skyflats.
-    :param filters Filter (single string) or filters (FILTA, FILTB.. array)
+    filters are filter (single string) or filters (FILTA, FILTB.. array)
         for flats to expose
     """
     def __init__(
