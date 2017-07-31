@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import subprocess
+import unittest
+
+class FLATStest(unittest.TestCase):
+
+    def __check_lines(self, lines, write=None):
+        for l in lines:
+            ls = self.flatS.stdout.readline().rstrip()
+            print(ls)
+            self.assertEqual(ls, l)
+        if write is not None:
+            self.flatS.stdin.write(write + '\n')
+
+    def testSunset(self):
+        self.flatS = subprocess.Popen(
+            ['../scripts/flat.py'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        self.__check_lines(['G centrald sun_az'], '-20')
+        self.__check_lines(['run_device'], 'CXX')
+        self.__check_lines(
+            [
+                'value SHUTTER = LIGHT',
+                'value filter = i',
+                'value binning = 1',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ],
+            'exposure_end'
+        )
+        self.__check_lines(
+            [
+                'VT TELESCOPE OFFS += 0.00277777777778 0.00277777777778'
+            ],
+            'image /tmp/flat1.fits'
+        )
+        self.__check_lines(
+            [
+                '? average'
+            ],
+            '45000'
+        )
+        self.__check_lines(
+            [
+                'delete /tmp/flat1.fits',
+                'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0 filter i next exptime 5 ret bright',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ]
+        )
+        self.flatS.terminate()
+
+unittest.main()
