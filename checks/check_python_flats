@@ -16,20 +16,24 @@ class FLATStest(unittest.TestCase):
                 self.assertEqual(ls, l)
             if write is not None:
                 self.flatS.stdin.write(write + '\n')
-        finally:
+        except AssertionError,ex:
             while True:
                 pr = self.poll.poll(10)
                 if len(pr) == 0:
                     break
                 succ = 0
                 for (fd, event) in pr:
+                    if event & select.POLLIN == 0:
+                        continue
                     if fd == self.flatS.stderr.fileno():
-                        if event == select.POLLHUP:
-                            break
                         print(self.flatS.stderr.readline().rstrip())
+                        succ += 1
+                    elif fd == self.flatS.stdout.fileno():
+                        print(self.flatS.stdout.readline().rstrip())
                         succ += 1
                 if succ == 0:
                     break
+            raise ex
 
     def setUp(self):
         self.env = os.environ.copy()
