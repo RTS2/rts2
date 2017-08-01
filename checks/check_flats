@@ -3,21 +3,38 @@
 import subprocess
 import unittest
 import os
+import select
 
 
 class FLATStest(unittest.TestCase):
 
     def __check_lines(self, lines, write=None):
-        for l in lines:
-            ls = self.flatS.stdout.readline().rstrip()
-            print(ls)
-            self.assertEqual(ls, l)
-        if write is not None:
-            self.flatS.stdin.write(write + '\n')
+        try:
+            for l in lines:
+                ls = self.flatS.stdout.readline().rstrip()
+                print(ls)
+                self.assertEqual(ls, l)
+            if write is not None:
+                self.flatS.stdin.write(write + '\n')
+        finally:
+            while True:
+                pr = self.poll.poll(10)
+                if len(pr) == 0:
+                    break
+		succ = 0
+                for (fd, event) in pr:
+                    if fd == self.flatS.stderr.fileno():
+		        if event == select.POLLHUP:
+			    break
+                        print(self.flatS.stderr.readline().rstrip())
+			succ += 1
+                if succ == 0:
+                    break
 
     def setUp(self):
         self.env = os.environ.copy()
         self.env['PYTHONPATH'] = '../python'
+        self.poll = select.poll()
 
     def testSunset(self):
         self.flatS = subprocess.Popen(
@@ -27,6 +44,8 @@ class FLATStest(unittest.TestCase):
             stderr=subprocess.PIPE,
             env=self.env
         )
+        self.poll.register(self.flatS.stdout, select.POLLIN)
+        self.poll.register(self.flatS.stderr, select.POLLIN)
         self.__check_lines(['G centrald sun_az'], '-20')
         self.__check_lines(['run_device'], 'CXX')
         self.__check_lines(
