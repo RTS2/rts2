@@ -12,11 +12,12 @@ class FLATStest(unittest.TestCase):
         try:
             for l in lines:
                 ls = self.flatS.stdout.readline().rstrip()
-                print(ls)
+                print('>{0}'.format(ls))
                 self.assertEqual(ls, l)
             if write is not None:
                 self.flatS.stdin.write(write + '\n')
-        except AssertionError,ex:
+                print('<{0}'.format(write))
+        except AssertionError as ex:
             while True:
                 pr = self.poll.poll(10)
                 if len(pr) == 0:
@@ -33,6 +34,7 @@ class FLATStest(unittest.TestCase):
                         succ += 1
                 if succ == 0:
                     break
+            print(ex)
             raise ex
 
     def setUp(self):
@@ -51,7 +53,7 @@ class FLATStest(unittest.TestCase):
         )
         self.poll.register(self.flatS.stdout, select.POLLIN)
         self.poll.register(self.flatS.stderr, select.POLLIN)
-        self.__check_lines(['G centrald sun_az'], '-20')
+        self.__check_lines(['G centrald sun_az'], '20')
         self.__check_lines(['run_device'], 'CXX')
         self.__check_lines(
             [
