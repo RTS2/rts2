@@ -1,0 +1,129 @@
+RTS2.TARGET(5)
+==============
+
+NAME
+----
+rts2.target - description of target types, how targets can be manipulated
+
+ABOUT
+-----
+
+Target is entity describing goal of an observation. It has name, position
+(which can be calculated - for example solar system bodies), priority,
+constraints determining its visibility, and script which governs how it
+will be observed.
+
+### Target ID
+
+Target ID is a number used internally in the database. Users are
+encouraged to use targets names, which are far better to remember.
+
+### Target observations constraints
+
+Among one of the factors used during scheduling are observing constraints.
+They are introduced in **constraints**
+structure. Constraints can be specified for all targets, group of targets
+(target types) and for a given target.  Constraints are specified in a
+XML file, which should match schema from constraint.xsd file. The
+structure of the constraint file is described in the following text.
+Usually constraint is a set of intervals specifying allowed values for
+given variable/observable. You can check value of most variables on target
+information page, or looking from output of linkman:rts2-targetinfo[7] 
+-e command (executed with -e option).
+
+There is an example **constraints**
+sequence. This specifies that observations should be carried either
+before 8Th August 2010 14:13:13 UT, or between 10Th August 2010 14:15:16
+and 8Th November 2010 11:12:13 UT, with airmass >= 2.0 and hour angle
+within [-2,2] hours corresponding to [-30,30] degrees (e.g. four hours around object transit
+time). The object will be also observed for 10 times. If the object was
+already observed 10 times, it will not be observed again.
+
+----
+<constraints>
+        <time>
+                <interval>
+                        <to>2010-08-08T14:13:12</to>
+                </interval>
+                <interval>
+                        <from>2010-08-10T14:15:16</from>
+                        <to>2010-11-08T11:12:13</to>
+                </interval>
+        </time>
+        <airmass>
+                <interval>
+                        <upper>2.0</upper>
+                </interval>
+        </airmass>
+        <HA>
+                <interval>
+                        <lower>-30</lower>
+                        <upper>30</upper>
+                </interval>
+        </HA>
+	<maxRepeats>10</maxRepeats>
+</constraints>
+----
+
+Intervals always use or logic - e.g. if interval for airmass is specified as:
+
+----
+<airmass>
+	<interval>
+		<upper>2.0</upper>
+	</interval>
+	<interval>
+		<lower>2.5</lower>
+		<upper>3.0</upper>
+	</interval>
+</airmass>
+----
+      
+the object airmass should be either lower then 2.0, or between 2.5 and
+3.0. Object observing constraints will be violated if the object airmass
+is between 2.5 and 2.0, or lower then 3.0. The use of the _on logic_ is also demonstrated in time interval above.
+
+The variables are always connected with and logic - e.g. the objects and
+system values must all be satisfied for object constraints to be
+satisfied.
+
+* **time** Specifies time intervals when the observations should be done. The
+  intervals are specified in XML time format - e.g. as YYYY-MM-DDTHH:MM:SS.sss. Please see above for an example.
+
+* **airmass** Allowed airmass. Airmass 1.0 is at zenith, and its value increases
+  towards horizon.
+
+* **zenithDistance** Zenith distance boundaries. Zenith distance is 0 at zenith, 90&deg; at horizon and
+  is equal to 90.0 - object altitude.
+
+* **HA** Allowed hour angle in units of degrees [0, +/-180]. Hour angle 0 is
+  at local meridian (e.g. when the object is at the highest
+  altitude), and is 180 (or -180) 12 hours after that. 
+
+* **dec** Allowed declination in units of degrees [0, +/-90]. 
+
+* **lunarDistance** Angular distance between object and moon center.
+
+* **lunarAltitude** Altitude of the moon at observe location.
+
+* **lunarPhase** Lunar phase, specified in degrees. 0 to 100, 0 is new moon, 50 is
+  full moon.
+
+* **solarDistance** Angular distance between object and sun center.
+
+* **solarAltitude** Sun altitude (angular distance from the horizon) at observe location.
+
+* **maxRepeats** Maximum number of observations. The target will not be selected if
+  it has already given number of observations performed.
+
+See also
+--------
+
+* linkman:rts2[7]
+* linkman:rts2.script[5]
+
+AUTHOR
+------
+
+Petr Kubanek <petr@rts2.org>
+
