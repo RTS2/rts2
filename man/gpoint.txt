@@ -185,7 +185,7 @@ SEE ALSO
 * linkman:rts2[7]
 * linkman:rts2-telmodeltest[1]
 
-AUTHORS
--------
+AUTHOR
+------
 
 Petr Kubanek <petr@rts2.org>

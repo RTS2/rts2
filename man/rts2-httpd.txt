@@ -1,0 +1,276 @@
+RTS2-HTTPD(7)
+=============
+
+NAME
+----
+rts2-httpd -  provides Web, JSON and XML-RPC access to RTS2. It also
+triggers execution of state and events based scripts, and includes HTTP
+server serving database access pages.
+
+SYNOPSIS
+--------
+*rts2-httpd* [-p 'port number'] [--event-file 'event file'] [--bb-queue 'queue name']
+
+DESCRIPTION
+-----------
+
+RTS2-HTTPD provides XML-RPC and JSON access to RTS2 functions.
+Commands are described on the web, on <http://rts2.org/wiki/code:xmlrpc>.
+
+RTS2-HTTPD also provides flexible triggering mechanism for reacting
+on device states and values changes.
+
+OPTIONS
+-------
+
+* **-p** specify HTTP and XML-RPC port. Daemon will listen on this port
+  for incoming HTTP (Web, JSON and XML-RPC interfaces) connections.
+
+* **--event-file** specify event trigger file. Read bellow on format used
+  for this file. Sending **signal 1** to  **rts2-httpd** will force
+  reload of event file.
+
+* **--bb-queue** specify name of BB queue. Targets from BB are queued to
+  the given queue.
+
+XML configuration file
+----------------------
+
+Due to complex nature of rts2-httpd, it uses own configuration file. This
+is specified with *--event-file*. Multiple configuration files can be
+specified.
+
+Configuration file is an XML file, which format is specified in schema.
+It has three major sections - **http**, **events** and **bb**.
+
+Http section
+------------
+
+**Http** section configures embedded HTTP server. It includes entries to
+configure document root, public directories and other relevant options.
+
+### docroot
+
+Document root of the embedded HTTP server. Requests which do not match
+**API** entries, nor any pages provided in **rts2-httpd**, are directed
+to this directory.
+
+### public
+
+Public path. The paths listed as public will be accessible without
+password. Please use * as wildcard, ** for recursive wildcard.
+
+### dir
+
+Maps system directory to access. Must contain "path" and "to" arguments,
+providing web server path and local path.
+
+### default-channel
+
+Specify default channel
+for image display. -1 is used to display all channels in multiple FITS
+file, 0-.. sets the channel (extension number).
+
+This option is used only when displaying multiple FITS files. It does not
+need to be specified on setups where only single extension FITS files
+are produced. 
+
+### defaultImageLabel
+
+Default RTS2 expansion character for image label. Image label is printed
+in lower part of the image, and can contains data from FITS header.
+Please see linkman:rts2[7] for details.
+
+Events section
+--------------
+
+**Events** section configures **rts2-httpd** reactions to changes of
+system environment.
+
+The section contains entries for response to events on various devices.
+It contains multiple device nodes. Device to which the node applies is
+identified by name attribute. The node contains child nodes applying
+trigger either on value or device state change.
+
+Value change expects name of the value being specified as node "name"
+attribute. The actions specified are executed every time the variable
+value is changed and its match an optional test. Test is specified as an
+node attribute called "test".
+
+Event actions
+-------------
+
+RTS2 currently supports two actions, which can be executed on value
+change. They are **record** and **command**.
+
+### record
+
+Records value change to database. This of course works only if RTS2 was
+compiled with database support. Values are recorded to various record_
+tables.
+
+### command
+
+This action executes given command. The command is executed with
+environmental variables filled with values of all devices presents.
+Environmental variables names are formed from device name and variable
+name joined with underscore (_). Their value is something sensible,
+what can be printed out (Boolean as true/false string, double numbers
+in readable form, RA and DEC in sexadecimal notation,..).
+
+Centrald state and variables are added as **centraldN_name**, where N is
+number from 1. This is to distinguish between possibly different centrald
+XMLRPC can be connected. You will usually use N = 1.
+
+Moreover, device state is also present in environment, as device name
+joined with _state. Let's suppose we have a device S1, with variable
+DBL with value 0.123. Device is currently in state 1. If you put in
+command script which will call set and store all environmental variables
+to a file, you will get this for S1:
+
+----
+S1_DBL=0.123
+S1_state=1
+----
+
+So to send email with status of dome switches, which are in DOME device
+variables end_switch_open and end_switch_close, you should modify
+following program:
+
+----
+#!/bin/bash
+
+echo "Hi, dome end switches values: $DOME_end_switch_open $DOME_end_switch_close
+centrald1 sun_alt: $centrald1_sun_alt
+  
+Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
+----
+
+### email
+
+Provides way to send emails with predefined content to an address.
+Should contain "to", "cc", "bcc", "subject" and "body" tags, with meaning
+hopefully clear enough.
+
+Subject and body can contain "value" and "device" tags for a value or
+device expansion. Please consult the following example for details:
+
+----
+<email>
+  <to>example@example.com</to>
+  <cc>name.surname@example.com</cc>
+  <bcc>name_surname@sub_domain.example.com</bcc>
+  <subject>Hey, you are exposing!</subject>
+  <body>It's my pleasure to inform <device>D1</device> you, <device>D2</device> that the camera
+    is exposing! Juhuu! Exposure is <value device="D1">V1</value> <value>device_value</value>
+  </body>
+</email>
+----
+
+BB section
+----------
+
+This section provides details about BB (Big Brother) connections. Please
+see linkman:rts2-bb[7] for details.
+
+### server
+
+BB server URL.
+
+### observatory
+
+Observatory ID. Number identifying observatory on BB.
+
+### password
+
+Password for the observatory. Username on the BB side is observatory ID.
+
+### cadency
+
+Time interval between updates of observatory status. Default to 60
+seconds.
+
+Event trigger configuration file
+--------------------------------
+
+This section describes event triggering file. It is the XML file
+specified with **--event-file** option. Event configuration file can be validated with provided XML schema file.
+
+### Example event triggering configuration file
+
+To start with, there is an example configuration file.
+
+----
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
+  <http>
+    <docroot>/var/www/rts2</docroot>
+  </http>  
+  <events>
+    <device name="C0">
+      <state state-mask="2" state="2">
+        <command>/etc/rts2/event.d/c0_reading</command>
+      </state>
+    </device>
+    <device name="DOME">
+      <state state-mask="7" state="4">
+        <command>/etc/rts2/event.d/dome_opened</command>
+      </state>
+      <state state-mask="7" state="1">
+        <command>/etc/rts2/event.d/dome_closed</command>
+      </state>
+    </device>
+    <device name="C0">
+      <value name="CCD_TEMP">
+        <record/>
+      </value>
+      <value name="CCD_SET" cadency=60>
+        <record/>
+      </value>
+    </device>
+  </events>
+</config>
+----
+
+This event file, when passed to rts2-httpd with --event-file option, will:
+
+* execute _/etc/rts2/event.d/c0_reading_ when camera C0 start reading of the
+  chip (switch from second state bit from 0 to 1).
+
+* execute _/etc/rts2/event.d/dome_opened_ when dome device with name DOME
+  changes third bit (0x04) from 0 to 1, e.g. when it switched to opened state.
+
+* execute _/etc/rts2/event.d/dome_closed_ when dome device with name DOME
+  changes first bit (0x01) from 0 to 1, e.g. when it switched to opened state.
+
+* Record any changes to CCD_TEMP value from C0 device. The changes
+  are recorded as soon as they are transmitted to XML-RPCD. Usually all RTS2
+  devices regularly send updates on their values to all connected clients, so
+  this should work reasonably well. Please note that only when value changes,
+  its new value is recorded - if value stays the same, it is not recorded.
+
+* Record any changes of CCD_SET value from C0 device. But the changes
+  will be recorded only every 60 seconds. This means following: if the value
+  changed within 60 seconds, it will be recorded (with proper time).  If it
+  changes more then once within those 60 seconds, only last value will be
+  recorded. Remember that even then, only changes are recorded - so if there
+  wasn't any change to the value within 60 seconds, database record wouldn't be
+  created.
+
+Configuration file options
+--------------------------
+
+Please consult linkman:rts2.ini[5] page for details about XML-RPC options
+available in the configuration file.
+
+SEE ALSO
+--------
+
+* linkman:rts2[7]
+* linkman:rts2.ini[5]
+* linkman:rts2-xmlrpcclient[1]
+* linkman:rts2-bb[7]
+
+AUTHOR
+------
+
+Petr Kubanek <petr@rts2.org>

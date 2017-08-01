@@ -1,7 +1,8 @@
 MD_PAGES = \
     rts2.txt \
     gpoint.txt \
-    rts2.target.txt
+    rts2.target.txt \
+    rts2-httpd.txt
 
 EXTRA_DIST = \
     rts2.conf \
@@ -44,7 +45,6 @@ EXTRA_DIST = \
     rts2-teld-sitech-gem.xml \
     rts2-telescope-model.xml \
     rts2-simbadinfo.xml \
-    rts2-httpd.xml \
     rts2-xmlrpcclient.xml \
     rts2-sensor-aag.xml \
     rts2-talker.xml \
@@ -103,7 +103,6 @@ man_MANS += \
     rts2-teld-sitech-gem.7 \
     rts2-telescope-model.7 \
     rts2-simbadinfo.1 \
-    rts2-httpd.7 \
     rts2-xmlrpcclient.1 \
     rts2-sensor-aag.1 \
     rts2-talker.1 \
@@ -167,7 +166,8 @@ if HAVE_A2X
 man_MANS += \
     rts2.7 \
     gpoint.1 \
-    rts2.target.5
+    rts2.target.5 \
+    rts2-httpd.7
 
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
