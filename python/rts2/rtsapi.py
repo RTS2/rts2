@@ -17,9 +17,8 @@
 # 51 Franklin Street, Fifth Floor
 # Boston, MA 02110-1301 USA
 
-from future.standard_library import install_aliases
-
-install_aliases()
+from future import standard_library
+standard_library.install_aliases()
 
 try:
     import base64
