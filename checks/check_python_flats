@@ -19,11 +19,12 @@ class FLATStest(unittest.TestCase):
                 print('<{0}'.format(write))
         except AssertionError as ex:
             while True:
-                pr = self.poll.poll(10)
+                pr = self.poll.poll(1000)
                 if len(pr) == 0:
                     break
                 succ = 0
                 for (fd, event) in pr:
+                    print(fd, event, event & select.POLLIN)
                     if event & select.POLLIN == 0:
                         continue
                     if fd == self.flatS.stderr.fileno():
