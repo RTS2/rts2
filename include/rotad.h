@@ -75,6 +75,11 @@ class Rotator:public rts2core::Device
 		virtual long isRotating () = 0;
 
 		/**
+		 * Returns >0 if rotator is parking.
+		 */
+		virtual long isParking();
+
+		/**
 		 * Called at the end of rotation.
 		 */
 		virtual void endRotation () { infoAll (); }

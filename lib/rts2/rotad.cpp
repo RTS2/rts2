@@ -109,7 +109,7 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand (COMMAND_ROTATOR_PARK))
 	{
-		maskState (ROT_MASK_PARK | ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PARKED, "parking rotator");
+		maskState (ROT_MASK_PARK | ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PARKING, "parking rotator");
 		setTarget(parkingPosition->getValueDouble());
 		return 0;
 	}
@@ -148,7 +148,7 @@ void Rotator::checkRotators ()
 			else
 			{
 				// ends with error
-				maskState (ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_IDLE, "rotation finished with error");
+				maskState (ROT_MASK_ROTATING | BOP_EXPOSURE | DEVICE_ERROR_MASK, ROT_IDLE | DEVICE_ERROR_HW, "rotation finished with error");
 			}
 			endRotation ();
 			setIdleInfoInterval (60);
@@ -178,6 +178,26 @@ void Rotator::checkRotators ()
 			{
 				maskState (BOP_EXPOSURE, 0, "rotated to target");
 			}
+		}
+	}
+	if ((getState() & ROT_MASK_PARK) == ROT_PARKING)
+	{
+		long ret = isParking();
+		if (ret < 0)
+		{
+			if (ret == -2)
+			{
+				maskState(ROT_MASK_ROTATING, ROT_IDLE, "rotation finished with error");
+			}
+			else
+			{
+				maskState(ROT_MASK_ROTATING | DEVICE_ERROR_MASK, ROT_IDLE | DEVICE_ERROR_HW, "rotation finished with error");
+			}
+			setIdleInfoInterval (5);
+		}
+		else
+		{
+			setIdleInfoInterval(((float) ret) / USEC_SEC);
 		}
 	}
 	if ((getState () & ROT_MASK_AUTOROT) == ROT_AUTO)
@@ -246,6 +266,11 @@ double Rotator::getPA (double t)
 	if (negatePA->getValueBool ())
 		return -ret;
 	return ret;
+}
+
+long Rotator::isParking()
+{
+	return abs(getCurrentPosition() - parkingPosition->getValueDouble()) < 1 ? -2 : USEC_SEC;
 }
 
 void Rotator::setPAOffset (double paOff)

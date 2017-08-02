@@ -224,8 +224,9 @@ typedef uint32_t rts2_status_t;
 #define ROT_AUTO            0x004
 
 // parked
-#define ROT_MASK_PARK       0x008
-#define ROT_PARKED          0x008
+#define ROT_MASK_PARK       0x018
+#define ROT_PARKING         0x008
+#define ROT_PARKED          0x010
 
 // telescope status
 #define TEL_MASK_MOVING     0x007
