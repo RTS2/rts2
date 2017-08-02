@@ -96,6 +96,7 @@ class Rotator:public rts2core::Device
 	private:
 		rts2core::ValueDouble *zeroOffs;
 		rts2core::ValueDouble *offset;
+		rts2core::ValueDouble *parkingPosition;
 
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDouble *targetPosition;

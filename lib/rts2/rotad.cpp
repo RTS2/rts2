@@ -37,6 +37,9 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	createValue (offset, "OFFSET", "[deg] custom offset", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	offset->setValueDouble (0);
 
+	createValue(parkingPosition, "PARK", "[deg] parking position", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES | RTS2_VALUE_AUTOSAVE);
+	parkingPosition->setValueDouble(0);
+
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (tarMin, "MIN", "[deg] minimum angle", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
@@ -107,7 +110,7 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand (COMMAND_ROTATOR_PARK))
 	{
 		maskState (ROT_MASK_PARK | ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PARKED, "parking rotator");
-		setTarget (0);
+		setTarget(parkingPosition->getValueDouble());
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
