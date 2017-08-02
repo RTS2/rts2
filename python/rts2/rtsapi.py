@@ -17,16 +17,12 @@
 # 51 Franklin Street, Fifth Floor
 # Boston, MA 02110-1301 USA
 
-# future is not available on Python 3+
-try:
-    from future import standard_library
-    standard_library.install_aliases()
-except ImportError:
-    pass
+from future import standard_library
+standard_library.install_aliases()
 
 try:
     import base64
-    import json as sysjson
+    import json
     import http.client
     from urllib.parse import urlencode
     import re
@@ -242,7 +238,7 @@ class Rts2JSON:
                 r = th.getresponse()
 
             if not(r.status == http.client.OK):
-                jr = sysjson.load(r)
+                jr = json.load(r)
                 raise Exception(jr['error'])
             return r
         except Exception as ec:
@@ -262,7 +258,7 @@ class Rts2JSON:
         d = self.loadData(path, args)
         if self.verbose:
             print(d)
-        return sysjson.loads(d)
+        return json.loads(d)
 
     def chunkJson(self, r):
         r.read_by_chunks = True
@@ -270,7 +266,7 @@ class Rts2JSON:
         if self.verbose:
             print(d)
         r.read_by_chunks = False
-        return sysjson.loads(d)
+        return json.loads(d)
 
 
 class JSONProxy(Rts2JSON):
