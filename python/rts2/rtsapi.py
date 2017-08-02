@@ -17,8 +17,12 @@
 # 51 Franklin Street, Fifth Floor
 # Boston, MA 02110-1301 USA
 
-from future import standard_library
-standard_library.install_aliases()
+# future is not available on Python 3+
+try:
+    from future import standard_library
+    standard_library.install_aliases()
+except ImportError:
+    pass
 
 try:
     import base64
