@@ -3,7 +3,7 @@ AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
 TESTS = check_python_libnova check_python_gpoint_altaz check_python_gpoint_gem check_python_rts2 check_python_bsc \
 	check_flats
-EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template altaz_check rts2.ini flat_single
+EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template altaz_check rts2.ini flat_single flat_multi
 
 if LIBCHECK
 TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi

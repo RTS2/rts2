@@ -413,13 +413,13 @@ class FlatScript (scriptcomm.Rts2Comm):
 
     def setConfiguration(self):
         if self.flat.filters is not None:
-            if type(self.flat.filters) == 'str':
+            if type(self.flat.filters) == str:
+                self.setValue('filter', self.flat.filters)
+            else:
                 fn = 'A'
                 for f in self.flat.filters:
                     self.setValue('FILT' + fn, f)
                     fn = chr(ord(fn) + 1)
-            else:
-                self.setValue('filter', self.flat.filters)
         if self.flat.binning is not None:
             self.setValue('binning', self.flat.binning)
         else:

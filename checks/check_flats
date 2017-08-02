@@ -8,39 +8,38 @@ import select
 
 class FLATStest(unittest.TestCase):
 
-    def __check_lines(self, lines, write=None):
+    def __check_lines(self, flatS, poll, lines, write=None):
         try:
             for l in lines:
-                ls = self.flatS.stdout.readline().rstrip()
+                ls = flatS.stdout.readline().rstrip()
                 print('>{0}'.format(ls))
                 self.assertEqual(ls, l)
             if write is not None:
-                self.flatS.stdin.write(write + '\n')
+                flatS.stdin.write(write + '\n')
                 print('<{0}'.format(write))
         except AssertionError as ex:
-            pr = self.poll.poll(1000)
+            pr = poll.poll(1000)
             for (fd, event) in pr:
                 if event & select.POLLIN == 0:
                     continue
                 print(os.read(fd, 30000))
             raise ex
 
-    def setUp(self):
-        self.poll = select.poll()
-
-    def testSunset(self):
-        self.flatS = subprocess.Popen(
+    def testSunsetSingle(self):
+        poll = select.poll()
+        flatS = subprocess.Popen(
             ['./flat_single'],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True
         )
-        self.poll.register(self.flatS.stdout, select.POLLIN)
-        self.poll.register(self.flatS.stderr, select.POLLIN)
-        self.__check_lines(['G centrald sun_az'], '20')
-        self.__check_lines(['run_device'], 'CXX')
+        poll.register(flatS.stdout, select.POLLIN)
+        poll.register(flatS.stderr, select.POLLIN)
+        self.__check_lines(flatS, poll, ['G centrald sun_az'], '20')
+        self.__check_lines(flatS, poll, ['run_device'], 'CXX')
         self.__check_lines(
+            flatS, poll, 
             [
                 'value SHUTTER = LIGHT',
                 'value filter = i',
@@ -52,18 +51,21 @@ class FLATStest(unittest.TestCase):
             'exposure_end'
         )
         self.__check_lines(
+            flatS, poll, 
             [
                 'VT TELESCOPE OFFS += 0.00277777777778 0.00277777777778'
             ],
             'image /tmp/flat1.fits'
         )
         self.__check_lines(
+            flatS, poll, 
             [
                 '? average'
             ],
             '45000'
         )
         self.__check_lines(
+            flatS, poll, 
             [
                 'delete /tmp/flat1.fits',
                 'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0'
@@ -73,7 +75,163 @@ class FLATStest(unittest.TestCase):
                 'exposure'
             ]
         )
-        self.flatS.terminate()
+        flatS.terminate()
 
+    def testSunsetSingle(self):
+        poll = select.poll()
+        flatS = subprocess.Popen(
+            ['./flat_single'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        poll.register(flatS.stdout, select.POLLIN)
+        poll.register(flatS.stderr, select.POLLIN)
+        self.__check_lines(flatS, poll, ['G centrald sun_az'], '20')
+        self.__check_lines(flatS, poll, ['run_device'], 'CXX')
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'value SHUTTER = LIGHT',
+                'value filter = i',
+                'value binning = 1',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ],
+            'exposure_end'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'VT TELESCOPE OFFS += 0.00277777777778 0.00277777777778'
+            ],
+            'image /tmp/flat1.fits'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                '? average'
+            ],
+            '45000'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'delete /tmp/flat1.fits',
+                'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0'
+                ' filter i next exptime 5 ret bright',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ]
+        )
+        flatS.terminate()
+
+    def testSunsetSingle(self):
+        poll = select.poll()
+        flatS = subprocess.Popen(
+            ['./flat_single'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        poll.register(flatS.stdout, select.POLLIN)
+        poll.register(flatS.stderr, select.POLLIN)
+        self.__check_lines(flatS, poll, ['G centrald sun_az'], '20')
+        self.__check_lines(flatS, poll, ['run_device'], 'CXX')
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'value SHUTTER = LIGHT',
+                'value filter = i',
+                'value binning = 1',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ],
+            'exposure_end'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'VT TELESCOPE OFFS += 0.00277777777778 0.00277777777778'
+            ],
+            'image /tmp/flat1.fits'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                '? average'
+            ],
+            '45000'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'delete /tmp/flat1.fits',
+                'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0'
+                ' filter i next exptime 5 ret bright',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ]
+        )
+        flatS.terminate()
+
+    def testSunsetMulti(self):
+        poll = select.poll()
+        flatS = subprocess.Popen(
+            ['./flat_multi'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        poll.register(flatS.stdout, select.POLLIN)
+        poll.register(flatS.stderr, select.POLLIN)
+        self.__check_lines(flatS, poll, ['G centrald sun_az'], '20')
+        self.__check_lines(flatS, poll, ['run_device'], 'CXX')
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'value SHUTTER = LIGHT',
+                'value FILTA = i',
+                'value FILTB = A',
+                'value binning = 1',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ],
+            'exposure_end'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'VT TELESCOPE OFFS += 0.00277777777778 0.00277777777778'
+            ],
+            'image /tmp/flat1.fits'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                '? average'
+            ],
+            '45000'
+        )
+        self.__check_lines(
+            flatS, poll, 
+            [
+                'delete /tmp/flat1.fits',
+                'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0 ' 
+                'filter [\'i\', \'A\'] next exptime 5 ret bright',
+                'value exposure = 5',
+                'value SHUTTER = LIGHT',
+                'exposure'
+            ]
+        )
+        flatS.terminate()
 
 unittest.main()

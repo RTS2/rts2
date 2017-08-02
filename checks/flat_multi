@@ -18,11 +18,12 @@ try:
 except:
     raise
 
-# You would at least like to specify filter order, if not binning and other things
+# You would at least like to specify filter order,
+# if not binning and other things
 f = FlatScript(
     eveningFlats=[
         Flat(
-            'i',
+            ['i', 'A'],
             binning=1,
             window='100 100 500 500',
             expTimes=[5, 10, 40]
