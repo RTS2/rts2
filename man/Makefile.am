@@ -2,7 +2,8 @@ MD_PAGES = \
     rts2.txt \
     gpoint.txt \
     rts2.target.txt \
-    rts2-httpd.txt
+    rts2-httpd.txt \
+    rts2-scriptexec.txt
 
 EXTRA_DIST = \
     rts2.conf \
@@ -22,7 +23,6 @@ EXTRA_DIST = \
     rts2.script.xml \
     rts2.fitskeys.xml \
     rts2-horizon.xml \
-    rts2-scriptexec.xml \
     rts2-logger.xml \
     rts2-logd.xml \
     rts2-image.xml \
@@ -80,7 +80,6 @@ man_MANS += \
     rts2.script.5 \
     rts2.fitskeys.5 \
     rts2-horizon.1 \
-    rts2-scriptexec.1 \
     rts2-logger.1 \
     rts2-logd.1 \
     rts2-image.1 \
@@ -167,7 +166,8 @@ man_MANS += \
     rts2.7 \
     gpoint.1 \
     rts2.target.5 \
-    rts2-httpd.7
+    rts2-httpd.7 \
+    rts2-scriptexec.1
 
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \

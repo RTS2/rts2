@@ -1,0 +1,100 @@
+RTS2-SCRIPTEXEC(1)
+==================
+
+NAME
+----
+rts2-scriptexec - allows execution of the script(s) on device(s).
+
+SYNOPSIS
+--------
+
+*rts2-scriptexec* [-c 'camera name'] [-d 'device name'] [-s 'script'] [--reset] [-e 'expand string'] [-o 'expand string'] [-t 'template filename'] [--no-metadata]
+
+DESCRIPTION
+-----------
+
+*rts2-scriptexec* enables execution of different scripts on the specified
+devices. It is dedicated for users who wish to run scripts on devices without
+supporting infrastructure of the linkman:rts2-executor[1]. Please note that as
+synchronization is handled on RTS2 system level, by running rts2-scriptexec you
+will still benefit from same synchronizations locks which rts2-executor uses.
+Running script under rts2-scriptexec is equivalent to running script from
+target send to rts2-executor.
+
+The default behaviour is to write list of created files to standard output.
+Standard error output receives debugging messages. Files are written to
+standard output after they are saved to disk and so its save to use them.
+
+OPTIONS
+-------
+
+* **-c** **-d** specify a camera or device that will be used. The most common
+  one is "C0", for the main camera. Check linkman:rts2-mon[1] for a list of the
+  devices that are present in your setup.
+
+* **-s** specify script that will be executed. This option MUST be preceded
+  with **-d** option. For details of the script syntax, please see
+  linkman:rts2.script[5]
+
+* **--reset** issue command to reset values before running the script. Values
+  specified in driver code are reset to their default configuration.
+
+* **-e** specify path on which images will be saved. Path is constituted as
+  expression, described in 
+  linkman:rts2.ini[5]
+
+* **-o** specify image path, works similarly to **-e** except that it caused
+  the program to overwrite existing file.
+
+* **-t** specify template for FITS cards.
+
+* **--no-metadata** do not record automatic header metadata. If specified
+  alone, resulting FITS image will have only a few basic header entries. Most
+  useful with template specified with <option>-t</option>. as this enables you
+  to record predefined values and do not populate header with unwanted entries.
+
+Configuration file
+------------------
+
+Configuration file can be specified with **--config** option. If this option is
+not used, default configuration file (usually _/etc/rts2/rts2.ini_) is used.
+Following options can be specified in configuration file's **scriptexec**
+section.
+
+* **expand_path** specify expand path for images produced by
+  **rts2-scriptexec**. This path can be override with the **-e** parameter. For
+  details about possible path strings, please see linkman:rts2.ini[5].
+
+* **default_device** set default device. This is used if **-d** option is not set.
+
+COMMAND OUTPUT
+--------------
+
+Output goes to standard output and it consists of logging messages from the application.
+
+EXAMPLES
+--------
+
+The following example will execute simple script that takes 10 times 5 and 10 second exposures using device C0.
+
+* **rts2-scriptexec** *-d* C0 *-s* \'for 10 { E 5 E 10 }\'
+
+Following command will save images in local time, prefixed with camera name:
+
+* **rts2-scriptexec** *-e* \'%c_%L%f\' *-d* C0 *-s* \'for 10 { E 5 E 10 }\'
+
+And the following will (in bash/sh) ship images to ds9 via xpa, as soon as they are acquired:
+
+* while true; do **rts2-scriptexec** *-d* C0 *-s* \'for 1000 { E 1 }\' | while read x; do xpaset ds9 fits < $x; done ; done
+
+SEE ALSO
+--------
+
+* linkman:rts2[7]
+* linkman:rts2.script[5]
+* linkman:rts2.ini[5]
+
+AUTHOR
+------
+
+Petr Kubanek <petr@rts2.org>

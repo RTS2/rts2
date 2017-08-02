@@ -1,4 +1,4 @@
-personal_ws-1.1 en 109 
+personal_ws-1.1 en 112 
 API
 airmass
 solarDistance
@@ -21,18 +21,19 @@ config
 Juhuu
 adoc
 TCP
-RPC
 cadency
+RPC
+ds
 Petr
 outlier
-altaz
 AltAz
+altaz
 ncurses
 dir
 fitskeys
 substates
-IP
 centraldN
+IP
 Cunniffe
 Vitek
 solarAltitude
@@ -44,8 +45,8 @@ Prouza
 httpd
 nd
 rts
-gpoint
 GPoint
+gpoint
 Ronan
 noNamespaceSchemaLocation
 docroot
@@ -70,8 +71,8 @@ Kubanek
 meteo
 GRBs
 xmlns
+xpaset
 ctime
-CTIME
 lunarDistance
 cmon
 FOV
@@ -92,6 +93,8 @@ bcc
 focusc
 focusd
 andor
+scriptexec
+SCRIPTEXEC
 imgproc
 xfocusc
 USEC
@@ -102,9 +105,9 @@ zenithDistance
 DDTHH
 CCD
 augershooter
+xpa
 sexadecimal
 http
 lunarAltitude
 ini
 json
-JSON
