@@ -560,7 +560,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
 }
 
-int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, int32_t &ea_speed, int32_t &ed_speed, double &speed_angle, double &err_angle)
+int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, double &ac_speed, double &dc_speed, double &ea_speed, double &ed_speed, double &speed_angle, double &err_angle)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
 	// refresh current target..

@@ -820,11 +820,11 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t a_azc = r_az_pos->getValueLong ();
 	int32_t a_altc = r_alt_pos->getValueLong ();
 
-	int32_t azc_speed = 0;
-	int32_t altc_speed = 0;
+	double azc_speed = 0;
+	double altc_speed = 0;
 
-	int32_t aze_speed = 0;
-	int32_t alte_speed = 0;
+	double aze_speed = 0;
+	double alte_speed = 0;
 
 	double speed_angle = 0;
 	double error_angle = 0;
@@ -838,8 +838,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		return;
 	}
 
-	int32_t az_change = 0;
-	int32_t alt_change = 0;
+	double az_change = 0;
+	double alt_change = 0;
 
 	az_change = a_azc - r_az_pos->getValueLong ();
 	alt_change = a_altc - r_alt_pos->getValueLong ();
@@ -861,12 +861,13 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	if (loop_sec < 1)
 	{
-		if (abs (aze_speed) > 25 || !isTracking ())
+		// if (abs (aze_speed) > 25 || !isTracking ())
+		if (!isTracking ())
 		{
 			int32_t err_sp = azErrPID->loop (aze_speed, loop_sec);
 			if (isTracking ())
 			{
-				int32_t err_cap = abs(azc_speed * 0.015);
+				int32_t err_cap = abs(azc_speed * 0.005);
 				if (err_sp > err_cap)
 					err_sp = err_cap;
 				else if (err_sp < -err_cap)
@@ -876,12 +877,13 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			azc_speed += err_sp;
 		}
 
-		if (abs (alte_speed) > 25 || !isTracking ())
+		// if (abs (alte_speed) > 25 || !isTracking ())
+		if (!isTracking ())
 		{
 			int32_t err_sp = altErrPID->loop (alte_speed, loop_sec);
 			if (isTracking ())
 			{
-				int32_t err_cap = abs(altc_speed * 0.015);
+				int32_t err_cap = abs(altc_speed * 0.005);
 				if (err_sp > err_cap)
 					err_sp = err_cap;
 				else if (err_sp < -err_cap)
@@ -893,6 +895,28 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	}
 
 	last_loop = mclock->getValueLong ();
+
+	try
+	{
+		if (telConn == NULL)
+		{
+			telConn = new rts2core::ConnSitech (tel_tty, this);
+			telConn->setDebug (getDebug ());
+			telConn->init ();
+
+			telConn->flushPortIO ();
+			telConn->getSiTechValue ('Y', "XY");
+			getConfiguration ();
+		}
+	}
+	catch (rts2core::Error &e)
+	{
+		delete telConn;
+		telConn = NULL;
+
+		logStream (MESSAGE_ERROR) << "cannot open connection to serial port" << sendLog;
+		usleep (USEC_SEC / 15);
+	}
 
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
@@ -938,17 +962,6 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	try
 	{
-		if (telConn == NULL)
-		{
-			telConn = new rts2core::ConnSitech (tel_tty, this);
-			telConn->setDebug (getDebug ());
-			telConn->init ();
-
-			telConn->flushPortIO ();
-			telConn->getSiTechValue ('Y', "XY");
-			getConfiguration ();
-		}
-
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTelTime ();
 		updateTrackingFrequency ();
@@ -1051,7 +1064,13 @@ void SitechAltAz::getTel ()
 
 			logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
 			usleep (USEC_SEC / 15);
+			return;
 		}
+	}
+	else
+	{
+		if (telConn == NULL)
+			return;
 	}
 
 	az_enc->setValueLong (telConn->last_status.y_enc);
@@ -1198,6 +1217,8 @@ void SitechAltAz::getTel ()
 void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, double &un_telzd)
 {
 	getTel ();
+	if (telConn == NULL)
+		return;
 
 	counts2hrz (telConn->last_status.y_pos, telConn->last_status.x_pos, telaz, telalt, un_telaz, un_telzd);
 }

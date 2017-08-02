@@ -976,11 +976,11 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	int32_t ac = r_ra_pos->getValueLong ();
 	int32_t dc = r_dec_pos->getValueLong ();
 
-	int32_t ac_speed = 0;
-	int32_t dc_speed = 0;
+	double ac_speed = 0;
+	double dc_speed = 0;
 
-	int32_t ea_speed = 0;
-	int32_t ed_speed = 0;
+	double ea_speed = 0;
+	double ed_speed = 0;
 
 	double speed_angle = 0;
 	double err_angle = 0;
@@ -994,8 +994,8 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 		return;
 	}
 
-	int32_t ac_change = 0;
-	int32_t dc_change = 0;
+	double ac_change = 0;
+	double dc_change = 0;
 
 	if (use_constant_speed->getValueBool () == true)
 	{
