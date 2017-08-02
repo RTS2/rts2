@@ -10,10 +10,13 @@
 
 import sys
 
-sys.path.append('../python')
+sys.path.append('../python/rts2')
 
-from rts2.flats import FlatScript,Flat
-import rts2.scriptcomm
+try:
+    from flats import FlatScript,Flat
+    import scriptcomm
+except:
+    raise
 
 # You would at least like to specify filter order, if not binning and other things
 f = FlatScript(eveningFlats=[Flat('i',binning=1,window='100 100 500 500',expTimes=[5,10,40])],maxBias=1,maxDarks=0,expTimes=range(1,40))

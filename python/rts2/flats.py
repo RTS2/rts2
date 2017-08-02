@@ -35,7 +35,7 @@
 import sys
 import string
 import time
-from . import scriptcomm
+import scriptcomm
 
 # email communication
 import smtplib
