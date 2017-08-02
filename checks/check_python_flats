@@ -27,7 +27,10 @@ class FLATStest(unittest.TestCase):
 
     def setUp(self):
         self.env = os.environ.copy()
-        self.env['PYTHONPATH'] = '../python'
+        try:
+            self.env['PYTHONPATH'] = '../python:' + os.environ['PYTHONPATH']
+        except KeyError:
+            self.env['PYTHONPATH'] = '../python'
         self.poll = select.poll()
 
     def testSunset(self):
