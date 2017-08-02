@@ -818,6 +818,8 @@ int Zelio::info ()
 	bool oldtimeout = timeoutOccured->getValueBool();
 
 	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
+	sendValueAll(timeoutOccured);
+
 	if (timeoutOccured->getValueBool ())
 	{
 		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "timeout during closing");
