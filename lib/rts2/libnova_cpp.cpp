@@ -585,7 +585,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	if (deg_dms.degrees == 0 && deg_dms.minutes == 0)
 	{
-		_os << "    0'";
+		_os << "      ";
 	}
 	else
 	{
@@ -599,7 +599,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 	if (deg_dms.seconds >= 0.01)
 	{
 		char old_fill = _os.fill ('0');
-		_os << std::setw (5) << deg_dms.seconds;
+		_os << std::setw (5) << deg_dms.seconds << '"';
 		_os.setf (old_settings);
 		_os.precision (old_precison);
 		_os.fill (old_fill);

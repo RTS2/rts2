@@ -187,11 +187,11 @@ void Rotator::checkRotators ()
 		{
 			if (ret == -2)
 			{
-				maskState(ROT_MASK_ROTATING, ROT_IDLE, "rotation finished with error");
+				maskState(ROT_MASK_ROTATING | ROT_MASK_PARK, ROT_IDLE | ROT_PARKED, "rotation finished with error");
 			}
 			else
 			{
-				maskState(ROT_MASK_ROTATING | DEVICE_ERROR_MASK, ROT_IDLE | DEVICE_ERROR_HW, "rotation finished with error");
+				maskState(ROT_MASK_ROTATING | DEVICE_ERROR_MASK | ROT_MASK_PARK, ROT_IDLE | DEVICE_ERROR_HW, "rotation finished with error");
 			}
 			setIdleInfoInterval (5);
 		}
