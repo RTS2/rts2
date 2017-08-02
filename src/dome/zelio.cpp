@@ -815,16 +815,22 @@ int Zelio::info ()
 	automode->setValueBool (regs[7] & ZS_SW_AUTO);
 	sendValueAll (automode);
 
+	bool oldtimeout = timeoutOccured->getValueBool();
+
 	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
 	if (timeoutOccured->getValueBool ())
 	{
 		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "timeout during closing");
 		valueError (timeoutOccured);
+		if (timeoutOccured->getValueBool () != oldtimeout)
+			logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "detected timeout" << sendLog;
 	}
 	else
 	{
 		maskState (DEVICE_ERROR_MASK, DEVICE_NO_ERROR, "timeout cleared");
 		valueGood (timeoutOccured);
+		if (timeoutOccured->getValueBool () != oldtimeout)
+			logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "timeout cleared" << sendLog;
 	}
 
 	weather->setValueBool (regs[7] & ZS_WEATHER);
