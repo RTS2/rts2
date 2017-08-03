@@ -9,6 +9,8 @@
 #
 #   Please visit http://www.gnu.org/licenses/gpl.html for license informations.
 
+from __future__ import print_function
+
 from optparse import OptionParser
 import sys
 import string
@@ -21,97 +23,119 @@ import time
 import calendar
 
 def parse_time(s, n=time.time(), hour_nextday=False):
-	"""Parses time provided as argument. n is actual time, hour_nextday
-	specify if only hour information should be altered to next day if the time already passed
-	(for example T12:00 will be converdet to tomorrow T12:00 if computer time is > T12:00)"""
-	mt = re.match('^[uUtT]([0-9][0-9]?)(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s)
-	if mt:
-		ut = False
-		if s[0] == 'u' or s[0] == 'U':
-			ut = True
-		lt = None
-		if ut:
-			lt = time.gmtime(n)
-		else:
-			lt = time.localtime(n)
-		h = int(mt.groups()[0])
-		m = 0
-		try:
-			m = int(mt.groups()[2])
-		except TypeError:
-			pass
-		s = 0
-		try:
-			s = int(mt.groups()[4])
-		except TypeError:
-			pass
-		ret = None
-		if ut:
-			ret = calendar.timegm((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
-		else:
-			ret = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
-		if hour_nextday and ret < n:
-				ret += 86400.0
-		return ret
-	# user specified full date
-	mt = re.match('^([0-9]+)-([0-9]+)-([0-9]+)([uUtT])([0-9][0-9]?)(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s)
-	if mt:
-		ut = False
-		if mt.groups()[3] == 'u' or mt.groups()[3] == 'U':
-			ut = True
-		lt = None
-		if ut:
-			lt = time.gmtime(n)
-		else:
-			lt = time.localtime(n)
+    """Parses time provided as argument. n is actual time, hour_nextday
+    specify if only hour information should be altered to next day if the time
+    already passed (for example T12:00 will be converdet to tomorrow T12:00 if
+    computer time is > T12:00)"""
+    mt = re.match('^[uUtT]([0-9][0-9]?)(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s)
+    if mt:
+        ut = False
+        if s[0] == 'u' or s[0] == 'U':
+            ut = True
+        lt = None
+        if ut:
+            lt = time.gmtime(n)
+        else:
+            lt = time.localtime(n)
+        h = int(mt.groups()[0])
+        m = 0
+        try:
+            m = int(mt.groups()[2])
+        except TypeError:
+            pass
+        s = 0
+        try:
+            s = int(mt.groups()[4])
+        except TypeError:
+            pass
+        ret = None
+        if ut:
+            ret = calendar.timegm((
+                lt.tm_year,
+                lt.tm_mon,
+                lt.tm_mday,
+                h, m, s,
+                lt.tm_wday, lt.tm_yday, lt.tm_isdst
+            ))
+        else:
+            ret = time.mktime((
+                lt.tm_year,
+                lt.tm_mon,
+                lt.tm_mday,
+                h, m, s,
+                lt.tm_wday, lt.tm_yday, lt.tm_isdst
+            ))
+        if hour_nextday and ret < n:
+            ret += 86400.0
+        return ret
+    # user specified full date
+    mt = re.match(
+        '^([0-9]+)-([0-9]+)-([0-9]+)([uUtT])([0-9][0-9]?)'
+        '(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s
+    )
+    if mt:
+        ut = False
+        if mt.groups()[3] == 'u' or mt.groups()[3] == 'U':
+            ut = True
+        lt = None
+        if ut:
+            lt = time.gmtime(n)
+        else:
+            lt = time.localtime(n)
 
-		Y = int(mt.groups()[0])
-		M = int(mt.groups()[1])
-		D = int(mt.groups()[2])
+        Y = int(mt.groups()[0])
+        M = int(mt.groups()[1])
+        D = int(mt.groups()[2])
 
-		h = int(mt.groups()[4])
-		m = 0
-		try:
-			m = int(mt.groups()[6])
-		except TypeError:
-			pass
-		s = 0
-		try:
-			s = int(mt.groups()[8])
-		except TypeError:
-			pass
-		ret = None
-		if ut:
-			ret = calendar.timegm((Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
-		else:
-			ret = time.mktime((Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
-		if hour_nextday and ret < n:
-				print "{0} is in past, changed to future.".format(time.strftime('%c %Z', time.localtime(ret)))
-				while ret < n:
-					ret += 86400.0
-		return ret
+        h = int(mt.groups()[4])
+        m = 0
+        try:
+            m = int(mt.groups()[6])
+        except TypeError:
+            pass
+        s = 0
+        try:
+            s = int(mt.groups()[8])
+        except TypeError:
+            pass
+        ret = None
+        if ut:
+            ret = calendar.timegm(
+                (Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+        else:
+            ret = time.mktime(
+                (Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+        if hour_nextday and ret < n:
+            print("{0} is in past, changed to future.".format(
+                time.strftime('%c %Z', time.localtime(ret))
+            ))
+            while ret < n:
+                ret += 86400.0
+        return ret
 
-	if s[0] == '+' or s[0] == '-':
-		# try to get multiplier
-		off = 0
-		neg = (s[0] == '-')
-		s = s[1:]
-		while len(s):
-			mt = re.match('^([0-9]+(\.[0-9]*)?)([Ddhms])', s)
-			if not mt:
-				raise Exception('cannot parse {0}, exiting'.format(s))
-			off += {'D':86164, 'd':86400, 'h':3600, 's':1}[mt.groups()[2]] * float(mt.groups()[0])
-			s = s[mt.span()[1]:]
-		if neg:
-			return n - off
-		else:
-			return n + off
-	return None
+    if s[0] == '+' or s[0] == '-':
+        # try to get multiplier
+        off = 0
+        neg = (s[0] == '-')
+        s = s[1:]
+        while len(s):
+            mt = re.match('^([0-9]+(\.[0-9]*)?)([Ddhms])', s)
+            if not mt:
+                raise Exception('cannot parse {0}, exiting'.format(s))
+            off += {'D': 86164, 'd': 86400, 'h': 3600, 's': 1}[
+                mt.groups()[2]] * float(mt.groups()[0])
+            s = s[mt.span()[1]:]
+        if neg:
+            return n - off
+        else:
+            return n + off
+    return None
+
 
 def run():
-	server = 'localhost:8889'
+    server = 'localhost:8889'
 
-  	parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--quiet][--debug] <target1>..
+    parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--quiet][--debug] <target1>..
        rts2-queue --with-times [--create <target name> --create-radec "<10:20:30> <+40:20:10>"][--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--debug][--quiet] <target1> <start> <end>..
 
 Queue target to the queues. Targets are queued to rts2-selector service using JSON interface provided by rts2-xmlrpc, so those two services must run on target machine. Start and end times can be specified in various times, either absolute or relative to the current time.
@@ -133,151 +157,201 @@ rts2-queue --queue manual --with-nrep --with-times 1000 20 500 2012-10-8T20 +10D
 rts2-queue --load circular.q
 rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
-	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
-	parser.add_option('--simulate',help="run simulation. If no parameters are specified, night_beginning or current time and night_ending will be used",action='store_true',dest='simulate',default=False)
-	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
-	parser.add_option("--queue", help='specify queue name on which to act', action='store', dest='queue', default=None)
-	parser.add_option('--load', help='add targets from XML file', action='append', dest='load_xml')
-	parser.add_option('--save', help='save queues to XML file', action='store', dest='save_xml')
-	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="with_times",default=False)
-	parser.add_option("--with-nrep",help="specify repeations and separations",action="store_true",dest="with_nrep",default=False)
-	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
-	parser.add_option("--user",help="user name",action="store",dest='username',default=None)
-	parser.add_option("--password",help="user password",action="store",dest='password',default=None)
-	parser.add_option('--quiet',help="don't print messages",action='store_true',dest='quiet',default=False)
-	parser.add_option('--debug',help='debug JSON communication',action='store_true',dest='debug',default=False)
-	parser.add_option('--create',help='name of the target to create',action='store',dest='create',default=None)
-	parser.add_option('--create-radec',help="create target with following ra/dec; needs --create option",action='store',dest='create_radec',default=None)
+    parser.add_option(
+        "--unique", help="only accept unique target names", action='store_true', dest='unique')
+    parser.add_option(
+        '--simulate', help="run simulation. If no parameters are specified, night_beginning or current time and night_ending will be used",
+                      action='store_true', dest='simulate', default=False)
+    parser.add_option(
+        "--clear", help="clear given queue", action='store_true', dest='clear')
+    parser.add_option("--queue", help='specify queue name on which to act',
+                      action='store', dest='queue', default=None)
+    parser.add_option(
+        '--load', help='add targets from XML file', action='append', dest='load_xml')
+    parser.add_option(
+        '--save', help='save queues to XML file', action='store', dest='save_xml')
+    parser.add_option("--with-times", help="specify observation time",
+                      action="store_true", dest="with_times", default=False)
+    parser.add_option("--with-nrep", help="specify repeations and separations",
+                      action="store_true", dest="with_nrep", default=False)
+    parser.add_option('--server', help='URL to RTS2 XML-RPC server',
+                      action='store', dest='server', default='http://localhost:8889')
+    parser.add_option("--user", help="user name",
+                      action="store", dest='username', default=None)
+    parser.add_option("--password", help="user password",
+                      action="store", dest='password', default=None)
+    parser.add_option('--quiet', help="don't print messages",
+                      action='store_true', dest='quiet', default=False)
+    parser.add_option('--debug', help='debug JSON communication',
+                      action='store_true', dest='debug', default=False)
+    parser.add_option('--create', help='name of the target to create',
+                      action='store', dest='create', default=None)
+    parser.add_option(
+        '--create-radec', help="create target with following ra/dec; needs --create option",
+                      action='store', dest='create_radec', default=None)
 
-	(options,args)=parser.parse_args()
+    (options, args) = parser.parse_args()
 
-	rts2.createProxy(url=options.server, username=options.username, password=options.password, verbose=options.debug)
+    rts2.createProxy(url=options.server, username=options.username,
+                     password=options.password, verbose=options.debug)
 
-	if options.simulate:
-		now = time.time()
-		night_beginning = rts2.rtsapi.getProxy().getValue('centrald', 'night_beginning', True)
-		night_ending = rts2.rtsapi.getProxy().getValue('centrald', 'night_ending')
-		if night_beginning > night_ending:
-			night_beginning = now
-		rts2.rtsapi.getProxy().executeCommand('SEL', 'simulate {0} {1}'.format(night_beginning, night_ending))
-		sys.exit(0)
+    if options.simulate:
+        now = time.time()
+        night_beginning = rts2.rtsapi.getProxy().getValue(
+            'centrald', 'night_beginning', True)
+        night_ending = rts2.rtsapi.getProxy().getValue(
+            'centrald', 'night_ending')
+        if night_beginning > night_ending:
+            night_beginning = now
+        rts2.rtsapi.getProxy().executeCommand(
+            'SEL', 'simulate {0} {1}'.format(night_beginning, night_ending))
+        sys.exit(0)
 
-	if options.save_xml and options.load_xml:
-		print >>sys.stderr, "cannot perform both load and save operations"
-		sys.exit(4)
+    if options.save_xml and options.load_xml:
+        print("cannot perform both load and save operations", file=sys.stderr)
+        sys.exit(4)
 
-	if (options.create is None) != (options.create_radec is None):
-		print >>sys.stderr, "you have to specify both target name and its coordinates (with --create and --create-radec options)"
-		sys.exit(5)
+    if (options.create is None) != (options.create_radec is None):
+        print(
+            "you have to specify both target name and its coordinates "
+            "(with --create and --create-radec options)", file=sys.stderr
+        )
+        sys.exit(5)
 
-		
-	q = None
-	if options.queue:
-		q = rts2.Queue(rts2.rtsapi.getProxy(), options.queue)
+    q = None
+    if options.queue:
+        q = rts2.Queue(rts2.rtsapi.getProxy(), options.queue)
 
-	def test_q():
-		if q is None:
-			print >>sys.stderr, "you must specify queue with the --queue argument"
-			sys.exit(6)
+    def test_q():
+        if q is None:
+            print(
+                "you must specify queue with the --queue argument",
+                file=sys.stderr
+            )
+            sys.exit(6)
 
-	if options.clear:
-		test_q()
-		resp = q.clear()
-		if not options.quiet:
-			print "cleared queue {0}".format(options.queue)
+    if options.clear:
+        test_q()
+        resp = q.clear()
+        if not options.quiet:
+            print("cleared queue {0}".format(options.queue))
 
-	n = time.time()
+    n = time.time()
 
-	if len(args):
-		test_q()
+    if len(args):
+        test_q()
 
-	# above test make sure create_radec is also defined	
-	if options.create is not None:
-		test_q()
-		(ra,dec) = rts2.radec.parse(options.create_radec)
-		tar_id = rts2.target.create(options.create,ra,dec)
-		q.add_target(tar_id)
-		if not options.quiet:
-			print 'Created and queued {0} on coordinates {1} to queue {2}'.format(options.create, options.create_radec, options.queue)
-		
+    # above test make sure create_radec is also defined
+    if options.create is not None:
+        test_q()
+        (ra, dec) = rts2.radec.parse(options.create_radec)
+        tar_id = rts2.target.create(options.create, ra, dec)
+        q.add_target(tar_id)
+        if not options.quiet:
+            print(
+                'Created and queued {0} on coordinates {1} '
+                'to queue {2}'.format(
+                    options.create,
+                    options.create_radec,
+                    options.queue
+                )
+            )
 
-	while len(args):
-		x = args[0]
-		tars = rts2.target.get(x)
-		if len(tars) == 0:
-			print >>sys.stderr, "cannot find target with name {0}".format(x)
-			sys.exit(1)
-		if options.unique and len(tars) != 1:
-		  	print >>sys.stderr, "target name {0} is not unique - returned target with IDs {1}".format(x, 'TBD')
-			sys.exit(2)
+    while len(args):
+        x = args[0]
+        tars = rts2.target.get(x)
+        if len(tars) == 0:
+            print(
+                "cannot find target with name {0}".format(x),
+                file=sys.stderr
+            )
+            sys.exit(1)
+        if options.unique and len(tars) != 1:
+            print(
+                "target name {0} is not unique - returned target "
+                "with IDs {1}".format(x, 'TBD'),
+                file=sys.stderr
+            )
+            sys.exit(2)
 
-		start = None
-		end = None
+        start = None
+        end = None
 
-		args = args[1:]
+        args = args[1:]
 
-		if options.with_times:
-			start = parse_time(args[0], n, True)
-			end = None
-			try:
-				end = parse_time(args[1], n, True)
-			except IndexError, ie:
-				pass
-			args = args[2:]
+        if options.with_times:
+            start = parse_time(args[0], n, True)
+            end = None
+            try:
+                end = parse_time(args[1], n, True)
+            except IndexError, ie:
+                pass
+            args = args[2:]
 
-		nrep = None
-		separation = None
+        nrep = None
+        separation = None
 
-		if options.with_nrep:
-			nrep = int(args[0])
-			separation = float(args[1])
-			args = args[2:]
+        if options.with_nrep:
+            nrep = int(args[0])
+            separation = float(args[1])
+            args = args[2:]
 
-		tids = []
-		for t in tars:
-			resp = q.add_target(t[0], start, end, nrep, separation)
-			startend = ""
-			if start is not None or end is not None:
-				startend = '('
-				if start is not None:
-					startend += 'starts {0}'.format(time.strftime('%c %Z', time.localtime(start)))
-				if end is not None:
-					if start is not None:
-						startend += ' '
-					startend += 'ends {0}'.format(time.strftime('%c %Z', time.localtime(end)))
-				startend += ') '
-		  	tids.append(t[0])
-			if not options.quiet:
-				print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
+        tids = []
+        for t in tars:
+            resp = q.add_target(t[0], start, end, nrep, separation)
+            startend = ""
+            if start is not None or end is not None:
+                startend = '('
+                if start is not None:
+                    startend += 'starts {0}'.format(
+                        time.strftime('%c %Z', time.localtime(start)))
+                if end is not None:
+                    if start is not None:
+                        startend += ' '
+                    startend += 'ends {0}'.format(
+                        time.strftime('%c %Z', time.localtime(end)))
+                startend += ') '
+            tids.append(t[0])
+            if not options.quiet:
+                print(
+                    'Queued to queue {0} target {1} {2}with ID {3} '
+                    'on RA {4} DEC {5}'.format(
+                        options.queue,
+                        startend,
+                        t[1], t[0], t[2], t[3]
+                    )
+                )
 
-	if q is not None:	
-		q.load()
+    if q is not None:
+        q.load()
 
-	if options.save_xml:
-	  	qs = rts2.Queues(rts2.rtsapi.getProxy())
-		qs.load()
-		qs.save_xml(options.save_xml)
-			
-	if options.load_xml:
-		qs = rts2.Queues(rts2.rtsapi.getProxy())
-		for xml in options.load_xml:
-			qs.load_xml(xml)
-		qs.save(True)
+    if options.save_xml:
+        qs = rts2.Queues(rts2.rtsapi.getProxy())
+        qs.load()
+        qs.save_xml(options.save_xml)
 
+    if options.load_xml:
+        qs = rts2.Queues(rts2.rtsapi.getProxy())
+        for xml in options.load_xml:
+            qs.load_xml(xml)
+        qs.save(True)
 
-	if not options.quiet:
+    if not options.quiet:
 
-		if q is not None:
-			q.load()
-			print "Queue {0}: {1}".format(options.queue, q)
-		else:
-			qs = rts2.Queues(rts2.rtsapi.getProxy())
-			qs.load()
-			for q in qs.queues:
-				print "Queue {0}: {1}".format(qs.queues[q].name, qs.queues[q])
+        if q is not None:
+            q.load()
+            print("Queue {0}: {1}".format(options.queue, q))
+        else:
+            qs = rts2.Queues(rts2.rtsapi.getProxy())
+            qs.load()
+            for q in qs.queues:
+                print("Queue {0}: {1}".format(qs.queues[q].name, qs.queues[q]))
+
 
 if __name__ == '__main__':
-	try:
-		run()
-	except Exception,ec:
-		print 'cannot run ', ' '.join(sys.argv), ':', str(ec)
+    try:
+        run()
+    except Exception, ec:
+        import traceback
+        traceback.print_exc()
+        print('cannot run ', ' '.join(sys.argv), ':', str(ec))
