@@ -22,7 +22,7 @@ find a generic solution, which is better then constant rebooting.
 
 To start RTS2 - as root issue:
 
-/etc/init.d/rts2 start
+rts2-start
 
 That in my case leads to:
 
@@ -34,11 +34,11 @@ omega:/home/petr#
 
 To stop it:
 
-/etc/init.d/rts2 stop
+rts2-stop
 
 To restart it:
 
-/etc/init.d/rts2 restart
+rts2-stop && rts2-start
 
 *) What does RTS2 stands for? What is its history? And future?
 
