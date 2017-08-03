@@ -30,26 +30,126 @@ import datetime
 import gettext
 gettext.install('rts2-verify-tracking')
 
-parser = argparse.ArgumentParser(description=_('Find brightests star on the first image, look for star on similar position and brightnes on next image. Print tracking date (in pixel coordinates).'))
+parser = argparse.ArgumentParser(description=_(
+    'Find brightests star on the first image, look for star on similar '
+    'position and brightnes on next image. Print tracking date (in pixel '
+    'coordinates).'
+))
 
-parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', dest='radius', type=float, default=15)
-parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
-parser.add_argument('--plot', help=_('plot results (x,y,pixel distances,angles,a,b,theta)'), action='store_true', dest='plot', default=False)
-parser.add_argument('--stars-plot', help=_('generate plot with stars positions'), action='store_true', dest='stars_plot', default=False)
-parser.add_argument('--save-plot', help=_('do not display plot results, save plots to a file'), action='store', dest='saveplot')
-parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
-parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
-parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
-parser.add_argument('--center-radius', help=_('select stars only that far from center'), action='store', dest='center_radius', default=None, type=float)
-parser.add_argument('--split', help=_('split graphs/data if matching stars cannot be found'), action='store_true', dest='split', default=False)
-parser.add_argument('--cube', help=_('process FITS cubes'), action='store_true', dest='cube', default=False)
-parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
-parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
-parser.add_argument('--save-skipped', help=_('save skipped frames to given file (as FITS extensions)'), dest='save_skipped', action='store', type=argparse.FileType('ab+'))
-parser.add_argument('--elipses', help=_('plot star fit elipsis parameters'), action='store_true', dest='elipses', default=False)
-parser.add_argument('--range', help=_('process given range of images'), action='store', dest='range', default=None)
-parser.add_argument('--markers', help=_('markers - , for pixels, . for points, - for line, x for crosses'), action='store', dest='markers', default=',', choices=[',','.','x','-','|','o','+'])
-parser.add_argument('-o', help=_('save star data'), action='store', dest='data')
+parser.add_argument(
+    '--radius',
+    help=_('search stars on next image in given radius (in pixels)'),
+    action='store', dest='radius', type=float, default=15
+)
+
+parser.add_argument(
+    '--ds9',
+    help=_('use DS9 to display images'),
+    action='store_true', dest='useDS9', default=False
+)
+
+parser.add_argument(
+    '--plot',
+    help=_('plot results (x,y,pixel distances,angles,a,b,theta)'),
+    action='store_true', dest='plot', default=False
+)
+
+parser.add_argument(
+    '--stars-plot',
+    help=_('generate plot with stars positions'),
+    action='store_true', dest='stars_plot', default=False
+)
+
+parser.add_argument(
+    '--save-plot',
+    help=_('do not display plot results, save plots to a file'),
+    action='store', dest='saveplot'
+)
+
+parser.add_argument(
+    '-v',
+    help=_('increases verbosity'),
+    action='count', dest='verbose', default=0
+)
+
+parser.add_argument(
+    'files',
+    help=_('files to process'),
+    action='store', default=[], nargs='+'
+)
+
+parser.add_argument(
+    '--stars',
+    help=_('number of stars to use'),
+    action='store', dest='stars', default=1, type=int
+)
+
+parser.add_argument(
+    '--center-radius',
+    help=_('select stars only that far from center'),
+    action='store', dest='center_radius', default=None, type=float
+)
+
+parser.add_argument(
+    '--split',
+    help=_('split graphs/data if matching stars cannot be found'),
+    action='store_true', dest='split', default=False
+)
+
+parser.add_argument(
+    '--cube',
+    help=_('process FITS cubes'),
+    action='store_true', dest='cube', default=False
+)
+
+parser.add_argument(
+    '--max-angle',
+    help=_(
+        'allowed deviation in degrees of angel between stars '
+        '(negative to not compute at all)'
+    ),
+    action='store', dest='max_angle', default=0.1, type=float
+)
+
+parser.add_argument(
+    '--skip-clouds',
+    help=_(
+        'allowed number of images without detection - '
+        'those will be skipped'
+    ),
+    action='store', dest='skip_clouds', default=2, type=int
+)
+
+parser.add_argument(
+    '--save-skipped',
+    help=_('save skipped frames to given file (as FITS extensions)'),
+    dest='save_skipped', action='store', type=argparse.FileType('ab+')
+)
+
+parser.add_argument(
+    '--elipses',
+    help=_('plot star fit elipsis parameters'),
+    action='store_true', dest='elipses', default=False
+)
+
+parser.add_argument(
+    '--range',
+    help=_('process given range of images'),
+    action='store', dest='range', default=None
+)
+
+parser.add_argument(
+    '--markers',
+    help=_('markers - , for pixels, . for points, - for line, x for crosses'),
+    action='store', dest='markers', default=',',
+    choices=[',', '.', 'x', '-', '|', 'o', '+']
+)
+
+parser.add_argument(
+    '-o',
+    help=_('save star data'),
+    action='store', dest='data'
+)
 
 options = parser.parse_args()
 
@@ -57,15 +157,22 @@ options = parser.parse_args()
 if not(options.plot) and options.saveplot is not None:
     import matplotlib
     matplotlib.use('agg')
-# needs to be called after matplotlib
-import rts2.brights
-import rts2.progressbar
+
+try:
+    # needs to be called after matplotlib
+    import rts2.brights
+    import rts2.progressbar
+except:
+    raise
+
 
 def RMS(vector):
     return np.sqrt(np.mean(np.square(vector)))
 
-def pixel_distance(x1,y1,x2,y2):
+
+def pixel_distance(x1, y1, x2, y2):
     return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
 
 def calculate_angels(sb):
     """Calculates matrice of angels between each star and another star"""
@@ -76,14 +183,17 @@ def calculate_angels(sb):
             for s2 in range(len(sb)):
                 if s1 == s2:
                     continue
-                angels[i,s1,s2] = np.arctan2(sb[s1][i][0] - sb[s2][i][0], sb[s1][i][1] - sb[s2][i][1])
+                angels[i, s1, s2] = np.arctan2(
+                    sb[s1][i][0] - sb[s2][i][0],
+                    sb[s1][i][1] - sb[s2][i][1]
+                )
     return angels
 
 
 class ProcessFiles:
     def __init__(self, nstars, save_skipped):
-        self.sb = [] # contains selected x, y, flux as members
-        self.times = [] # contains exposure times (datetime.datetime object)
+        self.sb = []  # contains selected x, y, flux as members
+        self.times = []  # contains exposure times (datetime.datetime object)
         self.skipped = 0
         self.ftime = None
         # save skipped images as extension to multiple FITS file
@@ -98,17 +208,28 @@ class ProcessFiles:
         for si in range(nstars):
             self.sb.append([])
 
-    def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, split, ci=None, date_keyword='DATE-OBS'):
+    def process_file(
+        self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds,
+        center_radius, split, ci=None, date_keyword='DATE-OBS'
+    ):
         if ci is None:
-            ftime = astropy.time.Time(hdu[0].header[date_keyword]).to_datetime()
+            ftime = astropy.time.Time(
+                hdu[0].header[date_keyword]
+            ).to_datetime()
         else:
             exp_time = float(hdu[0].header['EXPOSURE'])
-            if self.ftime is None: # saves some ms converting datetime..
-                self.ftime = astropy.time.Time(hdu[0].header[date_keyword]).to_datetime()
+            if self.ftime is None:  # saves some ms converting datetime..
+                self.ftime = astropy.time.Time(
+                    hdu[0].header[date_keyword]
+                ).to_datetime()
             ftime = self.ftime + datetime.timedelta(seconds=exp_time * ci)
         objects = rts2.brights.find_stars(fn, hdu, verbose, useDS9, ci)
         if verbose > 1:
-            print(_('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y']))
+            print(
+                _(
+                    'file {0} cube {1} brightest star on {2:.2f} {3:.2f}'
+                ).format(fn, ci, objects[0]['x'], objects[0]['y'])
+            )
         elif ci is not None:
             rts2.progressbar.progress(ci + 1, len(hdu[0].data))
         if len(self.sb[0]) == 0:
@@ -130,12 +251,19 @@ class ProcessFiles:
                 c_d = pixel_distance(x, y, c_x, c_y)
                 bsi += 1
                 if verbose:
-                    print(_('star x {0:.3f} y {1:.3f} center distance {2:.3f}').format(x, y, c_d))
+                    print(
+                        _(
+                            'star x {0:.3f} y {1:.3f} center distance {2:.3f}'
+                        ).format(x, y, c_d)
+                    )
                 if center_radius is not None and c_d > center_radius:
                     if verbose:
                         print(_('star too far from center'))
                     continue
-                self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['cxy']])
+                self.sb[si].append([
+                    x, y, flux, objects[bsi]['a'], objects[bsi]['b'],
+                    objects[bsi]['cxy']
+                ])
                 si += 1
         else:
             found_sb = []
@@ -146,25 +274,53 @@ class ProcessFiles:
                 for star in objects:
                     dist = pixel_distance(b_x, b_y, star['x'], star['y'])
                     if verbose > 1:
-                        print(_('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} flags {4} distance {5:.2f} tnpix {6}').format(si + 1, star['x'], star['y'], star['flux'], star['flag'], dist, star['tnpix']))
+                        print(
+                            _(
+                                'examining star # {0} x {1:.2f} y {2:.2f} '
+                                'flux {3:.2f} flags {4} distance {5:.2f} '
+                                'tnpix {6}'
+                            ).format(
+                                si + 1, star['x'], star['y'], star['flux'],
+                                star['flag'], dist, star['tnpix']
+                            )
+                        )
                     if dist < radius:
-                        found_sb.append([star['x'], star['y'], star['flux'], star['a'], star['b'], star['theta']])
+                        found_sb.append([
+                            star['x'], star['y'], star['flux'], star['a'],
+                            star['b'], star['theta']]
+                        )
                         star_find = True
                         break
-                if star_find == False and verbose:
+                if star_find is False and verbose:
                     if ci is None:
-                        print((_('file {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(fn, si + 1, b_x, b_y)))
+                        print((
+                            _(
+                                'file {0}: cannot find star #{1} '
+                                'close to {2:.2f} {3:.2f}'
+                            ).format(fn, si + 1, b_x, b_y))
+                        )
                     else:
-                        print((_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y)))
-            # too few stars matched, let's skip this frame and record that we skipped it
+                        print((
+                            _(
+                                'cube {0}: cannot find star #{1} '
+                                'close to {2:.2f} {3:.2f}'
+                            ).format(ci + 1, si + 1, b_x, b_y))
+                        )
+            # too few stars matched, let's skip this frame and record that we
+            # skipped it
             if len(found_sb) < stars:
                 self.append_skipped(fn, ci, hdu)
                 if self.skipped < skip_clouds:
                     self.skipped += 1
                     return 1
-                if split == False:
+                if split is False:
                     self.print_skipped()
-                    sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting at frame {2}').format(len(found_sb), self.skipped, ci))
+                    sys.exit(
+                        _(
+                            'too few stars ({0}) and too much '
+                            'clouded frames ({1}), exiting at frame {2}'
+                        ).format(len(found_sb), self.skipped, ci)
+                    )
                 return -1
 
             for si in range(stars):
@@ -182,7 +338,13 @@ class ProcessFiles:
             else:
                 self.skipped_fn.append('{0}[{1}]'.format(fn, ci))
                 if self.skipped_hdu is not None:
-                    self.skipped_hdu.append(fits.ImageHDU(hdu[0].data[ci], fits.Header({'FRAME':ci, 'EXPOSURE':float(hdu[0].header['EXPOSURE'])})))
+                    self.skipped_hdu.append(fits.ImageHDU(
+                        hdu[0].data[ci],
+                        fits.Header({
+                           'FRAME': ci,
+                           'EXPOSURE': float(hdu[0].header['EXPOSURE'])
+                        })
+                    ))
 
             if self.skipped_hdu is not None:
                 self.skipped_hdu.flush()
@@ -197,7 +359,10 @@ class ProcessFiles:
             if self.skipped_hdu is not None:
                 del self.skipped_hdu
 
-    def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses, markers):
+    def done(
+        self, verbose, stars, max_angle, plot, saveplot, stars_plot,
+        elipses, markers
+    ):
         if verbose == 0:
             print(_('Done'))
 
@@ -232,12 +397,12 @@ class ProcessFiles:
         max_deviation = 0
 
         for si in range(stars):
-            data_x = np_sb[si,:,0]
-            data_y = np_sb[si,:,1]
-            data_flux = np_sb[si,:,2]
-            data_a = np_sb[si,:,3]
-            data_b = np_sb[si,:,4]
-            data_theta = np_sb[si,:,5]
+            data_x = np_sb[si, :, 0]
+            data_y = np_sb[si, :, 1]
+            data_flux = np_sb[si, :, 2]
+            data_a = np_sb[si, :, 3]
+            data_b = np_sb[si, :, 4]
+            data_theta = np_sb[si, :, 5]
 
             max_x[si] = np.max(data_x)
             max_y[si] = np.max(data_y)
@@ -261,24 +426,64 @@ class ProcessFiles:
             min_theta[si] = np.min(data_theta)
 
             if verbose > 0:
-                print('  # stat {0:^8s} {1:^8s} {2:^8s} {3:^8s} {4:^8s} {5:^8s}'.format('x','y','flux','a','b','theta'))
-                print('{0:>3d} {1:^4s} {2:>8.2f} {3:>8.2f} {4:8>.2f} {5:8>.2f} {6:8>.2f}'.format(si + 1, 'max', max_x[si], max_y[si], max_flux[si], max_a[si], max_b[si], max_theta[si]))
-                print('{0:>3d} {1:^4s} {2:>8.2f} {3:>8.2f} {4:8>.2f} {5:8>.2f} {6:8>.2f}'.format(si + 1, 'avg', a_x[si], a_y[si], a_flux[si], a_a[si], a_b[si], a_theta[si]))
-                print('{0:>3d} {1:^4s} {2:>8.2f} {3:>8.2f} {4:8>.2f} {5:8>.2f} {6:8>.2f}'.format(si + 1, 'min', min_x[si], min_y[si], min_flux[si], min_a[si], min_b[si], min_theta[si]))
+                print(
+                    '  # stat {0:^8s} {1:^8s} {2:^8s} {3:^8s} {4:^8s} '
+                    '{5:^8s}'.format('x', 'y', 'flux', 'a', 'b', 'theta')
+                )
+                print(
+                    '{0:>3d} {1:^4s} {2:>8.2f} {3:>8.2f} '
+                    '{4:8>.2f} {5:8>.2f} {6:8>.2f}'.format(
+                        si + 1, 'max', max_x[si], max_y[si], max_flux[si],
+                        max_a[si], max_b[si], max_theta[si]
+                    )
+                )
+                print(
+                    '{0:>3d} {1:^4s} {2:>8.2f} {3:>8.2f} '
+                    '{4:8>.2f} {5:8>.2f} {6:8>.2f}'.format(
+                        si + 1, 'avg', a_x[si], a_y[si], a_flux[si],
+                        a_a[si], a_b[si], a_theta[si]
+                    )
+                )
+                print(
+                    '{0:>3d} {1:^4s} {2:>8.2f} {3:>8.2f} '
+                    '{4:8>.2f} {5:8>.2f} {6:8>.2f}'.format(
+                        si + 1, 'min', min_x[si], min_y[si], min_flux[si],
+                        min_a[si], min_b[si], min_theta[si]
+                    )
+                )
 
             # now get some stats..
-            dist[si] = [pixel_distance(max_x[si], max_y[si], s[0], s[1]) for s in pf.sb[si]]
+            dist[si] = [pixel_distance(
+                max_x[si], max_y[si], s[0], s[1]) for s in pf.sb[si]
+            ]
             a_dist[si] = np.average(dist[si])
 
-            print(_('star # {0} pixel distance min {1:.2f} max {2:.2f} average {3:.2f} median {4:.2f} std {5:.2f} RMS {6:.2f}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si])))
+            print(
+                _(
+                    'star # {0} pixel distance min {1:.2f} max {2:.2f} '
+                    'average {3:.2f} median {4:.2f} std {5:.2f} '
+                    'RMS {6:.2f}'
+                ).format(
+                    si + 1, min(dist[si]), max(dist[si]),
+                    a_dist[si], np.median(dist[si]), np.std(dist[si]),
+                    RMS(dist[si] - a_dist[si])
+                )
+            )
 
             if max_angle > 0 and stars > 1:
                 angels = calculate_angels(np_sb)
                 average_ang = np.average(angels, axis=0)
                 ang_deviations = np.degrees(angels - average_ang)
-                max_deviation = max(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
+                max_deviation = max(
+                    abs(np.nanmax(ang_deviations)),
+                    abs(np.nanmin(ang_deviations))
+                )
                 if verbose:
-                    print(_('maximal angle deviation: {0:.3f}').format(max_deviation))
+                    print(
+                        _(
+                            'maximal angle deviation: {0:.3f}'
+                        ).format(max_deviation)
+                    )
 
         self.print_skipped()
 
@@ -289,11 +494,11 @@ class ProcessFiles:
             fig = pylab.figure()
             pa = 3 if elipses else 0
             rows = (3 + pa) if ang_deviations is None else (4 + pa)
-            gs = gridspec.GridSpec(rows,1)
+            gs = gridspec.GridSpec(rows, 1)
             print(_('generating plots'))
             rts2.progressbar.progress(0, stars + 1)
             global xaxis
-            xaxis = None # principal X axis
+            xaxis = None  # principal X axis
 
             def add_plot(p_gs, p_ylabel):
                 global xaxis
@@ -306,40 +511,48 @@ class ProcessFiles:
                 ret.grid(True)
                 return ret
 
-            p_x = add_plot(gs[0:1,0:1], 'X (px)')
-            p_y = add_plot(gs[1:2,0:1], 'Y (px)')
-            p_dist = add_plot(gs[2:3,0:1], 'Dist. (px)')
+            p_x = add_plot(gs[0:1, 0:1], 'X (px)')
+            p_y = add_plot(gs[1:2, 0:1], 'Y (px)')
+            p_dist = add_plot(gs[2:3, 0:1], 'Dist. (px)')
 
-            p_x.set_ylabel ('X (px)')
-            p_y.set_ylabel ('Y (px)')
-            p_dist.set_ylabel ('Dist. (px)')
+            p_x.set_ylabel('X (px)')
+            p_y.set_ylabel('Y (px)')
+            p_dist.set_ylabel('Dist. (px)')
 
             devoffs = 0
 
             if ang_deviations is not None:
-                p_ang = add_plot(gs[3:4,0:1], 'Rot. (deg)')
-                p_ang.plot (self.times, np.average(ang_deviations, axis=1), markers)
-                p_ang.fill_between (self.times, np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
+                p_ang = add_plot(gs[3:4, 0:1], 'Rot. (deg)')
+                p_ang.plot(
+                    self.times, np.average(ang_deviations, axis=1), markers
+                )
+                p_ang.fill_between(
+                    self.times,
+                    np.nanmax(ang_deviations, axis=(2, 1)),
+                    np.nanmin(ang_deviations, axis=(2, 1))
+                )
                 devoffs = 1
 
             if elipses:
                 rs = 3 + devoffs
-                p_a = add_plot(gs[rs:rs+1,0:1], 'A (px)')
+                p_a = add_plot(gs[rs:rs+1, 0:1], 'A (px)')
                 rs += 1
-                p_b = add_plot(gs[rs:rs+1,0:1], 'B (px)')
+                p_b = add_plot(gs[rs:rs+1, 0:1], 'B (px)')
                 rs += 1
-                p_theta = add_plot(gs[rs:rs+1,0:1], 'Th. (deg)')
+                p_theta = add_plot(gs[rs:rs+1, 0:1], 'Th. (deg)')
 
             rts2.progressbar.progress(1, stars + 1)
 
             for si in range(stars):
-                p_x.plot (self.times, np_sb[si,:,0] - a_x[si], markers)
-                p_y.plot (self.times, np_sb[si,:,1] - a_y[si], markers)
-                p_dist.plot (self.times, a_dist[si] - dist[si], markers)
+                p_x.plot(self.times, np_sb[si, :, 0] - a_x[si], markers)
+                p_y.plot(self.times, np_sb[si, :, 1] - a_y[si], markers)
+                p_dist.plot(self.times, a_dist[si] - dist[si], markers)
                 if elipses:
-                    p_a.plot (self.times, np_sb[si,:,3], markers)
-                    p_b.plot (self.times, np_sb[si,:,4], markers)
-                    p_theta.plot (self.times, np.degrees (np_sb[si,:,5]) + 180, markers)
+                    p_a.plot(self.times, np_sb[si, :, 3], markers)
+                    p_b.plot(self.times, np_sb[si, :, 4], markers)
+                    p_theta.plot(
+                        self.times, np.degrees(np_sb[si, :, 5]) + 180, markers
+                    )
 
                 rts2.progressbar.progress(si + 1, stars + 1)
 
@@ -360,21 +573,36 @@ class ProcessFiles:
             pylab.close(fig)
 
         if stars > 1 and max_angle < max_deviation:
-            sys.exit(_('allowed angle deviation not met, measured maximal deviation: {0:.3f}').format(max_deviation))
+            sys.exit(_(
+                'allowed angle deviation not met, measured '
+                'maximal deviation: {0:.3f}'
+            ).format(max_deviation))
+
 
 pf = ProcessFiles(options.stars, options.save_skipped)
 
 imgranges = None
 
+
 def ranges(s):
-    return sum(((list(range(*[int(j) + k for k,j in enumerate(i.split('-'))])) if '-' in i else [int(i)]) for i in s.split(',')), [])
+    return sum(
+        (
+            (
+                list(range(*[int(j) + k for k, j in enumerate(i.split('-'))]))
+                if '-' in i else [int(i)]
+            )
+            for i in s.split(',')
+        ),
+        []
+    )
+
 
 if options.range is not None:
     imgranges = ranges(options.range)
     if options.verbose > 1:
-        print(_('Processing range'),imgranges)
+        print(_('Processing range'), imgranges)
 
-imgn = 0 # image number
+imgn = 0  # image number
 
 for fn in options.files:
     print(_('Processing {0}').format(fn), end=' ')
@@ -386,7 +614,11 @@ for fn in options.files:
             rts2.progressbar.progress(0, len(hdu[0].data))
     if hdu[0].header['NAXIS'] == 2:
         if options.cube:
-            sys.exit(_("File {0} data have only {1} dimensions, not a cube").format(fn,hdu[0].data.ndim))
+            sys.exit(
+                _("File {0} data have only {1} dimensions, not a cube").format(
+                    fn, hdu[0].data.ndim
+                )
+            )
 
         d_x = len(hdu[0].data)
         c_x = d_x / 2.0
@@ -408,17 +640,29 @@ for fn in options.files:
             imgn += 1
             if imgranges is not None and imgn not in imgranges:
                 continue
-            ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci, 'FRAME')
+            ret = pf.process_file(
+                fn, hdu, options.verbose, options.useDS9, options.stars,
+                options.radius, options.skip_clouds, options.center_radius,
+                options.split, ci, 'FRAME'
+            )
             if ret == -1:
                 # split graphs
-                pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
+                pf.done(
+                    options.verbose, options.stars, options.max_angle,
+                    options.plot, options.saveplot, options.stars_plot,
+                    options.elipses
+                )
                 pf = ProcessFiles(options.stars)
 
     else:
         imgn += 1
         if imgranges is not None and imgn not in imgranges:
             continue
-        ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
+        ret = pf.process_file(
+            fn, hdu, options.verbose, options.useDS9, options.stars,
+            options.radius, options.skip_clouds, options.center_radius,
+            options.split
+        )
         if ret == 0:
             print(_('OK'))
         elif ret > 0:
@@ -427,7 +671,14 @@ for fn in options.files:
             print(_('failed'))
 
     if options.cube:
-        pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
+        pf.done(
+            options.verbose, options.stars, options.max_angle, options.plot,
+            options.saveplot, options.stars_plot, options.elipses,
+            options.markers
+        )
 
 if not(options.cube):
-    pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses, options.markers)
+    pf.done(
+        options.verbose, options.stars, options.max_angle, options.plot,
+        options.saveplot, options.stars_plot, options.elipses, options.markers
+    )
