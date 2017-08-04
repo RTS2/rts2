@@ -106,7 +106,9 @@ class AstrometryScript:
 
   def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, wrkr=None):
     # '--no-verify: if not specified the output is different
+    #older versions:
     solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits','--no-verify',]
+    #solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots','--no-verify',]
 
     if scale is not None:
       scale_low=scale*(1-self.scale_relative_error)
@@ -165,9 +167,16 @@ class AstrometryScript:
     #                RA,Dec = (96.3752,-35.0503), pixel scale 1.70751 arcsec/pix.
     
     radecline=re.compile('Field center: \(RA,Dec\) = \(([^,]*),(.*)\).*?')
-
+    err=proc.stderr.readline().decode('utf-8')
+    if err is not None:
+      # may be more
+      if 'whaddup?' in err:
+        pass
+      else:
+        self.lg.error('error from astrometry.net: {}'.format(err))
+        return None
+      
     ret = None
-
     while True:
       try:
         a=proc.stdout.readline().decode('utf-8')
@@ -175,15 +184,16 @@ class AstrometryScript:
         break  
       if a == '':
         break
-
       if verbose:
         self.lg.debug(a)
+        
       match=radecline.match(a)
       if match:
         ret=[float(match.group(1)),float(match.group(2))]
+    
     if replace and ret is not None:
       shutil.move(self.odir+'/input.new',self.fits_file)
-         
+      
     shutil.rmtree(self.odir)
     return ret
 

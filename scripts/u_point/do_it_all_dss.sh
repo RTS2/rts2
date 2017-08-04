@@ -42,12 +42,12 @@ FETCH_DSS_IMAGE="--fetch-dss-image"
 TRANSFORMATION_CLASS="u_astropy"
 # if u_libnova or u_sofa is specfied, REFRACTION_METHOD, REFRACTIVE_INDEX_METHOD
 # are ignored
-REFRACTION_METHOD="stone"
-REFRACTIVE_INDEX_METHOD="owens"
-EQ_MOUNT="--eq-mount"
-#EQ_MOUNT=
-#USE_BRIGHT_STARS="--use-bright-stars"
-USE_BRIGHT_STARS=
+##REFRACTION_METHOD="stone"
+##REFRACTIVE_INDEX_METHOD="owens"
+#EQ_MOUNT="--eq-mount"
+EQ_MOUNT=
+USE_BRIGHT_STARS="--use-bright-stars"
+#USE_BRIGHT_STARS=
 #DO_QUICK_ANALYSIS="--do-quick-analysis"
 DO_QUICK_ANALYSIS=
 ACQUIRE_DS9_DISPLAY="--ds9-display"
@@ -78,7 +78,7 @@ function cont_exit {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
-	#echo "error with $1, status $status" >&2
+	echo "error within $1, status $status" >&2
 	kill -s TERM $TOP_PID > /dev/null 2>&1
     fi
     return $status
@@ -241,7 +241,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	    echo "takes several 5 seconds..."
 	    echo "CLOSE plot window to continue"
 	    echo ""
-	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $LONGITUDE $PLOT > /dev/null 2>&1
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 6.5" $LATITUDE $LONGITUDE $PLOT > /dev/null 2>&1
 	else
 	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $LONGITUDE > /dev/null 2>&1
 	fi

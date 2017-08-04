@@ -54,7 +54,6 @@ class Solver():
     except Exception as e:
       self.lg.debug('Solver: solver died, file: {}, exception: {}'.format(fn, e))
       return None
-      
     # base class method
     if self.blind:
       center=self.solver.run(scale=self.scale, replace=self.replace,timeout=self.timeout,verbose=self.verbose,wrkr=current_process().name)
@@ -62,10 +61,11 @@ class Solver():
       # ToDo
       center=self.solver.run(scale=self.scale,ra=ra,dec=dec,radius=self.radius,replace=self.replace,timeout=self.timeout,verbose=self.verbose,wrkr=current_process().name)
 
-      if center!=None:
-        if len(center)==2:
-          return SolverResult(ra=center[0],dec=center[1],fn=fn)
-      return None
+    if center!=None:
+      if len(center)==2:
+        return SolverResult(ra=center[0],dec=center[1],fn=fn)
+      
+    return None
 
 
 
@@ -118,6 +118,8 @@ if __name__ == "__main__":
     logger.addHandler(soh)
 
   px_scale=args.pixel_scale/3600./180.*np.pi
-
-  solver= Solver(lg=logger,blind=False,scale=px_scale,radius=args.radius,replace=args.replace,verbose=args.verbose_astrometry,timeout=args.timeout)
+  if args.ra is None or args.dec is None:
+    args.blind=True
+    
+  solver= Solver(lg=logger,blind=args.blind,scale=px_scale,radius=args.radius,replace=args.replace,verbose=args.verbose_astrometry,timeout=args.timeout)
   sr= solver.solve_field(fn=args.fits_image,ra=args.ra,dec=args.dec)

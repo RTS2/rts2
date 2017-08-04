@@ -94,6 +94,9 @@ if __name__ == "__main__":
   
   if args.toconsole:
     args.level='DEBUG'
+    
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
 
   pth, fn = os.path.split(sys.argv[0])
   filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script

@@ -37,7 +37,7 @@ class RefractiveIndex(object):
     # last resort
     if import_message is not None:
       self.lg.warn('ReafractiveIndex: {}'.format(import_message))
-      sys.exit(1)
+      #sys.exit(1)
       
   def refractive_index_ciddor(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
     # includes CO2  450micro-mole/mole

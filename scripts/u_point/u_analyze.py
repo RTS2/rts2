@@ -142,7 +142,7 @@ class Analysis(Script):
     #  +y: +dec
     # HA/Dec, AltAz both left handed coordinate systems
     if sky.eq_mount:
-      lon=ln0 + (px_r * self.px_scale/np.cos(lt0))
+      lon=ln0 + px_r * self.px_scale/np.cos(lt0)
       lat=lt0 + py_r * self.px_scale
       #self.lg.debug('{0}: sextract   center: {1:12.7f} {2:12.7f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
       #self.lg.debug('{0}: sextract   star  : {1:12.7f} {2:12.7f}'.format(pcn,lon*180./np.pi,lat*180./np.pi))
@@ -227,7 +227,7 @@ class Analysis(Script):
         self.lg.debug('{0}:id: {1},aa astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sr.ra,sr.dec,ptfn))
     
     else:
-      self.lg.debug('{0}:id: {1}, no astrometry result: file: {2}'.format(pcn,sky.nml_id,ptfn))
+      self.lg.debug('{0}:id: {1},no astrometry result: file: {2}'.format(pcn,sky.nml_id,ptfn))
 
   def re_plot(self,i=0,animate=None):
     self.lg.debug('re_plot: reploting')
@@ -411,6 +411,9 @@ if __name__ == "__main__":
   
   if args.toconsole:
     args.level='DEBUG'
+
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
 
   pth, fn = os.path.split(sys.argv[0])
   filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
