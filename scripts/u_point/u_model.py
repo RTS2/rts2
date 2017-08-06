@@ -505,9 +505,6 @@ class PointingModel(Script):
 
 
 # really ugly!
-def arg_floats(value):
-  return list(map(float, value.split()))
-
 def arg_float(value):
   if 'm' in value:
     return -float(value[1:])

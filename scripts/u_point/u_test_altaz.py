@@ -57,9 +57,6 @@ def plot(red_x=None,red_y=None,green_x=None,green_y=None,blue_x=None,blue_y=None
     plt.show()
 
 
-def arg_floats(value):
-  return list(map(float, value.split()))
-
 def arg_float(value):
   if 'm' in value:
     return -float(value[1:])

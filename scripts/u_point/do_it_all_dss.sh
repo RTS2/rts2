@@ -241,9 +241,9 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	    echo "takes several 5 seconds..."
 	    echo "CLOSE plot window to continue"
 	    echo ""
-	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 6.5" $LATITUDE $LONGITUDE $PLOT > /dev/null 2>&1
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval 6.0 6.5 $LATITUDE $LONGITUDE $PLOT > /dev/null 2>&1
 	else
-	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $LONGITUDE > /dev/null 2>&1
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval 6.0 7.0 $LATITUDE $LONGITUDE > /dev/null 2>&1
 	fi
 	#
 	echo "DONE selecting stars"

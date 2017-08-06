@@ -96,7 +96,7 @@ class Catalog(object):
         self.lg.error('fetch_catalog: error on line: {}, {}, {}'.format(i,e,ptfn))
         sys.exit(1)
         
-      if bgrightness[0]<mag_v<bgrightness[1]:
+      if float(bgrightness[0])<mag_v<float(bgrightness[1]):
         ra='{} {} {} hours'.format(ra_h,ra_m,ra_s)
         dec='{}{} {} {} '.format(dec_n,dec_d,dec_m,dec_s)
         cat_ic=SkyCoord(ra=ra,dec=dec, unit=(u.hour,u.deg), frame='icrs',obstime=self.dt_utc,location=self.obs)
@@ -161,9 +161,6 @@ class Catalog(object):
     plt.show()
 
 # really ugly!
-def arg_floats(value):
-  return list(map(float, value.split()))
-
 def arg_float(value):
   if 'm' in value:
     return -float(value[1:])
@@ -183,7 +180,7 @@ if __name__ == "__main__":
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   parser.add_argument('--yale-catalog', dest='yale_catalog', action='store', default='/usr/share/stardata/yale/catalog.dat', help=': %(default)s, Ubuntu apt install yale')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0],nargs='+', type=arg_floats, help=': %(default)s, visual star brightness [mag], format p1 p2')
+  parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0],nargs='+', type=float, help=': %(default)s, visual star brightness [mag], format p1 p2')
   parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, store the  observable objects')
   parser.add_argument('--minimum-separation', dest='minimum_separation', action='store', default=1.,type=arg_float, help=': %(default)s [deg], minimum separation between catalog stars')
   parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where data and images are stored')
@@ -191,13 +188,15 @@ if __name__ == "__main__":
   args=parser.parse_args()
   if args.toconsole:
     args.level='DEBUG'
-
+  print(type(args.brightness_interval))
+  print(args.brightness_interval)
+  
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
       
   pth, fn = os.path.split(sys.argv[0])
   filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
-  print('FIL', filename)
+  
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()

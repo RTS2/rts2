@@ -419,9 +419,6 @@ class Acquisition(Script):
 # ToDo test it!
 
 # really ugly!
-def arg_floats(value):
-  return list(map(float, value.split()))
-
 def arg_float(value):
   if 'm' in value:
     return -float(value[1:])
@@ -462,11 +459,11 @@ if __name__ == "__main__":
   parser.add_argument('--eq-mount', dest='eq_mount', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed from HA/Dec grid, see --nominal-positions')
 
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
-  parser.add_argument('--eq-excluded-ha-interval', dest='eq_excluded_ha_interval',default=[120.,240.],nargs='+',type=arg_floats,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format p1 p2')
+  parser.add_argument('--eq-excluded-ha-interval', dest='eq_excluded_ha_interval',default=[120.,240.],nargs='+',type=float,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format p1 p2')
   parser.add_argument('--eq-minimum-altitude', dest='eq_minimum_altitude',   default=30.,type=float,help=': %(default)s [deg],  EQ mount minimum altitude')
 
-  parser.add_argument('--azimuth-interval', dest='azimuth_interval',   default=[0.,360.], nargs='+',type=arg_floats,help=': %(default)s [deg], AltAz mount allowed azimuth interval, format p1 p2')
-  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[30.,80.], nargs='+',type=arg_floats,help=': %(default)s [deg], AltAz mount, allowed altitude, format p1 p2')
+  parser.add_argument('--azimuth-interval', dest='azimuth_interval',   default=[0.,360.], nargs='+',type=float,help=': %(default)s [deg], AltAz mount allowed azimuth interval, format p1 p2')
+  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[30.,80.], nargs='+',type=float,help=': %(default)s [deg], AltAz mount, allowed altitude, format p1 p2')
   parser.add_argument('--lon-step', dest='lon_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
   parser.add_argument('--lat-step', dest='lat_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
   # 
@@ -475,7 +472,7 @@ if __name__ == "__main__":
   parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
   parser.add_argument('--sun-separation', dest='sun_separation', action='store', default=30.,type=float, help=': %(default)s [deg], angular separation between sun and observed object')
   #
-  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], nargs='+',type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format p1 p2')
+  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], nargs='+',type=float, help=': %(default)s, ccd pixel size x,y[px], format p1 p2')
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], pixel scale of the CCD camera')
   parser.add_argument('--exposure-start', dest='exposure_start',   default=5.,type=float,help=': %(default)s [sec], start exposure ')
   parser.add_argument('--do-quick-analysis', dest='do_quick_analysis', action='store_true', default=False, help=': %(default)s, True: check exposure time and change it see --exposure-interval, --background-max, --peak-max')
