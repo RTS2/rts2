@@ -78,8 +78,8 @@ if __name__ == "__main__":
   #parser.add_argument('--refractive-index-method', dest='refractive_index_method', action='store', default='owens', help=': %(default)s, one of (owens|ciddor|edlen) if --refraction-method stone is specified, see refraction.py')
   group = parser.add_mutually_exclusive_group()
   # here: NO  nargs=1!!
-  group.add_argument('--eq-params', dest='eq_params', default=[-60.,+12.,-60.,+60.,+30.,+12.,-12.,+60.,-60.], type=arg_floats, help=': %(default)s, EQ list of parameters [arcsec], format "p1 p2...p9"')
-  group.add_argument('--aa-params', dest='aa_params', default=[-60.,+120.,-60.,+60.,-60.,+120.,-120.], type=arg_floats, help=': %(default)s, AltAz list of parameters [arcsec], format "p1 p2...p7"')
+  group.add_argument('--eq-params', dest='eq_params', default=[-60.,+12.,-60.,+60.,+30.,+12.,-12.,+60.,-60.],nargs='+', type=arg_floats, help=': %(default)s, EQ list of parameters [arcsec], format p1 p2...p9')
+  group.add_argument('--aa-params', dest='aa_params', default=[-60.,+120.,-60.,+60.,-60.,+120.,-120.],nargs='+', type=arg_floats, help=': %(default)s, AltAz list of parameters [arcsec], format p1 p2...p7')
   parser.add_argument('--all-params-zero', dest='all_params_zero', action='store_true', default=False, help=': %(default)s, set: --eq-params,--aa-params are all set to 0.')
   #
   parser.add_argument('--utc', dest='utc', action='store', default='2016-10-08 05:00:01', type=str,help=': %(default)s, utc observing time, format [iso]')

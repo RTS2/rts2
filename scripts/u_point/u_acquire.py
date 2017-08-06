@@ -28,6 +28,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import sys,os
 import argparse
+import confuse
 import logging
 import socket
 import numpy as np
@@ -433,6 +434,7 @@ if __name__ == "__main__":
   # basic options
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
+  parser.add_argument('--path-config', dest='path_config', action='store', default=None, help=': %(default)s, path of config file')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
@@ -460,11 +462,11 @@ if __name__ == "__main__":
   parser.add_argument('--eq-mount', dest='eq_mount', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed from HA/Dec grid, see --nominal-positions')
 
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
-  parser.add_argument('--eq-excluded-ha-interval', dest='eq_excluded_ha_interval',   default=[120.,240.],type=arg_floats,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format "p1 p2"')
+  parser.add_argument('--eq-excluded-ha-interval', dest='eq_excluded_ha_interval',default=[120.,240.],nargs='+',type=arg_floats,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format p1 p2')
   parser.add_argument('--eq-minimum-altitude', dest='eq_minimum_altitude',   default=30.,type=float,help=': %(default)s [deg],  EQ mount minimum altitude')
 
-  parser.add_argument('--azimuth-interval', dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg], AltAz mount allowed azimuth interval, format "p1 p2"')
-  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[30.,80.],type=arg_floats,help=': %(default)s [deg], AltAz mount, allowed altitude, format "p1 p2"')
+  parser.add_argument('--azimuth-interval', dest='azimuth_interval',   default=[0.,360.], nargs='+',type=arg_floats,help=': %(default)s [deg], AltAz mount allowed azimuth interval, format p1 p2')
+  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[30.,80.], nargs='+',type=arg_floats,help=': %(default)s [deg], AltAz mount, allowed altitude, format p1 p2')
   parser.add_argument('--lon-step', dest='lon_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
   parser.add_argument('--lat-step', dest='lat_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
   # 
@@ -473,18 +475,28 @@ if __name__ == "__main__":
   parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
   parser.add_argument('--sun-separation', dest='sun_separation', action='store', default=30.,type=float, help=': %(default)s [deg], angular separation between sun and observed object')
   #
-  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
+  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], nargs='+',type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format p1 p2')
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], pixel scale of the CCD camera')
   parser.add_argument('--exposure-start', dest='exposure_start',   default=5.,type=float,help=': %(default)s [sec], start exposure ')
   parser.add_argument('--do-quick-analysis', dest='do_quick_analysis', action='store_true', default=False, help=': %(default)s, True: check exposure time and change it see --exposure-interval, --background-max, --peak-max')
-  parser.add_argument('--exposure-interval', dest='exposure_interval',   default=[1.,30.],type=float,help=': %(default)s [sec], exposure lower and upper limits, format "p1 p2"')
-  parser.add_argument('--ratio-interval', dest='ratio_interval',   default=[.7,1.4],type=float,help=': %(default)s [], acceptable ratio maximum object brightnes/value of --peak-max, format "p1 p2"')
+  parser.add_argument('--exposure-interval', dest='exposure_interval',   default=[1.,30.],nargs='+',type=float,help=': %(default)s [sec], exposure lower and upper limits, format p1 p2')
+  parser.add_argument('--ratio-interval', dest='ratio_interval',   default=[.7,1.4], nargs='+',type=float, help=': %(default)s [], acceptable ratio maximum object brightnes/value of --peak-max, format p1 p2')
   parser.add_argument('--objects-min', dest='objects_min', default=10.,type=float,help=': %(default)s minimum number of objects per image')
   parser.add_argument('--background-max', dest='background_max', default=20000.,type=float,help=': %(default)s within 16 bits, background maximum')
   parser.add_argument('--peak-max', dest='peak_max', default=45000.,type=float,help=': %(default)s within 16 bits, peak maximum as found by SExtractor')
 
   args=parser.parse_args()
 
+  if args.path_config:
+    config=confuse.Configuration('u_acqiure') #creates u_acquire in $HOME/.config
+    config.set_file(args.path_config)
+    # overwrite values in config with values from argparse:
+    #config.set_args(args)
+
+    # overwrite values in args with values from config values: 
+    for kv in config:
+      setattr(args, kv, config[kv].get())
+      
   if args.toconsole:
     args.level='DEBUG'
 

@@ -183,7 +183,7 @@ if __name__ == "__main__":
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   parser.add_argument('--yale-catalog', dest='yale_catalog', action='store', default='/usr/share/stardata/yale/catalog.dat', help=': %(default)s, Ubuntu apt install yale')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0], type=arg_floats, help=': %(default)s, visual star brightness [mag], format "p1 p2"')
+  parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0],nargs='+', type=arg_floats, help=': %(default)s, visual star brightness [mag], format p1 p2')
   parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, store the  observable objects')
   parser.add_argument('--minimum-separation', dest='minimum_separation', action='store', default=1.,type=arg_float, help=': %(default)s [deg], minimum separation between catalog stars')
   parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where data and images are stored')

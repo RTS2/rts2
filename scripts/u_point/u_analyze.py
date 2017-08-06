@@ -391,7 +391,7 @@ if __name__ == "__main__":
 
   #
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
-  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s [px], ccd pixel size x,y[px], format "p1 p2"')
+  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.],nargs='+', type=arg_floats, help=': %(default)s [px], ccd pixel size x,y[px], format p1 p2')
   # angle is defined relative to the positive dec or alt direction
   # the rotation is anti clock wise (right hand coordinate system)
   parser.add_argument('--ccd-angle', dest='ccd_angle', default=0., type=float, help=': %(default)s [deg], ccd angle measured anti clock wise relative to positive Alt or Dec axis, rotation of 180. ')
