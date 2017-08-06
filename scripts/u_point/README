@@ -14,6 +14,7 @@ Prerequisites
 	      saods9
 	      
  pip3 install astropy (1.3)
+              confuse
               numpy
 	      scipy
 	      matplotlib
