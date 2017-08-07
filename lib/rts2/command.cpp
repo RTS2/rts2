@@ -707,10 +707,10 @@ CommandDeviceStatus::CommandDeviceStatus (Block * master, Connection * _control_
 	setCommand ("device_status");
 }
 
-CommandParallacticAngle::CommandParallacticAngle (Block * _master, double reftime, double pa, double rate):Command (_master)
+CommandParallacticAngle::CommandParallacticAngle (Block * _master, double reftime, double pa, double rate, double altitude, double azimuth):Command (_master)
 {
 	std::ostringstream _os;
-	_os << COMMAND_PARALLACTIC_UPDATE " " << std::fixed << reftime << " " << pa << " " << rate;
+	_os << COMMAND_PARALLACTIC_UPDATE " " << std::fixed << reftime << " " << pa << " " << rate << " " << altitude << " " << azimuth;
 	setCommand (_os);
 }
 

@@ -54,6 +54,8 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	createValue (parallacticAngleRate, "PARATE", "[deg/hour] calculated change of parallactic angle", false, RTS2_DT_DEGREES);
 	paTracking->setValueBool (true);
 
+	createValue(telAltAz, "TELALTAZ", "telescope altitude and azimuth", false, RTS2_DT_DEGREES);
+
 	createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 	createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
 	createValue (trackingWarning, "tracking_warning", "issue warning if tracking frequency drops bellow this number", false, RTS2_VALUE_WRITABLE);
@@ -68,11 +70,14 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		double reftime;
 		double pa;
 		double rate;
-		if (conn->paramNextDouble (&reftime) || conn->paramNextDouble (&pa) || conn->paramNextDouble (&rate) || !conn->paramEnd ())
+		double alt;
+		double az;
+		if (conn->paramNextDouble (&reftime) || conn->paramNextDouble (&pa) || conn->paramNextDouble (&rate) || conn->paramNextDouble(&alt) || conn->paramNextDouble(&az) || !conn->paramEnd ())
 			return -2;
 		parallacticAngleRef->setValueDouble (reftime);
 		parallacticAngle->setValueDouble (pa);
 		parallacticAngleRate->setValueDouble (rate);
+		telAltAz->setValueAltAz(alt, az);
 		if (paTracking->getValueBool ())
 			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PA_TRACK, "started tracking");
 		if (hasTimer == false)

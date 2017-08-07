@@ -389,7 +389,7 @@ int AltAz::setTracking (int track, bool addTrackingTimer, bool send)
 {
 	if (track == 3)
 	{
-		rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), 0);
+		rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), 0, telAltAz->getAlt(), telAltAz->getAz());
 		queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
 	}
 	return Telescope::setTracking (track, addTrackingTimer, send);
@@ -400,7 +400,7 @@ void AltAz::parallacticTracking ()
 	double n = getNow ();
 	if (nextParUpdate > n)
 		return;
-	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), derRate->getValueDouble ());
+	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), derRate->getValueDouble (), telAltAz->getAlt(), telAltAz->getAz());
 	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
 	nextParUpdate = n + 1;
 }

@@ -913,12 +913,14 @@ class CommandDeviceStatus:public CommandStatusInfo
  *   <li>time when PA was calculated</li>
  *   <li>calculated PA</li>
  *   <li>rate of PA change (in degrees/hour)</li>
+ *   <li>telescope altitude</li>
+ *   <li>telescope azimuth</li>
  * </ol>
  */
 class CommandParallacticAngle:public Command
 {
 	public:
-		CommandParallacticAngle (Block * _master, double reftime, double pa, double rate);
+		CommandParallacticAngle (Block * _master, double reftime, double pa, double rate, double altitude, double azimuth);
 };
 
 class CommandMoveAz:public Command

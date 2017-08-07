@@ -123,6 +123,8 @@ class Rotator:public rts2core::Device
 		rts2core::ValueDouble *parallacticAngleRate;
 		rts2core::ValueDouble *toGo;
 
+		rts2core::ValueAltAz *telAltAz;
+
 		void updateToGo ();
 
 		// autorotating in plus direction..
