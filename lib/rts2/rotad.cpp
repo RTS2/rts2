@@ -54,7 +54,7 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	createValue (parallacticAngleRate, "PARATE", "[deg/hour] calculated change of parallactic angle", false, RTS2_DT_DEGREES);
 	paTracking->setValueBool (true);
 
-	createValue(telAltAz, "TELALTAZ", "telescope altitude and azimuth", false, RTS2_DT_DEGREES);
+	createValue(telAltAz, "TELALTAZ", "telescope altitude and azimuth", false);
 
 	createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 	createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
