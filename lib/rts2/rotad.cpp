@@ -55,6 +55,9 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	paTracking->setValueBool (true);
 
 	createValue(telAltAz, "TELALTAZ", "telescope altitude and azimuth", false);
+	createValue(zenAngle, "zenith", "[deg] current zenith angle", false, RTS2_DT_DEGREES);
+	createValue(zenMin, "ZEN_MIN", "[deg] minimum zenith angle", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	createValue(zenMax, "ZEN_MAX", "[deg] maximum zenith angle", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
 	createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 	createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
@@ -79,13 +82,15 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		parallacticAngleRate->setValueDouble (rate);
 		telAltAz->setValueAltAz(alt, az);
 		if (paTracking->getValueBool ())
-			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PA_TRACK, "started tracking");
+			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT | ROT_MASK_PARK, ROT_PA_TRACK, "started tracking");
 		if (hasTimer == false)
 			addTimer (0.01, new rts2core::Event (EVENT_TRACK_TIMER));
 		return 0;
 	}
 	else if (conn->isCommand (COMMAND_ROTATOR_AUTO))
 	{
+		if ((std::isnan(getTargetMin()) && std::isnan(getTargetMax())) || (std::isnan(getZenithAngleMin()) && std::isnan(getZenithAngleMax())))
+			return DEVDEM_E_SYSTEM;
 		autoOldTrack = paTracking->getValueBool ();
 		paTracking->setValueBool (false);
 		autoPlus = true;
@@ -165,6 +170,7 @@ void Rotator::checkRotators ()
 		updateToGo ();
 		sendValueAll (currentPosition);
 		sendValueAll (toGo);
+		sendValueAll(zenAngle);
 	}
 	if ((getState () & ROT_MASK_PATRACK) == ROT_PA_TRACK)
 	{
@@ -212,16 +218,34 @@ void Rotator::checkRotators ()
 		{
 			if (ret == -2)
 			{
+				double newTarget = NAN;
 				if (autoPlus == true)
 				{
-					setTarget (std::isnan (getTargetMax ()) ? 180 : getTargetMax () + getOffset ());
-					autoPlus = false;
+					if (!std::isnan(getZenithAngleMax()) && !std::isnan(telAltAz->getAlt()))
+					{
+						newTarget = getZenithAngleMax() - 90 + telAltAz->getAlt();
+					}
+					if (!std::isnan(getTargetMax()))
+					{
+						if (std::isnan(newTarget) || newTarget > getTargetMax())
+							newTarget = getTargetMax();
+					}
 				}
 				else
 				{
-					setTarget (std::isnan (getTargetMin ()) ? -180 : getTargetMin () + getOffset ());
-					autoPlus = true;
+					if (!std::isnan(getZenithAngleMin()) && !std::isnan(telAltAz->getAlt()))
+					{
+						newTarget = getZenithAngleMin() - 90 + telAltAz->getAlt();
+					}
+					if (!std::isnan(getTargetMin()))
+					{
+						if (std::isnan(newTarget) || newTarget < getTargetMin())
+							newTarget = getTargetMax();
+					}
 				}
+				autoPlus = !autoPlus;
+				if (!std::isnan(newTarget))
+					setTarget(newTarget);
 			}
 			else
 			{
@@ -236,6 +260,7 @@ void Rotator::checkRotators ()
 		updateToGo ();
 		sendValueAll (currentPosition);
 		sendValueAll (toGo);
+		sendValueAll(zenAngle);
 	}
 }
 
@@ -262,6 +287,7 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 void Rotator::setCurrentPosition (double cp)
 {
 	currentPosition->setValueDouble (cp);
+	zenAngle->setValueDouble(getZenithAngleFromTarget(cp));
 	updateToGo ();
 }
 

@@ -91,6 +91,9 @@ class Rotator:public rts2core::Device
 		double getTargetMin () { return tarMin->getValueDouble (); }
 		double getTargetMax () { return tarMax->getValueDouble (); }
 
+		double getZenithAngleMin() { return zenMin->getValueDouble(); }
+		double getZenithAngleMax() { return zenMax->getValueDouble(); }
+
 		double getZeroOffset () { return zeroOffs->getValueDouble (); }
 		double getOffset () { return offset->getValueDouble (); }
 
@@ -98,6 +101,12 @@ class Rotator:public rts2core::Device
 		 * Set parallactic angle offset.
 		 */
 		void setPAOffset (double paOff);
+
+		/**
+		 * Returns zenith angle from target angle.
+		 */
+		double getZenithAngleFromTarget(double angle) { return angle + 90 - telAltAz->getAlt(); }
+
 	private:
 		rts2core::ValueDouble *zeroOffs;
 		rts2core::ValueDouble *offset;
@@ -124,6 +133,9 @@ class Rotator:public rts2core::Device
 		rts2core::ValueDouble *toGo;
 
 		rts2core::ValueAltAz *telAltAz;
+		rts2core::ValueDouble *zenAngle;
+		rts2core::ValueDouble *zenMin;
+		rts2core::ValueDouble *zenMax;
 
 		void updateToGo ();
 

@@ -200,6 +200,78 @@ void SitechRotator::setTarget (double tv)
 			}
 		}
 	}
+
+	double t_zangle = getZenithAngleFromTarget(t_angle);
+
+	if (!std::isnan (t_zangle))
+	{
+		if (!std::isnan(getZenithAngleMax()))
+		{
+			while (t_zangle > getZenithAngleMax())
+			{
+				t_angle -= 360.0;
+				t_zangle = getZenithAngleFromTarget(t_angle);
+			}
+		}
+		if (!std::isnan(getZenithAngleMin()))
+		{
+			while (t_zangle < getZenithAngleMin())
+			{
+				t_angle += 360.0;
+				t_zangle = getZenithAngleFromTarget(t_angle);
+			}
+		}
+		if (!std::isnan(getZenithAngleMin()) && !std::isnan(getZenithAngleMax()))
+		{
+			if (t_zangle < getZenithAngleMin ())
+			{
+				if (getZenithAngleMin () < (t_zangle + 180) && (t_zangle + 180) < getZenithAngleMax ())
+				{
+					t_angle += 180;
+					paOff -= 180;
+				}
+				else if (getZenithAngleMin () < (t_zangle + 90) && (t_zangle + 90) < getZenithAngleMax ())
+				{
+					t_angle += 90;
+					paOff -= 90;
+				}
+				else if (getZenithAngleMin () < (t_zangle + 270) && (t_zangle + 270) < getZenithAngleMax ())
+				{
+					t_angle += 270;
+					paOff -= 270;
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "cannot set zenith target value to " << t_zangle << sendLog;
+					return;
+				}
+			}
+			else if (t_angle > getZenithAngleMax ())
+			{
+				if (getZenithAngleMin () < (t_zangle - 180) && (t_zangle - 180) < getZenithAngleMax ())
+				{
+					t_angle -= 180;
+					paOff += 180;
+				}
+				else if (getZenithAngleMin () < (t_zangle - 90) && (t_zangle - 90) < getZenithAngleMax ())
+				{
+					t_angle -= 90;
+					paOff += 90;
+				}
+				else if (getZenithAngleMin () < (t_zangle - 270) && (t_zangle - 270) < getZenithAngleMax ())
+				{
+					t_angle -= 270;
+					paOff += 270;
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "cannot set zenith target value to " << t_zangle << sendLog;
+					return;
+				}
+			}
+		}
+	}
+
 	t_pos->setValueLong ((t_angle - getZeroOffset ()) * ticks->getValueLong () / 360.0);
 	setPAOffset (paOff);
 	updated = true;
