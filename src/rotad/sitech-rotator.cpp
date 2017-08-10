@@ -246,7 +246,7 @@ void SitechRotator::setTarget (double tv)
 					return;
 				}
 			}
-			else if (t_angle > getZenithAngleMax ())
+			else if (t_zangle > getZenithAngleMax ())
 			{
 				if (getZenithAngleMin () < (t_zangle - 180) && (t_zangle - 180) < getZenithAngleMax ())
 				{
