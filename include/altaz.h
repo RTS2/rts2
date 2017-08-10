@@ -92,6 +92,11 @@ class AltAz: public Telescope
 		 */
 		virtual void parallacticTracking ();
 
+		/**
+		 * Sends updated PA data.
+		 */
+		void sendPA ();
+
 		rts2core::ValueDouble *parallAngle;
 		rts2core::ValueDouble *derRate;
 

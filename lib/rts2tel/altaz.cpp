@@ -400,9 +400,14 @@ void AltAz::parallacticTracking ()
 	double n = getNow ();
 	if (nextParUpdate > n)
 		return;
+	sendPA ();
+	nextParUpdate = n + 1;
+}
+
+void AltAz::sendPA ()
+{
 	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), derRate->getValueDouble (), telAltAz->getAlt(), telAltAz->getAz());
 	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
-	nextParUpdate = n + 1;
 }
 
 void AltAz::afterMovementStart ()

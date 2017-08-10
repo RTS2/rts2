@@ -612,6 +612,7 @@ int SitechAltAz::isMoving ()
 
 	if (tdist > trackingDist->getValueDouble ())
 	{
+		sendPA ();
 		// close to target, run tracking
 		if (tdist < 0.5)
 		{
