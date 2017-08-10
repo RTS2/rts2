@@ -136,7 +136,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
 "}\n"
 
 "function highlight(name) {\n"
-  "if (document.forms['download'].elements['act'][1].checked)\n"
+  "if (document.forms['download'].elements['act'].value == 'd')\n"
   "{ var files = document.getElementById('files');\n"
     "if (document.images[name].className == 'hig') {"
       "high_off(files,name);\n"
@@ -145,8 +145,12 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
       "high_on(files,name);\n"
     "}\n"
   "}\n"
-  "else if (document.forms['download'].elements['act'][2].checked)\n"
+  "else if (document.forms['download'].elements['act'].value == 'f'\n"
   "{ window.open('" << getServer ()->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
+  "}\n"
+  "else if (document.forms['download'].elements['act'].value == 'b')\n"
+  "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', '_blank');\n"
+    "w2.focus ();"
   "}\n"
   "else\n"
   "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', 'Preview');\n"
@@ -171,7 +175,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
 
 void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, const char *label, float quantiles, int colourVariant)
 {
-	_os << "<form name='download' method='post' action='" << getServer ()->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
+	_os << "<form name='download' method='post' action='" << getServer ()->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='b'>New window</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
 	"<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
 	"<form name='label' method='get' action='./'>"
 #ifdef CHANNELS
