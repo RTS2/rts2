@@ -145,7 +145,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
       "high_on(files,name);\n"
     "}\n"
   "}\n"
-  "else if (document.forms['download'].elements['act'].value == 'f'\n"
+  "else if (document.forms['download'].elements['act'].value == 'f')\n"
   "{ window.open('" << getServer ()->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
   "}\n"
   "else if (document.forms['download'].elements['act'].value == 'b')\n"
