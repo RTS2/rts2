@@ -432,6 +432,7 @@ if __name__ == "__main__":
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--path-config', dest='path_config', action='store', default=None, help=': %(default)s, path of config file')
+  parser.add_argument('--dump-config', dest='dump_config', action='store_true', default=False, help=': %(default)s, dump arparse defaults to file if --path-config is set, else to stdout')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
@@ -484,16 +485,36 @@ if __name__ == "__main__":
 
   args=parser.parse_args()
 
+  if args.dump_config:
+    config=confuse.Configuration('u_acqiure') 
+    for arg in dir(args):
+      if not arg in args or arg in 'dump_config' or arg in 'path_config':
+        continue
+      
+      config[arg]=getattr(args, arg)
+      
+    config_out=config.dump(full=True)    
+    if args.path_config:
+      with open(args.path_config, 'w') as f:
+        f.write(config_out)
+    else:
+      print(config_out)
+    sys.exit(0)
+  
   if args.path_config:
-    config=confuse.Configuration('u_acqiure') #creates u_acquire in $HOME/.config
+    config=confuse.Configuration('u_acqiure') 
     config.set_file(args.path_config)
     # overwrite values in config with values from argparse:
     #config.set_args(args)
 
     # overwrite values in args with values from config values: 
     for kv in config:
-      setattr(args, kv, config[kv].get())
-      
+      if kv in args: # do not create arguments
+        setattr(args, kv, config[kv].get())
+      else:
+        print('config paramter: {}, not an argument of argparse, exiting'.format(kv))
+        sys.exit(1)
+
   if args.toconsole:
     args.level='DEBUG'
 
