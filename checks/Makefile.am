@@ -6,8 +6,8 @@ TESTS = check_python_libnova check_python_gpoint_altaz check_python_gpoint_gem c
 EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template altaz_check rts2.ini flat_single flat_multi
 
 if LIBCHECK
-TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi
-check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid
+TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi check_sep
+check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_sep
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
 
@@ -32,8 +32,11 @@ check_expander_SOURCES = check_expander.cpp
 
 check_pid_SOURCES = check_pid.cpp
 
+check_sep_SOURCES = check_sep.cpp
+check_sep_LDFLAGS = -L../lib/sep -lsep
+
 else
-EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp check_dut1.cpp check_expander.cpp check_pid.cpp
+EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp check_dut1.cpp check_expander.cpp check_pid.cpp check_sep.cpp
 endif
 
 clean-local:
