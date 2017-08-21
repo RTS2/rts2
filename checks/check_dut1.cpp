@@ -21,19 +21,19 @@ START_TEST(GETDUT1)
 	gmt.tm_year = 117;
 	gmt.tm_mon = 1;
 	gmt.tm_mday = 5;
-	ck_assert_dbl_eq (getDUT1 ("finals2000A.daily", &gmt), 0.5484645, 10e-5);
+	ck_assert_dbl_eq (getDUT1 ("data/finals2000A.daily", &gmt), 0.5484645, 10e-5);
 
 	gmt.tm_year = 118;
 	gmt.tm_mon = 1;
 	gmt.tm_mday = 5;
-	ck_assert_msg (isnan (getDUT1 ("finals2000A.daily", &gmt)), "data for 2018 found!");
+	ck_assert_msg (isnan (getDUT1 ("data/finals2000A.daily", &gmt)), "data for 2018 found!");
 
 	gmt.tm_year = 117;
 	gmt.tm_mon = 6;
 	gmt.tm_mday = 28;
-	ck_assert_dbl_eq (getDUT1 ("finals2000A.daily", &gmt), 1.3652135, 10e-5);
+	ck_assert_dbl_eq (getDUT1 ("data/finals2000A.daily", &gmt), 1.3652135, 10e-5);
 
-	ck_assert_msg (isnan (getDUT1 ("final2000A.daily", &gmt)), "data for not existing file found!");
+	ck_assert_msg (isnan (getDUT1 ("data/final2000A.daily", &gmt)), "data for not existing file found!");
 }
 END_TEST
 

@@ -73,7 +73,7 @@ AC_LANG_CPLUSPLUS
 
 CFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g -std=gnu++11 -lm"
+CXXFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CXXFLAGS)
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -1059,6 +1059,7 @@ AC_OUTPUT([Makefile
 	   src/redis/Makefile
 	   tests/Makefile
 	   checks/Makefile
+	   checks/data/Makefile
 	   scripts/rts2saf/Makefile
 	   scripts/rts2saf/rts2saf/Makefile]
 )

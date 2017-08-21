@@ -19,7 +19,7 @@ void setup_sep (void)
 
 void teardown_sep (void)
 {
-	unlink ("sep/cat.out");
+	//unlink ("sep/cat.out");
 }
 
 
@@ -305,8 +305,8 @@ START_TEST(SEP1)
 	flux = fluxerr = NULL;
 	flag = NULL;
 
-	fname1 = "sep/sep.fits";
-	fname2 = "sep/cat.out";
+	fname1 = "data/sep.fits";
+	fname2 = "data/cat.out";
 
 	/* read in image */
 	status = read_test_image (fname1, &data, &nx, &ny);
@@ -356,6 +356,8 @@ START_TEST(SEP1)
 	if (status)
 		goto exit_test;
 	print_time ("sep_extract()", t1 - t0);
+
+	printf ("number of catalogue objects: %d\n", catalog->nobj);
 
 	/* aperture photometry */
 	im.noise = &(bkg->globalrms);/* set image noise level */
