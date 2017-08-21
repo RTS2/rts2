@@ -351,7 +351,7 @@ Element *Script::parseBuf (Rts2Target * target)
 		strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE);
 	}
 	// we hit end of script buffer
-	if (commandStart == '\0')
+	if (*commandStart == '\0')
 	{
 		return NULL;
 	}
