@@ -13,13 +13,13 @@
 
 void setup_sep (void)
 {
-	unlink ("sep/cat.out");
+	unlink ("data/fram.out");
+	unlink ("data/image.out");
 }
 
 
 void teardown_sep (void)
 {
-	//unlink ("sep/cat.out");
 }
 
 
@@ -287,9 +287,9 @@ print_time (const char *s, uint64_t tdiff)
 }
 
 
-START_TEST(SEP1)
+void
+check_image(const char *in, const char *out)
 {
-	const char *fname1, *fname2;
 	int i, status, nx, ny;
 	double *flux, *fluxerr, *fluxt, *fluxerrt, *area, *areat;
 	short *flag, *flagt;
@@ -305,11 +305,8 @@ START_TEST(SEP1)
 	flux = fluxerr = NULL;
 	flag = NULL;
 
-	fname1 = "data/sep.fits";
-	fname2 = "data/cat.out";
-
 	/* read in image */
-	status = read_test_image (fname1, &data, &nx, &ny);
+	status = read_test_image (in, &data, &nx, &ny);
 	if (status)
 		goto exit_test;
 
@@ -376,18 +373,28 @@ START_TEST(SEP1)
 		(double) (t1 - t0) / 1000. / catalog->nobj);
 
 	/* print results */
-	printf ("writing to file: %s\n", fname2);
-	catout = fopen (fname2, "w+");
+	printf ("writing to file: %s\n", out);
+	catout = fopen (out, "w+");
 	fprintf (catout, "# SEP catalog\n");
 	fprintf (catout, "# 1 NUMBER\n");
 	fprintf (catout, "# 2 X_IMAGE (0-indexed)\n");
 	fprintf (catout, "# 3 Y_IMAGE (0-indexed)\n");
 	fprintf (catout, "# 4 FLUX\n");
 	fprintf (catout, "# 5 FLUXERR\n");
+	fprintf (catout, "# 5 FLUXERR\n");
+	fprintf (catout, "# 6 X2_IMAGE (seconds moments)\n");
+	fprintf (catout, "# 7 Y2_IMAGE\n");
+	fprintf (catout, "# 8 XY_IMAGE\n");
+	fprintf (catout, "# 9 a\n");
+	fprintf (catout, "# 10 b\n");
+	fprintf (catout, "# 11 theta\n");
 	for (i = 0; i < catalog->nobj; i++)
 	{
-		fprintf (catout, "%3d %#11.7g %#11.7g %#11.7g %#11.7g\n",
-			i, catalog->x[i], catalog->y[i], flux[i], fluxerr[i]);
+		fprintf (catout,
+			"%3d %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g\n",
+			i, catalog->x[i], catalog->y[i], flux[i], fluxerr[i],
+			catalog->x2[i], catalog->y2[i], catalog->xy[i],
+			catalog->a[i], catalog->b[i], catalog->theta[i]);
 	}
 	fclose (catout);
 
@@ -410,6 +417,13 @@ START_TEST(SEP1)
 		printf ("test_image passed\n");
 	}
 	ck_assert_int_eq (status, 0);
+}
+
+
+START_TEST(SEP1)
+{
+	check_image ("data/fram.fits", "data/fram.out");
+	check_image ("data/image.fits", "data/image.out");
 }
 END_TEST
 

@@ -1,1 +1,1 @@
-EXTRA_DIST = finals2000A.daily sep.fits
+EXTRA_DIST = finals2000A.daily fram.fits image.fits

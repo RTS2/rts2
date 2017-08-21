@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "expander.h"
 
 #include <check.h>
