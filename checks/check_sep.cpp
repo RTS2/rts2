@@ -288,7 +288,7 @@ print_time (const char *s, uint64_t tdiff)
 
 
 void
-check_image(const char *in, const char *out)
+check_image(const char *in, const char *out, sep_catalog **catalog)
 {
 	int i, status, nx, ny;
 	double *flux, *fluxerr, *fluxt, *fluxerrt, *area, *areat;
@@ -297,9 +297,11 @@ check_image(const char *in, const char *out)
 	uint64_t t0, t1;
 	sep_bkg *bkg = NULL;
 	float conv[] = { 1, 2, 1, 2, 4, 2, 1, 2, 1 };
-	sep_catalog *catalog = NULL;
+	sep_catalog *cat;
 	FILE *catout;
 	sep_image im;
+
+	*catalog = NULL;
 
 	status = 0;
 	flux = fluxerr = NULL;
@@ -348,29 +350,30 @@ check_image(const char *in, const char *out)
 	t0 = gettime_ns ();
 	status = sep_extract (&im, 1.5 * bkg->globalrms, SEP_THRESH_ABS,
 		5, conv, 3, 3, SEP_FILTER_CONV,
-		32, 1.0, 1, 1.0, &catalog);
+		32, 1.0, 1, 1.0, catalog);
+	cat = *catalog;
 	t1 = gettime_ns ();
 	if (status)
 		goto exit_test;
 	print_time ("sep_extract()", t1 - t0);
 
-	printf ("number of catalogue objects: %d\n", catalog->nobj);
+	printf ("number of catalogue objects: %d\n", cat->nobj);
 
 	/* aperture photometry */
 	im.noise = &(bkg->globalrms);/* set image noise level */
 	im.ndtype = SEP_TFLOAT;
-	fluxt = flux = (double *) malloc (catalog->nobj * sizeof (double));
-	fluxerrt = fluxerr = (double *) malloc (catalog->nobj * sizeof (double));
-	areat = area = (double *) malloc (catalog->nobj * sizeof (double));
-	flagt = flag = (short *) malloc (catalog->nobj * sizeof (short));
+	fluxt = flux = (double *) malloc (cat->nobj * sizeof (double));
+	fluxerrt = fluxerr = (double *) malloc (cat->nobj * sizeof (double));
+	areat = area = (double *) malloc (cat->nobj * sizeof (double));
+	flagt = flag = (short *) malloc (cat->nobj * sizeof (short));
 	t0 = gettime_ns ();
-	for (i = 0; i < catalog->nobj; i++, fluxt++, fluxerrt++, flagt++, areat++)
+	for (i = 0; i < cat->nobj; i++, fluxt++, fluxerrt++, flagt++, areat++)
 		sep_sum_circle (&im,
-			catalog->x[i], catalog->y[i], 5.0, 5, 0,
+			cat->x[i], cat->y[i], 5.0, 5, 0,
 			fluxt, fluxerrt, areat, flagt);
 	t1 = gettime_ns ();
 	printf ("sep_sum_circle() [r= 5.0]  %6.3f us/aperture\n",
-		(double) (t1 - t0) / 1000. / catalog->nobj);
+		(double) (t1 - t0) / 1000. / cat->nobj);
 
 	/* print results */
 	printf ("writing to file: %s\n", out);
@@ -388,13 +391,13 @@ check_image(const char *in, const char *out)
 	fprintf (catout, "# 9 a\n");
 	fprintf (catout, "# 10 b\n");
 	fprintf (catout, "# 11 theta\n");
-	for (i = 0; i < catalog->nobj; i++)
+	for (i = 0; i < cat->nobj; i++)
 	{
 		fprintf (catout,
 			"%3d %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g %#11.7g\n",
-			i, catalog->x[i], catalog->y[i], flux[i], fluxerr[i],
-			catalog->x2[i], catalog->y2[i], catalog->xy[i],
-			catalog->a[i], catalog->b[i], catalog->theta[i]);
+			i, cat->x[i], cat->y[i], flux[i], fluxerr[i],
+			cat->x2[i], cat->y2[i], cat->xy[i],
+			cat->a[i], cat->b[i], cat->theta[i]);
 	}
 	fclose (catout);
 
@@ -422,8 +425,11 @@ check_image(const char *in, const char *out)
 
 START_TEST(SEP1)
 {
-	check_image ("data/fram.fits", "data/fram.out");
-	check_image ("data/image.fits", "data/image.out");
+	sep_catalog *catalog;
+	check_image ("data/fram.fits", "data/fram.out", &catalog);
+	check_image ("data/image.fits", "data/image.out", &catalog);
+
+	ck_assert_int_eq (catalog->nobj, 65);
 }
 END_TEST
 
