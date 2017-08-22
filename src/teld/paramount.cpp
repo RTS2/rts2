@@ -256,6 +256,7 @@ class Paramount:public GEM
 		std::vector < ParaVal > paramountValues;
 
 		rts2core::ValueLong *axRa;
+		rts2core::ValueLong *axRaRaw;
 		rts2core::ValueLong *axDec;
 
 		rts2core::ValueLong *homeOffsetRa;
@@ -514,6 +515,7 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	logStream (MESSAGE_DEBUG) << "Paramount::Paramount" << sendLog;
 
 	createValue (axRa, "AXRA", "RA axis count", true);
+	createValue (axRaRaw, "AXRARAW", "raw RA axis count", true);
 	createValue (axDec, "AXDEC", "DEC axis count", true);
 
 	createValue (homeOffsetRa, "HOMEAXRA", "RA home offset", false);
@@ -1241,6 +1243,8 @@ int Paramount::doInfo ()
 	int32_t haOff;
 	ret = getHomeOffsetAxis (axis0, haOff);
 	if (ret) return ret;
+
+	axRaRaw->setValueLong (ac);
 
 	ac += haOff;
 
