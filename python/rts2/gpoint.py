@@ -64,6 +64,10 @@ def normalize_az_err(errs):
 def normalize_ha_err(errs):
 	return np.array([x if x < 180 else x - 360 for x in errs % 360])
 
+"""Returns pole distance, e.g. DEC distance from north (or south) pole in degrees"""
+def pole_distance(dec):
+    return map(lambda dd: 180 - dd if dd > 90 else dd, np.abs(dec))
+
 def _str_to_rad(s):
 	if s[-1] == 'd':
 		return np.radians(float(s[:-1]))
@@ -167,6 +171,8 @@ class GPoint:
 			return el
 		elif e.param[num] == 'zd':
 			return (np.pi / 2) - el
+                elif e.parma[num] == 'pd':
+                        return pole_distance(dec)
 		else:
 			sys.exit('unknow parameter {0}'.format(e.param[num]))
 
@@ -835,6 +841,7 @@ class GPoint:
 				'az':[self.aa_az,'rx','Azimuth'],
 				'alt':[self.aa_alt,'yx','Altitude'],
 				'dec':[self.aa_dec,'bx','Dec'],
+                                'pd':[pole_distance(self.aa_dec),'px','Pole distance'],
 				'ha':[self.aa_ha,'gx','HA'],
 				'real-err':[self.diff_angular_altaz*3600 if self.altaz else self.diff_angular_hadec*3600,'c+','Real angular error']
 			}
