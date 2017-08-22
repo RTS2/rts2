@@ -43,9 +43,16 @@ def model_line(fitsname, of, center=None):
         ra, dec = w.all_pix2world(center[0], center[1], 0)
     tar_telra = float(h['TAR_TELRA'])
     tar_teldec = float(h['TAR_TELDEC'])
+
     try:
-        of.write('\t'.join(map(str, [h['IMGID'], h['JD'], h['LST'], tar_telra, tar_teldec, h['AXRA'], h['AXDEC'], ra, dec])))
+        imgid = h['IMGID']
     except KeyError, ke:
-        of.write('\t'.join(map(str, [l, h['JD'], h['LST'], tar_telra, tar_teldec, h['AXRA'], h['AXDEC'], ra, dec])))
+        imgid = ln
+
+    if w.wcs.radesys == '':
+        of.write('# ' + '\t'.join(map(str, [imgid, h['JD'], h['LST'], tar_telra, tar_teldec, h['AXRA'], h['AXDEC'], ra, dec])))
+    else:
+        of.write('\t'.join(map(str, [imgid, h['JD'], h['LST'], tar_telra, tar_teldec, h['AXRA'], h['AXDEC'], ra, dec])))
+
     ln += 1
     of.write('\n')
