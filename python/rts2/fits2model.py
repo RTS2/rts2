@@ -20,23 +20,32 @@ from astropy import wcs
 from astropy.io import fits
 import sys
 
+ln = 1
+
+
 def first_line(fn, of):
-	"""First line for GEM model input."""
-	hdu = fits.open(fn)
-	h = hdu[0].header
-	of.write('#  Observation	  MJD	MNT-LST   RA-MNT   DEC-MNT 	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE\n')
-	of.write('# observatory {0} {1} {2}\n'.format(h['LONGITUD'],h['LATITUDE'],h['ALTITUDE']))
+    """First line for GEM model input."""
+    hdu = fits.open(fn)
+    h = hdu[0].header
+    of.write('#  Observation      MJD    MNT-LST   RA-MNT   DEC-MNT       AXRA      AXDEC   RA-TRUE  DEC-TRUE\n')
+    of.write('# observatory {0} {1} {2}\n'.format(h['LONGITUD'], h['LATITUDE'], h['ALTITUDE']))
+
 
 def model_line(fitsname, of, center=None):
-	"""Model line."""
-	hdulist = fits.open(fitsname)
-	h = hdulist[0].header
-	w = wcs.WCS(h)
-	if center is None:
-		ra,dec = w.all_pix2world(float(h['NAXIS1'])/2,float(h['NAXIS2'])/2,0)
-	else:
-		ra,dec = w.all_pix2world(center[0],center[1],0)
-	tar_telra = float(h['TAR_TELRA'])
-	tar_teldec = float(h['TAR_TELDEC'])
-	of.write('\t'.join(map(str,[h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec])))
-	of.write('\n')
+    """Model line."""
+    global ln
+    hdulist = fits.open(fitsname)
+    h = hdulist[0].header
+    w = wcs.WCS(h)
+    if center is None:
+        ra, dec = w.all_pix2world(float(h['NAXIS1'])/2, float(h['NAXIS2'])/2, 0)
+    else:
+        ra, dec = w.all_pix2world(center[0], center[1], 0)
+    tar_telra = float(h['TAR_TELRA'])
+    tar_teldec = float(h['TAR_TELDEC'])
+    try:
+        of.write('\t'.join(map(str, [h['IMGID'], h['JD'], h['LST'], tar_telra, tar_teldec, h['AXRA'], h['AXDEC'], ra, dec])))
+    except KeyError, ke:
+        of.write('\t'.join(map(str, [l, h['JD'], h['LST'], tar_telra, tar_teldec, h['AXRA'], h['AXDEC'], ra, dec])))
+    ln += 1
+    of.write('\n')
