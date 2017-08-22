@@ -72,7 +72,7 @@ def normalize_ha_err(errs):
 
 def pole_distance(dec):
     """Returns pole distance, e.g. DEC distance from north (or south) pole in degrees"""
-    return np.array([180 - dd if dd > 90 else dd for dd in np.abs(dec)])
+    return np.abs(90 - np.abs(dec))
 
 
 def _str_to_rad(s):
@@ -860,7 +860,7 @@ class GPoint:
                 'az': [self.aa_az, 'rx', 'Azimuth'],
                 'alt': [self.aa_alt, 'yx', 'Altitude'],
                 'dec': [self.aa_dec, 'bx', 'Dec'],
-                'pd': [pole_distance(self.aa_dec), 'px', 'Pole distance'],
+                'pd': [pole_distance(self.ar_dec), 'px', 'Pole distance'],
                 'ha': [self.aa_ha, 'gx', 'HA'],
                 'real-err': [self.diff_angular_altaz * 3600 if self.altaz else self.diff_angular_hadec * 3600, 'c+', 'Real angular error']
             }
