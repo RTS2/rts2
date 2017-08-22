@@ -33,99 +33,211 @@ import argparse
 import gettext
 gettext.install('rts2-build-model-tool')
 
-parser = argparse.ArgumentParser(description=_('Builds pointing model input data from BSC (Bright Star Catalogue) files.\n\nExample use:\n\n\trts2-model-bsc altazm'))
+parser = argparse.ArgumentParser(
+    description=_('Builds pointing model input data from BSC (Bright Star Catalogue) files.\
+\nExample use:\n\n\trts2-model-bsc altazm'))
 
-parser.add_argument('--server', help=_('URL to RTS2 XML-RPC server'), action='store', dest='server', default='http://localhost:8889')
-parser.add_argument('--user', help=_('RTS2 web server username'), action='store', dest='user', default=None)
-parser.add_argument('--password', help=_('password for web user'), action='store', dest='password', default=None)
-parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
-parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
-parser.add_argument('--path', help=_('path (alt:az,alt:az,#bscnum..) for model build'), action='store', dest='path', default=rts2.altazpath.constant_path([45,75]))
-parser.add_argument('--mags', help=_('magnitude range for BSC lookup'), action='store', dest='mags', default='4.5:2')
-parser.add_argument('--modelname', help=_('filename where model lines will be stored'), action='store', dest='modelname', default=None)
-parser.add_argument('--maxspiral', help=_('maximal number of steps in spiral'), action='store', type=int, dest='maxspiral', default=500)
-parser.add_argument('--maxverify', help=_('maximal number of tries to verify offset'), action='store', type=int, dest='maxverify', default=5)
-parser.add_argument('--verifyradius', help=_('radius fore sucessfull verify (in pixels)'), action='store', type=float, dest='verifyradius', default=5)
-parser.add_argument('--verifywcs', help=_('WCS for verify images - arcseconds per pixel:rotang:flip'), action='store', dest='verifywcs', type=str, default='0.335:270:X')
-parser.add_argument('--minflux', help=_('minimal flux for star to be considered as bright star. You can use k and m to indicate thousands and milions'), action='store', type=rts2.kmparse.kmparse, dest='minflux')
-parser.add_argument('--minalt', help=_('minimal altitude (in degrees)'), action='store', type=float, dest='minalt', default=15)
-parser.add_argument('--sleeptime', help=_('sleep time after move'), action='store', type=float, dest='sleeptime', default=20)
-parser.add_argument('--timeout', help=_('timeout after move'), action='store', type=float, dest='timeout', default=7)
-parser.add_argument('--imagescript', help=_('RTS2 script for camera exposure'), action='store', dest='imagescript', default='E 1')
-parser.add_argument('--camera', help=_('name of camera to take exposures'), action='store', dest='camera', default='C0')
-parser.add_argument('--center', help=_('image center (rotator center, if on alt-az)'), action='store', dest='center', default=None)
-parser.add_argument('action', help=_('action (line,spiral,model,bright-star,verify-brights,'), action='store', default=None, choices=['line','spiral','model','bright-star','verify-brights','print-stars'], nargs=1)
+parser.add_argument(
+    '--server', help=_('URL to RTS2 XML-RPC server'),
+    action='store', dest='server', default='http://localhost:8889'
+)
+
+parser.add_argument(
+    '--user', help=_('RTS2 web server username'),
+    action='store', dest='user', default=None
+)
+
+parser.add_argument(
+    '--password', help=_('password for web user'),
+    action='store', dest='password', default=None
+)
+
+parser.add_argument(
+    '-v', help=_('increases verbosity'),
+    action='count', dest='verbose', default=0
+)
+
+parser.add_argument(
+    '--ds9', help=_('use DS9 to display images'),
+    action='store_true', dest='useDS9', default=False
+)
+
+parser.add_argument(
+    '--path', help=_('path (alt:az,alt:az,#bscnum..) for model build'),
+    action='store', dest='path',
+    default=rts2.altazpath.constant_path([45, 75])
+)
+
+parser.add_argument(
+    '--mags', help=_('magnitude range for BSC lookup'),
+    action='store', dest='mags', default='4.5:2'
+)
+
+parser.add_argument(
+    '--modelname', help=_('filename where model lines will be stored'),
+    action='store', dest='modelname', default=None
+)
+
+parser.add_argument(
+    '--maxspiral', help=_('maximal number of steps in spiral'),
+    action='store', type=int, dest='maxspiral', default=500
+)
+
+parser.add_argument(
+    '--maxverify', help=_('maximal number of tries to verify offset'),
+    action='store', type=int, dest='maxverify', default=5
+)
+
+parser.add_argument(
+    '--verifyradius', help=_('radius fore sucessfull verify (in pixels)'),
+    action='store', type=float, dest='verifyradius', default=5
+)
+
+parser.add_argument(
+    '--verifywcs',
+    help=_('WCS for verify images - arcseconds per pixel:rotang:flip'),
+    action='store', dest='verifywcs', type=str, default='0.335:270:X'
+)
+
+parser.add_argument(
+    '--minflux', help=_('minimal flux for star to be considered as bright star.\
+You can use k and m to indicate thousands and milions'),
+    action='store', type=rts2.kmparse.kmparse, dest='minflux'
+)
+
+parser.add_argument(
+    '--minalt', help=_('minimal altitude (in degrees)'),
+    action='store', type=float, dest='minalt', default=15
+)
+
+parser.add_argument(
+    '--sleeptime', help=_('sleep time after move'),
+    action='store', type=float, dest='sleeptime', default=20
+)
+
+parser.add_argument(
+    '--timeout', help=_('timeout after move'),
+    action='store', type=float, dest='timeout', default=7
+)
+
+parser.add_argument(
+    '--imagescript', help=_('RTS2 script for camera exposure'),
+    action='store', dest='imagescript', default='E 1'
+)
+
+parser.add_argument(
+    '--camera', help=_('name of camera to take exposures'),
+    action='store', dest='camera', default='C0'
+)
+
+parser.add_argument(
+    '--center', help=_('image center (rotator center, if on alt-az)'),
+    action='store', dest='center', default=None
+)
+
+parser.add_argument(
+    'action', help=_('action (line,spiral,model,bright-star,verify-brights,'),
+    action='store', default=None,
+    choices=[
+        'line', 'spiral', 'model', 'bright-star',
+        'verify-brights', 'print-stars'
+    ],
+    nargs=1
+)
 
 options = parser.parse_args()
 
-j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+j = rts2.rtsapi.JSONProxy(
+    options.server, options.user, options.password, verbose=options.verbose)
 
-__mm = list(map(float,options.mags.split(':')))
+__mm = list(map(float, options.mags.split(':')))
 if len(__mm) != 2:
-	sys.exit(_('Magnitude limit shall be two float values separated with :'))
+    sys.exit(_('Magnitude limit shall be two float values separated with :'))
 __mm.sort()
 mag_max, mag_min = __mm
 
 fov_center = None
 if options.center is not None:
-	fov_center = list(map(float,options.center.split(':')))
+    fov_center = list(map(float, options.center.split(':')))
 
 __verifywcs = options.verifywcs.split(':')
 if len(__verifywcs) != 3:
-	sys.exit(_('VerifyWCS should be three : separated values (asec/pix,rotang and flip), are: {0}'.format(options.verifywcs)))
+    sys.exit(
+        _('VerifyWCS should be three : separated values \
+(asec/pix,rotang and flip), are: {0}'.format(options.verifywcs))
+    )
+
 __verifywcs_asecpix = float(__verifywcs[0])
 __verifywcs_rotang = float(__verifywcs[1])
 __verifywcs_flip = __verifywcs[2]
 
 try:
-	tp = rts2.tpvp.TPVP(j,options.camera,options.sleeptime)
-	tp.set_mags(mag_max,mag_min)
-	tp.set_wcs(fov_center,__verifywcs_asecpix,__verifywcs_rotang,__verifywcs_flip)
+    tp = rts2.tpvp.TPVP(j, options.camera, options.sleeptime)
+    tp.set_mags(mag_max, mag_min)
+    tp.set_wcs(fov_center, __verifywcs_asecpix,
+               __verifywcs_rotang, __verifywcs_flip)
 
-	if options.path == 'random':
-		path = rts2.altazpath.random_path()
-	elif options.path[:6] == 'const[':
-		path = rts2.altazpath.constant_path(list(map(float,options.path[6:-1].split(','))))
-	elif options.path[:6] == 'azsep[':
-		az,rest = options.path[6:].split(':')
-		path = rts2.altazpath.constant_path(list(map(float,rest[:-1].split(','))), azimuth_separation=float(az))
-	elif type(options.path) == str:
-		path = []
-		for p in options.path.split(','):
-			if p[0] == '#':
-				path.append(int(p[1:]))
-			else:
-				path.append(list(map(float,p.split(':'))))
-	else:
-		path = options.path
+    if options.path == 'random':
+        path = rts2.altazpath.random_path()
+    elif options.path[:6] == 'const[':
+        path = rts2.altazpath.constant_path(
+            list(map(float, options.path[6:-1].split(','))))
+    elif options.path[:6] == 'azsep[':
+        az, rest = options.path[6:].split(':')
+        path = rts2.altazpath.constant_path(
+            list(map(float, rest[:-1].split(','))),
+            azimuth_separation=float(az)
+        )
+    elif type(options.path) == str:
+        path = []
+        for p in options.path.split(','):
+            if p[0] == '#':
+                path.append(int(p[1:]))
+            else:
+                path.append(list(map(float, p.split(':'))))
+    else:
+        path = options.path
 
-	if options.action[0] == 'line':
-		print(tp.get_altazm_line())
-	elif options.action[0] == 'spiral':
-		tp.run_spiral(options.spiral,options.timeout)
-	elif options.action[0] == 'model':
-		tp.run_manual_path(options.timeout,path,options.modelname,options.maxspiral,options.imagescript,options.useDS9)
-	elif options.action[0] == 'bright-star':
-		for p in path:
-			bsc = tp.find_bright_star(p[0],p[1])
-			j.executeCommand(tp.telescope,'move_pm {0} {1} {2} {3}'.format(bsc[1],bsc[2],bsc[7],bsc[8]))
-			rts2.tpvp.wait_for_key(options.timeout)
-	elif options.action[0] == 'verify-brights':
-		tp.run_verify_brigths(options.timeout,path,options.modelname,options.imagescript,options.useDS9,options.maxverify,options.verifyradius,options.maxspiral,options.minflux,options.minalt)
-	elif options.action[0] == 'print-stars':
-		for p in path:
-			bsc = tp.find_bright_star(p[0],p[1],options.minalt)
-			print('move_pm {0} {1} {2} {3}'.format(bsc[1],bsc[2],bsc[7],bsc[8]))
-	else:
-		argparse.help()
-		sys.exit(1)
-	sys.exit(0)
+    if options.action[0] == 'line':
+        print(tp.get_altazm_line())
+    elif options.action[0] == 'spiral':
+        tp.run_spiral(options.spiral, options.timeout)
+    elif options.action[0] == 'model':
+        tp.run_manual_path(
+            options.timeout, path, options.modelname,
+            options.maxspiral, options.imagescript, options.useDS9
+        )
+    elif options.action[0] == 'bright-star':
+        for p in path:
+            bsc = tp.find_bright_star(p[0], p[1])
+            j.executeCommand(
+                tp.telescope,
+                'move_pm {0} {1} {2} {3}'.format(
+                    bsc[1], bsc[2], bsc[7], bsc[8]
+                )
+            )
+            rts2.tpvp.wait_for_key(options.timeout)
+    elif options.action[0] == 'verify-brights':
+        tp.run_verify_brigths(
+            options.timeout, path, options.modelname, options.imagescript,
+            options.useDS9, options.maxverify, options.verifyradius,
+            options.maxspiral, options.minflux, options.minalt
+        )
+    elif options.action[0] == 'print-stars':
+        for p in path:
+            bsc = tp.find_bright_star(p[0], p[1], options.minalt)
+            print('move_pm {0} {1} {2} {3}'.format(
+                bsc[1], bsc[2], bsc[7], bsc[8]))
+    else:
+        argparse.help()
+        sys.exit(1)
+    sys.exit(0)
 
 except Exception as ex:
-	if options.verbose:
-		import traceback
-		traceback.print_exc()
-	else:
-		print('error', ex, file=sys.stderr)
+    if options.verbose:
+        import traceback
+        traceback.print_exc()
+    else:
+        print('error', ex, file=sys.stderr)
 
-	sys.exit(1)
+    sys.exit(1)
