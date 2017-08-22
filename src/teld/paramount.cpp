@@ -1110,9 +1110,9 @@ int Paramount::doPara()
 			//logStream (MESSAGE_DEBUG) << "_MKS3DoSetVal32 axis1" << sendLog;
 			//ret1 = _MKS3DoSetVal32 (axis1, CMD_VAL32_ENCODER_POS, 0);
 
-			logStream (MESSAGE_DEBUG) << "MKS3PosTargetSet axis0" << sendLog;
+			logStream (MESSAGE_DEBUG) << "MKS3PosTargetSet axis0 " << ac << sendLog;
 			ret0 = MKS3PosTargetSet (axis0, (long) ac);
-			logStream (MESSAGE_DEBUG) << "MKS3PosTargetSet axis1" << sendLog;
+			logStream (MESSAGE_DEBUG) << "MKS3PosTargetSet axis1 " << dc << sendLog;
 			ret1 = MKS3PosTargetSet (axis1, (long) dc);
 
 			// if that's too far..home us
