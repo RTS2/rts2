@@ -29,8 +29,8 @@ namespace rts2telmodel
 //* maximal number of terms
 #define MAX_TERMS   4
 
-typedef enum { GPOINT_OFFSET=0, GPOINT_SIN, GPOINT_COS, GPOINT_TAN, GPOINT_SINCOS, GPOINT_COSCOS, GPOINT_SINSIN, GPOINT_ABSSIN, GPOINT_ABSCOS, GPOINT_CSC, GPOINT_SEC, GPOINT_COT, GPOINT_LASTFUN } function_t;
-typedef enum { GPOINT_AZ=0, GPOINT_EL, GPOINT_ZD, GPOINT_LASTTERM } terms_t;
+typedef enum { GPOINT_OFFSET=0, GPOINT_SIN, GPOINT_COS, GPOINT_TAN, GPOINT_SINCOS, GPOINT_COSCOS, GPOINT_SINSIN, GPOINT_ABSSIN, GPOINT_ABSCOS, GPOINT_CSC, GPOINT_SEC, GPOINT_COT, GPOINT_SINH, GPOINT_COSH, GPOINT_TANH, GPOINT_SECH, GPOINT_CSCH, GPOINT_COTH, GPOINT_LASTFUN } function_t;
+typedef enum { GPOINT_AZ=0, GPOINT_EL, GPOINT_ZD, GPOINT_HA, GPOINT_DEC, GPOINT_PD, GPOINT_LASTTERM } terms_t;
 
 /**
  * Extra parameters, currently only for Alt-Az telescopes.
@@ -42,7 +42,7 @@ class ExtraParam
 	public:
 		ExtraParam ();
 		void parse (std::istream &is);
-		double getValue (double az, double el);
+		double getValue (double az, double el, double ha, double dec);
 
 		std::string toString (char frmt = 'r');
 
@@ -55,7 +55,7 @@ class ExtraParam
 		long double consts[MAX_TERMS];
 
 	private:
-		double getParamValue (double az, double alt, int p);
+		double getParamValue (double az, double alt, double ha, double dec, int p);
 };
 
 /**
@@ -86,7 +86,7 @@ class GPointModel:public TelModel
 		/**
 		 * Calculate error for alt-az model. Returns expected error in err parameter.
 		 */
-		void getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err);
+		void getErrAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ, struct ln_hrz_posn *err);
 
 		virtual std::istream & load (std::istream & is);
 		virtual std::ostream & print (std::ostream & os, char frmt = 'r');

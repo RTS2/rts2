@@ -27,13 +27,17 @@ void teardown_gpoint (void)
 START_TEST(model_altaz_34)
 {
 	struct ln_hrz_posn test_hrz;
+	struct ln_equ_posn test_equ;
 	struct ln_hrz_posn test_err;
+
+	test_equ.ra = 0;
+	test_equ.dec = 0;
 
 	testGPoint_altaz_34.print (std::cout, '"');
 
 	test_hrz.az = 0;
 	test_hrz.alt = 45;
-	testGPoint_altaz_34.getErrAltAz (&test_hrz, &test_err);
+	testGPoint_altaz_34.getErrAltAz (&test_hrz, &test_equ, &test_err);
 
 	ck_assert_dbl_eq (ln_rad_to_deg (0.05235987755982989), 3, 10e-4);
 	ck_assert_dbl_eq (ln_rad_to_deg (0.05235987755982989) * 3600.0, 10800, 10e-4);
@@ -46,7 +50,7 @@ START_TEST(model_altaz_34)
 
 	test_hrz.az = 90;
 	test_hrz.alt = 45;
-	testGPoint_altaz_34.getErrAltAz (&test_hrz, &test_err);
+	testGPoint_altaz_34.getErrAltAz (&test_hrz, &test_equ, &test_err);
 
 	ck_assert_dbl_eq (test_hrz.az, 92, 10e-4);
 	ck_assert_dbl_eq (test_hrz.alt, 43, 10e-4);
@@ -56,7 +60,7 @@ START_TEST(model_altaz_34)
 
 	test_hrz.az = 30;
 	test_hrz.alt = 15;
-	testGPoint_altaz_34.getErrAltAz (&test_hrz, &test_err);
+	testGPoint_altaz_34.getErrAltAz (&test_hrz, &test_equ, &test_err);
 
 	ck_assert_dbl_eq (test_hrz.az, 30.5, 10e-4);
 	ck_assert_dbl_eq (test_hrz.alt, 19, 10e-4);
@@ -2071,7 +2075,11 @@ START_TEST(model_n32)
 {229.7398088152,90.6103923050,   -0.4795366712, 0.0033609713}
 };
 	struct ln_hrz_posn test_hrz;
+	struct ln_equ_posn test_equ;
 	struct ln_hrz_posn test_err;
+
+	test_equ.ra = 0;
+	test_equ.dec = 0;
 
 	testGPoint_n32.print (std::cout, '"');
 
@@ -2080,7 +2088,7 @@ START_TEST(model_n32)
 		std::cout << "testing " << i << " " << tps[i][0] << " " << tps[i][1] << std::endl;
 		test_hrz.az = tps[i][0];
 		test_hrz.alt = tps[i][1];
-		testGPoint_n32.getErrAltAz (&test_hrz, &test_err);
+		testGPoint_n32.getErrAltAz (&test_hrz, &test_equ, &test_err);
 
 		ck_assert_dbl_eq (test_hrz.az, tps[i][0] + tps[i][2], 10e-4);
 		ck_assert_dbl_eq (test_hrz.alt, tps[i][1] + tps[i][3], 10e-4);

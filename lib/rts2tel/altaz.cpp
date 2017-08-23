@@ -103,7 +103,7 @@ int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 
 	struct ln_hrz_posn model_change;
 
-	applyModelAltAz (&hrz_modelled, &model_change);
+	applyModelAltAz (&hrz_modelled, pos, &model_change);
 
 	int ret = hrz2counts (&hrz_modelled, azc, altc, used_flipping, use_flipped, writeValue, haMargin, false);
 	if (ret)

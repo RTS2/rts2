@@ -37,8 +37,8 @@ ExtraParam::ExtraParam ()
 }
 
 // function strings
-const char *ExtraParam::fns[] = {"offset", "sin", "cos", "tan", "sincos", "coscos", "sinsin", "abssin", "abscos", "csc", "sec", "cot"};
-const char *ExtraParam::pns[] = {"az", "el", "zd"};
+const char *ExtraParam::fns[] = {"offset", "sin", "cos", "tan", "sincos", "coscos", "sinsin", "abssin", "abscos", "csc", "sec", "cot", "sinh", "cosh", "tanh", "sech", "csch", "coth"};
+const char *ExtraParam::pns[] = {"az", "el", "zd", "ha", "dec", "pd"};
 
 /**
  * Reads from input stream degree (radians, degrees ends with d, arcmin with ' or m, arcsec with " or s).
@@ -189,7 +189,7 @@ void ExtraParam::parse (std::istream &is)
 		consts[t] = 1;
 }
 
-double ExtraParam::getParamValue (double az, double el, int p)
+double ExtraParam::getParamValue (double az, double el, double ha, double dec, int p)
 {
 	switch (terms[p])
 	{
@@ -199,39 +199,55 @@ double ExtraParam::getParamValue (double az, double el, int p)
 			return el;
 		case GPOINT_ZD:
 			return M_PI / 2.0 - el;
+		case GPOINT_HA:
+			return ha;
+		case GPOINT_DEC:
+			return dec;
 		default:
 			return 0;
 	}
 }
 
-double ExtraParam::getValue (double az, double el)
+double ExtraParam::getValue (double az, double el, double ha, double dec)
 {
 	switch (function)
 	{
 		case GPOINT_OFFSET:
 			return params[0];
 		case GPOINT_SIN:
-			return params[0] * sinl (consts[0] * getParamValue (az, el, 0));
+			return params[0] * sinl (consts[0] * getParamValue (az, el, ha, dec, 0));
 		case GPOINT_COS:
-			return params[0] * cosl (consts[0] * getParamValue (az, el, 0));
+			return params[0] * cosl (consts[0] * getParamValue (az, el, ha, dec, 0));
 		case GPOINT_ABSSIN:
-			return params[0] * abs (sinl (consts[0] * getParamValue (az, el, 0)));
+			return params[0] * abs (sinl (consts[0] * getParamValue (az, el, ha, dec, 0)));
 		case GPOINT_ABSCOS:
-			return params[0] * abs (cosl (consts[0] * getParamValue (az, el, 0)));
+			return params[0] * abs (cosl (consts[0] * getParamValue (az, el, ha, dec, 0)));
 		case GPOINT_TAN:
-			return params[0] * tanl (consts[0] * getParamValue (az, el, 0));
+			return params[0] * tanl (consts[0] * getParamValue (az, el, ha, dec, 0));
 		case GPOINT_CSC:
-			return params[0] / cosl (consts[0] * getParamValue (az, el, 0));
+			return params[0] / cosl (consts[0] * getParamValue (az, el, ha, dec, 0));
 		case GPOINT_SEC:
-			return params[0] / sinl (consts[0] * getParamValue (az, el, 0));
+			return params[0] / sinl (consts[0] * getParamValue (az, el, ha, dec, 0));
 		case GPOINT_COT:
-			return params[0] / tanl (consts[0] * getParamValue (az, el, 0));
+			return params[0] / tanl (consts[0] * getParamValue (az, el, ha, dec, 0));
+		case GPOINT_SINH:
+			return params[0] * sinhl (consts[0] * getParamValue (az, el, ha, dec, 0));
+		case GPOINT_COSH:
+			return params[0] * coshl (consts[0] * getParamValue (az, el, ha, dec, 0));
+		case GPOINT_TANH:
+			return params[0] * tanhl (consts[0] * getParamValue (az, el, ha, dec, 0));
+		case GPOINT_SECH:
+			return params[0] / sinhl (consts[0] * getParamValue (az, el, ha, dec, 0));
+		case GPOINT_CSCH:
+			return params[0] / coshl (consts[0] * getParamValue (az, el, ha, dec, 0));
+		case GPOINT_COTH:
+			return params[0] / tanhl (consts[0] * getParamValue (az, el, ha, dec, 0));
 		case GPOINT_SINCOS:
-			return params[0] * sinl (consts[0] * getParamValue (az, el, 0)) * cosl (consts[1] * getParamValue (az, el, 1));
+			return params[0] * sinl (consts[0] * getParamValue (az, el, ha, dec, 0)) * cosl (consts[1] * getParamValue (az, el, ha, dec, 1));
 		case GPOINT_COSCOS:
-			return params[0] * cosl (consts[0] * getParamValue (az, el, 0)) * cosl (consts[1] * getParamValue (az, el, 1));
+			return params[0] * cosl (consts[0] * getParamValue (az, el, ha, dec, 0)) * cosl (consts[1] * getParamValue (az, el, ha, dec, 1));
 		case GPOINT_SINSIN:
-			return sinl (consts[0] * getParamValue (az, el, 0)) * sinl (consts[1] * getParamValue (az, el, 1));
+			return sinl (consts[0] * getParamValue (az, el, ha, dec, 0)) * sinl (consts[1] * getParamValue (az, el, ha, dec, 1));
 		default:
 			return 0;
 	}
@@ -325,11 +341,13 @@ int GPointModel::reverse (struct ln_equ_posn *pos, double sid)
 	return reverse (pos);
 }
 
-void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
+void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ, struct ln_hrz_posn *err)
 {
-	long double az_r, el_r;
+	long double az_r, el_r, ha_r, dec_r;
 	az_r = ln_deg_to_rad (hrz->az);
 	el_r = ln_deg_to_rad (hrz->alt);
+	ha_r = ln_deg_to_rad (equ->ra);
+	dec_r = ln_deg_to_rad (equ->dec);
 
 	long double sin_az = sinl (az_r);
 	long double cos_az = cosl (az_r);
@@ -350,10 +368,10 @@ void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 	// now handle extra params
 	std::list <ExtraParam *>::iterator it;
 	for (it = extraParamsAz.begin (); it != extraParamsAz.end (); it++)
-		err->az += (*it)->getValue (az_r, el_r);
+		err->az += (*it)->getValue (az_r, el_r, ha_r, dec_r);
 
 	for (it = extraParamsEl.begin (); it != extraParamsEl.end (); it++)
-		err->alt += (*it)->getValue (az_r, el_r);
+		err->alt += (*it)->getValue (az_r, el_r, ha_r, dec_r);
 
 	err->az = ln_rad_to_deg (err->az);
 	err->alt = ln_rad_to_deg (err->alt);

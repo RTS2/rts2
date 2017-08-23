@@ -1241,11 +1241,11 @@ void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_po
 	}
 }
 
-void Telescope::applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
+void Telescope::applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ, struct ln_hrz_posn *err)
 {
 	if (!model || calModel->getValueBool () == false)
 		return;
-	model->getErrAltAz (hrz, err);
+	model->getErrAltAz (hrz, equ, err);
 	modelRaDec->setValueRaDec (err->alt, err->az);
 }
 
