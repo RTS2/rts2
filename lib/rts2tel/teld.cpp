@@ -2854,6 +2854,17 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		}
 		return ret;
 	}
+	else if (conn->isCommand ("getdut1"))
+	{
+		if (!conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
+		if (dut1fn == NULL)
+		{
+			conn->sendCommandEnd (DEVDEM_E_IGNORE, "DUT1 file was not provided");
+			return DEVDEM_E_IGNORE;
+		}
+		return requestDUT1 ();
+	}
 	return rts2core::Device::commandAuthorized (conn);
 }
 
@@ -2890,8 +2901,36 @@ void Telescope::updateDUT1 ()
 
 	double dut1 = getDUT1 (dut1fn, gmt);
 	if (!std::isnan (dut1))
+	{
 		telDUT1->setValueDouble (dut1);
+		valueGood (telDUT1);
+	}
 	else
+	{
 		valueError (telDUT1);
+	}
 	sendValueAll (telDUT1);
+}
+
+int Telescope::requestDUT1 ()
+{
+	std::string backup (dut1fn);
+	backup += ".1";
+	unlink (backup.c_str ());
+	rename (dut1fn, backup.c_str ());
+	if (retrieveDUT1 (dut1fn))
+	{
+		logStream (MESSAGE_ERROR) << "cannot retrieve DUt1 file" << sendLog;
+		return DEVDEM_E_HW;
+	}
+	updateDUT1 ();
+	if (telDUT1->isError ())
+	{
+		logStream (MESSAGE_ERROR) << "wrong DUT, reverting to old DUT1 file" << sendLog;
+		rename (backup.c_str (), dut1fn);
+		updateDUT1 ();
+		return DEVDEM_E_HW;
+	}
+	logStream (MESSAGE_INFO) << "update DUT1 file from the internet" << sendLog;
+	return DEVDEM_OK;
 }

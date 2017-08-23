@@ -42,7 +42,7 @@ START_TEST(UPDATE)
 	const char *fn = "dut1_download";
 	unlink (fn);
 
-	int ret = updateDUT1 (fn, NULL);
+	int ret = retrieveDUT1 (fn, NULL);
 	if (ret < 0)
 	{
 		printf ("cannot download updated file, skipping update tests");

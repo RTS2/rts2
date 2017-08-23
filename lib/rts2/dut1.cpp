@@ -30,7 +30,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/XmlRpcClient.h"
 
-int updateDUT1 (const char *fn, const char *url)
+int retrieveDUT1 (const char *fn, const char *url)
 {
 	if (url == NULL)
 		url = "http://maia.usno.navy.mil/ser7/finals2000A.daily";
@@ -60,7 +60,9 @@ int updateDUT1 (const char *fn, const char *url)
 	}
 	write (fo, reply, reply_length);
 	fchmod (fo, 0644);
+	syncfs (fo);
 	close (fo);
+	ret = 0;
 
 failed:
 	delete[] reply;

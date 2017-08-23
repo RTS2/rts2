@@ -24,10 +24,13 @@
 extern "C" {
 #endif
 
-int updateDUT1 (const char *fn, const char *url);
+/**
+ * Retrieves DUT1 from the internet.
+ */
+int retrieveDUT1 (const char *fn, const char *url = NULL);
 
 /**
- * Retrieves DUT from filename stored on HDD for given GM date.
+ * Calculates DUT from filename stored on HDD for given GM date.
  * File with offsets can be downloaded from: 
  * http://maia.usno.navy.mil/ser7/finals2000A.daily
  *

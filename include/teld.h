@@ -1427,6 +1427,8 @@ class Telescope:public rts2core::Device
 
 		void updateDUT1 ();
 		const char *dut1fn;
+
+		int requestDUT1 ();
 };
 
 };
