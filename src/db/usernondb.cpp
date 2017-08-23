@@ -164,6 +164,7 @@ int UserApp::newUser ()
 	}
 	
 	logins.setUserPassword (std::string (user), passwd);
+	logins.setAllowedDevices (std::string (user), "*");
 	logins.save (userfile);
 	return 0;
 }

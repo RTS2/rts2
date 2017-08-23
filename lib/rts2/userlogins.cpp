@@ -62,10 +62,10 @@ void UserLogins::load (const char *filename)
 		std::vector <std::string> fields = SplitStr (line, ":");
 		if (fields.size () == 2 || fields.size () == 3)
 		{
-			logins[fields[0]] = std::pair <std::string, std::vector <std::string> > ();
+			logins[fields[0]] = std::pair <std::string, std::string> ();
 			logins[fields[0]].first = fields[1];
-			if (logins.size () == 3)
-				logins[fields[0]].second = SplitStr (fields[2], " ");
+			if (fields.size () == 3)
+				logins[fields[0]].second = fields[2];
 		}
 		else
 		{
@@ -81,17 +81,9 @@ void UserLogins::save (const char *filename)
 	std::ofstream ofs (filename);
 	ofs.exceptions (std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
 
-	for (std::map <std::string, std::pair <std::string, std::vector <std::string> > >::iterator iter = logins.begin (); iter != logins.end (); iter++)
+	for (std::map <std::string, std::pair <std::string, std::string> >::iterator iter = logins.begin (); iter != logins.end (); iter++)
 	{
-		ofs << iter->first << ':' << iter->second.first;
-		for (std::vector <std::string>::iterator diter = iter->second.second.begin (); diter != iter->second.second.end(); diter++)
-		{
-			if (diter == iter->second.second.begin ())
-				ofs << ':';
-			else
-				ofs << ' ';
-			ofs << *diter;
-		}
+		ofs << iter->first << ':' << iter->second.first << ":" << iter->second.second;
 	}
 
 	ofs.close ();
@@ -99,17 +91,18 @@ void UserLogins::save (const char *filename)
 
 void UserLogins::listUser (std::ostream &os)
 {
-	for (std::map <std::string, std::pair <std::string, std::vector <std::string> > >::iterator iter = logins.begin (); iter != logins.end (); iter++)
+	for (std::map <std::string, std::pair <std::string, std::string> >::iterator iter = logins.begin (); iter != logins.end (); iter++)
 		os << iter->first << std::endl;
 }
 
-bool UserLogins::verifyUser (std::string username, std::string pass, std::vector <std::string> *allowedDevices)
+bool UserLogins::verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
 	if (logins.find (username) == logins.end ())
 		return false;
+	if (userPermissions)
+		userPermissions->parsePermissions(logins[username].second.c_str());
+
 	// crypt password using salt..
-	if (allowedDevices)
-		*allowedDevices = logins[username].second;
 #ifdef RTS2_HAVE_CRYPT
 	char *crp = crypt (pass.c_str (), logins[username].first.c_str ());
 	return logins[username].first == std::string(crp);
@@ -131,9 +124,14 @@ void UserLogins::setUserPassword (std::string username, std::string newpass)
 #endif
 }
 
+void UserLogins::setAllowedDevices (std::string username, std::string devices)
+{
+	logins[username].second = devices;
+}
+
 void UserLogins::deleteUser (std::string username)
 {
-	std::map <std::string, std::pair <std::string, std::vector <std::string> > >::iterator iter = logins.find (username);
+	std::map <std::string, std::pair <std::string, std::string> >::iterator iter = logins.find (username);
 	if (iter == logins.end ())
 		throw rts2core::Error ("cannot find user with name " + username);
 	logins.erase (iter);

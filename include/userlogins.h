@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+#include "userpermissions.h"
+
 namespace rts2core
 {
 
@@ -40,15 +42,17 @@ class UserLogins
 
 		void listUser (std::ostream &os);
 
-		bool verifyUser (std::string username, std::string pass, std::vector <std::string> *allowedDevices = NULL);
+		bool verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions = NULL);
 
 		void setUserPassword (std::string username, std::string newpass);
+
+		void setAllowedDevices (std::string username, std::string devices);
 
 		void deleteUser (std::string username);
 	
 	private:
 		// pair is holding password and allowed devices
-		std::map <std::string, std::pair <std::string, std::vector <std::string> > > logins;
+		std::map <std::string, std::pair <std::string, std::string > > logins;
 };
 
 }

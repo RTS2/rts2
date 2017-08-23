@@ -1133,13 +1133,15 @@ void HttpD::reloadEventsFile ()
 bool HttpD::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
 	if (emptyConnectString())
-		return userLogins.verifyUser(username, pass);
+	{
+		return userLogins.verifyUser(username, pass, userPermissions);
+	}
 	return verifyUser (username, pass, userPermissions);
 }
 #else
 bool HttpD::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	return userLogins.verifyUser (username, pass);
+	return userLogins.verifyUser (username, pass, userPermissions);
 }
 
 bool rts2xmlrpc::verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
