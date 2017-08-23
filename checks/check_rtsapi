@@ -64,11 +64,25 @@ class JSONTest(unittest.TestCase):
             lock_prefix, server,
             '--width=5000', '--height=5000'
         ])
+
+        try:
+            os.unlink('DUT1')
+        except OSError:
+            pass
+
+        self.teld_nf = subprocess.Popen([
+            '../src/teld/rts2-teld-dummy',
+            '-i', '--debug', '-d T0',
+            lock_prefix, server,
+            '--dut1-filename=DUT1'
+        ])
+
         time.sleep(10)
         self.j = rtsapi.createProxy(
             'http://localhost:8889', 'pytest', 'pytest')
 
     def tearDown(self):
+        self.teld_nf.terminate()
         self.camd_nf.terminate()
         self.httpd.terminate()
         self.centrald.terminate()
@@ -83,5 +97,7 @@ class JSONTest(unittest.TestCase):
         self.j.refresh()
         self.assertEqual(self.j.getValue('NF', 'average'), numpy.average(data))
 
+    def testGetDUT1(self):
+        self.j.executeCommand('T0', 'getdut1')
 
 unittest.main()
