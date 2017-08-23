@@ -1598,6 +1598,12 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 		}
 	}
 
+	// update DUT1 during evening
+	if (dut1fn != NULL && (new_state & SERVERD_STATUS_MASK) == SERVERD_EVENING)
+	{
+		requestDUT1();
+	}
+
 	if (blockOnStandby->getValueBool () == true)
 	{
 		if (new_state & SERVERD_ONOFF_MASK)
