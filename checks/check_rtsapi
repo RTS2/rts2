@@ -97,7 +97,11 @@ class JSONTest(unittest.TestCase):
         self.j.refresh()
         self.assertEqual(self.j.getValue('NF', 'average'), numpy.average(data))
 
-    def testGetDUT1(self):
+    def testValues(self):
+        self.j.setValue('T0', 'AMBTEMP', 20)
+        self.j.refresh()
+        self.assertEqual(self.j.getValue('T0', 'AMBTEMP'), 20)
+
         self.j.executeCommand('T0', 'getdut1')
 
 unittest.main()
