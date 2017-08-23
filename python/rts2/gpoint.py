@@ -50,6 +50,14 @@ def flip_dec(a_dec, dec):
     return a_dec
 
 
+def rad_flip_dec(a_dec, dec):
+    if dec > np.pi/2.0:
+        return np.pi - a_dec
+    elif dec < -np.pi/2.0:
+        return -np.pi - a_dec
+    return a_dec
+
+
 def print_model_input(filename, first):
     hdulist = fits.open(filename)
     h = hdulist[0].header
@@ -72,7 +80,12 @@ def normalize_ha_err(errs):
 
 def pole_distance(dec):
     """Returns pole distance, e.g. DEC distance from north (or south) pole in degrees"""
-    return np.abs(90 - np.abs(dec))
+    return 90 - np.abs(np.array([flip_dec(dd, dd) for dd in dec]))
+
+
+def rad_pole_distance(dec):
+    """Returns pole distance, e.g. DEC distance from north (or south) pole in degrees"""
+    return np.pi/2.0 - np.abs(np.array([rad_flip_dec(dd, dd) for dd in dec]))
 
 
 def _str_to_rad(s):
@@ -192,7 +205,7 @@ class GPoint:
         elif e.param[num] == 'zd':
             return (np.pi / 2) - el
         elif e.param[num] == 'pd':
-            return pole_distance(dec)
+            return rad_pole_distance(dec)
         else:
             sys.exit('unknow parameter {0}'.format(e.param[num]))
 
@@ -219,6 +232,18 @@ class GPoint:
             return 1.0 / np.cos(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
         elif e.function == 'cot':
             return 1.0 / np.tan(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
+        elif e.function == 'sinh':
+            return np.sinh(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
+        elif e.function == 'cosh':
+            return np.cosh(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
+        elif e.function == 'tanh':
+            return np.tanh(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
+        elif e.function == 'sech':
+            return 1.0 / np.cosh(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
+        elif e.function == 'csch':
+            return 1.0 / np.sinh(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
+        elif e.function == 'coth':
+            return 1.0 / np.tanh(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0))
         elif e.function == 'sincos':
             return np.sin(e.consts[0] * self.get_extra_val(e, ha, dec, az, el, 0)) * np.cos(e.consts[1] * self.get_extra_val(e, ha, dec, az, el, 1))
         elif e.function == 'sinsin':
@@ -259,7 +284,8 @@ class GPoint:
         ret = - params['ih'] \
             - params['ch'] / np.cos(a_dec) \
             - params['np'] * np.tan(a_dec) \
-            - (params['me'] * np.sin(a_ha) - params['ma'] * np.cos(a_ha)) * np.tan(a_dec) \
+            - (params['me'] * np.sin(a_ha) \
+            - params['ma'] * np.cos(a_ha)) * np.tan(a_dec) \
             - params['tf'] * np.cos(self.latitude_r) * np.sin(a_ha) / np.cos(a_dec) \
             - params['daf'] * (np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
         for e in self.extra:
@@ -860,7 +886,7 @@ class GPoint:
                 'az': [self.aa_az, 'rx', 'Azimuth'],
                 'alt': [self.aa_alt, 'yx', 'Altitude'],
                 'dec': [self.aa_dec, 'bx', 'Dec'],
-                'pd': [pole_distance(self.ar_dec), 'px', 'Pole distance'],
+                'pd': [pole_distance(self.aa_dec), 'px', 'Pole distance'],
                 'ha': [self.aa_ha, 'gx', 'HA'],
                 'real-err': [self.diff_angular_altaz * 3600 if self.altaz else self.diff_angular_hadec * 3600, 'c+', 'Real angular error']
             }
