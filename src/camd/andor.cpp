@@ -1289,7 +1289,7 @@ int Andor::initAndorID ()
 {
 	char textbuf[TEXTBUF_LEN];
 	char name[128];
-	int n, ret;
+	int n = 0, ret;
 
 	// Set camera type etc.
 	switch (cap.ulCameraType)
@@ -1301,7 +1301,7 @@ int Andor::initAndorID ()
 		n = snprintf (textbuf, TEXTBUF_LEN, "ANDOR iXon-Ultra");
 		break;
 	default:
-		snprintf (textbuf, TEXTBUF_LEN, "ANDOR type%lu", (unsigned long) cap.ulCameraType);
+		n = snprintf (textbuf, TEXTBUF_LEN, "ANDOR type %lu", (unsigned long) cap.ulCameraType);
 		break;
 	}
 
