@@ -1222,9 +1222,9 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 	return 0;
 }
 
-void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD)
+void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD)
 {
-	computeModel (m_pos, model_change, JD);
+	computeModel (m_pos, hrz, model_change, JD);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
         tt_pos->ra -= model_change->ra;
@@ -1264,7 +1264,7 @@ void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_po
 	}
 }
 
-void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD)
+void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *model_change, double JD)
 {
 	struct ln_equ_posn hadec;
 	double ra;
@@ -1280,7 +1280,7 @@ void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	hadec.ra = ls - pos->ra;	// intentionally without ln_range_degrees
 	hadec.dec = pos->dec;
 
-	model->reverse (&hadec);
+	model->reverse (&hadec, hrz);
 
 	// get back from model - from HA
 	ra = ls - hadec.ra;

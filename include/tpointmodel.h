@@ -61,9 +61,8 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 		virtual int apply (struct ln_equ_posn *pos);
 		virtual int applyVerbose (struct ln_equ_posn *pos);
 
-		virtual int reverse (struct ln_equ_posn *pos);
-		virtual int reverseVerbose (struct ln_equ_posn *pos);
-		virtual int reverse (struct ln_equ_posn *pos, double sid);
+		virtual int reverse (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz);
+		virtual int reverseVerbose (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz);
 
 		/**
 		 * Return RMS in degrees.

@@ -1202,6 +1202,8 @@ int Gemini::startResync ()
 	struct ln_equ_posn pos_flip[2];
 	struct ln_equ_posn model_change_flip[2];
 
+	struct ln_hrz_posn hrz;
+
 	bool flip_possible[2];
 	double travel_distance = 360.0;
 	int i;
@@ -1223,6 +1225,12 @@ int Gemini::startResync ()
 	JD = ln_get_julian_from_sys ();
 	locSidTimeDeg = getLocSidTime () * 15.0;
 
+	struct ln_lnlat_posn latpos;
+	latpos.lat = telLatitude->getValueDouble ();
+	latpos.lng = telLongitude->getValueDouble ();
+
+	ln_get_hrz_from_equ (&pos, &latpos, JD, &hrz);
+
 	haActual = ln_range_degrees (locSidTimeDeg - getTelRa ());
 	if (haActual > 180.0)
 		haActual -= 360.0;
@@ -1230,7 +1238,7 @@ int Gemini::startResync ()
 	// for both flips....
 	for (i = 0; i <= 1; i++)
 	{
-		computeModel (&pos_flip[i], &model_change_flip[i], JD);
+		computeModel (&pos_flip[i], &hrz, &model_change_flip[i], JD);
 		applyCorrRaDec (&pos_flip[i]);
 		// We don't take care of dec 90deg overflow, as it is not necessary here, we only want to measure distances and feasibility.
 		// Also, we don't want to solve funny things like flip change because of model or corrections... But gemini can handle these values, hopefully, so we don't care :-).
@@ -1505,6 +1513,7 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 	char readback[101];
 	int32_t v205, v206, v205_new, v206_new;
 	struct ln_equ_posn pos, tt_pos, model_change;
+	struct ln_hrz_posn hrz;
 	double JD;
 
 	normalizeRaDec (set_ra, set_dec);
@@ -1515,8 +1524,14 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
         tt_pos.dec = set_dec;
 	JD = ln_get_julian_from_sys ();
 
+	struct ln_lnlat_posn latpos;
+	latpos.lat = telLatitude->getValueDouble ();
+	latpos.lng = telLongitude->getValueDouble ();
+
+	ln_get_hrz_from_equ (&pos, &latpos, JD, &hrz);
+
 	zeroCorrRaDec ();
-	applyModel (&pos, &tt_pos, &model_change, JD);
+	applyModel (&pos, &hrz, &tt_pos, &model_change, JD);
 
 	if ((tel_write_ra (pos.ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (pos.dec) < 0) || usleep (USEC_SEC / 15))
 		return -1;

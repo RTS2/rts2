@@ -369,6 +369,7 @@ void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 	struct ln_equ_posn posTar;
 	struct ln_equ_posn posTarUn;
 	struct ln_equ_posn posImg;
+	struct ln_hrz_posn hrz;
 	LibnovaRaDec posMount;
 	LibnovaRaDec posMountRaw;
 
@@ -393,11 +394,14 @@ void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 	LibnovaRaDec pImg (&posImg);
 
 	double lst = 15.0 * img.getExposureLST ();
+
+	ln_get_hrz_from_equ_sidereal_time (&posTarUn, rts2core::Configuration::instance ()->getObserver (), lst, &hrz);
+
 	posTarUn.ra = lst - posTarUn.ra;
 	if (verbose)
-		model->reverseVerbose (&posTarUn);
+		model->reverseVerbose (&posTarUn, &hrz);
 	else
-		model->reverse (&posTarUn);
+		model->reverse (&posTarUn, &hrz);
 	posTarUn.ra = lst - posTarUn.ra;
 	LibnovaRaDec pTarUn2 (&posTarUn);
 

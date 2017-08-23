@@ -276,6 +276,13 @@ GPointModel::~GPointModel (void)
 
 	for (it = extraParamsEl.begin (); it != extraParamsEl.end (); it++)
 		delete *it;
+
+	for (it = extraParamsHa.begin (); it != extraParamsHa.end (); it++)
+		delete *it;
+
+	for (it = extraParamsDec.begin (); it != extraParamsDec.end (); it++)
+		delete *it;
+
 }
 
 int GPointModel::load (const char *modelFile)
@@ -310,16 +317,39 @@ int GPointModel::applyVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int GPointModel::reverse (struct ln_equ_posn *pos)
+int GPointModel::reverse (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
 {
 	double d_tar, r_tar;
-	pos->ra = ln_deg_to_rad (pos->ra);
-	pos->dec = ln_deg_to_rad (pos->dec);
+	double az_r, el_r, ha_r, dec_r;
+	az_r = ln_deg_to_rad (hrz->az);
+	el_r = ln_deg_to_rad (hrz->alt);
+	ha_r = ln_deg_to_rad (pos->ra);
+	dec_r = ln_deg_to_rad (pos->dec);
 
 	double lat_r = getLatitudeRadians ();
 
-	d_tar = pos->dec + params[0] + params[1] * cos (pos->ra) + params[2] * sin (pos->ra) + params[3] * (cos (lat_r) * sin (pos->dec) * cos (pos->ra) - sin (lat_r) * cos(pos->dec)) + params[8] * cos (pos->ra);
-	r_tar = pos->ra + params[4] + params[5] / cos (pos->dec) + params[6] * tan (pos->dec) + (params[1] * sin (pos->ra) - params[2] * cos (pos->ra)) * tan (pos->dec) + params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) + params[7] * (sin (lat_r) * tan (pos->dec) + cos (lat_r) * cos (pos->ra));
+	d_tar = dec_r
+		+ params[0]
+		+ params[1] * cos (ha_r)
+		+ params[2] * sin (ha_r)
+		+ params[3] * (cos (lat_r) * sin (dec_r) * cos (ha_r) - sin (lat_r) * cos(dec_r))
+		+ params[8] * cos (ha_r);
+
+	r_tar = ha_r
+		+ params[4]
+		+ params[5] / cos (dec_r)
+		+ params[6] * tan (dec_r)
+		+ (params[1] * sin (ha_r) - params[2] * cos (ha_r)) * tan (dec_r)
+		+ params[3] * cos (lat_r) * sin (ha_r) / cos (dec_r)
+		+ params[7] * (sin (lat_r) * tan (dec_r) + cos (lat_r) * cos (ha_r));
+
+	// now handle extra params
+	std::list <ExtraParam *>::iterator it;
+	for (it = extraParamsHa.begin (); it != extraParamsHa.end (); it++)
+		r_tar += (*it)->getValue (az_r, el_r, ha_r, dec_r);
+
+	for (it = extraParamsDec.begin (); it != extraParamsDec.end (); it++)
+		d_tar += (*it)->getValue (az_r, el_r, ha_r, dec_r);
 
 	pos->ra = ln_rad_to_deg (r_tar);
 	pos->dec = ln_rad_to_deg (d_tar);
@@ -327,18 +357,13 @@ int GPointModel::reverse (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int GPointModel::reverseVerbose (struct ln_equ_posn *pos)
+int GPointModel::reverseVerbose (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
 {
 	logStream (MESSAGE_DEBUG) << "Before: " << pos->ra << " " << pos->dec << sendLog;
-	reverse (pos);
+	reverse (pos, hrz);
 	logStream (MESSAGE_DEBUG) << "After: " << pos->ra << " " << pos->dec << sendLog;
 
 	return 0;
-}
-
-int GPointModel::reverse (struct ln_equ_posn *pos, double sid)
-{
-	return reverse (pos);
 }
 
 void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ, struct ln_hrz_posn *err)
@@ -354,15 +379,15 @@ void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ,
 	long double cos_el = cosl (el_r);
 	long double tan_el = tanl (el_r);
 
-	err->az = - params[0] \
-		+ params[1] * sin_az  * tan_el \
-		- params[2] * cos_az * tan_el \
-		- params[3] * tan_el \
+	err->az = - params[0]
+		+ params[1] * sin_az  * tan_el
+		- params[2] * cos_az * tan_el
+		- params[3] * tan_el
 		+ params[4] / cos_el;
 
-	err->alt = - params[5] \
-		+ params[1] * cos_az \
-		+ params[2] * sin_az \
+	err->alt = - params[5]
+		+ params[1] * cos_az
+		+ params[2] * sin_az
 		+ params[6] * cos_el;
 
 	// now handle extra params
@@ -454,6 +479,10 @@ std::istream & GPointModel::load (std::istream & is)
 				extraParamsAz.push_back (p);
 			else if (ci_axis == "el")
 				extraParamsEl.push_back (p);
+			else if (ci_axis ==  "ha")
+				extraParamsHa.push_back (p);
+			else if (ci_axis == "dec")
+				extraParamsDec.push_back (p);
 			else
 			{
 				logStream (MESSAGE_ERROR) << "invalid axis name " << axis << sendLog;

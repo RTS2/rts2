@@ -66,7 +66,7 @@ int TPointModel::applyVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int TPointModel::reverse (struct ln_equ_posn *pos)
+int TPointModel::reverse (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn pos2;
 
@@ -83,7 +83,7 @@ int TPointModel::reverse (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int TPointModel::reverseVerbose (struct ln_equ_posn *pos)
+int TPointModel::reverseVerbose (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn pos2;
 
@@ -109,15 +109,6 @@ int TPointModel::reverseVerbose (struct ln_equ_posn *pos)
 		logStream (MESSAGE_DEBUG) << "After2: " << pos->ra << " " << pos->dec
 			<< "(" << (pos->ra - old_pos.ra) << " "
 			<< (pos->dec - old_pos.dec) << ")" << sendLog;
-	}
-	return 0;
-}
-
-int TPointModel::reverse (struct ln_equ_posn *pos, double sid)
-{
-	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
-	{
-		(*iter)->reverse (pos, getLatitudeRadians ());
 	}
 	return 0;
 }

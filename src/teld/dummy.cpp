@@ -183,12 +183,14 @@ int Dummy::startResync ()
 
 	getTarget (&tar);
         getTarget (&tt_pos);
-	applyModel (&tar, &tt_pos, &model_change, JD);
+
+	ln_get_hrz_from_equ (&tar, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
+
+	applyModel (&tar, &hrz, &tt_pos, &model_change, JD);
 
 	setTarget (tar.ra, tar.dec);
 	setTelTarget (tar.ra, tar.dec);
 
-	ln_get_hrz_from_equ (&tar, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot move to negative altitude (" << hrz.alt << ")" << sendLog;

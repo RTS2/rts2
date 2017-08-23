@@ -96,7 +96,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 		tt_pos.dec = (double) (tn_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-		applyModel (&tn_pos, &tt_pos, &n_model_change, utc1 + utc2);
+		applyModel (&tn_pos, &hrz, &tt_pos, &n_model_change, utc1 + utc2);
 
 		tn_ac += (int32_t) (n_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
 		tn_dc -= (int32_t) (n_model_change.dec * decCpd->getValueDouble ());
@@ -131,7 +131,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 		tt_pos.dec = (double) (tf_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 	
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-		applyModel (&tf_pos, &tt_pos, &f_model_change, utc1 + utc2);
+		applyModel (&tf_pos, &hrz, &tt_pos, &f_model_change, utc1 + utc2);
 
 		tf_ac += (int32_t) (f_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
 		tf_dc -= (int32_t) (f_model_change.dec * decCpd->getValueDouble ());    // flipped, that means DEC is counted in opossite direction

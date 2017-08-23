@@ -481,7 +481,7 @@ void Trencin::setGuidingSpeed (double value)
 
 		if (raPAN->getValueInteger () != 0)
 		  	tel_kill (trencinConnRa, 0x02);
-		if (decPAN->getValueInteger () != 0);
+		if (decPAN->getValueInteger () != 0)
 			tel_kill (trencinConnDec, 0x02);
 	}
 

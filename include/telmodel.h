@@ -74,9 +74,8 @@ class TelModel
 		virtual int apply (struct ln_equ_posn *pos) = 0;
 		virtual int applyVerbose (struct ln_equ_posn *pos) = 0;
 
-		virtual int reverse (struct ln_equ_posn *pos) = 0;
-		virtual int reverseVerbose (struct ln_equ_posn *pos) = 0;
-		virtual int reverse (struct ln_equ_posn *pos, double sid) = 0;
+		virtual int reverse (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz) = 0;
+		virtual int reverseVerbose (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz) = 0;
 
 		virtual void getErrAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ, struct ln_hrz_posn *err) { logStream (MESSAGE_ERROR) << "unexpected getErrAltAz call" << sendLog; };
 

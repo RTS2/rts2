@@ -126,7 +126,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
         tt_pos.ra = u_pos.ra;
         tt_pos.dec = u_pos.dec;
 
-	applyModel (&u_pos, &tt_pos, &model_change, JD);
+	applyModel (&u_pos, &hrz, &tt_pos, &model_change, JD);
 
         // when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
 	if (telLatitude->getValueDouble () < 0)
