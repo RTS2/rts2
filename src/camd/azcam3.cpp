@@ -277,11 +277,11 @@ int AzCam3::initHardware()
 		commandConn->setDebug ();
 	}
 
-	int ret = callCommand ("abort\r\n");
+	int ret = callCommand ("exposure.abort\r\n");
 	if (ret)
 		return ret;
 
-	callCommand ("readout_abort\r\n");
+	//callCommand ("controller.ReadoutAbort()\r\n");
 
 	initCameraChip (101, 101, 0, 0);
 	//Default binning should be in the config. 
