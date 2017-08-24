@@ -229,11 +229,11 @@ int AzCam3::initHardware()
 		commandConn->setDebug ();
 	}
 
-	int ret = callCommand ("exposure.Abort()\r\n");
+	int ret = callCommand ("exposure.abort\r\n");
 	if (ret)
 		return ret;
 
-	callCommand ("controller.ReadoutAbort()\r\n");
+	//callCommand ("controller.ReadoutAbort()\r\n");
 
 	initCameraChip (101, 101, 0, 0);
 
@@ -392,8 +392,8 @@ int AzCam3::startExposure()
 
 int AzCam3::stopExposure ()
 {
-	callCommand ("exposure.Abort()\r\n");
-	callCommand ("controller.ReadoutAbort()\r\n");
+	callCommand ("exposure.abort\r\n");
+	//callCommand ("controller.ReadoutAbort()\r\n");
 	return Camera::stopExposure ();
 }
 
