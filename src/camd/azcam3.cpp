@@ -34,7 +34,6 @@ class AzCam3DataConn:public rts2core::ConnTCP
 
 		ssize_t getDataSize () { return dataSize; }
 		int getRecvs() {return recvs;}
-		bool imgWasRecvd() {return wasRecvd;}
 
 	private:
 		ssize_t dataSize;
@@ -42,7 +41,6 @@ class AzCam3DataConn:public rts2core::ConnTCP
 		char header[257];
 		int outFile;
 		int recvs;
-		bool wasRecvd;
 };
 
 AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
@@ -52,7 +50,6 @@ AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_m
 	memset (header, 0, sizeof (header));
 	outFile = 0;
 	recvs = 0;
-	wasRecvd = false;
 }
 
 int AzCam3DataConn::receive (rts2core::Block *block)
@@ -83,9 +80,9 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 			return 0;
 		}
 
-		static char rbuf[2048*4];
+		static char rbuf[2048];
 
-		rec = recv (sock, rbuf, 2048*4, 0);
+		rec = recv (sock, rbuf, 2048, 0);
 		
 		if (rec > 0)
 		{
@@ -281,7 +278,7 @@ int AzCam3::initHardware()
 	if (ret)
 		return ret;
 
-	//callCommand ("controller.ReadoutAbort()\r\n");
+	callCommand ("controller.readout_abort\r\n");
 
 	initCameraChip (101, 101, 0, 0);
 	//Default binning should be in the config. 
@@ -631,14 +628,15 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
 	int ret = setupDataConnection ();
 	if (ret)
-		return ret;
-	
-	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+		return -2;
+
+	ret = callCommand ("exposure.set_image_type", "object");
 	if (ret)
 		return ret;
 	
 	commandConn->sendData("rts2.focuser_run\r\n");
 
+	ret = callCommand ("exposure.integrate\r\n");
 	if (ret)
 		return ret;
 	sleep (5);
@@ -648,16 +646,48 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 
 int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
 {
-	//int ret;
-	removeConnection( dataConn );
-	dataConn = NULL;
-	fitsDataTransfer("/tmp/m.fits");
+	int ret;
+	if (lastShiftExpTime != exptime)
+	{
+		ret = callCommand ("exposure.set_exposure_time", exptime);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
+			return -2;
+		}
+		lastShiftExpTime = exptime;
+	}
+	ret = callCommand ("controller.parshift", shift);
+	if (ret)
+		return -2;
+	ret = callCommand ("exposure.integrate\r\n");
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
 int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
-	//int ret;
+	int ret;
+	if (lastShiftExpTime != exptime)
+	{
+		ret = callCommand ("exposure.set_exposure_time", exptime);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
+			return -2;
+		}
+		lastShiftExpTime = exptime;
+	}
+
+	ret = callCommand ("controller.parshift", shift);
+	if (ret)
+		return -2;
+	ret = callCommand ("exposure.integrate\r\n");
+	if (ret)
+		return -2;
+	ret = callCommand ("exposure.readout\r\n");
+	if (ret)
+		return -2;
+	commandConn->sendData ("exposure.end\r\n");
 	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 
