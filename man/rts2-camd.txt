@@ -1,0 +1,92 @@
+RTS2-CAMD(7)
+============
+
+NAME
+----
+
+rts2-camd - generic manual page for camera drivers.
+
+SYNOPSIS
+--------
+
+*rts2-camd-'camera driver'* [--focdev 'focuser name'] [--wheeldev 'filter wheel'] [-e 'default exposure'] [-s 'hostname[:port]'] [--modefile 'filename'] [-d 'device name'] [--detsize 'x:y:w:h'] [--filter-offsets 'fo1:fo2:..'] [--offsets-file 'filename']
+
+DESCRIPTION
+-----------
+
+This manual page describes camera drivers available in RTS2, and common
+options for camera driver. For description of options common to all
+devices, please consult linkman:rts2-device[7].
+
+SPECIFYING ARRANGEMENT OF MULTI CHANNEL DETECTORS
+------------------------------------------------
+
+Camera driver can specify variables which are transformed into description of how a channel in multi-channel
+device is oriented on screen. It is safe to ignore the further description for a single channel device.
+
+Channel orientation is specified by its starting point in XY detector coordinates, and its deltas, e.g. ratio
+and orientation of detector pixels to channel pixels. Please note that the current model allows only for
+channels axis aligned with detector axis. Assuming the 4 channel 1000x1000 detector, with readout amplifiers (=
+first pixel of the image) on locations marked with +, as depicted on the next graphics:
+
+----
+  +------|------+
+  |      |      |
+  |  4   |   3  |
+  |      |      |
+  --------------|
+  |      |      |
+  |  1   |   2  |
+  |      |      |
+  +-------------+
+----
+
+the following arguments should be supplied to rts2-camd (preferably in /etc/rts2/devices):
+**--detsize 0:0:2000:2000 --chanstarts 0:0,2000:0,2000:2000,0:2000 --chandeltas 1:1,-1:1,-1:-1,1:-1**.
+
+Please note this only adds certain keywords to FITS header. This does not
+change axis orientation of the recorded data.
+
+OPTIONS
+-------
+
+* **--wheeldev** name of attached (external) filter wheel device
+
+* **--focdev** name of attached (external) focuser device
+
+* **--filter-offsets** filter offsets. Offsets are specified in filter order
+  (see -f option), and applicable only if camera has either embedded filter
+  wheel, or a wheel is attached to camera using **--wheeldev** option. And of
+  course you need to add focuser with **--focdev** option.
+
+* **--offsets-file** file with filter offsets. Line in the file represents one
+  entry, and consists of filter name and offset (in focuser steps). Lines
+  starting with # are ignored.  Applicable only when **--focdev** and
+  **--wheeldev** are provided.
+
+Example filter offset file:
+
+----
+# Simple filter offset file
+# R filter, -200 steps
+R -200
+# B filter, +20 steps
+B 20
+----
+
+Camera drivers
+--------------
+* linkman:rts2-camd-fli[1] Finger Lakes Instruments RTS2 driver
+
+* linkman:rts2-camd-reflex[1] STA Reflex controller RTS2 driver
+
+* linkman:rts2-camd-gxccd[1] MI CCD (GX CCD) RTS2 driver
+
+* linkman:rts2-camd-andor[1] Andor CCDs RTS2 driver
+
+SEE ALSO
+--------
+
+* linkman:rts2[7]
+
+* linkman:rts2-device[7]

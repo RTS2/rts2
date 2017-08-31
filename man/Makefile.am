@@ -3,7 +3,8 @@ MD_PAGES = \
     gpoint.txt \
     rts2.target.txt \
     rts2-httpd.txt \
-    rts2-scriptexec.txt
+    rts2-scriptexec.txt \
+    rts2-camd.txt
 
 EXTRA_DIST = \
     rts2.conf \
@@ -38,7 +39,6 @@ EXTRA_DIST = \
     rts2-sensor-system.xml \
     rts2-sensor-apcups.xml \
     rts2-sensor-mrakomer.xml \
-    rts2-camd.xml \
     rts2-dome.xml \
     rts2-focusd.xml \
     rts2-teld.xml \
@@ -95,7 +95,6 @@ man_MANS += \
     rts2-sensor-system.1 \
     rts2-sensor-apcups.1 \
     rts2-sensor-mrakomer.1 \
-    rts2-camd.7 \
     rts2-dome.7 \
     rts2-focusd.7 \
     rts2-teld.7 \
@@ -167,7 +166,8 @@ man_MANS += \
     gpoint.1 \
     rts2.target.5 \
     rts2-httpd.7 \
-    rts2-scriptexec.1
+    rts2-scriptexec.1 \
+    rts2-camd.7
 
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
