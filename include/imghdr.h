@@ -63,15 +63,19 @@
 #define RTS2_DATA_USHORT    20
 #define RTS2_DATA_ULONG     40
 
+#define RTS2_H_FLIPPED     0x01			//! horizontaly flip data before writing to FITS file
+#define RTS2_V_FLIPPED     0x02			//! verticaly flip data before writing to FITS file
+
 struct imghdr
 {
-	int16_t data_type;
-	int16_t naxes;					 //! Number of axes.
-	int32_t sizes[MAX_AXES];		 //! Sizes in given axes.
-	int16_t binnings[MAX_AXES];		 //! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
-	int16_t filter;					 //! Camera filter
+	int16_t data_type;			//! date type - please see RTS2_DATA_XXXX constants
+	int8_t flags;				//! Image flags - flipped axis,..
+	int8_t naxes;				//! Number of axes.
+	int32_t sizes[MAX_AXES];		//! Sizes in given axes.
+	int16_t binnings[MAX_AXES];		//! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
+	int16_t filter;				//! Camera filter
 	int16_t shutter;
-	int16_t x, y;					 //! image beginning (detector coordinates)
-	uint16_t channel;				 //! which channel is those data
+	int16_t x, y;				//! image beginning (detector coordinates)
+	uint16_t channel;			//! which channel is those data
 };
 #endif							 // __RTS_IMGHDR__
