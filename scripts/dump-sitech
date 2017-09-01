@@ -226,21 +226,19 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--az-from',
-    dest='az_from',
-    help=_('X range in degrees'),
+    '--az-range',
+    dest='az_range',
+    help=_('X range in degrees (from..to)'),
     action='store',
-    default=None,
-    type=float
+    default=None
 )
 
 parser.add_argument(
-    '--az-to',
-    dest='az_to',
-    help=_('X range in degrees'),
+    '--colors',
+    dest='colors',
+    help=_('plot colors'),
     action='store',
-    default=None,
-    type=float
+    default=None
 )
 
 args = parser.parse_args()
@@ -540,15 +538,15 @@ command date,X target,Y target,X speed,Y speed\n')
                 positions.y_pos]) + args.az_offset
             if commands is not None:
                 c_x = numpy.array([
-                    360.0 * float(y) / args.az_cpr for y in
-                    commands.y_dest
+                    360.0 * float(y) / args.az_cpr for y in commands.y_dest
                 ]) + args.az_offset
         elif x_axis == 'alt-counts':
             p_x = positions.x_pos
             if commands is not None:
                 c_x = commands.x_dest
         elif x_axis == 'alt-deg':
-            p_x = [360.0 * float(y) / args.az_cpr for y in positions.x_pos]
+            p_x = [360.0 * float(y) / args.az_cpr for y in
+                positions.x_pos]
             if commands is not None:
                 c_x = [
                     360.0 * float(y) / args.az_cpr for y in
@@ -559,13 +557,12 @@ command date,X target,Y target,X speed,Y speed\n')
 
         return p_x, c_x
 
-    def __plot_extra(
-        self, lines_x, lines_y,
+    def __plot_extra(self, lines_x, lines_y, positions,
         extra, label, color
     ):
         if extra in args.plot_extra:
             if self.plot_x:
-                extra_data = self.positions[self.positions.x_type == extra]
+                extra_data = positions[positions.x_type == extra]
                 lab = 'Alt ' + label
                 if self.axis_x is None:
                     axis = self.__add_plot(gs, lab)
@@ -588,7 +585,7 @@ command date,X target,Y target,X speed,Y speed\n')
                 lines_x.append(p)
                 self.gs_index += 1
             if self.plot_y:
-                extra_data = self.positions[self.positions.y_type == extra]
+                extra_data = positions[positions.y_type == extra]
                 lab = 'Az ' + label
                 if self.axis_y is None:
                     axis = self.__add_plot(gs, lab)
@@ -611,18 +608,10 @@ command date,X target,Y target,X speed,Y speed\n')
                 lines_y.append(p)
                 self.gs_index += 1
 
-    def plot(self):
-        if args.speed_dif and self.commands is not None:
-            self.bpn += 1
-
-        self.fig = pylab.figure()
-
-        if args.axis == 'both':
-            gs = gridspec.GridSpec(self.bpn * 2, 1)
-        else:
-            gs = gridspec.GridSpec(self.bpn, 1)
-
-        p_x, c_x = ps.get_x_data(args.x_axis, self.positions, self.commands)
+    def plot_fn(self, fn):
+        positions = self.positions[self.positions.fns == fn]
+        commands = self.commands[self.commands.fns == fn]
+        p_x, c_x = ps.get_x_data(args.x_axis, positions, commands)
 
         self.ax_current = None
         self.gs_index = 0
@@ -638,19 +627,19 @@ command date,X target,Y target,X speed,Y speed\n')
 
         if self.plot_x and not(self.plot_errors):
             self.__add_plot(gs, 'Alt pos')
-            self.ax_current.plot(p_x, self.positions.x_pos, args.markers)
+            self.ax_current.plot(p_x, positions.x_pos, args.markers)
             self.gs_index += 1
 
         if self.plot_y and not(self.plot_errors):
             self.__add_plot(gs, 'Az pos')
-            self.ax_current.plot(p_x, self.positions.y_pos, 'g' + args.markers)
+            self.ax_current.plot(p_x, positions.y_pos, 'g' + args.markers)
             self.gs_index += 1
 
         if self.plot_x:
             self.__add_plot(gs, 'Alt err')
             p, = self.ax_current.plot(
                 p_x,
-                self.positions.x_err,
+                positions.x_err,
                 args.markers,
                 label='Alt err'
             )
@@ -663,7 +652,7 @@ command date,X target,Y target,X speed,Y speed\n')
             self.__add_plot(gs, 'Az err')
             p, = self.ax_current.plot(
                 p_x,
-                self.positions.y_err,
+                positions.y_err,
                 'g' + args.markers,
                 label='Az err'
             )
@@ -672,44 +661,57 @@ command date,X target,Y target,X speed,Y speed\n')
                 self.axis_y = self.ax_current
                 lines_y.append(p)
 
-        if self.plot_x and self.commands is not None and not(self.plot_errors):
+        if self.plot_x and commands is not None and not(self.plot_errors):
             self.__add_plot(gs, 'Alt speed')
-            self.ax_current.plot(c_x, self.commands.x_speed, args.markers)
+            self.ax_current.plot(c_x, commands.x_speed, args.markers)
             self.gs_index += 1
 
-        if self.plot_y and self.commands is not None and not(self.plot_errors):
+        if self.plot_y and commands is not None and not(self.plot_errors):
             self.__add_plot(gs, 'Az speed')
             self.ax_current.plot(
-                c_x, self.commands.y_speed, 'g' + args.markers)
+                c_x, commands.y_speed, 'g' + args.markers)
             self.gs_index += 1
 
-        if args.speed_dif and self.plot_x and self.commands is not None:
+        if args.speed_dif and self.plot_x and commands is not None:
             self.__add_plot(gs, 'Alt sp dif')
             self.ax_current.plot(c_x[1:], numpy.diff(
-                self.commands.x_speed),
+                commands.x_speed),
                 'b' + args.markers
             )
             self.gs_index += 1
 
-        if args.speed_dif and self.plot_y and self.commands is not None:
+        if args.speed_dif and self.plot_y and commands is not None:
             self.__add_plot(gs, 'Az sp dif')
             self.ax_current.plot(c_x[1:], numpy.diff(
-                self.commands.y_speed),
+                commands.y_speed),
                 'g' + args.markers
             )
             self.gs_index += 1
 
-        self.__plot_extra(lines_x, lines_y, 'E', 'error', 'y')
-        self.__plot_extra(lines_x, lines_y, 'C', 'current', 'k')
-        self.__plot_extra(lines_x, lines_y, 'S', 'supply', 'c')
-        self.__plot_extra(lines_x, lines_y, 'T', 'temperature', 'm')
-        self.__plot_extra(lines_x, lines_y, 'P', 'PID output', 'r')
+        self.__plot_extra(lines_x, lines_y, positions, 'E', 'error', 'y')
+        self.__plot_extra(lines_x, lines_y, positions, 'C', 'current', 'k')
+        self.__plot_extra(lines_x, lines_y, positions, 'S', 'supply', 'c')
+        self.__plot_extra(lines_x, lines_y, positions, 'T', 'temperature', 'm')
+        self.__plot_extra(lines_x, lines_y, positions, 'P', 'PID output', 'r')
 
         # add labels, if needed
         if self.axis_x is not None and len(args.plot_extra) > 0:
             self.axis_x.legend(lines_x, [l.get_label() for l in lines_x])
         if self.axis_y is not None and len(args.plot_extra) > 0:
             self.axis_y.legend(lines_y, [l.get_label() for l in lines_y])
+
+    def plot(self):
+        self.fig = pylab.figure()
+
+        if args.speed_dif and self.commands is not None:
+            self.bpn += 1
+
+        if args.axis == 'both':
+            gs = gridspec.GridSpec(self.bpn * 2, 1)
+        else:
+            gs = gridspec.GridSpec(self.bpn, 1)
+
+        self.plot_fn(1)
 
         self.fig.subplots_adjust(hspace=0)
 
