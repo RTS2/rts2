@@ -145,7 +145,7 @@ bool XmlRpcServerConnection::readHeader()
 			lp = cp + 16;
 		else if ((ep - cp > 12) && (strncasecmp(cp, "Connection: ", 12) == 0))
 			kp = cp + 12;
-		else if ((ep - cp > 12) && (strncasecmp (cp, "Authorization: ", 15) == 0))
+		else if ((ep - cp > 15) && (strncasecmp (cp, "Authorization: ", 15) == 0))
 			ap = cp + 15;
 		else if ((ep - cp >= 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
