@@ -186,7 +186,7 @@ int Dummy::startResync ()
 
 	ln_get_hrz_from_equ (&tar, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
-	applyModel (&tar, &hrz, &tt_pos, &model_change, JD);
+	applyModel (&tar, &hrz, &tt_pos, &model_change, JD, 0);
 
 	setTarget (tar.ra, tar.dec);
 	setTelTarget (tar.ra, tar.dec);

@@ -466,6 +466,13 @@ CommandStopGuide::CommandStopGuide (Block * _master, char dir):Command (_master)
 	setCommand (_os);
 }
 
+CommandWeather::CommandWeather (Block *_master, double temp, double hum, double pres):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_TELD_WEATHER << " " << temp << " " << hum << " " << pres;
+	setCommand (_os);
+}
+
 CommandCupolaSyncTel::CommandCupolaSyncTel (Block * _master, double ra, double dec):Command (_master)
 {
 	std::ostringstream _os;

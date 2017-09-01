@@ -1238,7 +1238,7 @@ int Gemini::startResync ()
 	// for both flips....
 	for (i = 0; i <= 1; i++)
 	{
-		computeModel (&pos_flip[i], &hrz, &model_change_flip[i], JD);
+		computeModel (&pos_flip[i], &hrz, &model_change_flip[i], JD, 0);
 		applyCorrRaDec (&pos_flip[i]);
 		// We don't take care of dec 90deg overflow, as it is not necessary here, we only want to measure distances and feasibility.
 		// Also, we don't want to solve funny things like flip change because of model or corrections... But gemini can handle these values, hopefully, so we don't care :-).
@@ -1531,7 +1531,7 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 	ln_get_hrz_from_equ (&pos, &latpos, JD, &hrz);
 
 	zeroCorrRaDec ();
-	applyModel (&pos, &hrz, &tt_pos, &model_change, JD);
+	applyModel (&pos, &hrz, &tt_pos, &model_change, JD, 0);
 
 	if ((tel_write_ra (pos.ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (pos.dec) < 0) || usleep (USEC_SEC / 15))
 		return -1;

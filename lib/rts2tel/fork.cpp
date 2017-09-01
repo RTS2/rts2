@@ -50,7 +50,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 		logStream (MESSAGE_ERROR) << "sky2counts called with nan ra/dec" << sendLog;
 		return -1;
 	}
-	ls = getLstDeg (JD);
+	ls = getLstDeg (JD, 0);
 
 	ln_get_hrz_from_equ (pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < -1)
@@ -126,7 +126,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
         tt_pos.ra = u_pos.ra;
         tt_pos.dec = u_pos.dec;
 
-	applyModel (&u_pos, &hrz, &tt_pos, &model_change, JD);
+	applyModel (&u_pos, &hrz, &tt_pos, &model_change, JD, 0);
 
         // when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
 	if (telLatitude->getValueDouble () < 0)
@@ -153,7 +153,7 @@ int Fork::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip
 	double JD, ls, ha;
 
 	JD = ln_get_julian_from_sys ();
-	ls = getLstDeg (JD);
+	ls = getLstDeg (JD, 0);
 
 	ha = (double) (ac / haCpd) + haZero;
 	dec = (double) (dc / decCpd) + decZero;

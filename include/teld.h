@@ -375,7 +375,7 @@ class Telescope:public rts2core::Device
 		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates)
 		 * @param model_change ln_equ_posn difference against original pos position, includes coputed model's difference together with correction corrRaDec.
 		 */
-		void applyModel (struct ln_equ_posn *m_pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD);
+		void applyModel (struct ln_equ_posn *m_pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double utc1, double utc2);
 
 		void applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_equ_posn *equ, struct ln_hrz_posn *err);
 
@@ -393,7 +393,7 @@ class Telescope:public rts2core::Device
 		 * @param hrz horizontal coordinates corresponding to RA/DEC
 		 * @param model_change ln_equ_posn coputed model's difference.
 		 */
-		void computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *model_change, double JD);
+		void computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *model_change, double utc1, double utc2);
 
 		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		rts2core::ValueAltAz *telAltAz;
@@ -747,7 +747,7 @@ class Telescope:public rts2core::Device
 		double getTargetHa ();
 		double getTargetHa (double jd);
 
-		double getLstDeg (double JD);
+		double getLstDeg (double utc1, double utc2);
 
 		virtual bool isBellowResolution (double ra_off, double dec_off) { return (ra_off == 0 && dec_off == 0); }
 

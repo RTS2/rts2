@@ -710,6 +710,12 @@ class CommandStopGuideAll:public Command
 		}
 };
 
+class CommandWeather:public Command
+{
+	public:
+		CommandWeather (Block *_master, double temp, double hum, double pres);
+};
+
 class CommandCupolaSyncTel:public Command
 {
 	public:

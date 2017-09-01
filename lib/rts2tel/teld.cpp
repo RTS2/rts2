@@ -873,9 +873,18 @@ double Telescope::getTargetHa (double jd)
 	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - tarRaDec->getRa ());
 }
 
-double Telescope::getLstDeg (double JD)
+double Telescope::getLstDeg (double utc1, double utc2)
 {
-	return ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) + telLongitude->getValueDouble ());
+#ifdef RTS2_LIBERFA
+	double ut11, ut12, tt1, tt2;
+	if (eraUtcut1 (utc1, utc2, telDUT1->getValueDouble (), &ut11, &ut12))
+		return NAN;
+	if (eraUt1tt (ut11, ut12, telDUT1->getValueDouble (), &tt1, &tt2))
+		return NAN;
+	return ln_range_degrees (ln_rad_to_deg (eraGst06a (ut11, ut12, tt1, tt2)) + telLongitude->getValueDouble ());
+#else
+	return ln_range_degrees (15. * ln_get_apparent_sidereal_time (utc1 + utc2) + telLongitude->getValueDouble ());
+#endif
 }
 
 int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
@@ -1222,9 +1231,9 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 	return 0;
 }
 
-void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD)
+void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double utc1, double utc2)
 {
-	computeModel (m_pos, hrz, model_change, JD);
+	computeModel (m_pos, hrz, model_change, utc1, utc2);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
         tt_pos->ra -= model_change->ra;
@@ -1264,7 +1273,7 @@ void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_po
 	}
 }
 
-void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *model_change, double JD)
+void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *model_change, double utc1, double utc2)
 {
 	struct ln_equ_posn hadec;
 	double ra;
@@ -1276,7 +1285,7 @@ void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, 
 		model_change->dec = 0;
 		return;
 	}
-	ls = getLstDeg (JD);
+	ls = getLstDeg (utc1, utc2);
 	hadec.ra = ls - pos->ra;	// intentionally without ln_range_degrees
 	hadec.dec = pos->dec;
 
@@ -1938,7 +1947,7 @@ int Telescope::info ()
 
 int Telescope::infoUTC (const double utc1, const double utc2)
 {
-	return infoUTCLST (utc1, utc2, getLstDeg (utc1 + utc2));
+	return infoUTCLST (utc1, utc2, getLstDeg (utc1, utc2));
 }
 
 int Telescope::infoLST (double telLST)
