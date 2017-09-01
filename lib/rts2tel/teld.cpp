@@ -83,16 +83,16 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telPressure->setValueFloat (1000);
 
-	createValue (telAmbientTemperature, "AMBTEMP", "[C] observatory ambient temperature", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (telAmbientTemperature, "AMBTEMP", "[C] observatory ambient temperature", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telAmbientTemperature->setValueFloat (10);
 
-	createValue (telHumidity, "AMBHUMIDITY", "[%] observatory relative humidity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE | RTS2_DT_PERCENTS);
+	createValue (telHumidity, "AMBHUMIDITY", "[%] observatory relative humidity", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE | RTS2_DT_PERCENTS);
 	telHumidity->setValueFloat (70);
 
-	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telWavelength->setValueFloat (500);
 
-	createValue (telDUT1, "DUT1", "[s] UT1 - UTC", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (telDUT1, "DUT1", "[s] UT1 - UTC", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telDUT1->setValueDouble (0);
 
 	createValue (pointingModel, "MOUNT", "mount pointing model (equ, alt-az, ...)", false, 0, 0);
