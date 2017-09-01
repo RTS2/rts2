@@ -123,6 +123,16 @@
 #define COMMAND_TELD_PEEK       "peek"
 
 /**
+ * Download new DUT1 data.
+ */
+#define COMMAND_TELD_GETDUT1    "getdut1"
+
+/**
+ * Updates weather data.
+ */
+#define COMMAND_TELD_WEATHER    "weather"
+
+/**
  * Send client location of the latest camera image. @ingroup RTS2Command
  *
  * This command is used when camera produces data directly written on the disk.

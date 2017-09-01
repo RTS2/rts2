@@ -362,8 +362,8 @@ class GPoint:
 
     # open file, produce model
     # expected format:
-    #  Observation      MJD       LST-MNT RA-MNT   DEC-MNT   AXRA      AXDEC   RA-TRUE  DEC-TRUE
-    # observatory <longitude> <latitude> <altitude>
+    # # Observation      MJD       LST-MNT RA-MNT   DEC-MNT   AXRA      AXDEC   RA-TRUE  DEC-TRUE
+    # # observatory <longitude> <latitude> <altitude>
     # 02a57222e0002o 57222.260012 233.8937 275.7921  77.0452  -55497734  -46831997 276.0206  77.0643
     # or for alt-az
     #  Observation      MJD       LST-MNT   AZ-MNT   ALT-MNT   AXAZ      AXALT   AZ-TRUE  ALT-TRUE

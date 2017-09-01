@@ -2844,7 +2844,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		}
 		return ret;
 	}
-	else if (conn->isCommand ("getdut1"))
+	else if (conn->isCommand (COMMAND_TELD_GETDUT1))
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
@@ -2855,6 +2855,22 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		}
 		return requestDUT1 ();
 	}
+	else if (conn->isCommand (COMMAND_TELD_WEATHER))
+	{
+		double temp = NAN;
+		double hum = NAN;
+		double pres = NAN;
+		if (conn->paramNextDouble (&temp) || conn->paramNextDouble (&hum) || conn->paramNextDouble (&pres) || !conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
+		if (!std::isnan (temp))
+			telAmbientTemperature->setValueDouble (temp);
+		if (!std::isnan (hum))
+			telHumidity->setValueDouble (hum);
+		if (!std::isnan (pres))
+			telPressure->setValueDouble (pres);
+		return 0;
+	}
+
 	return rts2core::Device::commandAuthorized (conn);
 }
 
