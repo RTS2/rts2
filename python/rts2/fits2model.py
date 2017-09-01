@@ -27,7 +27,7 @@ def first_line(fn, of):
     """First line for GEM model input."""
     hdu = fits.open(fn)
     h = hdu[0].header
-    of.write('#  Observation      MJD    MNT-LST   RA-MNT   DEC-MNT       AXRA      AXDEC   RA-TRUE  DEC-TRUE\n')
+    of.write('#  Observation      JD    MNT-LST   RA-MNT   DEC-MNT       AXRA      AXDEC   RA-TRUE  DEC-TRUE\n')
     of.write('# observatory {0} {1} {2}\n'.format(h['LONGITUD'], h['LATITUDE'], h['ALTITUDE']))
 
 
