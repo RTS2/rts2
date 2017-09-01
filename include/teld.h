@@ -395,25 +395,6 @@ class Telescope:public rts2core::Device
 		 */
 		void computeModel (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, struct ln_equ_posn *model_change, double JD);
 
-		/**
-		 * Apply corrections (at system time).
-		 * Will apply corrections (precession, refraction,..) at system time.
-		 * Override this method for any custom corrections. You most
-		 * probably would like to call parent method in overrided
-		 * method to get coordinates to start with.
-		 *
-		 * void MyClass::applyCorrections (double &tar_ra, double &tar_dec)
-		 * {
-		 *      Telescope::applyCorrections (tar_ra, tar_dec);
-		 *      tar_ra += myoffs.ra);
-		 *      tar_dec += myoffs.dec;
-		 * }
-		 *
-		 * @param tar_ra  target RA, returns its value.
-		 * @param tar_dec target DEC, returns its value.
-		 */
-		virtual void applyCorrections (double &tar_ra, double &tar_dec, bool writeValues);
-
 		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		rts2core::ValueAltAz *telAltAz;
 

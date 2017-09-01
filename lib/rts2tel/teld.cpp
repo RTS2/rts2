@@ -2069,22 +2069,6 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 #endif
 }
 
-void Telescope::applyCorrections (double &t_ra, double &t_dec, bool writeValues)
-{
-	struct ln_equ_posn pos;
-	pos.ra = t_ra;
-	pos.dec = t_dec;
-
-#ifdef RTS2_LIBERFA
-	applyCorrections (&pos, 0, 0, NULL, writeValues);
-#else
-	applyCorrections (&pos, ln_get_julian_from_sys (), 0, NULL, writeValues);
-#endif
-
-	t_ra = pos.ra;
-	t_dec = pos.dec;
-}
-
 #ifdef RTS2_LIBERFA
 void Telescope::getEraUTC (double &utc1, double &utc2)
 {
