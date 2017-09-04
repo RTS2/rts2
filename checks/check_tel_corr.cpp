@@ -517,7 +517,7 @@ START_TEST(test_mean2apparent)
 	ck_assert_dbl_eq (pos.dec, 9.8789411273, 10e-7);
 #else
 	ck_assert_dbl_eq (pos.ra, 155.4611594137, 10e-7);
-	ck_assert_dbl_eq (pos.dec, 9.8767953610, 10e-7);
+	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
 #endif
 
 #ifdef RTS2_LIBERFA
