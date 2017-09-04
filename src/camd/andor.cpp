@@ -577,8 +577,8 @@ int Andor::setTiming ()
 	binv = binv < 1 ? 1 : binv;
 
 	ret = SetImage (binh, binv, chipTopX () + 1,
-			chipTopX () + chipUsedReadout->getHeightInt (), chipTopY () + 1,
-			chipTopY () + chipUsedReadout->getWidthInt ());
+			chipTopX () + chipUsedReadout->getWidthInt (), chipTopY () + 1,
+			chipTopY () + chipUsedReadout->getHeightInt ());
 	checkRet ("setTiming()", "SetImage()");
 
 	ret = SetAcquisitionMode (acqMode->getValueInteger ());
