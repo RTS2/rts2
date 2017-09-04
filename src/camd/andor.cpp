@@ -293,8 +293,8 @@ int Andor::startExposure ()
 // This is called by setTiming anyway
 //      ret =
 //          SetImage (binningHorizontal (), binningVertical (), chipTopX () + 1,
-//                    chipTopX () + chipUsedReadout->getHeightInt (), chipTopY () + 1,
-//                    chipTopY () + chipUsedReadout->getWidthInt ());
+//                    chipTopX () + chipUsedReadout->getWidthInt (), chipTopY () + 1,
+//                    chipTopY () + chipUsedReadout->getHeightInt ());
 
 //      if (ret != DRV_SUCCESS)
 //      {
