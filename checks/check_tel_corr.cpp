@@ -524,8 +524,8 @@ START_TEST(test_mean2apparent)
 	ck_assert_dbl_eq (hrz.az, 155.1994725981, 10e-7);
 	ck_assert_dbl_eq (hrz.alt, 36.8130786022, 10e-7);
 #else
-	ck_assert_dbl_eq (hrz.az, 144.0325956056, 10e-7);
-	ck_assert_dbl_eq (hrz.alt, 32.8926506421, 10e-7);
+	ck_assert_dbl_eq (hrz.az, 155.1990540442, 10e-7);
+	ck_assert_dbl_eq (hrz.alt, 36.8133130985, 10e-7);
 #endif
 
 	for (int i = 0; i < 36; i++)
