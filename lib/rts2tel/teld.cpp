@@ -2022,7 +2022,7 @@ int Telescope::scriptEnds ()
 	return rts2core::Device::scriptEnds ();
 }
 
-void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, struct ln_hrz_posn *hrz, bool writeValues)
+void Telescope::applyCorrections (struct ln_equ_posn *pos, double utc1, double utc2, struct ln_hrz_posn *hrz, bool writeValues)
 {
 #ifdef RTS2_LIBERFA
 	double aob, zob, hob, dob, rob, eo, ri, di;
@@ -2032,7 +2032,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 
 	eraASTROM astrom;
 
-	int status = eraApco13 (JD, utc2, telDUT1->getValueDouble (), ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &astrom, &eo);
+	int status = eraApco13 (utc1, utc2, telDUT1->getValueDouble (), ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &astrom, &eo);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;
@@ -2056,24 +2056,24 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 #else
 	// apply all posible corrections
 	if (calPrecession->getValueBool () == true)
-		applyPrecession (pos, JD, writeValues);
+		applyPrecession (pos, utc1 + utc2, writeValues);
 	
 	// always apply proper motion - if set
 	struct ln_equ_posn pm;
 	pm.ra = pmRaDec->getRa ();
 	pm.dec = pmRaDec->getDec ();
-	ln_get_equ_pm (pos, &pm, JD, pos);
+	ln_get_equ_pm (pos, &pm, utc1 + utc2, pos);
 
 	if (calNutation->getValueBool () == true)
-		applyNutation (pos, JD, writeValues);
+		applyNutation (pos, utc1 + utc2, writeValues);
 	if (calAberation->getValueBool () == true)
-		applyAberation (pos, JD, writeValues);
+		applyAberation (pos, utc1 + utc2, writeValues);
 	if (calRefraction->getValueBool () == true)
-		applyRefraction (pos, JD, writeValues);
+		applyRefraction (pos, utc1 + utc2, writeValues);
 	
 	if (hrz != NULL)
 	{
-		getHrzFromEqu (pos, JD, hrz);
+		getHrzFromEqu (pos, utc1 + utc2, hrz);
 	}
 #endif
 }
