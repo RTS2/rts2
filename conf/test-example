@@ -1,0 +1,3 @@
+<tests hostname="http://localhost:8889" login="test" password="t">
+	<exposure camera="C0" exposure="10" type="dark" average="400" deviation="10%"/>
+</tests>
