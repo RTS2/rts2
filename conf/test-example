@@ -1,3 +1,6 @@
 <tests hostname="http://localhost:8889" login="test" password="t">
+	<exists device='C0'/>
 	<exposure camera="C0" exposure="10" type="dark" average="400" deviation="10%"/>
+	<exposure exposure="10" type="object" average="400" deviation="10%"/>
+	<exposure exposure="0.1" type="object" repeat="5"/>
 </tests>

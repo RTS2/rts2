@@ -6,6 +6,7 @@ import rts2.rtsapi
 import xml.etree.ElementTree as ET
 import argparse
 import numpy
+import time
 
 parser = argparse.ArgumentParser(description='Configuration file driven tests for various RTS2 subsystems')
 parser.add_argument('-v', help='increase verbosity', dest='verbose', action='count')
@@ -17,7 +18,7 @@ et = ET.ElementTree(file=args.testfile)
 
 tr = et.getroot()
 
-j = rts2.rtsapi.createProxy(tr.attrib['hostname'], tr.attrib['login'], tr.attrib['password'])
+j = rts2.rtsapi.createProxy(tr.attrib.get('hostname', 'http://localhost:8889'), tr.attrib.get('login', None), tr.attrib.get('password', None))
 
 def test_image(camname, dark, exposure, expected, deviation):
     j.setValue(camname, 'EXPOSURE', exposure)
@@ -25,6 +26,8 @@ def test_image(camname, dark, exposure, expected, deviation):
     if args.verbose:
         print('{0:>4s} taking {1} second {2} exposure'.format(camname, exposure, 'dark' if dark else 'object'))
     data = j.takeImage(camname)
+    if expected <= 0:
+        return
     if args.verbose:
         print('average {0:.1f} expected {1:.1f} allowed deviations {2}'.format(numpy.average(data), expected, deviation))
     if deviation[-1] == '%':
@@ -32,6 +35,34 @@ def test_image(camname, dark, exposure, expected, deviation):
     else:
     	assert(abs(numpy.average(data) - expected) < float(deviation))
 
+def test_exposure(camname, dark, exposure, expected, deviation, repeat):
+    if camname is None:
+        for c in j.getDevicesByType(rts2.rtsapi.DEVICE_TYPE_CCD):
+	    for r in range(0, repeat):
+                test_image(c, dark, exposure, expected, deviation)
+    else:
+        for r in range(0, repeat):
+            test_image(camname, dark, exposure, expected, deviation)
+
 for child in tr:
-    if child.tag == 'exposure':
-        test_image(child.attrib['camera'], child.attrib['type'] == 'dark', float(child.attrib['exposure']), float(child.attrib['average']), child.attrib['deviation'])
+    if child.tag == 'exists':
+        d = child.attrib.get('device')
+	j.executeCommand(d, 'info')
+        infotime = j.getValue(d, 'infotime', True)
+	now = time.time()
+	if args.verbose:
+	    print('device {0} infotime {1}'.format(d, time.ctime(infotime)))
+	assert((now - infotime) > 0)
+	assert((now - infotime) < float(child.attrib.get('maxdelay', 60)))
+	    
+    elif child.tag == 'exposure':
+        test_exposure(
+            child.attrib.get('camera', None),
+            child.attrib.get('type', 'object') == 'dark',
+            float(child.attrib.get('exposure', 1)),
+            float(child.attrib.get('average', -1)),
+            child.attrib.get('deviation', '0'),
+	    int(child.attrib.get('repeat', 1))
+        )
+    elif child.tag == 'value':
+        pass

@@ -4,7 +4,8 @@ MD_PAGES = \
     rts2.target.txt \
     rts2-httpd.txt \
     rts2-scriptexec.txt \
-    rts2-camd.txt
+    rts2-camd.txt \
+    rts2-test.txt
 
 EXTRA_DIST = \
     rts2.conf \
@@ -167,7 +168,8 @@ man_MANS += \
     rts2.target.5 \
     rts2-httpd.7 \
     rts2-scriptexec.1 \
-    rts2-camd.7
+    rts2-camd.7 \
+    rts2-test.1
 
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
@@ -184,11 +186,9 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 .txt.7:
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
-else
-
-EXTRA_DIST += rts2.txt gpoint.txt rts2.target.txt
-
 endif
+
+EXTRA_DIST += rts2.txt gpoint.txt rts2.target.txt rts2-httpd.txt rts2-scriptexec.txt rts2-camd.txt rts2-test.txt
 
 if HAVE_ASPELL
 

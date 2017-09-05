@@ -1,4 +1,4 @@
-personal_ws-1.1 en 124 
+personal_ws-1.1 en 127 
 API
 airmass
 solarDistance
@@ -29,8 +29,8 @@ ds
 Petr
 fo
 outlier
-altaz
 AltAz
+altaz
 ncurses
 dir
 fitskeys
@@ -50,8 +50,8 @@ Prouza
 httpd
 nd
 rts
-gpoint
 GPoint
+gpoint
 Ronan
 noNamespaceSchemaLocation
 docroot
@@ -65,9 +65,9 @@ Stanislav
 tpm
 Wildi
 chanstarts
+focuser
 teld
 py
-focuser
 grbd
 fli
 ESA
@@ -99,9 +99,12 @@ maxRepeats
 deamons
 outliers
 INTA
+ADU
 YYYYMMDD
 gnuplotting
+infotime
 bcc
+maxdelay
 focusc
 focusd
 andor
