@@ -500,6 +500,29 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		getPIDs ();
 		return 0;
 	}
+	else if (conn->isCommand ("flash_save"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		telConn->siTechCommand ('X', "W");
+		return 0;
+	}
+	else if (conn->isCommand ("flash_load"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		telConn->siTechCommand ('X', "T");
+		getPIDs ();
+		return 0;
+	}
+	else if (conn->isCommand ("flash_default"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		telConn->siTechCommand ('X', "U");
+		getPIDs ();
+		return 0;
+	}
 	return AltAz::commandAuthorized (conn);
 }
 
