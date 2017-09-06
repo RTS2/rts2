@@ -67,6 +67,7 @@ class TPVP:
         self.sleeptime = sleeptime
         self.verbose = verbose
         self.catalog = catalog
+        self.ver = False
         if self.catalog == 'hip':
             self.hipparcos = rts2.scat.Hipparcos(
                 '/home/petr/hipparcos/hipparcos')
@@ -442,6 +443,9 @@ class TPVP:
             vhdu = fits.open(vfn)
             b_x, b_y, b_flux, b_flux_ratio = brights.find_brightest(
                 vfn, vhdu, 1, useDS9)
+            if b_x is None or b_y is None:
+                print(_('Bright star not found, continuing..'))
+                return False, flux_history, flux_ratio_history, history_x, history_y, history_alt, history_alt
             if self.fov_center is None:
                 off_x = vhdu[0].header['NAXIS1'] / 2.0 - b_x
                 off_y = vhdu[0].header['NAXIS2'] / 2.0 - b_y
@@ -532,7 +536,7 @@ class TPVP:
                     else:
                         modelf.write(
                             '# bright star not found on image - continue, target ALT {0:.2f} AZ {1:.2f} BS RA {2:.2f} DEC {3:.2f} mag {4:.2f}\n'.format(
-                                [0], p[1], bsc[1], bsc[2], bsc[3]
+                                p[0], p[1], bsc[1], bsc[2], bsc[3]
                             )
                         )
                     modelf.close()
@@ -552,10 +556,9 @@ class TPVP:
                     self.telescope, 'AZALOFFS',
                     '{0} {1}'.format(off_azalt[1], off_azalt[0])
                 )
-            ver, flux_history, flux_ratio_history, history_x,
-            history_y, history_alt, history_az = self.__verify(
-                mn, timeout, imagescript, useDS9, maxverify,
-                verifyradius, minflux
+
+            ver, flux_history, flux_ratio_history, history_x, history_y, history_alt, history_az = self.__verify(
+                mn, timeout, imagescript, useDS9, maxverify, verifyradius, minflux
             )
 
             if modelname is not None:
