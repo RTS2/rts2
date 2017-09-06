@@ -214,21 +214,21 @@ class TPVP:
         lat = self.j.getValue(self.telescope, 'LATITUDE')
         print(_('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(
             ra, dec, lst, self.__mag_max, self.__mag_min))
-        # find bsc..
-        bsc = None
+        # find bstar..
+        bstar = None
         if self.catalog == 'hip':
-            bsc = self.hipparcos.search_catalogue(
+            bstar = self.hipparcos.search_catalogue(
                 ra, dec, 10, self.__mag_max, self.__mag_min)
-            if len(bsc) == 0:
+            if len(bstar) == 0:
                 return None
             print(_('Found HIP #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(
-                bsc[0].xno, numpy.degrees(bsc[0].sra0), numpy.degrees(bsc[0].sdec0), bsc[0].mag, numpy.degrees(bsc[0].xrpm), numpy.degrees(bsc[0].xdpm)))
+                bstar[0].xno, numpy.degrees(bstar[0].sra0), numpy.degrees(bstar[0].sdec0), bstar[0].mag, numpy.degrees(bstar[0].xrpm), numpy.degrees(bstar[0].xdpm)))
         else:
-            bsc = bsc.find_nearest(
+            bstar = bsc.find_nearest(
                 ra, dec, self.__mag_max, self.__mag_min, lst, lat, minalt)
             print(_('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(
-                bsc[0], bsc[1], bsc[2], bsc[3], bsc[7], bsc[8]))
-        return bsc
+                bstar[0], bstar[1], bstar[2], bstar[3], bstar[7], bstar[8]))
+        return bstar
 
     def __check_model_firstline(self, modelname):
         oa = open(modelname, 'a')
@@ -485,7 +485,7 @@ class TPVP:
         return False, flux_history, flux_ratio_history, history_x, history_y, history_alt, history_az
 
     def run_verify_brigths(self, timeout, path, modelname, imagescript, useDS9, maxverify, verifyradius, maxspiral, minflux, minalt):
-        selr.zero_offsets()
+        self.zero_offsets()
         for p in path:
             if type(p) == int:
                 fn, mn, bsc = self.run_manual_bsc(
