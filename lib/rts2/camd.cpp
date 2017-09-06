@@ -337,7 +337,7 @@ int Camera::sendFirstLine (int chan, int pchan)
 	}
 
 	focusingHeader->data_type = htons (getDataType ());
-	focusingHeader->naxes = htons (2);
+	focusingHeader->naxes = 2;
 	focusingHeader->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
 	focusingHeader->sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
 	focusingHeader->binnings[0] = htons (binningVertical ());

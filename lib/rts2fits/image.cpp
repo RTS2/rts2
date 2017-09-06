@@ -931,9 +931,9 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	avg_stdev = 0;
 
 	// we have to copy data to FITS anyway, so let's do it right now..
-	if (ntohs (im_h->naxes) != 2)
+	if (im_h->naxes != 2)
 	{
-		logStream (MESSAGE_ERROR) << "Image::writeDate not 2D image " << ntohs (im_h->naxes) << sendLog;
+		logStream (MESSAGE_ERROR) << "Image::writeDate not 2D image " << im_h->naxes << sendLog;
 		return -1;
 	}
 	flags |= IMAGE_SAVE;
@@ -1063,7 +1063,7 @@ void Image::getImgHeader (struct imghdr *im_h, int chan)
 	im_h->data_type = htons (cha->getDataType ());
 
 	int naxes = cha->getNaxis ();
-	im_h->naxes = htons (naxes);
+	im_h->naxes = naxes;
 
 	for (i = 0; i < naxes; i++)
 	{
