@@ -204,7 +204,7 @@ parser.add_argument(
     help=_('X axis value. Defaults to time.'),
     action='store',
     default='time',
-    choices=['time', 'az-counts', 'az-deg', 'alt-counts', 'alt-deg']
+    choices=['time', 'az-counts', 'az-deg', 'az-deg-rev', 'alt-counts', 'alt-deg', 'alt-deg-rev']
 )
 
 parser.add_argument(
@@ -269,6 +269,7 @@ class ProcessSitech:
         self.last_x_error = None
         self.last_y_error = None
         self.types = ['E', 'C', 'S', 'T', 'P']
+        self.invert_x = False  # reverse axis on graph
 
     def process_A(self, f, date, do_append):
         data = f.read(41)
@@ -533,18 +534,20 @@ command date,X target,Y target,X speed,Y speed\n')
             p_x = positions.y_pos
             if commands is not None:
                 c_x = commands.y_dest
-        elif x_axis == 'az-deg':
+        elif x_axis == 'az-deg' or x_axis == 'az-deg-rev':
             p_x = numpy.array([360.0 * float(y) / args.az_cpr for y in
                 positions.y_pos]) + args.az_offset
             if commands is not None:
                 c_x = numpy.array([
                     360.0 * float(y) / args.az_cpr for y in commands.y_dest
                 ]) + args.az_offset
+            if x_axis == 'az-deg-rev':
+                self.invert_x = True
         elif x_axis == 'alt-counts':
             p_x = positions.x_pos
             if commands is not None:
                 c_x = commands.x_dest
-        elif x_axis == 'alt-deg':
+        elif x_axis == 'alt-deg' or x_axis == 'alt-deg-rev':
             p_x = [360.0 * float(y) / args.az_cpr for y in
                 positions.x_pos]
             if commands is not None:
@@ -552,6 +555,8 @@ command date,X target,Y target,X speed,Y speed\n')
                     360.0 * float(y) / args.az_cpr for y in
                     commands.x_dest
                 ]
+            if x_axis == 'alt-deg-rev':
+                self.invert_x = True
         else:
             return None, None
 
@@ -699,6 +704,9 @@ command date,X target,Y target,X speed,Y speed\n')
             self.axis_x.legend(lines_x, [l.get_label() for l in lines_x])
         if self.axis_y is not None and len(args.plot_extra) > 0:
             self.axis_y.legend(lines_y, [l.get_label() for l in lines_y])
+
+        if self.invert_x:
+            self.ax_current.invert_xaxis()
 
     def plot(self):
         self.fig = pylab.figure()
