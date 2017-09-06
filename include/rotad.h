@@ -105,7 +105,7 @@ class Rotator:public rts2core::Device
 		/**
 		 * Returns zenith angle from target angle.
 		 */
-		double getZenithAngleFromTarget(double angle) { return angle + 90 - telAltAz->getAlt(); }
+		double getZenithAngleFromTarget(double angle) { return angle - 90 + telAltAz->getAlt(); }
 
 	private:
 		rts2core::ValueDouble *zeroOffs;
