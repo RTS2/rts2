@@ -255,7 +255,7 @@ class TPVP:
         if modelname is None:
             print(_('model line {0}').format(modline))
             return
-        print(_('adding to aling file {0}').format(modline))
+        print(_('adding to align file {0}').format(modline))
         oa = open(modelname, 'a')
         oa.write('{0}\t{1}\n'.format(mn, modline))
         oa.flush()
