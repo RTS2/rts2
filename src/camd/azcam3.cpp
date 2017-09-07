@@ -32,12 +32,14 @@ class AzCam3DataConn:public rts2core::ConnTCP
 		virtual int receive (rts2core::Block *block);
 
 		ssize_t getDataSize () { return dataSize; }
+		int getRecvs() {return recvs;}
 
 	private:
 		ssize_t dataSize;
 		size_t headerSize;
 		char header[257];
 		int outFile;
+		int recvs;
 };
 
 AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
@@ -46,10 +48,12 @@ AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_m
 	headerSize = 0;
 	memset (header, 0, sizeof (header));
 	outFile = 0;
+	recvs = 0;
 }
 
 int AzCam3DataConn::receive (rts2core::Block *block)
 {
+	recvs++;
 	if (isConnState (CONN_DELETE))
 		return -1;
 	if (sock >= 0 && block->isForRead (sock))
@@ -77,7 +81,7 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 		static char rbuf[2048];
 
 		rec = recv (sock, rbuf, 2048, 0);
-
+		
 		if (rec > 0)
 		{
 			if (outFile == 0)
@@ -229,11 +233,11 @@ int AzCam3::initHardware()
 		commandConn->setDebug ();
 	}
 
-	int ret = callCommand ("exposure.Abort()\r\n");
+	int ret = callCommand ("exposure.abort\r\n");
 	if (ret)
 		return ret;
 
-	callCommand ("controller.ReadoutAbort()\r\n");
+	callCommand ("controller.readout_abort\r\n");
 
 	initCameraChip (101, 101, 0, 0);
 
@@ -255,28 +259,28 @@ int AzCam3::callCommand (const char *cmd)
 int AzCam3::callCommand (const char *cmd, int p1)
 {
 	char buf[200];
-	snprintf (buf, 200, "%s(%d)\r\n", cmd, p1);
+	snprintf (buf, 200, "%s %d\r\n", cmd, p1);
 	return callCommand (buf);
 }
 
 int AzCam3::callCommand (const char *cmd, double p1)
 {
 	char buf[200];
-	snprintf (buf, 200, "%s(%f)\r\n", cmd, p1);
+	snprintf (buf, 200, "%s %f\r\n", cmd, p1);
 	return callCommand (buf);
 }
 
 int AzCam3::callCommand (const char *cmd, const char *p1)
 {
 	char buf[200];
-	snprintf (buf, 200, "%s('%s')\r\n", cmd, p1);
+	snprintf (buf, 200, "%s '%s'\r\n", cmd, p1);
 	return callCommand (buf);
 }
 
 int AzCam3::callCommand (const char *cmd, double p1, const char *p2, const char *p3)
 {
 	char buf[200];
-	snprintf (buf, 200, "%s(%f,'%s','%s')\r\n", cmd, p1, p2, p3);
+	snprintf (buf, 200, "%s %f '%s' '%s' \r\n", cmd, p1, p2, p3);
 	return callCommand (buf);
 }
 
@@ -314,7 +318,9 @@ int AzCam3::setCamera (const char *name, const char *value)
 {
 	size_t len = strlen (name) + strlen (value);
 	char buf[8 + len];
-	snprintf (buf, 8 + len, "%s = '%s'\r\n", name, value);
+	snprintf (buf, 8 + len, "set %s %s\r\n", name, value);
+	
+	logStream (MESSAGE_INFO) << "sending " <<  buf << sendLog;
 	return callArg (buf);
 }
 
@@ -322,7 +328,7 @@ int AzCam3::setCamera (const char *name, int value)
 {
 	size_t len = strlen (name) + 20;
 	char buf[8 + len];
-	snprintf (buf, 8 + len, "%s = %d\r\n", name, value);
+	snprintf (buf, 8 + len, "set %s %d\r\n", name, value);
 	return callArg (buf);
 }
 
@@ -344,6 +350,7 @@ double AzCam3::getDouble (const char *cmd)
 
 int AzCam3::setupDataConnection ()
 {
+	
 	if (dataConn)
 	{
 		removeConnection (dataConn);
@@ -359,15 +366,15 @@ int AzCam3::setupDataConnection ()
 
 	setFitsTransfer ();
 
-	int ret = setCamera ("exposure.RemoteImageServer", 1);
+	int ret = setCamera ("remoteimageserverflag", 1);
+	if (ret)
+		return ret;
+	
+	ret = setCamera ("remoteimageserverhost", hostname);
 	if (ret)
 		return ret;
 
-	ret = setCamera ("exposure.RemoteImageServerHost", hostname);
-	if (ret)
-		return ret;
-
-	ret = setCamera ("exposure.RemoteImageServerPort", dataConn->getPort ());
+	ret = setCamera ("remoteimageserverport", dataConn->getPort ());
 	return ret;
 }
 
@@ -383,7 +390,7 @@ int AzCam3::startExposure()
 
 	const char *imgType[3] = {"object", "dark", "zero"};
 
-	ret = callCommand ("exposure.Expose1", getExposure(), imgType[getExpType ()], "RTS2");
+	ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], "RTS2");
 	if (ret)
 		return ret;
 	sleep (5);
@@ -392,8 +399,8 @@ int AzCam3::startExposure()
 
 int AzCam3::stopExposure ()
 {
-	callCommand ("exposure.Abort()\r\n");
-	callCommand ("controller.ReadoutAbort()\r\n");
+	callCommand ("exposure.abort\r\n");
+	callCommand ("controller.readout_abort\r\n");
 	return Camera::stopExposure ();
 }
 
@@ -401,7 +408,7 @@ long AzCam3::isExposing ()
 {
 	try
 	{
-		exposureRemaining->setValueFloat (getDouble ("controller.UpdateExposureTimeRemaining()\r\n"));
+		exposureRemaining->setValueFloat (getDouble ("controller.update_exposuretime_remaining\r\n"));
 		sendValueAll (exposureRemaining);
 		if (exposureRemaining->getValueFloat () > 0)
 			return exposureRemaining->getValueFloat () * USEC_SEC;
@@ -421,6 +428,7 @@ long AzCam3::isExposing ()
 
 int AzCam3::doReadout ()
 {
+	
 	if (dataConn)
 	{
 		if (dataConn->getDataSize () == -1)
@@ -429,7 +437,8 @@ int AzCam3::doReadout ()
 			{
 				if (!(getState () & CAM_SHIFT))
 				{
-					pixelsRemaining->setValueLong (getLong ("controller.GetPixelsRemaining()\r\n"));
+					
+					pixelsRemaining->setValueLong (getLong ("controller.get_pixels_remaining\r\n"));
 					sendValueAll (pixelsRemaining);
 				}
 				return USEC_SEC;
@@ -474,14 +483,14 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	if (ret)
 		return -2;
 
-	ret = callCommand ("exposure.SetImageType", "object");
+	ret = callCommand ("exposure.set_image_type", "object");
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
 		return -2;
 	}
 
-	ret = callCommand ("exposure.SetExposureTime", exptime);
+	ret = callCommand ("exposure.set_exposure_time", exptime);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
@@ -491,11 +500,11 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	ret = Camera::shiftStoreStart (conn, exptime);
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.Begin()\r\n");
+	ret = callCommand ("exposure.begin\r\n");
 	if (ret)
 		return -2;
 
-	ret = callCommand ("exposure.Integrate()\r\n");
+	ret = callCommand ("exposure.integrate\r\n");
 	if (ret)
 		return -2;
 
@@ -507,7 +516,7 @@ int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 	int ret;
 	if (lastShiftExpTime != exptime)
 	{
-		ret = callCommand ("exposure.SetExposureTime", exptime);
+		ret = callCommand ("exposure.set_exposure_time", exptime);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
@@ -515,10 +524,10 @@ int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 		}
 		lastShiftExpTime = exptime;
 	}
-	ret = callCommand ("controller.Parshift", shift);
+	ret = callCommand ("controller.parshift", shift);
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.Integrate()\r\n");
+	ret = callCommand ("exposure.integrate\r\n");
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
@@ -527,7 +536,7 @@ int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 	int ret;
 	if (lastShiftExpTime != exptime)
 	{
-		ret = callCommand ("exposure.SetExposureTime", exptime);
+		ret = callCommand ("exposure.set_exposure_time", exptime);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
@@ -536,16 +545,16 @@ int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 		lastShiftExpTime = exptime;
 	}
 
-	ret = callCommand ("controller.Parshift", shift);
+	ret = callCommand ("controller.parshift", shift);
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.Integrate()\r\n");
+	ret = callCommand ("exposure.integrate\r\n");
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.Readout()\r\n");
+	ret = callCommand ("exposure.readout\r\n");
 	if (ret)
 		return -2;
-	commandConn->sendData ("exposure.End()\r\n");
+	commandConn->sendData ("exposure.end\r\n");
 	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 
