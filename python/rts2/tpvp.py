@@ -498,6 +498,9 @@ class TPVP:
                 fn, mn, bsc = self.run_manual_altaz(
                     p[0], p[1], timeout, None, -1, imagescript, None, useDS9, minalt)
 
+            if fn is None or mn is None:
+                continue
+
             off_radec, off_azalt, flux, flux_ratio, first_xy = self.__get_offset_by_image(
                 fn, useDS9, mn, self.fov_center)
             if minflux is not None and (flux is None or flux < minflux) and maxspiral >= -1:
