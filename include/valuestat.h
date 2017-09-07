@@ -73,6 +73,8 @@ class ValueDoubleStat:public ValueDouble
 		 */
 		double getMax () { return max; }
 
+		double getRange () { return abs (max - min); }
+
 		double getStdev () { return stdev; }
 
 		std::deque < double >&getMesList () { return valueList; }

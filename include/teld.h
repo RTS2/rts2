@@ -622,7 +622,7 @@ class Telescope:public rts2core::Device
 		 * @param ed_speed       second axis speed to correct error (in counts per second)
 		 * @param speed_angle    tracking angle
 		 */
-		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, double &ac_speed, double &dc_speed, double&ea_speed, double &ed_speed, double &speed_angle, double &err_angle);
+		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, double &ac_speed, double &dc_speed, double &ea_speed, double &ed_speed, double &speed_angle, double &err_angle);
 
 		/**
 		 * Transform sky coordinates to axis coordinates. Implemented in classes

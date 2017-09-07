@@ -174,6 +174,11 @@ class SitechAltAz:public AltAz
 		rts2core::ValueDoubleStat *az_sitech_speed_stat;
 		rts2core::ValueDoubleStat *alt_sitech_speed_stat;
 
+#ifdef ERR_DEBUG
+		rts2core::ValueDoubleStat *az_err_speed_stat;
+		rts2core::ValueDoubleStat *alt_err_speed_stat;
+#endif
+
 		rts2core::ValueDouble *az_acceleration;
 		rts2core::ValueDouble *alt_acceleration;
 
@@ -344,6 +349,11 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (az_sitech_speed_stat, "az_s_speed_stat", "sitech speed statistics", false);
 	createValue (alt_sitech_speed_stat, "alt_s_speed_stat", "sitech speed statistics", false);
+
+#ifdef ERR_DEBUG
+	createValue (az_err_speed_stat, "az_err_speed_stat", "sitech error speed statistics", false);
+	createValue (alt_err_speed_stat, "alt_err_speed_stat", "sitech error speed statistics", false);
+#endif
 
 	firstSlewCall = true;
 	wasStopped = false;
@@ -620,7 +630,7 @@ int SitechAltAz::isMoving ()
 		return -1;
 
 	time_t now = time (NULL);
-	if ((getTargetStarted () + 120) < now)
+	if ((getTargetStarted () + 3600) < now)
 	{
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
@@ -813,12 +823,14 @@ void SitechAltAz::scaleTrackingLook ()
 			else
 				change = 2;
 		}
-		else if (trackingLook->getValueFloat () > 1)
+		else if (trackingLook->getValueFloat () < 2.5)
+		{
+			trackingLook->setValueFloat (2.5);
+		}
+		else if (trackingLook->getValueFloat () > 2.5)
 		{
 			if (trackingLook->getValueFloat () > 5)
 				change = -2;
-			else if (trackingLook->getValueFloat () > 1)
-				change = -0.5;
 			else
 				change = -0.1;
 		}
@@ -828,8 +840,8 @@ void SitechAltAz::scaleTrackingLook ()
 			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
 			if (trackingLook->getValueFloat () > 15)
 				trackingLook->setValueFloat (15);
-			else if (trackingLook->getValueFloat () < 0.5)
-				trackingLook->setValueFloat (0.5);
+			else if (trackingLook->getValueFloat () < 2.5)
+				trackingLook->setValueFloat (2.5);
 		}
 		sendValueAll (trackingLook);
 		lastTrackingNum = trackingNum;
@@ -865,11 +877,11 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	double az_change = 0;
 	double alt_change = 0;
 
-	az_change = a_azc - r_az_pos->getValueLong ();
-	alt_change = a_altc - r_alt_pos->getValueLong ();
+	az_change = (a_azc - r_az_pos->getValueLong ()) * 300;
+	alt_change = (a_altc - r_alt_pos->getValueLong ()) * 300;
 
-	a_azc += az_change * 300;
-	a_altc += alt_change * 300;
+	a_azc += az_change;
+	a_altc += alt_change;
 
 	if (a_azc > azMax->getValueLong ())
 		a_azc = azMax->getValueLong ();
@@ -885,36 +897,68 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	if (loop_sec < 1)
 	{
-		// if (abs (aze_speed) > 25 || !isTracking ())
-		if (!isTracking ())
+		//if (abs (aze_speed) > 25 || !isTracking ())
+		//if (!isTracking ())
+		if ((abs (aze_speed) > 25 || !isTracking ()) && az_pos_error->getRange () < 100)
 		{
-			int32_t err_sp = azErrPID->loop (aze_speed, loop_sec);
-			if (isTracking ())
+			double err_sp = azErrPID->loop (aze_speed, loop_sec);
+			//if (isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
+			if (getTargetDistance () < trackingDist->getValueDouble ())
 			{
-				int32_t err_cap = abs(azc_speed * 0.005);
+				double err_cap = abs(azc_speed * 0.1);
+				if (abs(azc_speed) < 10)
+					err_cap = 10;
+
 				if (err_sp > err_cap)
 					err_sp = err_cap;
 				else if (err_sp < -err_cap)
 					err_sp = -err_cap;
 			}
 
+			// properly handles sign change
+			double orig_speed = azc_speed;
 			azc_speed += err_sp;
+#ifdef ERR_DEBUG
+			az_err_speed_stat->addValue (err_sp, 15);
+			az_err_speed_stat->calculate ();
+			sendValueAll (az_err_speed_stat);
+#endif
+
+			if (orig_speed < 0 && azc_speed > 0)
+				a_azc = r_az_pos->getValueLong () + abs (az_change);
+			else if (orig_speed > 0 && azc_speed < 0)
+				a_azc = r_az_pos->getValueLong () - abs (az_change);
 		}
 
-		// if (abs (alte_speed) > 25 || !isTracking ())
-		if (!isTracking ())
+		//if (abs (alte_speed) > 25 || !isTracking ())
+		if ((abs (alte_speed) > 25 || !isTracking ()) && alt_pos_error->getRange () < 100)
 		{
-			int32_t err_sp = altErrPID->loop (alte_speed, loop_sec);
-			if (isTracking ())
+			double err_sp = altErrPID->loop (alte_speed, loop_sec);
+			//if isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
+			if (getTargetDistance () < trackingDist->getValueDouble ())
 			{
-				int32_t err_cap = abs(altc_speed * 0.005);
+				double err_cap = abs(altc_speed * 0.1);
+				if (abs(altc_speed) < 10)
+					err_cap = 10;
+
 				if (err_sp > err_cap)
 					err_sp = err_cap;
 				else if (err_sp < -err_cap)
 					err_sp = -err_cap;
 			}
 
+			double orig_speed = altc_speed;
 			altc_speed += err_sp;
+#ifdef ERR_DEBUG
+			alt_err_speed_stat->addValue (err_sp, 15);
+			alt_err_speed_stat->calculate ();
+			sendValueAll (alt_err_speed_stat);
+#endif
+
+			if (orig_speed < 0 && altc_speed > 0)
+				a_altc = r_alt_pos->getValueLong () + abs (alt_change);
+			else if (orig_speed > 0 && altc_speed < 0)
+				a_altc = r_alt_pos->getValueLong () - abs (alt_change);
 		}
 	}
 
@@ -1215,12 +1259,12 @@ void SitechAltAz::getTel ()
 			int16_t az_err = *(int16_t*) &(telConn->last_status.y_last[2]);
 			int16_t alt_err = *(int16_t*) &(telConn->last_status.x_last[2]);
 
-			if (abs (az_err) <= 7)
+			if (abs (az_err) <= 7 || abs(az_err) > 1000)
 				r_az_pos->setValueLong (telConn->last_status.y_pos);
 			else
 				r_az_pos->setValueLong (telConn->last_status.y_pos - az_err);
 
-			if (abs (alt_err) <= 7)
+			if (abs (alt_err) <= 7 || abs(alt_err) > 1000)
 				r_alt_pos->setValueLong (telConn->last_status.x_pos);
 			else
 				r_alt_pos->setValueLong (telConn->last_status.x_pos - alt_err);
