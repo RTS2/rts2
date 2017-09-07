@@ -816,10 +816,8 @@ void SitechAltAz::scaleTrackingLook ()
 		// scale trackingLook as needed
 		if (speedAngle->getStdev () > 2)
 		{
-			if (trackingLook->getValueFloat () < 1)
+			if (trackingLook->getValueFloat () < 5)
 				change = 0.1;
-			else if (trackingLook->getValueFloat () < 5)
-				change = 0.5;
 			else
 				change = 2;
 		}
@@ -831,7 +829,7 @@ void SitechAltAz::scaleTrackingLook ()
 		{
 			trackingLook->setValueFloat (2.5);
 		}
-		else if (trackingLook->getValueFloat () > 0.5)
+		else if (trackingLook->getValueFloat () > 1.5)
 		{
 			if (trackingLook->getValueFloat () > 5)
 				change = -2;
@@ -846,8 +844,8 @@ void SitechAltAz::scaleTrackingLook ()
 				trackingLook->setValueFloat (15);
 			else if (trackingLook->getValueFloat () < 2.5 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
 				trackingLook->setValueFloat (2.5);
-			else if (trackingLook->getValueFloat () < 0.5)
-				trackingLook->setValueFloat (0.5);
+			else if (trackingLook->getValueFloat () < 1.5)
+				trackingLook->setValueFloat (1.5);
 		}
 		sendValueAll (trackingLook);
 		lastTrackingNum = trackingNum;
@@ -905,7 +903,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	{
 		//if (abs (aze_speed) > 25 || !isTracking ())
 		//if (!isTracking ())
-		if ((abs (aze_speed) > 3 || !isTracking ()) && az_pos_error->getRange () < 100)
+		if ((abs (aze_speed) > 3 || !isTracking ()) && (az_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
 		{
 			double err_sp = azErrPID->loop (aze_speed, loop_sec);
 			//if (isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
@@ -925,7 +923,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			double orig_speed = azc_speed;
 			azc_speed += err_sp;
 #ifdef ERR_DEBUG
-			az_err_speed_stat->addValue (err_sp, 15);
+			az_err_speed_stat->addValue (err_sp, 20);
 			az_err_speed_stat->calculate ();
 			sendValueAll (az_err_speed_stat);
 #endif
@@ -937,7 +935,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		}
 
 		//if (abs (alte_speed) > 25 || !isTracking ())
-		if ((abs (alte_speed) > 3 || !isTracking ()) && alt_pos_error->getRange () < 100)
+		if ((abs (alte_speed) > 3 || !isTracking ()) && (alt_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
 		{
 			double err_sp = altErrPID->loop (alte_speed, loop_sec);
 			//if isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
@@ -956,7 +954,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			double orig_speed = altc_speed;
 			altc_speed += err_sp;
 #ifdef ERR_DEBUG
-			alt_err_speed_stat->addValue (err_sp, 15);
+			alt_err_speed_stat->addValue (err_sp, 20);
 			alt_err_speed_stat->calculate ();
 			sendValueAll (alt_err_speed_stat);
 #endif
@@ -1001,8 +999,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
 	alt_sitech_speed->setValueLong (altaz_Xrequest.x_speed);
 
-	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 15);
-	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 15);
+	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 20);
+	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 20);
 
 	az_sitech_speed_stat->calculate ();
 	alt_sitech_speed_stat->calculate ();
