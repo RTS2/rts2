@@ -905,7 +905,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	{
 		//if (abs (aze_speed) > 25 || !isTracking ())
 		//if (!isTracking ())
-		if ((abs (aze_speed) > 25 || !isTracking ()) && az_pos_error->getRange () < 100)
+		if ((abs (aze_speed) > 3 || !isTracking ()) && az_pos_error->getRange () < 100)
 		{
 			double err_sp = azErrPID->loop (aze_speed, loop_sec);
 			//if (isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
@@ -937,7 +937,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		}
 
 		//if (abs (alte_speed) > 25 || !isTracking ())
-		if ((abs (alte_speed) > 25 || !isTracking ()) && alt_pos_error->getRange () < 100)
+		if ((abs (alte_speed) > 3 || !isTracking ()) && alt_pos_error->getRange () < 100)
 		{
 			double err_sp = altErrPID->loop (alte_speed, loop_sec);
 			//if isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
