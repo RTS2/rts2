@@ -630,7 +630,7 @@ int SitechAltAz::isMoving ()
 		return -1;
 
 	time_t now = time (NULL);
-	if ((getTargetStarted () + 3600) < now)
+	if ((getTargetStarted () + 180) < now)
 	{
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
@@ -823,11 +823,15 @@ void SitechAltAz::scaleTrackingLook ()
 			else
 				change = 2;
 		}
-		else if (trackingLook->getValueFloat () < 2.5)
+		else if (isTracking () && trackingLook->getValueFloat () < 10 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
+		{
+			trackingLook->setValueFloat (10);
+		}
+		else if (trackingLook->getValueFloat () < 2.5 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
 		{
 			trackingLook->setValueFloat (2.5);
 		}
-		else if (trackingLook->getValueFloat () > 2.5)
+		else if (trackingLook->getValueFloat () > 0.5)
 		{
 			if (trackingLook->getValueFloat () > 5)
 				change = -2;
@@ -840,8 +844,10 @@ void SitechAltAz::scaleTrackingLook ()
 			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
 			if (trackingLook->getValueFloat () > 15)
 				trackingLook->setValueFloat (15);
-			else if (trackingLook->getValueFloat () < 2.5)
+			else if (trackingLook->getValueFloat () < 2.5 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
 				trackingLook->setValueFloat (2.5);
+			else if (trackingLook->getValueFloat () < 0.5)
+				trackingLook->setValueFloat (0.5);
 		}
 		sendValueAll (trackingLook);
 		lastTrackingNum = trackingNum;
@@ -903,7 +909,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		{
 			double err_sp = azErrPID->loop (aze_speed, loop_sec);
 			//if (isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
-			if (getTargetDistance () < trackingDist->getValueDouble ())
+			if (getTargetDistanceMax () < trackingDist->getValueDouble ())
 			{
 				double err_cap = abs(azc_speed * 0.1);
 				if (abs(azc_speed) < 10)
@@ -935,7 +941,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		{
 			double err_sp = altErrPID->loop (alte_speed, loop_sec);
 			//if isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
-			if (getTargetDistance () < trackingDist->getValueDouble ())
+			if (getTargetDistanceMax () < trackingDist->getValueDouble ())
 			{
 				double err_cap = abs(altc_speed * 0.1);
 				if (abs(altc_speed) < 10)
@@ -1259,12 +1265,12 @@ void SitechAltAz::getTel ()
 			int16_t az_err = *(int16_t*) &(telConn->last_status.y_last[2]);
 			int16_t alt_err = *(int16_t*) &(telConn->last_status.x_last[2]);
 
-			if (abs (az_err) <= 7 || abs(az_err) > 1000)
+			if (abs (az_err) <= 7 || abs(az_err) > 20000)
 				r_az_pos->setValueLong (telConn->last_status.y_pos);
 			else
 				r_az_pos->setValueLong (telConn->last_status.y_pos - az_err);
 
-			if (abs (alt_err) <= 7 || abs(alt_err) > 1000)
+			if (abs (alt_err) <= 7 || abs(alt_err) > 20000)
 				r_alt_pos->setValueLong (telConn->last_status.x_pos);
 			else
 				r_alt_pos->setValueLong (telConn->last_status.x_pos - alt_err);
