@@ -887,23 +887,13 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	a_azc += az_change;
 	a_altc += alt_change;
 
-	if (a_azc > azMax->getValueLong ())
-		a_azc = azMax->getValueLong ();
-	if (a_azc < azMin->getValueLong ())
-		a_azc = azMin->getValueLong ();
-
-	if (a_altc > altMax->getValueLong ())
-		a_altc = altMax->getValueLong ();
-	if (a_altc < altMin->getValueLong ())
-		a_altc = altMin->getValueLong ();
-
 	double loop_sec = (mclock->getValueLong () - last_loop) / 1000.0;
 
 	if (loop_sec < 1)
 	{
-		//if (abs (aze_speed) > 25 || !isTracking ())
+		if (abs (aze_speed) > 3 || !isTracking ())
 		//if (!isTracking ())
-		if ((abs (aze_speed) > 3 || !isTracking ()) && (az_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
+		//if ((abs (aze_speed) > 3 || !isTracking ()) && (az_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
 		{
 			double err_sp = azErrPID->loop (aze_speed, loop_sec);
 			//if (isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
@@ -934,8 +924,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 				a_azc = r_az_pos->getValueLong () - abs (az_change);
 		}
 
-		//if (abs (alte_speed) > 25 || !isTracking ())
-		if ((abs (alte_speed) > 3 || !isTracking ()) && (alt_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
+		if (abs (alte_speed) > 3 || !isTracking ())
+		//if ((abs (alte_speed) > 3 || !isTracking ()) && (alt_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
 		{
 			double err_sp = altErrPID->loop (alte_speed, loop_sec);
 			//if isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
@@ -989,6 +979,16 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		logStream (MESSAGE_ERROR) << "cannot open connection to serial port" << sendLog;
 		usleep (USEC_SEC / 15);
 	}
+
+	if (a_azc > azMax->getValueLong ())
+		a_azc = azMax->getValueLong ();
+	if (a_azc < azMin->getValueLong ())
+		a_azc = azMin->getValueLong ();
+
+	if (a_altc > altMax->getValueLong ())
+		a_altc = altMax->getValueLong ();
+	if (a_altc < altMin->getValueLong ())
+		a_altc = altMin->getValueLong ();
 
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
