@@ -128,6 +128,9 @@ class SitechAltAz:public AltAz
 		rts2core::ValuePID *alt_slew_PID;
 		rts2core::ValuePID *alt_track_PID;
 
+		rts2core::ValueInteger *az_integral_limit;
+		rts2core::ValueInteger *alt_integral_limit;
+
 		rts2core::ValueLong *az_enc;
 		rts2core::ValueLong *alt_enc;
 
@@ -307,6 +310,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	alt_slew_PID = NULL;
 	alt_track_PID = NULL;
 
+	az_integral_limit = NULL;
+	alt_integral_limit = NULL;
+
 	createValue (az_enc, "ENCAZ", "AZ encoder readout", true);
 	createValue (alt_enc, "ENCALT", "ALT encoder readout", true);
 
@@ -392,10 +398,16 @@ int SitechAltAz::processOption (int in_opt)
 			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID", false, RTS2_VALUE_WRITABLE);
 			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID", false, RTS2_VALUE_WRITABLE);
 
+			createValue (az_integral_limit, "az_integral_limit", "Az integral limit", false);
+			createValue (alt_integral_limit, "alt_integral_limit", "Alt integral limit", false);
+
 			updateMetaInformations (az_slew_PID);
 			updateMetaInformations (az_track_PID);
 			updateMetaInformations (alt_slew_PID);
 			updateMetaInformations (alt_track_PID);
+
+			updateMetaInformations (az_integral_limit);
+			updateMetaInformations (alt_integral_limit);
 			break;
 
 		default:
@@ -455,11 +467,6 @@ int SitechAltAz::initHardware ()
 		getPIDs ();
 	}
 
-	//SitechControllerConfiguration sconfig;
-	//telConn->getConfiguration (sconfig);
-
-	//telConn->resetController ();
-	
 	/* Flush the input buffer in case there is something left from startup */
 
 	telConn->flushPortIO ();
@@ -1312,6 +1319,8 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 
 void SitechAltAz::getPIDs ()
 {
+	telConn->flashLoad ();
+
 	alt_curr_PID->setPID (telConn->getSiTechValue ('X', "PPP"), telConn->getSiTechValue ('X', "III"), telConn->getSiTechValue ('X', "DDD"));
 	if (alt_slew_PID)
 	{
@@ -1330,6 +1339,16 @@ void SitechAltAz::getPIDs ()
 	if (az_track_PID)
 	{
 		az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
+	}
+
+	if (alt_integral_limit)
+	{
+		alt_integral_limit->setValueInteger (telConn->getFlashInt16 (16));
+	}
+
+	if (az_integral_limit)
+	{
+		az_integral_limit->setValueInteger (telConn->getFlashInt16 (116));
 	}
 }
 

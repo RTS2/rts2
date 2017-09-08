@@ -37,6 +37,8 @@ ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName
 	logCount = 0;
 
 	memset (&last_status, 0, sizeof (last_status));
+
+	memset (&flashBuffer, 0, sizeof (flashBuffer));
 }
 
 int ConnSitech::init ()
@@ -71,6 +73,7 @@ int ConnSitech::init ()
 		countUp = getSiTechValue ('Y', "XHC");
 		PIDSampleRate = (CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp);
 	}
+
 	return 0;
 }
 
@@ -265,14 +268,6 @@ void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
 {
 }
 
-void ConnSitech::getConfiguration (SitechControllerConfiguration &config)
-{
-	switchToBinary ();
-	siTechCommand ('S', "C");
-
-	readConfiguration (config);
-}
-
 void ConnSitech::readAxisStatus ()
 {
 	char ret[42];
@@ -313,103 +308,6 @@ void ConnSitech::readAxisStatus ()
 
 	if (logFile > 0)
 		logBuffer ('A', ret, 41);
-}
-
-void ConnSitech::readConfiguration (SitechControllerConfiguration &config)
-{
-	char ret[400];
-	size_t len = readPort (ret, 400);
-
-	if (len != 130)
-	{
-		std::cout << "len " << len << std::endl;
-		flushPortIO ();
-		throw Error ("cannot read Sitech configuration");
-	}
-
-	// checksum checks
-	uint16_t checksum = binaryChecksum (ret, 128, false);
-	if ((*((uint16_t *) (ret + 129))) != checksum)
-	{
-		std::cerr << *((uint16_t *) (ret + 129)) << " " << checksum << std::endl;
-		throw Error ("invalid checksum in readConfiguration");
-	}
-
-	// fill in proper values
-
-	config.x_acc = le32toh (*((uint32_t *) (ret + 0)));
-	config.x_backlash = le32toh (*((uint32_t *) (ret + 4)));
-	config.x_error_limit = le16toh (*((uint16_t *) (ret + 8)));
-	config.x_p_gain = le16toh (*((uint16_t *) (ret + 10)));
-	config.x_i_gain = le16toh (*((uint16_t *) (ret + 12)));
-	config.x_d_gain = le16toh (*((uint16_t *) (ret + 14)));
-	config.x_o_limit = le16toh (*((uint16_t *) (ret + 16)));
-	config.x_c_limit = le16toh (*((uint16_t *) (ret + 18)));
-	config.x_i_limit = le16toh (*((uint16_t *) (ret + 20)));
-	config.x_bits = ret[21];
-
-	config.p_0 = ret[22];
-
-	config.y_acc = le32toh (*((uint32_t *) (ret + 23)));
-	config.y_backlash = le32toh (*((uint32_t *) (ret + 27)));
-	config.y_error_limit = le16toh (*((uint16_t *) (ret + 31)));
-	config.y_p_gain = le16toh (*((uint16_t *) (ret + 33)));
-	config.y_i_gain = le16toh (*((uint16_t *) (ret + 35)));
-	config.y_d_gain = le16toh (*((uint16_t *) (ret + 37)));
-	config.y_o_limit = le16toh (*((uint16_t *) (ret + 39)));
-	config.y_c_limit = le16toh (*((uint16_t *) (ret + 41)));
-	config.y_i_limit = le16toh (*((uint16_t *) (ret + 43)));
-	config.y_bits = ret[44];
-
-	config.p_1 = ret[45];
-
-	config.address = ret[46];
-
-	config.p_2 = ret[47];
-
-	config.eq_rate = le32toh (*((uint32_t *) (ret + 48)));
-	config.eq_updown = le32toh (*((uint32_t *) (ret + 52)));
-	
-	config.tracking_goal = le32toh (*((uint32_t *) (ret + 56)));
-
-	config.latitude = be16toh (*((uint16_t *) (ret + 60)));
-
-	config.y_enc_ticks = be32toh (*((uint32_t *) (ret + 62)));
-	config.x_enc_ticks = be32toh (*((uint32_t *) (ret + 66)));
-
-	config.y_mot_ticks = be32toh (*((uint32_t *) (ret + 70)));
-	config.x_mot_ticks = be32toh (*((uint32_t *) (ret + 74)));
-
-	config.x_slew_rate = le32toh (*((uint32_t *) (ret + 78)));
-	config.y_slew_rate = le32toh (*((uint32_t *) (ret + 82)));
-
-	config.x_pan_rate = le32toh (*((uint32_t *) (ret + 86)));
-	config.y_pan_rate = le32toh (*((uint32_t *) (ret + 90)));
-
-	config.x_guide_rate = le32toh (*((uint32_t *) (ret + 94)));
-	config.y_guide_rate = le32toh (*((uint32_t *) (ret + 98)));
-
-	config.pec_auto = ret[102];
-
-	config.p_3 = ret[103];
-	config.p_4 = ret[104];
-
-	config.p_5 = ret[105];
-
-	config.p_6 = ret[106];
-
-	config.p_7 = ret[107];
-
-	config.local_deg = le32toh (*((uint32_t *) (ret + 108)));
-	config.local_speed = le32toh (*((uint32_t *) (ret + 112)));
-
-	config.backhlash_speed = le32toh (*((uint32_t *) (ret + 116)));
-
-	config.y_pec_ticks = le32toh (*((uint32_t *) (ret + 120)));
-
-	config.p_8 = ret[121];
-	config.p_9 = ret[122];	 
-
 }
 
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
@@ -507,6 +405,52 @@ void ConnSitech::endLogging ()
 		close (logFile);
 	}
 	logFile = -1;
+}
+
+int ConnSitech::flashLoad ()
+{
+	switchToBinary ();
+	siTechCommand ('S', "C");
+
+	size_t l = 0;
+
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			l = 130;
+			break;
+		case FORCE_ONE:
+			l = 514;
+			break;
+	}
+	size_t ret = readPort ((char *) flashBuffer, l);
+	if (ret != l)
+		return -1;
+
+	uint16_t checksum = binaryChecksum ((char *) flashBuffer, l - 2, true);
+
+	if ((*((uint16_t *) (flashBuffer + l - 2))) != checksum)
+	{
+		return -2;
+	}
+
+	return 0;
+}
+
+int ConnSitech::flashStore ()
+{
+	return -1;
+}
+
+int16_t ConnSitech::getFlashInt16 (int i)
+{
+	return ntohs (*((uint16_t*) (flashBuffer + i)));
+}
+
+int32_t ConnSitech::getFlashInt32 (int i)
+{
+	return ntohl (*((uint32_t*) (flashBuffer + i)));
 }
 
 void ConnSitech::logBuffer (char spec, void *data, size_t len)

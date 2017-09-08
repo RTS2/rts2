@@ -735,11 +735,6 @@ int Sitech::initHardware ()
 		getPIDs ();
 	}
 
-	//SitechControllerConfiguration sconfig;
-	//serConn->getConfiguration (sconfig);
-
-	//serConn->resetController ();
-	
 	/* Flush the input buffer in case there is something left from startup */
 
 	serConn->flushPortIO();
