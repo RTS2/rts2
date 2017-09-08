@@ -443,6 +443,59 @@ int ConnSitech::flashStore ()
 	return -1;
 }
 
+/**
+Flash content - integers etc. are low endian.
+
+Starting at location 0 is Secondary Axis (dec/alt) Configuration bytes:
+0 long int (4 bytes) Secondary Axis Acceleration
+4 UInt (2 bytes) Secondary Axis Servo PID Sample Rate Count Up Value 61440 to 63718
+6 Short int (2 bytes) Spare, not used yet.
+8 long int (4 bytes) Secondary Axis Position Error Limit
+12 int (2 bytes) Secondary axis Proportional while tracking 0-32767
+14 int (2 bytes) Secondary axis Integral while tracking 0-32767
+16 int (2 bytes) Secondary axis Derivative while tracking 0-32767
+18 int (2 bytes) Secondary axis Output Limit 0-32767
+20 int (2 bytes) Secondary axis Current Limit 0-255 = 0-48.45 amps.  Max is 10 amps, or 53, so in effect, only 1 byte is used.
+22 UInt (2 bytes) Secondary Axis X_Bits 0-65535
+24 int (2 bytes) Secondary axis Integral Limit 0-32767
+26 long int (4 bytes) Secondary Axis Motor Location at 270 motor electrical deg's
+	note: this one is read only.  You can't write to this.  It's calculated during the axis initilization process.
+30 long int (4 bytes) Secondary Axis Slew Rate
+34 long int (4 bytes) Secondary Axis Pan Rate
+38 long int (4 bytes) Secondary Axis Tweak Rate
+42 long int (4 bytes) Secondary Axis Guide Rate
+46 long int (4 bytes) Secondary Axis Ticks per motor electrical angle
+50 long int (4 bytes) Secondary Axis Ticks per axis revolution for motor encoder
+54 long int (4 bytes) Secondary Axis Ticks per axis revolution for scope encoder
+58 long int (4 bytes) Secondary Axis Ticks per Worm revolution for scope encoder (not used yet)
+62 int (2 bytes) Secondary axis six pole data
+64 int (2 bytes) Secondary axis Not used
+66 int (2 bytes) Secondary axis Proportional while Slewing 0-32767
+68 int (2 bytes) Secondary axis Integral while Slewing 0-32767
+70 int (2 bytes) Secondary axis Derivative while Slewing 0-32767
+72 int (2 bytes) Secondary axis PID Deadband (Zero Crossing Filter) 0-255, but spare byte after
+74 int (2 bytes) Secondary axis PID Deadband (Zero Crossing Filter) 0-255, but spare byte after
+76 int (2 bytes) Secondary axis Initialization Ending Winding PWM Value, 0-4095.
+78 int (2 bytes) Secondary axis Initialization Starting Winding PWM Value, 0-4095.
+80 int (2 bytes) Secondary axis Brake Threshold.  WHen the PID output reaches this value, the brake is released if in Auto
+
+From bytes 84 to 99 is spare bytes;
+Starting at location 100 is Primary Axis Configuration bytes, see above
+
+from bytes 184 to 399 is spare bytes
+
+Starting at location 400 is common configuration bytes.  Note: None of these are used yet:
+400 int (2 bytes) Latitude
+402 long int (4 bytes) Sidereal Rate
+406 long int (4 bytes) Sidereal Up/Down
+410 long int (4 bytes) Sidereal Goal
+414 long int (4 bytes) Spiral Distance
+418 long int (4 bytes) Spiral Speed
+422 int (2 bytes) Baud Rate
+424 int (2 bytes) Argo Navis Bits
+426 int (2 bytes) Address of controller.
+*/
+
 int16_t ConnSitech::getFlashInt16 (int i)
 {
 	return ntohs (*((uint16_t*) (flashBuffer + i)));
