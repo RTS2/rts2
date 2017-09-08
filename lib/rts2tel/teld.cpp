@@ -577,7 +577,7 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	if (ret)
 		return ret;
 
-	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " current " << c_ac << " " < c_dc << " target " << t_ac << " " << t_dc << std::endl;
+	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " current " << c_ac << " " << c_dc << " target " << t_ac << " " << t_dc << " ac " << ac << " " << dc << std::endl;
 
 	// for speed vector calculation..
 	double ra_diff = t_eqpos.ra - eqpos.ra;

@@ -860,6 +860,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t a_azc = r_az_pos->getValueLong ();
 	int32_t a_altc = r_alt_pos->getValueLong ();
 
+	int32_t old_azc = a_azc;
+	int32_t old_altc = a_altc;
+
 	double azc_speed = 0;
 	double altc_speed = 0;
 
@@ -883,6 +886,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	az_change = (a_azc - r_az_pos->getValueLong ()) * 300;
 	alt_change = (a_altc - r_alt_pos->getValueLong ()) * 300;
+
+	//std::cout << std::fixed << "aa " << a_azc << " " << az_change << " " << a_altc << " " << alt_change << " " << az_change << " " << alt_change << " " << azc_speed << " " << altc_speed << " " << aze_speed << " " << alte_speed << std::endl;
 
 	a_azc += az_change;
 	a_altc += alt_change;
@@ -910,7 +915,6 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			}
 
 			// properly handles sign change
-			double orig_speed = azc_speed;
 			azc_speed += err_sp;
 #ifdef ERR_DEBUG
 			az_err_speed_stat->addValue (err_sp, 20);
@@ -918,10 +922,16 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			sendValueAll (az_err_speed_stat);
 #endif
 
-			if (orig_speed < 0 && azc_speed > 0)
-				a_azc = r_az_pos->getValueLong () + abs (az_change);
-			else if (orig_speed > 0 && azc_speed < 0)
-				a_azc = r_az_pos->getValueLong () - abs (az_change);
+			if (azc_speed > 0)
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
+			else
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
 		}
 
 		if (abs (alte_speed) > 3 || !isTracking ())
@@ -941,7 +951,6 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 					err_sp = -err_cap;
 			}
 
-			double orig_speed = altc_speed;
 			altc_speed += err_sp;
 #ifdef ERR_DEBUG
 			alt_err_speed_stat->addValue (err_sp, 20);
@@ -949,10 +958,16 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			sendValueAll (alt_err_speed_stat);
 #endif
 
-			if (orig_speed < 0 && altc_speed > 0)
-				a_altc = r_alt_pos->getValueLong () + abs (alt_change);
-			else if (orig_speed > 0 && altc_speed < 0)
-				a_altc = r_alt_pos->getValueLong () - abs (alt_change);
+			if (altc_speed > 0)
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
+			else
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
 		}
 	}
 
