@@ -130,6 +130,11 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueInteger *az_integral_limit;
 		rts2core::ValueInteger *alt_integral_limit;
+		rts2core::ValueInteger *az_output_limit;
+		rts2core::ValueInteger *alt_output_limit;
+		rts2core::ValueInteger *az_current_limit;
+		rts2core::ValueInteger *alt_current_limit;
+
 
 		rts2core::ValueLong *az_enc;
 		rts2core::ValueLong *alt_enc;
@@ -312,6 +317,10 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	az_integral_limit = NULL;
 	alt_integral_limit = NULL;
+	az_output_limit = NULL;
+	alt_output_limit = NULL;
+	az_current_limit = NULL;
+	alt_current_limit = NULL;
 
 	createValue (az_enc, "ENCAZ", "AZ encoder readout", true);
 	createValue (alt_enc, "ENCALT", "ALT encoder readout", true);
@@ -400,6 +409,10 @@ int SitechAltAz::processOption (int in_opt)
 
 			createValue (az_integral_limit, "az_integral_limit", "Az integral limit", false);
 			createValue (alt_integral_limit, "alt_integral_limit", "Alt integral limit", false);
+			createValue (az_output_limit, "az_output_limit", "Az output limit", false);
+			createValue (alt_output_limit, "alt_output_limit", "Alt output limit", false);
+			createValue (az_current_limit, "az_current_limit", "Az current limit", false);
+			createValue (alt_current_limit, "alt_current_limit", "Alt current limit", false);
 
 			updateMetaInformations (az_slew_PID);
 			updateMetaInformations (az_track_PID);
@@ -408,6 +421,10 @@ int SitechAltAz::processOption (int in_opt)
 
 			updateMetaInformations (az_integral_limit);
 			updateMetaInformations (alt_integral_limit);
+			updateMetaInformations (az_output_limit);
+			updateMetaInformations (alt_output_limit);
+			updateMetaInformations (az_current_limit);
+			updateMetaInformations (alt_current_limit);
 			break;
 
 		default:
@@ -904,11 +921,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	if (loop_sec < 1)
 	{
 		if (abs (aze_speed) > 3 || !isTracking ())
-		//if (!isTracking ())
-		//if ((abs (aze_speed) > 3 || !isTracking ()) && (az_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
 		{
 			double err_sp = azErrPID->loop (aze_speed, loop_sec);
-			//if (isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
 			if (getTargetDistanceMax () < trackingDist->getValueDouble ())
 			{
 				double err_cap = abs(azc_speed * 0.1);
@@ -942,10 +956,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		}
 
 		if (abs (alte_speed) > 3 || !isTracking ())
-		//if ((abs (alte_speed) > 3 || !isTracking ()) && (alt_pos_error->getRange () < 100 || ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)))
 		{
 			double err_sp = altErrPID->loop (alte_speed, loop_sec);
-			//if isTracking () && !((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING))
 			if (getTargetDistanceMax () < trackingDist->getValueDouble ())
 			{
 				double err_cap = abs(altc_speed * 0.1);
@@ -1285,18 +1297,28 @@ void SitechAltAz::getTel ()
 			int16_t az_err = *(int16_t*) &(telConn->last_status.y_last[2]);
 			int16_t alt_err = *(int16_t*) &(telConn->last_status.x_last[2]);
 
-			if (abs (az_err) <= 7 || abs(az_err) > 20000)
+			if (abs (az_err) <= 7)
 				r_az_pos->setValueLong (telConn->last_status.y_pos);
 			else
 				r_az_pos->setValueLong (telConn->last_status.y_pos - az_err);
 
-			if (abs (alt_err) <= 7 || abs(alt_err) > 20000)
+			if (abs (alt_err) <= 7)
 				r_alt_pos->setValueLong (telConn->last_status.x_pos);
 			else
 				r_alt_pos->setValueLong (telConn->last_status.x_pos - alt_err);
 
 			az_pos_error->addValue (az_err, 20);
 			alt_pos_error->addValue (alt_err, 20);
+
+			if (az_pos_error->getRange () > 50 || abs (az_pos_error->getMin ()) > 50 || abs (az_pos_error->getMax ()) > 50)
+				valueWarning (az_pos_error);
+			else
+				valueGood (az_pos_error);
+
+			if (alt_pos_error->getRange () > 50 || abs (alt_pos_error->getMin ()) > 50 || abs (alt_pos_error->getMax ()) > 50)
+				valueWarning (alt_pos_error);
+			else
+				valueGood (alt_pos_error);
 
 			r_az_pos->setValueLong (telConn->last_status.y_pos);
 			r_alt_pos->setValueLong (telConn->last_status.x_pos);
@@ -1343,12 +1365,32 @@ void SitechAltAz::getPIDs ()
 
 	if (alt_integral_limit)
 	{
-		alt_integral_limit->setValueInteger (telConn->getFlashInt16 (16));
+		alt_integral_limit->setValueInteger (telConn->getFlashInt16 (24));
 	}
 
 	if (az_integral_limit)
 	{
-		az_integral_limit->setValueInteger (telConn->getFlashInt16 (116));
+		az_integral_limit->setValueInteger (telConn->getFlashInt16 (124));
+	}
+
+	if (alt_output_limit)
+	{
+		alt_output_limit->setValueInteger (telConn->getFlashInt16 (18));
+	}
+
+	if (az_output_limit)
+	{
+		az_output_limit->setValueInteger (telConn->getFlashInt16 (118));
+	}
+
+	if (alt_current_limit)
+	{
+		alt_current_limit->setValueInteger (telConn->getFlashInt16 (20));
+	}
+
+	if (az_current_limit)
+	{
+		az_current_limit->setValueInteger (telConn->getFlashInt16 (120));
 	}
 }
 
