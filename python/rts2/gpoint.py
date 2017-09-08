@@ -284,8 +284,7 @@ class GPoint:
         ret = - params['ih'] \
             - params['ch'] / np.cos(a_dec) \
             - params['np'] * np.tan(a_dec) \
-            - (params['me'] * np.sin(a_ha) \
-            - params['ma'] * np.cos(a_ha)) * np.tan(a_dec) \
+            - (params['me'] * np.sin(a_ha) - params['ma'] * np.cos(a_ha)) * np.tan(a_dec) \
             - params['tf'] * np.cos(self.latitude_r) * np.sin(a_ha) / np.cos(a_dec) \
             - params['daf'] * (np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
         for e in self.extra:
@@ -707,6 +706,19 @@ class GPoint:
             num -= 1
 
         return removed
+
+    def autofix_terms(self, max_pcnt=100):
+        """Removes from fit any terms with error greater than"""
+        mt = self.find_max_error()
+        while mt is not None and 100 * abs(self.best.params[mt].stderr / self.best.params[mt].value) > max_pcnt:
+            print('Fixing {0} (stderr {1:>3.1f}")'.format(mt, 100 * abs(self.best.params[mt].stderr / self.best.params[mt].value)))
+            self.set_fixed([mt])
+            self.fit()
+            self.print_params()
+            mt = self.find_max_error()
+
+    def find_max_error(self):
+        return max(self.best.params.iterkeys(), key=lambda k: abs(np.divide(self.best.params[k].stderr, self.best.params[k].value)))
 
     def print_params(self):
         if self.verbose is False:

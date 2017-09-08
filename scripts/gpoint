@@ -63,6 +63,10 @@ def generate_model(args):
 				break
 			for r in removed:
 				print('removed line:\n{0}'.format('\n'.join(r)))
+
+		if args.autofix is not None:
+			model.autofix_terms(args.autofix)
+
 	model.print_stat()
 
 	if args.model_output is not None:
