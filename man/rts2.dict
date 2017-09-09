@@ -1,4 +1,4 @@
-personal_ws-1.1 en 142 
+personal_ws-1.1 en 147 
 API
 airmass
 solarDistance
@@ -12,11 +12,10 @@ xsi
 CEDEA
 dec
 XMLRPC
-www
 de
-DF
+www
 rotad
-ROTAD
+DF
 seltest
 CCDs
 Jelinek
@@ -28,15 +27,19 @@ TCP
 gxccd
 cadency
 RPC
-ds
 rotators
+ds
 Rotads
 Petr
 fo
+merr
+ia
 outlier
 altaz
 AltAz
+ie
 ncurses
+ih
 dir
 fitskeys
 substates
@@ -75,6 +78,8 @@ Stanislav
 tpm
 Wildi
 chanstarts
+autofix
+AZALOFFS
 rotator
 focuser
 teld
