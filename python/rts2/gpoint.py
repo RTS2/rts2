@@ -710,7 +710,7 @@ class GPoint:
     def autofix_terms(self, max_pcnt=100):
         """Removes from fit any terms with error greater than"""
         mt = self.find_max_error()
-        while mt is not None and 100 * abs(self.best.params[mt].stderr / self.best.params[mt].value) > max_pcnt:
+        while mt is not None and 100 * abs(np.divide(self.best.params[mt].stderr, self.best.params[mt].value)) > max_pcnt:
             print('Fixing {0} (stderr {1:>3.1f}")'.format(mt, 100 * abs(self.best.params[mt].stderr / self.best.params[mt].value)))
             self.set_fixed([mt])
             self.fit()
@@ -731,29 +731,30 @@ class GPoint:
 
         print()
 
-        if self.altaz:
-            print('Zero point in AZ ................................. {0:>9.2f}"'.format(degrees(self.best.params['ia']) * 3600.0))
-            print('Zero point in ALT ................................ {0:>9.2f}"'.format(degrees(self.best.params['ie']) * 3600.0))
-            print('Tilt of az-axis against N ........................ {0:>9.2f}"'.format(degrees(self.best.params['tn']) * 3600.0))
-            print('Tilt of az-axis against E ........................ {0:>9.2f}"'.format(degrees(self.best.params['te']) * 3600.0))
-            print('Non-perpendicularity of alt to az axis ........... {0:>9.2f}"'.format(degrees(self.best.params['npae']) * 3600.0))
-            print('Non-perpendicularity of optical axis to alt axis . {0:>9.2f}"'.format(degrees(self.best.params['npoa']) * 3600.0))
-            print('Tube flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
-        else:
-            print('Zero point in DEC ................................ {0:>9.2f}"'.format(degrees(self.best.params['id']) * 3600.0))
-            print('Zero point in RA ................................. {0:>9.2f}"'.format(degrees(self.best.params['ih']) * 3600.0))
-            i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
-            print('Angle between true and instrumental poles ........ {0:>9.2f}"'.format(degrees(i) * 3600.0))
-            print('Angle between line of pole and true meridian ..... {0:>9.2f}"'.format(degrees(atan2(self.best.params['ma'], self.best.params['me'])) * 3600.0))
-            print('Telescope tube drop in HA and DEC ................ {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
-            print('Angle between optical and telescope tube axes .... {0:>9.2f}"'.format(degrees(self.best.params['np']) * 3600.0))
-            print('Mechanical orthogonality of RA and DEC axes ...... {0:>9.2f}"'.format(degrees(self.best.params['ma']) * 3600.0))
-            print('DEC axis flexure ................................. {0:>9.2f}"'.format(degrees(self.best.params['daf']) * 3600.0))
-            print('Fork flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['fo']) * 3600.0))
-
-        for e in self.extra:
-            print('{0}\t{1:.2f}"\t{2}'.format(e.axis.upper(), np.degrees(self.best.params[e.parname()].value) * 3600.0, e))
-
+# TODO move model term names to manual page
+#        if self.altaz:
+#            print('Zero point in AZ ................................. {0:>9.2f}"'.format(degrees(self.best.params['ia']) * 3600.0))
+#            print('Zero point in ALT ................................ {0:>9.2f}"'.format(degrees(self.best.params['ie']) * 3600.0))
+#            print('Tilt of az-axis against N ........................ {0:>9.2f}"'.format(degrees(self.best.params['tn']) * 3600.0))
+#            print('Tilt of az-axis against E ........................ {0:>9.2f}"'.format(degrees(self.best.params['te']) * 3600.0))
+#            print('Non-perpendicularity of alt to az axis ........... {0:>9.2f}"'.format(degrees(self.best.params['npae']) * 3600.0))
+#            print('Non-perpendicularity of optical axis to alt axis . {0:>9.2f}"'.format(degrees(self.best.params['npoa']) * 3600.0))
+#            print('Tube flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
+#        else:
+#            print('Zero point in DEC ................................ {0:>9.2f}"'.format(degrees(self.best.params['id']) * 3600.0))
+#            print('Zero point in RA ................................. {0:>9.2f}"'.format(degrees(self.best.params['ih']) * 3600.0))
+#            i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
+#            print('Angle between true and instrumental poles ........ {0:>9.2f}"'.format(degrees(i) * 3600.0))
+#            print('Angle between line of pole and true meridian ..... {0:>9.2f}"'.format(degrees(atan2(self.best.params['ma'], self.best.params['me'])) * 3600.0))
+#            print('Telescope tube drop in HA and DEC ................ {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
+#            print('Angle between optical and telescope tube axes .... {0:>9.2f}"'.format(degrees(self.best.params['np']) * 3600.0))
+#            print('Mechanical orthogonality of RA and DEC axes ...... {0:>9.2f}"'.format(degrees(self.best.params['ma']) * 3600.0))
+#            print('DEC axis flexure ................................. {0:>9.2f}"'.format(degrees(self.best.params['daf']) * 3600.0))
+#            print('Fork flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['fo']) * 3600.0))
+#
+#        for e in self.extra:
+#            print('{0}\t{1:.2f}"\t{2}'.format(e.axis.upper(), np.degrees(self.best.params[e.parname()].value) * 3600.0, e))
+#
     def get_model_type(self):
         if self.altaz:
             return 'RTS2_ALTAZ'
