@@ -91,8 +91,8 @@ int SitechMulti::initHardware ()
 		return -1;
 	derConn->flushPortIO ();
 
-	rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn, this, derdefaults[0]);
-	rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn, this, derdefaults[1]);
+	rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn, this, derdefaults[0], false);
+	rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn, this, derdefaults[1], true);
 
 	ybits = derConn->getSiTechValue ('Y', "B");
 	xbits = derConn->getSiTechValue ('X', "B");

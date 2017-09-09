@@ -23,7 +23,9 @@
 
 using namespace rts2rotad;
 
-Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname)
+Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer, bool _leftRotator):
+	rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname),
+	leftRotator (_leftRotator)
 {
 	lastTrackingRun = 0;
 	hasTimer = ownTimer;
@@ -311,6 +313,14 @@ void Rotator::setPAOffset (double paOff)
 		paOffset->setValueDouble (paOff);
 		logStream (MESSAGE_INFO | INFO_ROTATOR_OFFSET) << offset->getValueDouble () << " " << paOff << sendLog;
 	}
+}
+
+double Rotator::getZenithAngleFromTarget(double angle)
+{
+	if (leftRotator)
+		return angle + 90 - telAltAz->getAlt();
+	else
+		return angle - 90 + telAltAz->getAlt();
 }
 
 void Rotator::updateToGo ()
