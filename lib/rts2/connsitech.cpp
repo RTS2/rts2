@@ -498,12 +498,12 @@ Starting at location 400 is common configuration bytes.  Note: None of these are
 
 int16_t ConnSitech::getFlashInt16 (int i)
 {
-	return ntohs (*((uint16_t*) (flashBuffer + i)));
+	return le16toh (*((uint16_t*) (flashBuffer + i)));
 }
 
 int32_t ConnSitech::getFlashInt32 (int i)
 {
-	return ntohl (*((uint32_t*) (flashBuffer + i)));
+	return le32toh (*((uint32_t*) (flashBuffer + i)));
 }
 
 void ConnSitech::logBuffer (char spec, void *data, size_t len)
