@@ -41,7 +41,7 @@ class MPCEphem:
 
         self.data = numpy.array(
             [(
-                numpy.datetime64('{0}-{1:>02}-{2:>02}T{3}:{4}:{5}.00'.format(year, month, day, hms[:2], hms[2:4], hms[4:6])),
+                numpy.datetime64('{0}-{1:>02}-{2:>02}T{3}:{4}:{5}.00'.format(year, month, day, hms[:2].decode('u8'), hms[2:4].decode('u8'), hms[4:6].decode('u8'))),
                 ra_h + ra_m / 60.0 + ra_s / 3600.0,
                 dec_d + dec_m / 60.0 + dec_s / 3600.0,
                 sky * numpy.sin(numpy.radians(PA)),
