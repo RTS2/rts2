@@ -2,7 +2,7 @@ LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pl
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
 TESTS = check_python_libnova check_python_gpoint_altaz check_python_gpoint_gem check_python_rts2 check_python_bsc \
-	check_flats
+	check_flats check_python_mpcephem
 EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template altaz_check rts2.ini flat_single flat_multi
 
 SUBDIRS = data
