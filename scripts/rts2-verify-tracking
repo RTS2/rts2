@@ -148,7 +148,15 @@ parser.add_argument(
 parser.add_argument(
     '-o',
     help=_('save star data'),
-    action='store', dest='data'
+    action='store',
+    dest='data'
+)
+
+parser.add_argument(
+    '--combine',
+    help=_('combine images (cut noise before combining them)'),
+    action='store',
+    dest='combine'
 )
 
 options = parser.parse_args()
@@ -191,7 +199,7 @@ def calculate_angels(sb):
 
 
 class ProcessFiles:
-    def __init__(self, nstars, save_skipped):
+    def __init__(self, nstars, save_skipped, combine):
         self.sb = []  # contains selected x, y, flux as members
         self.times = []  # contains exposure times (datetime.datetime object)
         self.skipped = 0
@@ -204,6 +212,10 @@ class ProcessFiles:
 
         # skipped file + frame names
         self.skipped_fn = []
+
+	# combined image
+	self.combine = combine
+	self.combined = None
 
         for si in range(nstars):
             self.sb.append([])
@@ -232,6 +244,27 @@ class ProcessFiles:
             )
         elif ci is not None:
             rts2.progressbar.progress(ci + 1, len(hdu[0].data))
+
+        if self.combine:
+	    # subtract noise from image
+	    if ci is None:
+	        img_d = np.array(hdu[0].data, dtype=np.float64)
+            else:
+	        img_d = np.array(hdu[0].data[ci], dtype=np.float64)
+	    average = np.average(img_d)
+	    if verbose > 1:
+	        print(_('subtracting average: {0:.2f}'.format(average)))
+	    img_d -= average * 1.1
+	    # replace < 0 with 0
+	    img_d[img_d < 0] = 0
+	    if self.combined is None:
+	        self.combined = img_d
+	    else:
+	        self.combined += img_d
+
+	    if verbose > 1:
+	        print(_('combining average: {0:.2f} {1:.2f}').format(average, np.average(self.combined)))
+
         if len(self.sb[0]) == 0:
             si = 0
             bsi = 0
@@ -487,6 +520,10 @@ class ProcessFiles:
 
         self.print_skipped()
 
+	if self.combine:
+	    hdu = fits.PrimaryHDU(self.combined)
+	    hdu.writeto(self.combine)
+
         if plot or saveplot or stars_plot:
             import pylab
             import matplotlib.gridspec as gridspec
@@ -579,7 +616,7 @@ class ProcessFiles:
             ).format(max_deviation))
 
 
-pf = ProcessFiles(options.stars, options.save_skipped)
+pf = ProcessFiles(options.stars, options.save_skipped, options.combine)
 
 imgranges = None
 
