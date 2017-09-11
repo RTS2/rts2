@@ -293,7 +293,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 		r_pos->setValueLong (der_status->y_pos);
 	}
 
-	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + getZeroOffset () + getOffset());
+	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + getZeroOffset ());
 
 	// not stopped, not in manual mode
 	autoMode->setValueBool ((der_status->extra_bits & (axis == 'X' ? 0x02 : 0x20)) == 0);
