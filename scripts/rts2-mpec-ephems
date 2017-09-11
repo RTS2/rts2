@@ -9,6 +9,7 @@ import numpy
 import datetime
 import rts2.logger
 import sys
+import time
 
 parser = argparse.ArgumentParser(description='Calculates pointing data from MPC ephemerid file, and feed this to RTS2 telescope (providing starting RA, DEC and changing skyspeed as long as the program is run)')
 
@@ -30,6 +31,27 @@ if current[0] == None:
     rts2.logger.log('Cannot calculate RA and DEC from ephemeris file, exiting', rts2.logger.colors.FAIL)
     sys.exit(1)
 
+j = rts2.rtsapi.JSONProxy(args.server, args.user, args.password, verbose=args.verbose)
+telescopes = j.getDevicesByType(rts2.rtsapi.DEVICE_TYPE_MOUNT)
+
+if len(telescopes) == 0:
+    sys.exit('cannot find telescope, is any present in the system?')
+
+telescope = telescopes[0]
+
 rts2.logger.log('Calculated RA {0} DEC {1} speeds {2} {3}'.format(current[0], current[1], current[2], current[3]), rts2.logger.colors.OKBLUE)
+
+j.executeCommand(telescope, 'move {0} {1}'.format(current[0], current[1]))
+j.setValue(telescope, 'DRATE', '{0} {1}'.format(current[2] / 3600.0, current[3] / 3600.0))
+j.setValue(telescope, 'TRACKING', 1)
+
+while True:
+    time.sleep(60)
+    now = numpy.datetime64(datetime.datetime.now())
+
+    current = ephs.interpolate(now)
+
+    rts2.logger.log('Calculated RA {0} DEC {1} speeds {2} {3}'.format(current[0], current[1], current[2], current[3]))
+    j.setValue(telescope, 'DRATE', '{0} {1}'.format(current[2] / 3600.0, current[3] / 3600.0))
 
 rts2.logger.log('Exiting')
