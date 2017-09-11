@@ -318,9 +318,9 @@ void Rotator::setPAOffset (double paOff)
 double Rotator::getZenithAngleFromTarget(double angle)
 {
 	if (leftRotator)
-		return angle + getOffset () + 90 - telAltAz->getAlt();
+		return angle + 90 - telAltAz->getAlt();
 	else
-		return angle + getOffset () - 90 + telAltAz->getAlt();
+		return angle - 90 + telAltAz->getAlt();
 }
 
 void Rotator::updateToGo ()

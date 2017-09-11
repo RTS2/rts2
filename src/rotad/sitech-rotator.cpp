@@ -21,7 +21,7 @@
 
 using namespace rts2rotad;
 
-SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase, const char *defaults, bool leftRotator):Rotator (0, NULL, name, true, leftRotator)
+SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase, const char *defaults, bool _leftRotator):Rotator (0, NULL, name, true, _leftRotator)
 {
 	setDeviceName (name);
 	sitech = conn;
@@ -293,7 +293,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 		r_pos->setValueLong (der_status->y_pos);
 	}
 
-	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + getZeroOffset () + getOffset ());
+	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + getZeroOffset () + getOffset());
 
 	// not stopped, not in manual mode
 	autoMode->setValueBool ((der_status->extra_bits & (axis == 'X' ? 0x02 : 0x20)) == 0);
