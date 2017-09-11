@@ -24,6 +24,7 @@ import numpy as np
 import sys
 from astropy.io import fits
 import astropy.time
+import os
 
 import argparse
 import datetime
@@ -213,9 +214,9 @@ class ProcessFiles:
         # skipped file + frame names
         self.skipped_fn = []
 
-	# combined image
-	self.combine = combine
-	self.combined = None
+        # combined image
+        self.combine = combine
+        self.combined = None
 
         for si in range(nstars):
             self.sb.append([])
@@ -246,24 +247,24 @@ class ProcessFiles:
             rts2.progressbar.progress(ci + 1, len(hdu[0].data))
 
         if self.combine:
-	    # subtract noise from image
-	    if ci is None:
-	        img_d = np.array(hdu[0].data, dtype=np.float64)
+            # subtract noise from image
+            if ci is None:
+                img_d = np.array(hdu[0].data, dtype=np.float64)
             else:
-	        img_d = np.array(hdu[0].data[ci], dtype=np.float64)
-	    average = np.average(img_d)
-	    if verbose > 1:
-	        print(_('subtracting average: {0:.2f}'.format(average)))
-	    img_d -= average * 1.1
-	    # replace < 0 with 0
-	    img_d[img_d < 0] = 0
-	    if self.combined is None:
-	        self.combined = img_d
-	    else:
-	        self.combined += img_d
+                img_d = np.array(hdu[0].data[ci], dtype=np.float64)
+            average = np.average(img_d)
+            if verbose > 1:
+                print(_('subtracting average: {0:.2f}'.format(average)))
+            img_d -= average * 1.1
+            # replace < 0 with 0
+            img_d[img_d < 0] = 0
+            if self.combined is None:
+                self.combined = img_d
+            else:
+                self.combined += img_d
 
-	    if verbose > 1:
-	        print(_('combining average: {0:.2f} {1:.2f}').format(average, np.average(self.combined)))
+            if verbose > 1:
+                print(_('combining average: {0:.2f} {1:.2f}').format(average, np.average(self.combined)))
 
         if len(self.sb[0]) == 0:
             si = 0
@@ -520,9 +521,13 @@ class ProcessFiles:
 
         self.print_skipped()
 
-	if self.combine:
-	    hdu = fits.PrimaryHDU(self.combined)
-	    hdu.writeto(self.combine)
+        if self.combine:
+            hdu = fits.PrimaryHDU(self.combined)
+            try:
+                os.unlink(self.combine)
+            except OSError:
+                pass
+            hdu.writeto(self.combine)
 
         if plot or saveplot or stars_plot:
             import pylab
