@@ -52,17 +52,20 @@ def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None, pix_treshold=None):
 	if len(s_objects) == 0:
 		return None, None, None, None
-	i_b = 0
+	# remove all "stars" below threshold
 	if pix_treshold is not None:
-		for i_b in range(len(s_objects)):
-			if s_objects[i_b]['tnpix'] >= pix_treshold:
-				break
-		if i_b == len(s_objects):
+	        s_new = []
+		for o in s_objects:
+			if o['tnpix'] >= pix_treshold:
+			    s_new.append(o)
+		if len(s_new) == 0:
 			return None, None, None, None
 
-	b_x = s_objects[i_b]['x']
-	b_y = s_objects[i_b]['y']
-	b_flux = s_objects[i_b]['flux']
+		s_objects = s_new
+
+	b_x = s_objects[0]['x']
+	b_y = s_objects[0]['y']
+	b_flux = s_objects[0]['flux']
 	if verbose:
 		print('detected {0} objects'.format(len(s_objects)))
 
@@ -94,10 +97,10 @@ def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None, 
 	if verbose:
 		print('brightest at {0:.2f} {1:.2f}'.format(b_x,b_y))
 		if verbose > 1:
-			print('sel x     y     flag npix')
+			print('x     y     flag npix')
 			i = 0
 			for o in s_objects:
-				print(' {0:s}  {1:>5.1f} {2:>5.1f} {3:>3d} {4:>4d} {5:>4d}'.format('*' if i == i_b else ' ', o['x'], o['y'], o['flag'], o['tnpix'], o['npix']))
+				print('{0:>5.1f} {1:>5.1f} {2:>3d} {3:>4d} {4:>4d}'.format(o['x'], o['y'], o['flag'], o['tnpix'], o['npix']))
 				i += 1
 
 	bb_flux = b_flux
