@@ -1151,6 +1151,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *gOffsRaDec;
 
 		rts2core::ValueTime *guidingTime;
+		rts2core::ValueTime *lastGuideTime;
 
 		/**
 		 * User alt-az offsets. Supported primary on alt-az mounts.
