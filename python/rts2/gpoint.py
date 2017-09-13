@@ -335,7 +335,7 @@ class GPoint:
     def fit_model_gem(self, params, a_ra, r_ra, a_dec, r_dec):
         if self.verbose > 1:
             print('computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec)
-	m_ha, m_dec = self.model_hadec(params, a_ra, a_dec)
+        m_ha, m_dec = self.model_hadec(params, a_ra, a_dec)
         return libnova.angular_separation(np.degrees(a_ra + m_ha), np.degrees(a_dec + m_dec), np.degrees(r_ra), np.degrees(r_dec))
 
     def fit_model_azel(self, params, a_az, r_az, a_el, r_el):
@@ -345,7 +345,7 @@ class GPoint:
     def fit_model_altaz(self, params, a_az, r_az, a_el, r_el):
         if self.verbose > 1:
             print('computing', self.latitude, self.latitude_r, params, a_az, r_az, a_el, r_el)
-	m_az, m_el = self.model_azel(params, a_az, a_el)
+        m_az, m_el = self.model_azel(params, a_az, a_el)
         return libnova.angular_separation(np.degrees(a_az + m_az), np.degrees(a_el + m_el), np.degrees(r_az), np.degrees(r_el))
 
     # open file, produce model
