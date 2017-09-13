@@ -47,8 +47,7 @@ class AltAzTest(unittest.TestCase):
 			r_az = numpy.radians(azel[0])
 			r_el = numpy.radians(azel[1])
 
-			e_az = numpy.degrees(self.model.model_az(self.model.best.params,r_az,r_el))
-			e_el = numpy.degrees(self.model.model_el(self.model.best.params,r_az,r_el))
+			e_az, e_el = numpy.degrees(self.model.model_azel(self.model.best.params,r_az,r_el))
 			#print '{0:.10f},{1:.10f},   {2:.10f}, {3:.10f}'.format(azel[0], azel[1], e_az,e_el)
 			self.assertAlmostEqual(e_az, azel[2], delta=2.0/3600.0)
 			self.assertAlmostEqual(e_el, azel[3], delta=2.0/3600.0)
