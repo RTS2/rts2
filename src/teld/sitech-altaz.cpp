@@ -248,6 +248,7 @@ class SitechAltAz:public AltAz
 		void setTrackPID (rts2core::ValuePID *pid, char axis);
 
 		void correctOscillations (char axis, rts2core::ValueDoubleStat *err, rts2core::ValueDouble *limit, rts2core::ValuePID *trackPID, rts2core::ValuePID *oscPID);
+		void oscOff (char axis);
 };
 
 }
@@ -621,7 +622,12 @@ int SitechAltAz::startResync ()
 	wasStopped = false;
 
 	az_osc_speed = NAN;
+	if (az_osc_limit->isWarning ())
+		oscOff ('Y');
+
 	alt_osc_speed = NAN;
+	if (alt_osc_limit->isWarning ())
+		oscOff ('X');
 
 	ret = sitechMove (azc, altc);
 	if (ret < 0)
@@ -1489,6 +1495,13 @@ void SitechAltAz::correctOscillations (char axis, rts2core::ValueDoubleStat *err
 			valueGood (limit);
 		}
 	}
+}
+
+void SitechAltAz::oscOff (char axis)
+{
+	logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << " setting normal tracking PIDs" << sendLog;
+	setTrackPID ((axis == 'X' ? alt_track_PID : az_track_PID), axis);
+	valueGood (axis == 'X' ? alt_osc_limit : az_osc_limit);
 }
 
 int main (int argc, char **argv)
