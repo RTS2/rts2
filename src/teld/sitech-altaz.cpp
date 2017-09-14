@@ -1372,9 +1372,7 @@ void SitechAltAz::getPIDs ()
 	}
 	if (alt_track_PID)
 	{
-		if (alt_osc_limit->isWarning ())
-			alt_track_PID->setPID (telConn->getFlashInt16 (12), telConn->getFlashInt16 (14), telConn->getFlashInt16 (16));
-		else
+		if (!alt_osc_limit->isWarning ())
 			alt_track_PID->setPID (telConn->getSiTechValue ('X', "P"), telConn->getSiTechValue ('X', "I"), telConn->getSiTechValue ('X', "D"));
 	}
 
@@ -1385,9 +1383,7 @@ void SitechAltAz::getPIDs ()
 	}
 	if (az_track_PID)
 	{
-		if (az_osc_limit->isWarning ())
-			az_track_PID->setPID (telConn->getFlashInt16 (112), telConn->getFlashInt16 (114), telConn->getFlashInt16 (116));
-		else
+		if (!az_osc_limit->isWarning ())
 			az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
 	}
 
