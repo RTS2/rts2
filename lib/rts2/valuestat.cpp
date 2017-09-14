@@ -46,19 +46,16 @@ void ValueDoubleStat::calculate ()
 	max = *(--sorted.end ());
 	numMes = valueList.size ();
 	double sum = 0;
+	stdev = 0;
+	double tmp_stdev;
 	for (std::deque < double >::iterator iter = sorted.begin (); iter != sorted.end (); iter++)
 	{
 		sum += (*iter);
+		tmp_stdev = *iter - getValueDouble ();
+		tmp_stdev *= tmp_stdev;
+		stdev += tmp_stdev;
 	}
 	setValueDouble (sum / numMes);
-	// calculate stdev
-	stdev = 0;
-	for (std::deque < double >::iterator iter = sorted.begin (); iter != sorted.end (); iter++)
-	{
-		sum = *iter - getValueDouble ();
-		sum *= sum;
-		stdev += sum;
-	}
 	stdev = sqrt (stdev / numMes);
 	if ((numMes % 2) == 1)
 		mode = sorted[numMes / 2];
