@@ -620,6 +620,9 @@ int SitechAltAz::startResync ()
 
 	wasStopped = false;
 
+	az_osc_speed = NAN;
+	alt_osc_speed = NAN;
+
 	ret = sitechMove (azc, altc);
 	if (ret < 0)
 		return ret;
@@ -1452,7 +1455,7 @@ void SitechAltAz::correctOscillations (char axis, rts2core::ValueDoubleStat *err
 	{
 		if (!limit->isWarning ())
 		{
-			logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << "setting oscillation PIDs" << sendLog;
+			logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << " setting oscillation PIDs" << sendLog;
 			setTrackPID (oscPID, axis);
 			valueWarning (limit);
 			if (axis == 'X')
@@ -1468,18 +1471,18 @@ void SitechAltAz::correctOscillations (char axis, rts2core::ValueDoubleStat *err
 			// wait for speed to drop before changing PID
 			if (axis == 'X')
 			{
-				if (alt_sitech_speed_stat->getValueDouble () > alt_osc_speed * 0.7)
+				if (!isnan (alt_osc_speed) && alt_sitech_speed_stat->getValueDouble () > alt_osc_speed * 0.7)
 					return;
 				alt_osc_speed = NAN;
 			}
 			else
 			{
-				if (az_sitech_speed_stat->getValueDouble () > az_osc_speed * 0.7)
+				if (!isnan (az_osc_speed) && az_sitech_speed_stat->getValueDouble () > az_osc_speed * 0.7)
 					return;
 				az_osc_speed = NAN;
 			}
 
-			logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << "setting normal tracking PIDs" << sendLog;
+			logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << " setting normal tracking PIDs" << sendLog;
 			setTrackPID (trackPID, axis);
 			valueGood (limit);
 		}
