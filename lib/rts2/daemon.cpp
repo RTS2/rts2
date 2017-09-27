@@ -184,7 +184,7 @@ int Daemon::checkLockFile ()
 		return 0;
 	int ret;
 	mode_t old_mask = umask (022);
-	lock_file = open (lock_fname.c_str (), O_RDWR | O_CREAT | O_TRUNC, 0666);
+	lock_file = open (lock_fname.c_str (), O_RDWR | O_CREAT, 0666);
 	umask (old_mask);
 	if (lock_file == -1)
 	{
@@ -203,6 +203,7 @@ int Daemon::checkLockFile ()
 		if (errno == EWOULDBLOCK)
 		{
 			logStream (MESSAGE_ERROR) << "lock file " << lock_fname << " owned by another process" << sendLog;
+			lock_file = 0;
 			return -1;
 		}
 		logStream (MESSAGE_DEBUG) << "cannot flock " << lock_fname << ": " << strerror (errno) << sendLog;
