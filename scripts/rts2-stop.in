@@ -48,7 +48,7 @@ if [ "x$name" == "xall" ]; then
 	done < <(cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
 else
 	echo -n "stopping $name .. "
-	kill `cat @LOCK_PREFIX@$name`
+	kill `cat @LOCK_PREFIX@$name` 2>/dev/null
 	stopped=$?
 	[ $stopped == 0 ] && echo "killed" || echo "failed"
 fi
