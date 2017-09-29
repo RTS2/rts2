@@ -135,7 +135,9 @@ int SitechMulti::callInfo ()
 
 		// try to reinit..
 
-		return initHardware ();
+		int ret = initHardware ();
+		md.initMultidev (getDebug ());
+		return ret;
 	}
 	return 0;
 }
