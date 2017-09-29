@@ -130,6 +130,9 @@ int SitechMulti::callInfo ()
 		delete rotators[0];
 		delete rotators[1];
 
+		memset (rotators, 0, sizeof (rotators));
+		md.clear ();
+
 		// try to reinit..
 
 		return initHardware ();
