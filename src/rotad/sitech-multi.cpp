@@ -89,6 +89,7 @@ int SitechMulti::processOption (int opt)
 				paTrack = 2;
 			else
 				return -1;
+			break;
 
 		default:
 			return MultiBase::processOption (opt);
