@@ -53,6 +53,8 @@ class Rotator:public rts2core::Device
 
 		void checkRotators ();
 
+		void unsetPaTracking () { paTracking->setValueBool (false); }
+
 	protected:
 		virtual int idle ();
 

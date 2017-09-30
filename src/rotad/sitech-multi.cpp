@@ -21,6 +21,7 @@
 
 #define OPT_DEF_DER1    OPT_LOCAL + 2451
 #define OPT_DEF_DER2    OPT_LOCAL + 2452
+#define OPT_PA_TRACK    OPT_LOCAL + 2453
 
 using namespace rts2rotad;
 
@@ -29,12 +30,16 @@ SitechMulti::SitechMulti (int argc, char **argv):rts2core::MultiBase (argc, argv
 	der_tty = NULL;
 	derConn = NULL;
 
+	paTrack = 3;
+
 	memset (derdefaults, 0, sizeof (derdefaults));
 	memset (rotators, 0, sizeof (rotators));
 
 	addOption ('f', NULL, 1, "derotator serial port (ussually /dev/ttyUSBxx)");
 	addOption (OPT_DEF_DER1, "defaults-der1", 1, "defaults values for derotator 1");
 	addOption (OPT_DEF_DER2, "defaults-der2", 1, "defaults values for derotator 2");
+
+	addOption (OPT_PA_TRACK, "pa-track", 1, "switch PA tracking on only for given derotator (accept only 0, 1 or 2)");
 }
 
 SitechMulti::~SitechMulti ()
@@ -75,6 +80,16 @@ int SitechMulti::processOption (int opt)
 			derdefaults[1] = optarg;
 			break;
 
+		case OPT_PA_TRACK:
+			if (!strcmp (optarg, "0"))
+				paTrack = 0;
+			else if (!strcmp (optarg, "1"))
+				paTrack = 1;
+			else if (!strcmp (optarg, "2"))
+				paTrack = 2;
+			else
+				return -1;
+
 		default:
 			return MultiBase::processOption (opt);
 	}
@@ -93,6 +108,11 @@ int SitechMulti::initHardware ()
 
 	rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn, this, derdefaults[0], false);
 	rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn, this, derdefaults[1], true);
+
+	if (!(paTrack & 0x01))
+		rotators[0]->unsetPaTracking ();
+	if (!(paTrack & 0x02))
+		rotators[1]->unsetPaTracking ();
 
 	ybits = derConn->getSiTechValue ('Y', "B");
 	xbits = derConn->getSiTechValue ('X', "B");
