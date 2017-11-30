@@ -52,7 +52,7 @@ AS_IF([test "x$ERFA_LIBS" != x], [
 
 libwebsockets="no"
 
-PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.7.0],,AC_MSG_RESULT(not found))
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.7.0 libwebsockets < 2.2.0],,AC_MSG_RESULT(not found))
 AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
 AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
@@ -79,7 +79,7 @@ AC_SUBST(CXXFLAGS)
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
 LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
 **** You don't have math library.
-**** Please install one and make sure, that it is available. 
+**** Please install one and make sure, that it is available.
 EOF
 exit 1])
 
@@ -95,17 +95,17 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset poll socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
 
-AC_FUNC_CHOWN 
+AC_FUNC_CHOWN
 AC_FUNC_MEMCMP
 AC_FUNC_STAT
-AC_FUNC_STRFTIME 
-AC_FUNC_VPRINTF 
+AC_FUNC_STRFTIME
+AC_FUNC_VPRINTF
 AC_TYPE_MODE_T
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([limits.h sys/ioccom.h argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h sys/inotify.h curses.h ncurses/curses.h])
+AC_CHECK_HEADERS([limits.h sys/ioccom.h argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h sys/inotify.h curses.h ncurses/curses.h endian.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -166,7 +166,7 @@ AS_IF([test "x${CFITSIO_LIBS}" != "xno"],[
 		AC_CHECK_LIB([cfitsio], [ffinit], CFITSIO_LIBS="-lcfitsio",[
 			cat <<EOF
 **** cfitsio is not installed.
-**** Please download one from 
+**** Please download one from
 **** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
 EOF
 			exit 1])
@@ -520,7 +520,7 @@ AC_SUBST(COMEDI)
 AC_SUBST(LIB_COMEDI)
 AC_SUBST(INC_COMEDI)
 
-# check for paramount library 
+# check for paramount library
 AC_ARG_WITH(paralib,
 [  --with-paralib          path to Paramount library, build Paramount driver],
 PARALIB="${withval}";
@@ -605,7 +605,7 @@ AC_ARG_WITH(bigng,
 [  --with-bigng            path for Tban SDK (libtan)],
 BIGNG="${withval}";
 LIB_BIGNG="${withval}/big_ng.o ${withval}/parser.o ${withval}/tban.o ${withval}/libtban.a";
-INC_BIGNG="-I${withval}", 
+INC_BIGNG="-I${withval}",
 [BIGNG=no])
 
 AM_CONDITIONAL(BIGNG, test x$BIGNG != xno)
@@ -687,7 +687,7 @@ AS_IF([test "x${libwcstools}" != "xno"], [
   AS_IF([test "x${libwcstools}" != "xyes"], [
     LDFLAGS="${LDFLAGS} -L${libwcstools}/libwcstools"
   ])
-  AC_CHECK_LIB([wcstools], [wcs2pix], LIBWCS_LDFLAGS="-lwcstools", 
+  AC_CHECK_LIB([wcstools], [wcs2pix], LIBWCS_LDFLAGS="-lwcstools",
   [cat <<EOF
 **** You don't have wcstools installed.
 **** You can download one from
@@ -712,7 +712,7 @@ AC_SUBST(LIBWCS_LDFLAGS)
 AS_IF([test "x${libnova}" != "xyes"], [
   LDFLAGS="${LDFLAGS} -L${libnova}/lib"
 ])
-AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova", 
+AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova",
 [cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
@@ -768,7 +768,7 @@ AC_SUBST(LIBARCHIVE_LIBS)
 AC_SUBST(LIBARCHIVE_CFLAGS)
 
 AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
- 
+
 AS_IF([test "x$LIBARCHIVE_LIBS" != "x"], [
 	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
 	libarchive="yes"
@@ -1007,7 +1007,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2scheduler/Makefile
 	   lib/rts2json/Makefile
 	   lib/rts2tel/Makefile
-	   lib/libindi/Makefile 
+	   lib/libindi/Makefile
 	   lib/sep/Makefile
 	   python/Makefile
 	   python/rts2/Makefile

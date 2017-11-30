@@ -32,7 +32,9 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <time.h>
 #include <sys/time.h>
 

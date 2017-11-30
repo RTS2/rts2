@@ -7,6 +7,10 @@ noinst_HEADERS = xmlstream.h httpd.h r2x.h session.h stateevents.h valueevents.h
 LDADD = @MAGIC_LIBS@ @LIB_M@ @LIB_NOVA@ @JSONGLIB_LIBS@
 AM_CXXFLAGS = @MAGIC_CFLAGS@ @NOVA_CFLAGS@ @MAGIC_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ @JSONGLIB_CFLAGS@ -I../../include
 
+if MACOSX
+AM_CXXFLAGS += -include ../../include/compat/osx/compat.h
+endif
+
 if PGSQL
 
 rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp stateeventsdb.cpp valueevents.cpp \
