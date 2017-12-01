@@ -1,5 +1,7 @@
 #include <stdio.h>
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <stdlib.h>
 #include <math.h>
 

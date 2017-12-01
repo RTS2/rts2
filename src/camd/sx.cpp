@@ -1,4 +1,4 @@
-/* 
+/*
  * Starlight Express CCD driver.
  * Copyright (C) 2016 Petr Kubanek <petr@kubanek.net>
  *
@@ -94,7 +94,7 @@ SX::SX (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('n', NULL, 1, "camera name (for systems with multiple CCDs)");
 	addOption ('l', NULL, 0, "list available camera names");
 	addOption ('r', NULL, 0, "allow reboot command");
-	
+
 	createExpType ();
 
 	createValue (model, "model", "camera model", false);
@@ -261,7 +261,7 @@ for (int j=0; j < 5; j++)
 		if (!ret)
 			return -1;
 	}
-	
+
 //	ret = sxSetShutter (sxHandle, 0);
 //	if (!ret)
 //		return -1;
@@ -269,7 +269,7 @@ for (int j=0; j < 5; j++)
 //	ret = sxSetTimer (sxHandle, getExposure () * 100.0);
 //	if (!ret)
 //		return -1;
-	
+
 	return 0;
 }
 

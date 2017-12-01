@@ -23,7 +23,9 @@
 
 #include <errno.h>
 #include <ftw.h>
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <iostream>
 #include <string.h>
 #include <stdarg.h>

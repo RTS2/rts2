@@ -12,7 +12,9 @@
 # include <list>
 #endif
 
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <poll.h>
 #include <stdlib.h>
 

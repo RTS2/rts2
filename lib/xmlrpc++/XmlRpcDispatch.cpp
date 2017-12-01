@@ -62,7 +62,7 @@ void XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 			return;
 		}
 	// if not found, add it
-	addSource(source, eventMask);	
+	addSource(source, eventMask);
 }
 
 #define MAX_POLLS	200
@@ -166,7 +166,7 @@ void XmlRpcDispatch::addToFds (struct pollfd *fds, nfds_t &nfd)
 			fds[nfd].fd = it->getSource()->getfd();
 			fds[nfd].events = events;
 			fds[nfd].revents = 0;
-			nfd++;	
+			nfd++;
 		}
 	}
 }

@@ -26,7 +26,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <sys/time.h>
 #endif
 

@@ -1,9 +1,9 @@
-EXTRA_DIST = 
+EXTRA_DIST =
 
 SUBDIRS = irait
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
-	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
+	rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-apgto-pk rts2-teld-lx200test rts2-teld-nexstar \
 	rts2-teld-lx200gps rts2-teld-lx200focgps rts2-teld-meade rts2-teld-indi \
@@ -13,6 +13,10 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
+
+if MACOSX
+AM_CXXFLAGS += -include ../../include/compat/osx/compat.h
+endif
 
 rts2_teld_gemini_SOURCES = gemini.cpp
 rts2_teld_gemini_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 ${LDADD}
@@ -49,13 +53,18 @@ rts2_teld_apgto_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collisio
 rts2_teld_apgto_pk_SOURCES = apgto_pk.cpp
 rts2_teld_apgto_pk_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
 
+if !SUNCYGMAC
+bin_PROGRAMS += rts2-teld-d50
 rts2_teld_d50_SOURCES = d50.cpp
+else
+EXTRA_DIST += d50.cpp
+endif
 
 rts2_teld_kolonica_SOURCES = kolonica.cpp
 
 rts2_teld_hlohovec_SOURCES = hlohovec.cpp
 
-rts2_teld_opentpl_SOURCES = opentpl.cpp 
+rts2_teld_opentpl_SOURCES = opentpl.cpp
 rts2_opentpl_errors_SOURCES = opentpl-errors.cpp
 
 rts2_teld_trencin_SOURCES = trencin.cpp
