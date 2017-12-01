@@ -22,7 +22,9 @@
 #include "imghdr.h"
 #include "nan.h"
 
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <string.h>
 #include <math.h>
 #include <iostream>

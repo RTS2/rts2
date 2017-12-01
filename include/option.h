@@ -27,7 +27,9 @@
 #else
 #include "getopt_own.h"
 #endif
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <stdio.h>
 
 // custom configuration values

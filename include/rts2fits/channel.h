@@ -21,7 +21,9 @@
 #define __RTS2_CHANNEL__
 
 #include <vector>
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <sys/types.h>
 
 namespace rts2image
