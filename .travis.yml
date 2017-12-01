@@ -52,7 +52,6 @@ matrix:
             libsoup2.4-dev
             pkg-config
             postgresql-server-dev-all
-            postgresql
             libecpg-dev
             wget
             check
@@ -83,7 +82,6 @@ matrix:
             libsoup2.4-dev
             pkg-config
             postgresql-server-dev-all
-            postgresql
             libecpg-dev
             wget
             check
