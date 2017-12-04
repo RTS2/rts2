@@ -1,4 +1,4 @@
-/* 
+/*
  * NCurses based monitoring
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -73,7 +73,8 @@ void NMonitor::sendCommand ()
 	if (*cmd_top)
 	{
 		oldCommand = new rts2core::Command (this, cmd_top);
-		conn->queCommand (oldCommand);
+		if (conn)
+			conn->queCommand (oldCommand);
 		comWindow->winclear ();
 		comWindow->printCommand (command);
 		wmove (comWindow->getWriteWindow (), 0, 0);
@@ -349,7 +350,8 @@ void NMonitor::changeActive (NWindow * new_active)
 void NMonitor::changeListConnection ()
 {
 	rts2core::Connection *conn = connectionAt (deviceList->getSelRow ());
-	if (conn)
+	// We may arrive here if conn is already deleted, so let's check it
+	if (conn && conn->getConnState() != CONN_DELETE)
 	{
 		delete daemonWindow;
 		daemonWindow = NULL;
@@ -693,14 +695,18 @@ void NMonitor::processKey (int key)
 			break;
 		case KEY_F (1):
 			showHelp ();
+			activeWindow = NULL;
 			break;
 		case KEY_F (2):
 			messageBox ("Are you sure to switch off?", SWITCH_OFF);
+			activeWindow = NULL;
 			break;
 		case KEY_F (3):
 			messageBox ("Are you sure to switch to standby?", SWITCH_STANDBY);
+			activeWindow = NULL;
 			break;
 		case KEY_F (4):
+			activeWindow = NULL;
 			messageBox ("Are you sure to switch to on?", SWITCH_ON);
 			break;
 		case KEY_F (5):
@@ -720,6 +726,19 @@ void NMonitor::processKey (int key)
 			resize ();
 			break;
 			// default for active window
+		case KEY_EXIT:
+		case K_ESC:
+			ret = activeWindow->injectKey (key);
+			if (ret == RKEY_NOT_HANDLED)
+			{
+				// ESC in device window brings you back to device list
+				if (activeWindow == daemonWindow && true)
+				{
+					changeActive (deviceList);
+					ret = RKEY_HANDLED;
+				}
+			}
+			break;
 		case KEY_ENTER:
 		case K_ENTER:
 			// preproccesed enter in case device window is selected..
@@ -728,6 +747,13 @@ void NMonitor::processKey (int key)
 			{
 				ret = comWindow->injectKey (key);
 				sendCommand ();
+				break;
+			}
+			// If no command is entered then RET in device list brings up device window
+			if (activeWindow == deviceList && comWindow->getCurX () == 0)
+			{
+				changeActive (daemonWindow);
+				activeWindow = NULL;
 				break;
 			}
 		default:
