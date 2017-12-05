@@ -71,6 +71,7 @@
 #define RESET_AG1		0x0001
 #define RESET_AG2		0x0002
 #define RESET_APM		0x0004
+#define SLEW_LIGHTS		0x0008
 
 namespace rts2dome
 {
@@ -123,6 +124,7 @@ class SAAO:public Cupola
 		void setRegisters (uint8_t address, uint16_t regaddr, int len, const uint16_t *sbuf);
 
 		void setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition);
+		void setSlewLights (bool lights);
 		void resetPower (uint16_t bit);
 
 		rts2core::ConnSerial *domeConn;
@@ -142,6 +144,8 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *lightsOn;
 		rts2core::ValueBool *lightsManual;
+
+		rts2core::ValueBool *slewLightsOn;
 
 		rts2core::ValueBool *emergencyPressed;
 		rts2core::ValueBool *closedRemote;
@@ -254,6 +258,8 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv, true)
 
 	createValue (lightsOn, "lights", "dome lights", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (lightsManual, "lights_manual", "dome lights switched on by manual switch", false, RTS2_DT_ONOFF);
+
+	createValue (slewLightsOn, "slew_lights", "slew lights on/off", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 
 	createValue (shutterPower, "shutter_power", "shutter power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (rotatPower, "rotator_power", "dome rotator power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
@@ -423,6 +429,11 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == lightsOn)
 	{
 		setDome (((rts2core::ValueBool *) newValue)->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
+		return 0;
+	}
+	if (oldValue == slewLightsOn)
+	{
+		setSlewLights (((rts2core::ValueBool *) newValue)->getValueBool ());
 		return 0;
 	}
 	if (oldValue == rotatPower)
@@ -630,6 +641,16 @@ void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, 
 		data[2] = num2hex (ln_range_degrees (getTargetAz () + 180) * 10);
 
 	setRegisters (0x01, 0x1064, 3, data);
+}
+
+void SAAO::setSlewLights (bool lights)
+{
+	uint16_t data[1];
+	memset (data, 0, sizeof (data));
+	if (lights)
+		data[0] |= SLEW_LIGHTS;
+
+	setRegisters (0x01, 0x106A, 1, data);
 }
 
 void SAAO::resetPower (uint16_t bit)
