@@ -390,7 +390,7 @@ int AzCam3::startExposure()
 
 	const char *imgType[3] = {"object", "dark", "zero"};
 
-	ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], "RTS2");
+	ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue());
 	if (ret)
 		return ret;
 	sleep (5);

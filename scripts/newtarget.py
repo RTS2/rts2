@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from  xml.etree import ElementTree
 import requests
 import numpy
@@ -6,7 +8,9 @@ from astropy.coordinates import Angle
 import sys
 import rts2
 import urllib
+import argparse
 rts2.createProxy(url="http://localhost:8889")
+
 
 def build_url(search_term="M39"):
     urlsafe = urllib.quote_plus(search_term)
@@ -17,14 +21,18 @@ def build_url(search_term="M39"):
     return url
 
 
-
-
-
 def get_data(st):
     url = build_url(st)
     print("URL is {}".format(url))
     data = requests.get(url)
     doc = ElementTree.fromstring(data.text)
+    for ele in doc:
+        if "INFO" in ele.tag:
+            if ele.attrib["name"] == "Error":
+                print("There was an error:")
+                print("{}".format(ele.attrib["value"]))
+                if 'y' not in raw_input("Continue y/n\n").lower():
+                    sys.exit()
     return doc
         
 def sort_data(doc):
@@ -47,7 +55,7 @@ def sort_data(doc):
     
     return mydict
 
-def newtarget(search_term):
+def search(search_term):
     votable = get_data(search_term)
     target = sort_data(votable)
     target['ra'] = Angle(target['RA_d'], u.deg)
@@ -57,7 +65,42 @@ def newtarget(search_term):
     return target
 
 
+def create(rastr, decstr, name ):
+    ra = Angle( rastr, unit=u.hour )
+    dec = Angle( decstr, unit=u.deg )
+    
+    tar_id = rts2.target.create( name, ra.deg, dec.deg)
+    print("Adding Target {} at {} {} with target id {}".format(name, ra, dec, tar_id))
 
 
-search_term = sys.argv[1]
-newtarget(search_term)
+class create_parser:
+    args = None
+
+    def __call__(self, arg):
+        if self.args == None:
+            self.args = []
+
+        self.args.append(arg)
+
+
+    
+
+def main():
+    cp = create_parser() # negative decs wreak havoc
+    parser = argparse.ArgumentParser(description='Add new targets to the RTS2 database')
+    parser.add_argument("--search", nargs=1, dest="search_term", help="Search term for Simbad database.")
+    parser.add_argument("--create", nargs=3, dest="obj", action="store", type=cp, help="Create a new target with ra, dec and name eg --create 20:42:22 +38:00:00 my_name_for_this_target. If the Declination is negative put the argument in quotes and add a leading space like \" -09:21:14.9\" ")
+
+    args = parser.parse_args()
+
+    if args.search_term:
+        search( args.search_term )
+
+    elif args.obj:
+        
+        create( *cp.args )
+
+
+        
+main()
+
