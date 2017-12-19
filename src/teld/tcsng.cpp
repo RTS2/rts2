@@ -96,6 +96,7 @@ class TCSNG:public Telescope
 		rts2core::ValueBool *domeAuto;
 		rts2core::ValueBool *domeInit;
 		rts2core::ValueBool *domeHome;
+		rts2core::ValueBool *pecState;
 		rts2core::ValueDouble *domeAz;
 		rts2core::ValueSelection *tcsngmoveState;
 		rts2core::ValueInteger *motionState;
@@ -108,6 +109,8 @@ class TCSNG:public Telescope
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
 		rts2core::ValueDouble *tle_refresh;
+
+
 
 		rts2core::ValueInteger *reqcount;
 };
@@ -149,6 +152,10 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv, true, true)
 	domeHome->setValueBool (false);
 
 	createValue (domeAz, "dome_az", "dome azimuth", false);
+
+	createValue (pecState, "pec_state", "PEC", false, RTS2_VALUE_WRITABLE);
+	pecState->setValueBool (false);
+	
 	
 	/*RTS2 moveState is an rts2 data type that is alwasy 
 	set equal to the tcsng.moveState member 
@@ -256,7 +263,15 @@ int TCSNG::info ()
 			domeAz->setValueDouble (az);
 			domeHome->setValueBool (home == 1);
 		}
-
+		const char * pecst = ngconn->request("PECSTAT");
+		int pecCond, pecCount, pecIndex, pecMode;
+		slen = sscanf (pecst, "%d %d %d %d", &pecCond, &pecCount, &pecIndex, &pecMode);
+		if (slen == 4)
+		{
+			pecState->setValueBool( pecCond == 1 || pecCond == 3 );
+			if( pecCond == 3 )
+			logStream(MESSAGE_WARNING) << "PEC has not yet found the index." << sendLog;
+		}
 		reqcount->setValueInteger (ngconn->getReqCount ());
 	}
 	catch (rts2core::Error &er)
@@ -354,7 +369,14 @@ int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	{
 		ngconn->command (((rts2core::ValueBool *) newValue)->getValueBool () ? "ENABLE" : "DISABLE");
 		return 0;
+	}	
+
+	if (oldValue == pecState)
+	{
+		ngconn->command (((rts2core::ValueBool *) newValue)->getValueBool () ? "PEC ON" : "PEC OFF");
+		return 0;
 	}
+
 	return Telescope::setValue (oldValue, newValue);
 }
 

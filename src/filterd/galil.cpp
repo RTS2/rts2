@@ -114,6 +114,7 @@ class GalilFilter:public Filterd
 		char rspBuff[100];
 		rts2core::ValueString *filterNames;
 		rts2core::ValueString *loadedFilter;
+		rts2core::StringArray *filterArray;
 		GalilConn *galilConn;
 		HostString *host;
 		
@@ -130,6 +131,7 @@ GalilFilter::GalilFilter (int argc, char **argv):Filterd (argc, argv)
 	addOption ('g', "hostname", 1, "name or ip address of galilserver");
 	createValue (filterNames, "filter_names", "filter names (will be parsed)", false, RTS2_VALUE_WRITABLE);
 	createValue (loadedFilter, "loadedFilter", "THis Filter", false);
+	createValue (filterArray, "Filters", "Filter List", false);
 }
 
 GalilFilter::~GalilFilter ()
@@ -240,6 +242,7 @@ int GalilFilter::readAllFilters( )
 
 	//const char *allFilters[6] = {"Bessell-U", "Harris-R", "Harris-B", "Harris-V", "Arizona-I", "Schott-8612"};
 	std::string allFilters[nFilters];
+	std::string dummy_filterNames= "";
 	int ii =0;
 
 	while( ii < nFilters )
@@ -255,19 +258,23 @@ int GalilFilter::readAllFilters( )
 			ii++;
 			pos = atoi( galilConn->writeRead("SHOW FWPOS\r\n").c_str() )-1;
 			allFilters[pos] = galilConn->writeRead("SHOWLOADEDFILTER\r\n");
+			
 			logStream (MESSAGE_INFO) << "Filter number " << pos << " is " << allFilters[pos] << sendLog;
 			galilConn->writeRead("MOVE1\r\n");
 			sleep(1);
 		}
+		
 	}
-
+	
 
 	for( ii=0; ii< nFilters; ii++)
 	{
 		logStream (MESSAGE_INFO) << "adding filter " << ii << " " << allFilters[ii] << sendLog;
 		addFilter (allFilters[ii].c_str ());
+		dummy_filterNames+= allFilters[ii] + " ";
 	
 	}
+	filterNames->setValueString( dummy_filterNames );
 	sendFilterNames ( );
 	return 0;
 }
