@@ -553,7 +553,7 @@ if __name__ == "__main__":
     
   processes = list()
   
-  for w in range(1,cpus,1):
+  for w in range(0,cpus,1):
     p=Worker(work_queue=work_queue,cmd_queue=cmd_queue,next_queue=next_queue,lock=lock,lg=logger,anl=anl)
     logger.debug('starting process: {}'.format(p.name))
     p.start()
