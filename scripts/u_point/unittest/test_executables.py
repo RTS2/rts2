@@ -125,7 +125,7 @@ class TestAnalysisModel(unittest.TestCase):
         if val is not None:
             # ToDo quick
             diff=abs(30.-val)
-            self.assertLess(difffg,val_max, msg='return value: {}, instead of max: {}'.format(val, val_max))
+            self.assertLess(diff,val_max, msg='return value: {}, instead of max: {}'.format(val, val_max))
         else:
             self.assertEqual(1.,val_max, msg='return value: None, instead of max: {}'.format(val_max))
             

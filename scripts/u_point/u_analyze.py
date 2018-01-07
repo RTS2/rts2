@@ -296,9 +296,9 @@ class Analysis(Script):
     # ToDo: use AltAz, HA coordinates
     
     if self.sky_acq[0].eq_mount:
-      annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.ra.degree,x.cat_ll_ap.dec.degree,x.image_fn) for x in self.sky_anl]
+      annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.ra.degree,x.cat_ll_ap.dec.degree,x.image_fn) for x in self.sky_acq]
     else:
-      annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.az.degree,x.cat_ll_ap.alt.degree,x.image_fn) for x in self.sky_anl]
+      annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.az.degree,x.cat_ll_ap.alt.degree,x.image_fn) for x in self.sky_acq]
 
     nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa_rdb is not None]
     aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=self.cat_ll_ap_lon,lat=self.cat_ll_ap_lat,annotes=annotes)]
@@ -542,8 +542,8 @@ if __name__ == "__main__":
     
   if len(anl.sky_anl) and args.ds9_display:
     logger.warn('deleted positions will appear again, these are deliberately not stored, file: {}'.format(args.analyzed_positions))
-    
-  cpus=int(cpu_count())-1 # one left for the user :-))
+
+  cpus=max(1,int(cpu_count())-1) # one left for the user :-))  
   cmd_queue=None    
   next_queue=None    
   if args.pos_by_position:
