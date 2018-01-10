@@ -8,64 +8,82 @@ import unittest
 import numpy
 
 class AngularTest(unittest.TestCase):
-	def test(self):
-		self.assertAlmostEqual(libnova.angular_separation(0,0,1,1), 1.41417, 4)
-		self.assertAlmostEqual(libnova.angular_separation(213.9154,19.1825,201.2983,-11.1614), 32.79302684, 7)
-		self.assertAlmostEqual(libnova.angular_separation(0,0,180,0),180)
-		self.assertAlmostEqual(libnova.angular_separation(0,0,180,-40),140)
+    def test(self):
+        self.assertAlmostEqual(libnova.angular_separation(0,0,1,1), 1.41417, 4)
+        self.assertAlmostEqual(libnova.angular_separation(213.9154,19.1825,201.2983,-11.1614), 32.79302684, 7)
+        self.assertAlmostEqual(libnova.angular_separation(0,0,180,0),180)
+        self.assertAlmostEqual(libnova.angular_separation(0,0,180,-40),140)
 
 class HrzTest(unittest.TestCase):
-	def testRaDec(self):
-		ra = [0,10,20,120.5,120.52,180,190,250,320,359]
-		dec = [40] * len(ra)
-		dec.extend([0] * len(ra))
-		dec.extend([-20] * len(ra))
-		dec.extend([-30] * len(ra))
-		dec.extend([-89] * len(ra))
-		ra = numpy.array (ra * 5, numpy.float)
+    def testRaDec(self):
+        ra = [0,10,20,120.5,120.52,180,190,250,320,359]
+        dec = [40] * len(ra)
+        dec.extend([0] * len(ra))
+        dec.extend([-20] * len(ra))
+        dec.extend([-30] * len(ra))
+        dec.extend([-89] * len(ra))
+        ra = numpy.array (ra * 5, numpy.float)
 
-		self.__testRaDecVector(ra, dec, -20, 120.51)
-		self.__testRaDecVector(ra, dec, 50, 120.51)
-		self.__testRaDecVector(ra, dec, 0, 120.51)
+        self.__testRaDecVector(ra, dec, -20, 120.51)
+        self.__testRaDecVector(ra, dec, 50, 120.51)
+        self.__testRaDecVector(ra, dec, 0, 120.51)
 
-	def __testRaDecVector(self, ra, dec, latitude, lst):
-		self.assertEqual(len(ra), len(dec))
-		alt,az = libnova.equ_to_hrz(ra, dec, lst, latitude)
-		r_ha,r_dec = libnova.hrz_to_equ(az, alt, latitude)
-		# convert HA to RA
-		r_ra = (lst - r_ha) % 360
+    def __testRaDecVector(self, ra, dec, latitude, lst):
+        self.assertEqual(len(ra), len(dec))
+        alt,az = libnova.equ_to_hrz(ra, dec, lst, latitude)
+        r_ha,r_dec = libnova.hrz_to_equ(az, alt, latitude)
+        # convert HA to RA
+        r_ra = (lst - r_ha) % 360
 
-		self.assertEqual(len(ra), len(r_ra))
-		self.assertEqual(len(dec), len(r_dec))
+        self.assertEqual(len(ra), len(r_ra))
+        self.assertEqual(len(dec), len(r_dec))
 
-		r_alt,r_az = libnova.equ_to_hrz(r_ra, r_dec, lst, latitude)
+        r_alt,r_az = libnova.equ_to_hrz(r_ra, r_dec, lst, latitude)
 
-		for i in range(len(ra)):
-			# 359.999 = 360
-			if round (r_ra[i], 4) == 360:
-				r_ra[i] = 0
-			self.assertAlmostEqual(ra[i], r_ra[i], 4)
-			self.assertAlmostEqual(dec[i], r_dec[i], 4)
+        for i in range(len(ra)):
+            # 359.999 = 360
+            if round (r_ra[i], 4) == 360:
+                r_ra[i] = 0
+            self.assertAlmostEqual(ra[i], r_ra[i], 4)
+            self.assertAlmostEqual(dec[i], r_dec[i], 4)
 
-			self.assertAlmostEqual(alt[i], r_alt[i], 4)
-			self.assertAlmostEqual(az[i], r_az[i], 4)
+            self.assertAlmostEqual(alt[i], r_alt[i], 4)
+            self.assertAlmostEqual(az[i], r_az[i], 4)
 
-	def testHrzEqu0(self):
-		dec = [-80, -67.78, -55.12, -40.1234, -22] #, 0, 22.345, 55.34, 70.213, 89.34]
-		ra = numpy.array ([12.3] * len(dec))
+    def testHrzEqu0(self):
+        dec = [-80, -67.78, -55.12, -40.1234, -22] #, 0, 22.345, 55.34, 70.213, 89.34]
+        ra = numpy.array ([12.3] * len(dec))
 
-		alt,az = libnova.equ_to_hrz(ra, dec, 12.3, -1)
+        alt,az = libnova.equ_to_hrz(ra, dec, 12.3, -1)
 
-		for a in az:
-			self.assertAlmostEqual(a, 0, 4)
+        for a in az:
+            self.assertAlmostEqual(a, 0, 4)
 
-	def testHrzEqu180(self):
-		dec = [0, 22.345, 55.34, 70.213, 89.34]
-		ra = numpy.array ([12.3] * len(dec))
+    def testHrzEqu180(self):
+        dec = [0, 22.345, 55.34, 70.213, 89.34]
+        ra = numpy.array ([12.3] * len(dec))
 
-		alt,az = libnova.equ_to_hrz(ra, dec, 12.3, -1)
+        alt,az = libnova.equ_to_hrz(ra, dec, 12.3, -1)
 
-		for a in az:
-			self.assertAlmostEqual(a, 180, 4)
+        for a in az:
+            self.assertAlmostEqual(a, 180, 4)
+
+class HrzVectTest(unittest.TestCase):
+    def testHrzVect(self):
+        az, el = numpy.radians([90, 50])
+	x, y, z = libnova.hrz_to_vect(az, el)
+	az_2, el_2 = libnova.vect_to_hrz(x, y, z)
+        self.assertAlmostEqual(az, az_2, 10)
+	self.assertAlmostEqual(el, el_2, 10)
+
+	az = numpy.radians([0,    2, 57, -78, -56.4, 78, 56, 12, 13])
+	el = numpy.radians([-15, 45, 75,   7, 13.12, 25, -5, 37, 45])
+
+        x, y, z = libnova.hrz_to_vect(az, el)
+	az_2, el_2 = libnova.vect_to_hrz(x, y, z)
+
+	for i in range(len(az)):
+	     self.assertAlmostEqual(az[i], az_2[i], 10)
+	     self.assertAlmostEqual(el[i], el_2[i], 10)
 
 unittest.main()

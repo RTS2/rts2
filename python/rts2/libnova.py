@@ -17,7 +17,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from numpy import cos,sin,arctan2,tan,sqrt,radians,degrees,arcsin,arccos,seterr,divide
+from numpy import cos,sin,arctan2,tan,sqrt,radians,degrees,arcsin,arccos,arctan,seterr,divide
 
 def angular_separation(ra1,dec1,ra2,dec2):
 	a1 = radians(ra1)
@@ -75,5 +75,19 @@ def parallactic_angle(latitude, ha, dec):
 	return degrees(parallactic_angle_rad(latitude_r, ha_r, dec_r))
 
 def parallactic_angle_rad(latitude_r, ha_r, dec_r):
-	div = sin(latitude_r) * cos(dec_r) - cos(latitude_r) * sin(dec_r) * cos(ha_r)
-	return arctan2(cos(latitude_r) * sin(ha_r), div)
+    div = sin(latitude_r) * cos(dec_r) - cos(latitude_r) * sin(dec_r) * cos(ha_r)
+    return arctan2(cos(latitude_r) * sin(ha_r), div)
+
+def hrz_to_vect(az, el):
+    """Transform az/alt pair to XYZ vector.
+    :param az: azimuth (radians)
+    :param el: elevation (radians)
+    :return [x,y,z]: unit vector representing 
+    """
+    return [cos(az) * cos(el), sin(az) * cos(el), sin(el)]
+
+def vect_to_hrz(x, y, z):
+    r = sqrt(x**2 + y**2 + z**2)
+    el = arcsin(z / r)
+    az = arctan(y / x)
+    return [az, el]
