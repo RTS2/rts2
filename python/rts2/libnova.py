@@ -89,5 +89,5 @@ def hrz_to_vect(az, el):
 def vect_to_hrz(x, y, z):
     r = sqrt(x**2 + y**2 + z**2)
     el = arcsin(z / r)
-    az = arctan(y / x)
+    az = arctan2(y,  x)
     return [az, el]

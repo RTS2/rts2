@@ -85,8 +85,8 @@ class HrzVectTest(unittest.TestCase):
         self.assertAlmostEqual(az, az_2, 10)
         self.assertAlmostEqual(el, el_2, 10)
 
-        az = numpy.radians([0,    2, 57, -78, -56.4, 78, 56, 12, 13])
-        el = numpy.radians([-15, 45, 75,   7, 13.12, 25, -5, 37, 45])
+        az = numpy.radians([0,    2, 57, -78, -56.4, 78, 56, 12, 13, -8, -174])
+        el = numpy.radians([-15, 45, 75,   7, 13.12, 25, -5, 37, 45,  10, -20])
 
         x, y, z = libnova.hrz_to_vect(az, el)
         az_2, el_2 = libnova.vect_to_hrz(x, y, z)
