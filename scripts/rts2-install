@@ -101,16 +101,19 @@ step_sys_ubuntu()
 		extra_p="postgresql libecpg-dev"
 		case $DISTRIB_CODENAME in
 			lucid)
-				extra_p="$extra_p libatlas-cpp-0.6-dev libatlas-base-dev postgresql-server-dev-8.4"
+				extra_p="$extra_p libatlas-cpp-0.6-dev libatlas-base-dev postgresql-server-dev-8.4 libcfitsio3-dev"
 				;;
 			natty)
-				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-8.4"
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-8.4 libcfitsio3-dev"
 				;;
 			oneiric|precise|quantal|raring|saucy|trusty|wheezy|sid)
-				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-all"
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-all libcfitsio3-dev"
+				;;
+			artful)
+				extra_p="$extra_p libatlas-base-dev libatlas-base-dev postgresql-server-dev-all libcfitsio-dev"
 				;;
 			*)
-				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-all"
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-all libcfitsio3-dev"
 				;;
 
 		esac		
@@ -118,7 +121,7 @@ step_sys_ubuntu()
 
 	echo "Installing required Ubuntu packages"
 
-	sudo apt-get -y install git $extra_p liberfa1 liberfa-dev automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-future python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config python-lmfit
+	sudo apt-get -y install git $extra_p liberfa1 liberfa-dev automake libtool libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-future python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config python-lmfit
 }
 
 step_sys_ds9()
