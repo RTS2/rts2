@@ -65,9 +65,10 @@ class JSONTest(unittest.TestCase):
             '--width=5000', '--height=5000'
         ])
 
+        print('starting multidev')
         self.multi_sensor = subprocess.Popen([
             '../src/sensord/rts2-sensor-multi',
-            '-i', '--debug',
+            '-i', '--debug', '-d MS',
             lock_prefix, server
         ])
 
@@ -84,8 +85,7 @@ class JSONTest(unittest.TestCase):
         ])
 
         time.sleep(10)
-        self.j = rtsapi.createProxy(
-            'http://localhost:8889', 'pytest', 'pytest')
+        self.j = rtsapi.createProxy('http://localhost:8889', 'pytest', 'pytest')
 
     def tearDown(self):
         self.teld_nf.terminate()
@@ -105,15 +105,16 @@ class JSONTest(unittest.TestCase):
         self.assertEqual(self.j.getValue('NF', 'average'), numpy.average(data))
 
     def testMulti(self):
+        time.sleep(300)
         self.j.refresh()
         self.assertNotEqual(self.j.getValue('MS1', 'test_string', True), '')
         self.assertNotEqual(self.j.getValue('MS2', 'test_string'), '')
 
     def testMount(self):
+        self.j.executeCommand('T0', 'getdut1')
+
         self.j.setValue('T0', 'AMBTEMP', 20)
         self.j.refresh()
-        self.assertEqual(self.j.getValue('T0', 'AMBTEMP'), 20)
-
-        self.j.executeCommand('T0', 'getdut1')
+        self.assertEqual(self.j.getValue('T0', 'AMBTEMP', True), 20)
 
 unittest.main()

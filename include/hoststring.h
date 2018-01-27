@@ -21,6 +21,7 @@
 #define __RTS2_HOSTSTRING__
 
 #include <rts2-config.h>
+#include <string>
 
 /**
  * Represents hostname with possible port number.
@@ -30,7 +31,7 @@
 class HostString
 {
 	private:
-		const char *hostname;
+		std::string hostname;
 		int port;
 	public:
 		/**
@@ -43,7 +44,7 @@ class HostString
 
 		const char *getHostname ()
 		{
-			return hostname;
+			return hostname.c_str ();
 		}
 
 		int getPort ()

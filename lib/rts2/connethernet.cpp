@@ -155,8 +155,8 @@ int ConnEthernet::writeRead (const void* wbuf, int wlen, void *rbuf, int rlen, i
 	}
 
 	// and now take care of response...
-	readTout.tv_sec = wtime;
-	readTout.tv_usec = 0;
+	// readTout.tv_sec = wtime;
+	// readTout.tv_usec = 0;
 	readToutDline = time (0) + wtime;
 
 	// docasna testovaci nahrada za select:

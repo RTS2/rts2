@@ -27,13 +27,13 @@ HostString::HostString (const char *hoststring, const char *defaultPort)
 	const char *ch = strchr (hoststring, ':');
 	if (ch != NULL)
 	{
-		*((char *) ch) = '\0';
+		hostname = std::string (hoststring).substr (0, ch - hoststring);
 		ch++;
+		port = atoi (ch);
 	}
 	else
 	{
-		ch = defaultPort;
+		hostname = std::string (hoststring);
+		port = atoi (defaultPort);
 	}
-	port = atoi (ch);
-	hostname = hoststring;
 }
