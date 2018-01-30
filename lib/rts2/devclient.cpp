@@ -555,6 +555,8 @@ DevClientExecutor::DevClientExecutor (Connection * _connection):DevClient (_conn
 
 void DevClientExecutor::lastReadout ()
 {
+	if (connection && connection->getMaster ())
+		connection->getMaster ()->postEvent (new rts2core::Event (EVENT_IMAGE_OK));
 }
 
 void DevClientExecutor::stateChanged (ServerState * state)
