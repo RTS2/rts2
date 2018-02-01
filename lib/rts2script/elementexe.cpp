@@ -444,6 +444,31 @@ void ConnExecute::processCommand (char *cmd)
 		else
 			writeToProcess (masterElement->getConnection ()->getName ());
 	}
+	else if (!strcmp (cmd, "requeue"))
+	{
+		char *queueName;
+		double delay;
+		if (paramNextString (&queueName) || paramNextDouble (&delay))
+			return;
+		if (masterElement->getTarget ())
+		{
+			rts2core::connections_t::iterator iter = getMaster ()->getConnections ()->begin ();
+			getMaster ()->getOpenConnectionType (DEVICE_TYPE_SELECTOR, iter);
+			if (iter != getMaster ()->getConnections ()->end ())
+			{
+				writeToProcess ((*iter)->getName ());
+			}
+			else
+			{
+				writeToProcess ("! cannot find device with given name");
+			}
+		}
+		else
+		{
+			writeToProcess ("! cannot get target");
+		}
+	}
+
 	else
 	{
 		ConnExe::processCommand (cmd);
