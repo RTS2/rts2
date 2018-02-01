@@ -1,0 +1,724 @@
+RTS2.SCRIPT(5)
+==============
+
+NAME
+----
+rts2.script - scripting for Remote Telescope System, 2nd Version
+
+ABOUT
+-----
+
+Scripting is used to command various devices, which can be found
+in RTS2 setup.
+
+Script can contain block, enclosed in curved brackets ({}).  This
+block ussually comes after 'for', 'if' and similar commands.
+
+COMMANDS
+--------
+
+Commands are separated by an arbitrary number of spaces.  Here in
+this description we use parameters enclosed in {curved brackets},
+and afterwards explanation of their meaning is given in text.
+Numerical values are entered in standard decimal notation.
+
+cmd {command}[({arg{,arg2..}})]::
+    Execute arbitrary command on the device. Command parameters
+    can be specified in round bracket, separated with comma,
+    without any space between command and ending bracket.
+
+exe {executable filename}::
+    Execute external script. The script communicates with executor
+    through standard input and outputs - both normal and error
+    output. For documentation of the protocol, as well as
+    available Python class for handling of this communication,
+    please see bellow.
+
+SEQUENCE {filter} {repeat} {exposure_time}::
+    Performs exposure sequence. First set a filter, described as
+    parameter. Then repeat *repeat* times execution of exposures
+    with duration *exposure_time* seconds.
+
+E {exposure_time}::
+    Takes light exposure. Exposure time is specified
+    in seconds.
+
+D {exposure_time}::
+    Takes dark frame, useful for calibration. Exposure time is
+    specified in seconds.
+
+I {exposure_time}::
+    Takes an image, without changing shutter position. If the
+    observer wish to have certain shutter position, SHUTTER=
+    command must be used before I command. Exposure time is
+    specified in seconds.
+
+{value name}operation{new value}
+
+    Perform value change of the specified value. *value name* is
+    name of the value, *new value* is new value, either as string,
+    or number in decimal notation. *operation* can be one of the
+    following:
+
+    * = Set new value. It works with all types of variables.
+
+    * += Increase value. Works only with numeric values.
+
+    * -= Decrease value. Works only with numeric values.
+
+    Please see EXAMPLES section for sample scripts, which might
+    clear how this command operates better than the description.
+
+    Value name, operation and new value must be written without
+    space. This is invalid: focpos +=10, focpos+= 10. This is
+    valid: focpos+=10.
+
+    Variables which have more the one component (telescope axes and
+    offsets,..) must be coma "," separated and enclosed in round
+    brackets "(", ")". This is valid syntax for increase of the
+    telescope offset by 10 degrees in RA and 5 degrees in DEC:
+    
+    * T0.OFFS+=(10,5)
+
+{device name}.!{value name}operation{new value}::
+    Performs value operation only when camera is exposing. Useful
+    to start an operation synchronously with camera exposure. For
+    example, the following script:
+
+    * TX.DRATE=(0.001,0.02) TX.DON=off for 10 { TX.!DON=on E 30 TX.DON=off sleep 5 }
+
+    will set differential tracking rate, but does not apply it. It
+    will apply differential tracking only when starting exposure,
+    and reset it after exposure is done.  Note that TX represents
+    any telescope device.
+
+C {ra_diff} {dec_diff}::
+    Offsets mount position before next exposure by {ra_diff} and
+    {dec_diff}. Wait until no exposure is going on, then perform
+    move, then continue exposing. Please note, that telescope
+    which should change must by specified with . notation - so if
+    your telescope is called T0, you must write T0.C {ra_diff}
+    {dec_diff}
+
+    {ra_diff} and {dec_diff} are in degrees.
+
+hex {ra_diff} {dec_diff} [block]::
+    Offsets mount position in hex pattern after finishing [block]
+    and execute [block] again. This will produce images which are
+    aligned on hexagonal path.
+
+    {ra_diff} and {dec_diff} are in degrees.
+
+fxf {ra_diff} {dec_diff} [block]::
+    Change mount position in 5x5 rectangular pattern after
+    finishing [block] and execute [block] again. This will produce
+    images, which are aligned on rectangular path.
+
+    {ra_diff} and {dec_diff} are in degrees.
+
+BIN {binning}::
+    Change both vertical and horizontal binning. Will be
+    dropped in favour of value (*binning*) operation.
+
+BOX {x} {y} {width} {heigh}::
+    Readout only area of the chip, specified by pixel coordinates
+    of upper left corner (x and y) and by area width and height.
+
+CENTER {width} {height}::
+    Readout center of the chip of provided width and height (in
+    pixels).
+
+W::
+    Generic wait for any signal.
+
+A {precision} {exposure_time}::
+    Takes an image of {exposure_time}, tries astrometry, waits for
+    a result. If the image is not within {precision} in degrees
+    from a target position, then the procedure is repeated.  It
+    will continue and it will take multiple images, as long as
+    precision of the last image is at least twice better than
+    previous image - e.g. if o1 is offset of the last image, and
+    o0 is offset of previous one, o1 < o0 / 2.
+
+Aw::
+    Wait until A command on other camera is finished. If there is
+    no running script with A command on any other device, it will
+    continue with the next command.
+
+P {filter} {exposure} {count}::
+    Do measurements using photometer. {filter} is filter number
+    (integer), {exposure} is exposure time in seconds (float
+    number), and {count} is integer specifying how many
+    measurements will be taken.
+
+PS {radius} {speed}::
+    Do cross-shaped search of maxima on photometer. {radius}
+    specifies size of the arms in degrees, which will be searched,
+    and speed specifies speed which will be used.
+
+block_waitsig {signal}::
+    Execute next block only if given signal arrives.
+
+ifacq [block] [else [block]]::
+    Start given commands only if acquisition of target ended
+    sucessfully.
+
+for {repeat_number} [block]::
+    Execute commands in block for {repeat_number} times.
+
+while {condition} {max_repeat} [block]::
+    Execute block while condition evaluation is non-zero and number of
+    repeats is smaller then max_repeat.
+
+do {max_repeat} [block] while {condition}::
+    Execute block while condition evaluation is non-zero and
+    number of repeats is smaller then max_repeat. First test of
+    condition occurs after first loop.
+
+once [block]::
+    Execute block only when the target script is executed for the
+    first time. This command is ideal for executing focusing runs
+    before the first science image.
+
+    This command is usefull only for scripts executed from the
+    linkman:rts2-executor[7].
+
+    The block is run as without *once* command, when executed from
+    the other tools capable of script execution.
+
+waitfor {variable} {value} {range}::
+    This command will wait for numeric {variable} to reach {value} with {range} margin.
+
+sleep {seconds}::
+    This command will pause execution of script for given number
+    of seconds.
+
+wait_idle::
+    Waits for device to enter idle state.
+
+SS {signal}::
+    Sends given signal. Other scripts can wait for signal with
+    SW command. Signal is integer number, which should be
+    unique in script.
+
+SW {signal}::
+    Wait for a signal. Execution of the script is paused until
+    the signal with given number ({}) is send.
+
+tardisable::
+    Disable target. In consectutive selector runs, it will not be considered
+    for selection. Target can be re-enabled by linkman:rts2-target[1] command executed
+    with -e option.
+
+tempdisable {delay}::
+    Temporaly disable target for delay seconds. Delay can be specified using
+    delay string - e.g. h for hours, w for weeks. So to temporary delay target
+    for 1 week, 2 days and 3 hours, the delay will be 1w2d3h. If next selector
+    run hapened earlier then delay time from now, target will not be considered
+    for observing. Target temporary disable is stored in NEXT_OBSERVABLE target
+    parameter, which can be reseted by linkman:rts2-target[1] command executed
+    with -o option.
+
+tarboost {seconds} {bonus}::
+    Temporary boost of target for {seconds}. It changes value of
+    TARGET BONUS and TARGET BONUS TIME fields. Those fields
+    can be changed by linkman:rts2-target[1] command executed with -b
+    and -t options.
+
+Communication with executable
+-----------------------------
+    If you use *exe* command in scripting, the script should communicate with
+    RTS2 through standart input and outputs. The protocol is simple, text
+    oriented, with lines ending with \n (end of line).  It is possible to write
+    observing script using shell echo and read commands, as is demonstrated in
+    example bellow. But for higher interaction, some higher language is
+    prefered - based on user preferences, any of Python, PHP, Perl, TCL or
+    other language capable to read and write to file descriptor will work.
+
+exposure::
+    Start exposure on the camera. Current exposure length setting and
+    others current settings will be used.
+
+    When exposure is finished, controlling script receives notification
+    on standard input with *exposure_end* string. 
+
+    When the image is written to disk, controlling script receives image name
+    on standard input, preceeded by *image* string. Script is responsible to
+    specify treatment of the image - it might be copied, renamed or moved to
+    some system locations. Please see bellow for an example. *If the script
+    does not specify what will done with the image, the image will be deleted
+    when script ends.*
+
+exposure_wfn {pattern}::
+    Allow user to provide filename for the next exposure(s). Works similarly to
+    exposure command, with the exception that the file is not accesible after
+    exposure is finished. Pattern, the only argument, is the RTS2 expand
+    pattern for new filename.  *Script does not have to specify what should be
+    done with the image in order to keep it on the disk after the script
+    finish.*
+
+exposure_overwrite {pattern}::
+    Similar to *exposure_wfn*, but overwites existing file if pattern expand to
+    an existing file.
+
+progress {start} {expected end}::
+    Report script progress. Script start and end times (in ctime, e.g.  seconds
+    from 1-1-1970) are the only allowed arguments. Expected end should be in
+    future, start should be some time ago.
+
+    Issuing such command will update script_end and script_start variables.
+    Maximal/minimal times of all running scripts are used for end/start times
+    progress of the scripting device state.
+
+rename {image name} {expression}::
+    Renames image to given by an expression. Updates image record in database. Please see
+    linkman:rts2.ini[5] for details of the expression. Bellow is an example,
+    which start exposure, waits for image and rename image to given location.
+    Returns new image name.
+```
+echo exposure
+read exposure_end # is notified of exposure end
+read image imagename  # $image will hold "image" string
+echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}	
+read new_name # reads new image name to $new_name
+```
+
+move {image name} {expression}::
+    Moves image to given path, delete it from the database. Please see rename
+    command for an example. Returns new image name.
+
+copy {image name} {expression}::
+    Copy image to path given by an expression. Please see linkman:rts2.ini[5]
+    for details of the expression. See rename command for an example.  Returns
+    new image name.
+
+process {image name}::
+    Queue image to standard processing in linkman:rts2-imgproc[1].
+
+flat {image name}::
+    Move given image to sky flat destination, configured in
+    linkman:rts2.ini[5].  Returns new image name.
+
+dark {image name}::
+    Move given image to raw dark destination, configured in
+    linkman:rts2.ini[5].  Returns new image name.
+
+archive {image name}::
+    Move given image to raw dark destination, configured in linkman:rts2.ini[5]
+    Returns new image name.
+
+trash {image name}::
+    Move given image to trash destination, configured in linkman:rts2.ini[5].
+    Returns new image name.
+
+V {device} {value name} {operator} {operand1 [operand2..]}::
+    Change value of variable of given device. Operand can be any of =, +=
+    or -=. If value have multiple components (e.g. telescope RA DEC
+    offsets, or camera readout area), you must separated components with
+    space.  Examples:
+``` bash
+echo V W0 filter += 1 # increases filter of device W0 by one
+echo V T0 WOFFS = 0.01 0.01 # set WOFFS of device T0 to 0.01 in RA and DEC
+echo V C1 WINDOW = 0 0 10 10 # set C1 WINDOW (readout area). C1 will read only upper left square with size of 10 pixels
+```
+
+VT {device_type} {value name} {operator} {operand1 [operand2..]}::
+    Changes value of variable of devices of given type. Operand can be any of
+    =, += or -=. If value have multiple components (e.g. telescope RA DEC
+    offsets, or camera readout area), you must separated components with space.
+    Following strings are allowed for device_type:
+
+    * TELESCOPE
+    * CCD
+    * DOME
+    * WEATHER
+    * PHOT
+    * PLAN
+    * FOCUS
+    * CUPOLA
+    * FW
+    * SENSOR
+
+    Examples:
+``` bash
+echo VT FW filter += 1 # increases filter of all filter wheels by one
+echo VT TELESCOPE WOFFS = 0.01 0.01 # set WOFFS of all telescopes to 0.01 in RA and DEC
+echo VT CCD WINDOW = 0 0 10 10 # set all CCDs WINDOW (readout area).
+```
+
+set_own {value name} {new value}
+    Change own value. Particularly usefull for values created with
+    *string* and similar commands.
+
+value {value name} {operator} {operand1 [operand2..]}::
+    Change value of variable of script device. This is shortcut to easily
+    interact with device on which the script is run. It is otherwise similar to
+    V command.
+
+``` bash
+echo value exposure += 1
+echo value WINDOW = 0 0 10 10 
+```
+
+device_by_type {device_type}::
+    Retrieves name of the first device with given type. Device type is
+    specified by strings listed in *VT* command.
+
+target_disable::
+    Disables target for autonomouse selection.
+
+target_tempdisable {seconds}::
+    Temporary disable target for a given number of seconds.
+
+end_script::
+    End target script. Ask controlling block to end whole script.
+
+end_target::
+    End target execution. Ends scripts of all cameras, and execute next target
+    if there is some available.
+
+stop_target::
+    Stop target execution. Ends scripts of all cameras, and stop the executor.
+
+wait_target_move::
+    Wait for target movement command completion. When this command returns with
+    0, system telescope daemon is guarantee to have proper target coordinates
+    for the next target execution.
+
+loopcount::
+    Print current loopcount. It is 0 when target script is executed for the
+    first time.
+
+run_device::
+    Return name of the device on which the script is running.
+
+? {value name}::
+    Retrieves value of variable from scripting device. The value of variable is
+    printed on standard output. If an erorr occured, string ERR is printed. See
+    *G* command for an example - the only diference is that you should not
+    specify device name.
+
+G {device name} {value name}::
+    Retrieves value of given variable from given device. The value of variable
+    is printed on standard output. If an error occured, string ERR is printed.
+    See bellow for an example:
+
+```
+G W0 filter
+```
+    If filter is set to number 5, 5 will be printed (followed by line feed) on
+    standard output.
+
+get_own {value name}::
+    Retrieves own value. This is similar to *G* or *?*. It is handy to retrieve
+    values created by *string* and other value cleation commands.
+
+S {device name}
+    Retrieves device state. Can retrieve centrald state if
+    *device name* parameter is *"centrald"*.
+
+waitidle {device name} {timeout}::
+    Waits for *timeout* number of seconds for specified device to enter idle
+    state. Return either 1 if device reached idle status, or 0 if the call
+    timeouts.
+
+    This function is equvivalent to calling *S* command, compare status and
+    return 1 if device properly reached idle, 0 if it timeouts.
+
+C {device name} {command..}::
+    Executes an arbitary command on device. Please see device drivers source
+    code for allowed commands - they are called from commandAuthorize call.
+
+CT {device_type} {command..}::
+    Executes an arbitary command on all device of given type. Please see
+    *VT* command for list of allowed device type strings.
+
+command {command..}::
+    This call is similar to C (see above), except that the command is called on
+    current scripting device.
+
+tempentry {file/directory}::
+    Add entry to list of files/directories, which will be deleted when script
+    terminates. As security precaution, only files from /tmp directory can be
+    specified in the path. File or directory must exists and must be writable
+    at the time the command is issued. If the entry is removed by the script
+    before it finish, no error is reported.
+
+double {variable name} {variable description} {value} [{rts2 type}]::
+double_w {variable name} {variable description} {value} [{rts2 type}]::
+    Creates or update device double value. If variable with given name and
+    double type is not in the device, it is created, populated with
+    description, value type and value. If the variable is found and is of
+    double type, its value is updated.
+
+    The second form, *double_w*, creates writable variable. The first form
+    creates variable which can be update only from a script. If the value
+    already exists, it is not altered and a warning is issued. *_w* suffix is
+    used with other variable commands described below to distinguish between
+    constant, changeable only from the script, and writable variable, which can
+    be changed by the user.
+
+    This way, the script can permanently inform users about values it found.
+    Assuming there is a *FWHM* measuring sctipt, echoing
+
+```
+double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
+```
+
+    will create *fwhm*, with given description and value equals to 6.32.
+
+    The following constants can be specified as *type*:
+
+    * DT_RA
+    * DT_DEC
+    * DT_DEGREES
+    * DT_DEG_DIST
+    * DT_PERCENTS
+    * DT_ROTANG
+    * DT_HEX
+    * DT_BYTESIZE
+    * DT_KMG
+    * DT_INTERVAL
+    * DT_ONOFF
+
+time {variable name} {variable description} {value}::
+time_w {variable name} {variable description} {value}::
+    Creates or update device time value. Similar to *double* and *double_w* commands, described above.
+
+integer {variable name} {variable description} {value}::
+integer_w {variable name} {variable description} {value}::
+    Creates or update device integer value. Similar to *double* and *double_w*
+    commands, described above.
+
+string {variable name} {variable description} {value}::
+string_w {variable name} {variable description} {value}::
+    Creates or update device string value. Similar to
+    *double* and *double_w* commands, described above.
+
+bool {variable name} {variable description} {value}::
+bool_w {variable name} {variable description} {value}::
+    Creates or update device boolean value. Similar to
+    *double* and *double_w* commands, described above.
+
+onoff {variable name} {variable description} {value}::
+onoff_w {variable name} {variable description} {value}::
+    Creates or update device boolean value with ON/OFF type. Similar to
+    *bool* and *bool_w* commands, described above.
+
+double_array {variable name} {variable description} {values..}::
+double_array_w {variable name} {variable description} {values..}::
+    Creates or update double array variable. If the array variable exists, its
+    values are overwritten by specified values. Values to an existing array can
+    be added with *double_array_add* command.
+
+double_array_add {variable name} {values..}::
+    Add new values to an existing double array variable.
+
+radec {ra} {dec}::
+    Moves telescope to given equatorial (RA DEC) coordinates. Coordinates can
+    be specified in HMS and DMS - see example bellow.
+
+``` bash
+echo move 15 1  # moves to 1h RA, 1deg DEC
+echo move 1:2:3.4 -1:30 # moves to RA 1h 2m 3.4sec and DEC -1.5 deg
+```
+
+newobs {ra} {dec}
+    Same as *radec*, but force system to log start of the new observation.
+
+altaz {alt} {az}::
+    Moves telescope to given horizontal (altitude and azimuth) coordinates.
+    Tracking is still enabled after move finished. This command should be used
+    when observations at some horizontal position are required from the script.
+
+``` bash
+echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
+```
+
+newaltaz {alt} {az}::
+    Same as *altaz*, but similarly to *newobs* starts new observation.
+
+waitidle::
+    Waits for telescope to become idle (tracking or hold).
+
+log {level} {message}::
+    Log something through RTS2 logging system. First letter of loglevel is
+    significant, and its case does not matter. Log level can be E for errors, W
+    for warnings, I for info, and D for debug messages.
+
+## Variables
+    Inside scripting, following syntax is used to access variables values.
+    Please see examples at the end of this man page to gain better
+    understanding of the topic.
+
+    * .{variable_name} Access variable name from the current device - e.g. device on which
+    script is run. Given that script is run on device C0, the *.average* is equal to *C0.average*.
+
+    * {device_name}.{variable_name} Access variable from any device present in the system. If device or
+    variable cannot be found, script is ended and target execution is
+    blocked for the device whose script failed.
+
+## Array indexing
+    Arrays values can be indexed simirarly to Python. Numbers, : and , are
+    allowed for array indexing. Array index must stars with [ and ends with ].
+    Array indexes starts from 1 - e.g. first member has index 1, last has index
+    equal to array size. Please see example section for some exampls.
+
+Runing scripts
+--------------
+    Script can be run using linkman:rts2-scriptexec[5] command, or autonomously
+    as part of execution of target through linkman:rts2-executor[5].
+
+    Please be aware that scripts can be run only on camera or photometers
+    devices. So for example, to move the telescope, one need to execute *in systems with C0 camera*.
+
+```
+rts2-scriptexec -d C0 -s 'T0.cmd hadec(-15,60)'
+```
+
+    Or even better, using TX to address any telescope:
+
+```
+rts2-scriptexec -d C0 -s 'TX.cmd hadec(-15,60)'
+```
+
+    To attach script for a target, use:
+
+```
+rts2-target -c C0 -s 'for 10 { E 10 filter+=1 }' 1002
+```
+
+EXAMPLES
+--------
+    Following script will call external script, which will hadle all
+    communication. It will start exposure on camera, change filter and
+    telescope offsets, and move image to given expand path. Then it asks for
+    infotime variable, current sun azimuth and creates (or updates) test_double
+    variable.
+
+```
+exe /home/user/bin/test.sh
+```
+
+    And this is the executable.
+
+``` bash
+#!/bin/bash
+
+for x in 1 2; do
+	echo "value exposure = $x"
+	echo "exposure"
+	read exp_end
+	echo "V W0 filter += 1"
+	echo "V T0 WOFFS += 0.01 0.01"
+	read x y
+	# if the script does not specify what to do with the image, the image will be deleted!
+	echo "rename $y %b/test/%f"
+	read renamed
+	echo "log E renamed $y to $renamed"
+	# this will store image, no rename is needed
+	echo "exposure_wfn %b/test/%f"
+	read exp_end
+	read x y
+	echo "log I image %y"
+	echo "? infotime"
+	read x
+	echo "G centrald sun_az"
+	read y
+	echo 'double test_double "[AU] double test value" 6.721'
+	sleep 5
+done
+```
+
+    The following script will take 10 5 seconds randomly ditthered observations (in range of 8 arcseconds):
+
+```
+for 10 { TX.OFFS=(rand(-8s,8s),rand(-8s,8s)) E 5 }
+```
+
+    The following script will run *exe .. E 10* part only once, when the target
+    script is first observed. If target is changed, the *once* part will be run
+    again.
+
+```
+once { exe .. E 10 } E 20 E 30
+```
+
+    Following script can be used for finding focus position. It moves focuser
+    50 steps backwards. Then it starts a sequence of 10 5 seconds exposures,
+    moving focuser position forward by 10 steps after each exposure.
+
+```
+focpos-=50 for 10 { E 5 focpos+=10 }
+```
+
+    This script test how various SPL_MODE affect resulting image. Sequence of
+    1, 5 and 10 seconds exposures is taken, then SPL_MODE variable is increased
+    by 1.
+ 
+```
+for 3 { E 1 E 5 E 10 SPL_MODE+=1 }
+```
+
+    Script bellow tests various gain and SPL_MODE settings.
+
+```
+for 3 { GAIN=0 for 10 { E 1 GAIN+=1 } SPL_MODE+=1 }
+
+GAIN=20 for 3 { E 1 GAIN-=1 }
+
+SD.waitfor MODE 2 0 sleep 10 E 1
+
+for 10 { E 10 T0.OFFS+=(0,0.01) }
+
+    Script bellow takes sequence of 10 and 20 seconds exposures in 10 filters,
+    starting form filter named C.
+
+```
+filter=C for 10 { E 10 E 20 filter+=1 }
+```
+
+    Following scripts are equal, both take 5 20 seconds exposures in i filter.
+
+```
+filter=i for 5 { E 20 }
+
+filter=i E 20 E 20 E 20 E 20 E 20
+
+SEQUENCE i 5 20
+```
+
+    Sets all memmbers of boolean array to false.
+
+```
+    for 10 { E 10 S1.bools[1:2,2:]=0 }
+```
+
+    This is a simple example of the flat fielding script. It changes camera to
+    readout a small window. Then it takes 1 seconds, wait for finish of
+    readout, and check average value of the camera. If the average is bellow or
+    equal to 2000, script carry on - switch back to full frame mode, and do 1
+    seconds exposures until average value is above 2000.
+
+```
+WINDOW=(10,10,20,20) do 200 { E 1 wait_idle } while (.average > 2000) WINDOW=(-1,-1,-1,-1) do 200 { E 1 wait_idle } while (.average > 1000)
+```
+
+    Call command with arguments 5 and 1.
+
+```
+cmd apply(5,1)
+```
+
+SEE ALSO
+--------
+
+* linkman:rts2[7]
+* linkman:rts2-target[1]
+* linkman:rts2-scriptexec[1]
+
+AUTHOR
+------
+
+Petr Kubanek <petr@rts2.org>
+

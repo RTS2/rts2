@@ -6,7 +6,8 @@ MD_PAGES = \
     rts2-scriptexec.txt \
     rts2-camd.txt \
     rts2-test.txt \
-    rts2-rotad.txt
+    rts2-rotad.txt \
+    rts2.script.txt
 
 EXTRA_DIST = \
     rts2.conf \
@@ -23,7 +24,6 @@ EXTRA_DIST = \
     rts2-focusc.xml \
     rts2-xfocusc.xml \
     rts2-seltest.xml \
-    rts2.script.xml \
     rts2.fitskeys.xml \
     rts2-horizon.xml \
     rts2-logger.xml \
@@ -79,7 +79,6 @@ man_MANS += \
     rts2-focusc.1 \
     rts2-xfocusc.1 \
     rts2-seltest.1 \
-    rts2.script.5 \
     rts2.fitskeys.5 \
     rts2-horizon.1 \
     rts2-logger.1 \
@@ -171,7 +170,8 @@ man_MANS += \
     rts2-scriptexec.1 \
     rts2-camd.7 \
     rts2-test.1 \
-    rts2-rotad.7
+    rts2-rotad.7 \
+    rts2.script.5
 
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
