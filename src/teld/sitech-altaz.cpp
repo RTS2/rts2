@@ -665,6 +665,8 @@ int SitechAltAz::moveAltAz ()
 
 int SitechAltAz::stopMove ()
 {
+	if (telConn == NULL)
+		return -1;
 	try
 	{
 		telConn->siTechCommand ('X', "N");
@@ -764,6 +766,10 @@ int SitechAltAz::startPark ()
 	if (parkPos == NULL)
 	{
 		return 0;
+	}
+	if (telConn == NULL)
+	{
+		return -1;
 	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
 	wasStopped = false;
@@ -1102,7 +1108,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		delete telConn;
 		telConn = NULL;
 
-		logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
+		logStream (MESSAGE_ERROR) << "closing connection to serial port, " << e << sendLog;
 		usleep (USEC_SEC / 15);
 	}
 }
@@ -1193,7 +1199,7 @@ void SitechAltAz::getTel ()
 			delete telConn;
 			telConn = NULL;
 
-			logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
+			logStream (MESSAGE_ERROR) << "closing connection to serial port, " << e << sendLog;
 			usleep (USEC_SEC / 15);
 			return;
 		}
@@ -1431,7 +1437,8 @@ void SitechAltAz::changeSitechLogFile ()
 		if (sitechLogExpander)
 		{
 			sitechLogExpander->setExpandDate ();
-			telConn->startLogging (sitechLogExpander->expandPath (sitechLogFile->getValue ()).c_str ());
+			if (telConn)
+				telConn->startLogging (sitechLogExpander->expandPath (sitechLogFile->getValue ()).c_str ());
 		}
 	}
 	catch (rts2core::Error er)

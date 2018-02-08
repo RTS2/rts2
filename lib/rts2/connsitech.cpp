@@ -286,7 +286,9 @@ void ConnSitech::readAxisStatus ()
 
 	if ((*((uint16_t *) (ret + 39))) != checksum)
 	{
-		throw Error ("invalid checksum in readAxisStatus");
+		std::ostringstream oss;
+		oss << "invalid checksum in readAxisStatus, expected " <<  (*((uint16_t *) (ret + 39))) << ", calculated " << checksum;
+		throw Error (oss.str());
 	}
 
 	// fill in proper return values..
