@@ -83,6 +83,8 @@ LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
 EOF
 exit 1])
 
+PKG_CHECK_MODULES([EIGEN3],[eigen3])
+
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)
 
@@ -877,9 +879,8 @@ AS_IF([test "x"$psql = xyes], [
   AC_MSG_CHECKING(for PostgreSQL version)
   AC_MSG_RESULT(${PG_MAJOR}.${PG_MINOR})
 
-
-  ECPG_MAJOR=`$ECPG --version | sed 's/ecpg (PostgreSQL //' | sed 's/\..*$//'`
-  ECPG_MINOR=`$ECPG --version | sed 's/ecpg (PostgreSQL [[0-9]]*\.//' | sed 's/\..*$//'`
+  ECPG_MAJOR=`$ECPG --version | sed 's/ecpg \(([^\)]*)\) //' | sed 's/\..*$//'`
+  ECPG_MINOR=`$ECPG --version | sed 's/ecpg \(([^)]*)\) [0-9]?\.//' | sed 's/\..*$//'`
 
   AC_MSG_CHECKING(for ECPG version)
   AC_MSG_RESULT(${ECPG_MAJOR}.${ECPG_MINOR})

@@ -121,7 +121,7 @@ step_sys_ubuntu()
 
 	echo "Installing required Ubuntu packages"
 
-	sudo apt-get -y install git $extra_p liberfa1 liberfa-dev automake libtool libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-future python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config python-lmfit
+	sudo apt-get -y install git $extra_p liberfa1 liberfa-dev automake libtool libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-future python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config python-lmfit libeigen3-dev
 }
 
 step_sys_ds9()
