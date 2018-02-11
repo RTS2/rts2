@@ -69,12 +69,19 @@ int ConnSitech::init ()
 	{
 		sitechType = SERVO_II;
 	}
-	else
+	else if (version < 180)
 	{
 		sitechType = FORCE_ONE;
 		countUp = getSiTechValue ('Y', "XHC");
 		PIDSampleRate = (CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp);
 	}
+	else
+	{
+		sitechType = FORCE_TWO;
+		countUp = getSiTechValue ('Y', "XHC");
+		PIDSampleRate = (CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp);
+	}
+
 
 	return 0;
 }
@@ -352,6 +359,7 @@ double ConnSitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double
 		case SERVO_II:
 			return ((loop_ticks / full_circle) * dps) / 1953;
 		case FORCE_ONE:
+		case FORCE_TWO:
 			return ((loop_ticks / full_circle) * dps) / PIDSampleRate;
 		default:
 			return 0;
@@ -366,6 +374,7 @@ double ConnSitech::ticksPerSec2MotorSpeed (double tps)
 		case SERVO_II:
 			return tps * SPEED_MULTI / 1953;
 		case FORCE_ONE:
+		case FORCE_TWO:
 			return tps * SPEED_MULTI / PIDSampleRate;
 		default:
 			return 0;
@@ -380,6 +389,7 @@ double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
 		case SERVO_II:
 			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
 		case FORCE_ONE:
+		case FORCE_TWO:
 			return (double) speed / loop_ticks * (360.0 * PIDSampleRate / SPEED_MULTI);
 		default:
 			return 0;
@@ -425,6 +435,7 @@ int ConnSitech::flashLoad ()
 			l = 130;
 			break;
 		case FORCE_ONE:
+		case FORCE_TWO:
 			l = 514;
 			break;
 	}

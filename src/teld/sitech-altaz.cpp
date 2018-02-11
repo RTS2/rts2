@@ -187,16 +187,6 @@ class SitechAltAz:public AltAz
 		rts2core::ValueDoubleStat *alt_err_speed_stat;
 #endif
 
-		// osciallation prevention
-		rts2core::ValueDouble *az_osc_limit;
-		rts2core::ValueDouble *alt_osc_limit;
-
-		rts2core::ValuePID *az_osc_PID;
-		rts2core::ValuePID *alt_osc_PID;
-
-		double az_osc_speed;
-		double alt_osc_speed;
-
 		rts2core::ValueDouble *az_acceleration;
 		rts2core::ValueDouble *alt_acceleration;
 
@@ -246,9 +236,6 @@ class SitechAltAz:public AltAz
 
 		void setSlewPID (rts2core::ValuePID *pid, char axis);
 		void setTrackPID (rts2core::ValuePID *pid, char axis);
-
-		void correctOscillations (char axis, rts2core::ValueDoubleStat *err, rts2core::ValueDouble *limit, rts2core::ValuePID *trackPID, rts2core::ValuePID *oscPID);
-		void oscOff (char axis);
 };
 
 }
@@ -351,8 +338,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	createValue (az_last, "az_last", "AZ motor location at last AZ scope encoder location change", false);
 	createValue (alt_last, "alt_last", "ALT motor location at last ALT scope encoder location change", false);
 
-	createValue (az_errors, "az_errors", "AZ errors (only for FORCE ONE)", false);
-	createValue (alt_errors, "alt_errors", "ALT errors (only for FORCE_ONE)", false);
+	createValue (az_errors, "az_errors", "AZ errors (only for FORCE family)", false);
+	createValue (alt_errors, "alt_errors", "ALT errors (only for FORCE family)", false);
 
 	createValue (az_errors_val, "az_errors_val", "AZ errors value", false);
 	createValue (alt_errors_val, "alt_erorrs_val", "ALT errors value", false);
@@ -386,17 +373,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	createValue (alt_err_speed_stat, "alt_err_speed_stat", "sitech error speed statistics", false);
 #endif
 
-	createValue (az_osc_limit, "az_osc", "fraction of error / range to set osc_PID", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	createValue (alt_osc_limit, "alt_osc", "fraction of error / range to set osc_PID", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-
-	createValue (az_osc_PID, "az_osc_PID", "PID to set when az_osc conditions occurs", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	createValue (alt_osc_PID, "alt_osc_PID", "PID to set when alt_osc conditions occurs", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-
 	firstSlewCall = true;
 	wasStopped = false;
-
-	az_osc_speed = NAN;
-	alt_osc_speed = NAN;
 
 	last_loop = 0;
 
@@ -498,7 +476,7 @@ int SitechAltAz::initHardware ()
 	if (alt_curr_PID == NULL)
 		createValue (alt_curr_PID, "PID_ALT", "Altitude current PID", false);
 
-	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
+	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE || telConn->sitechType == rts2core::ConnSitech::FORCE_TWO)
 	{
 		createValue (countUp, "count_up", "CPU count up", false);
 		countUp->setValueInteger (telConn->countUp);
@@ -620,14 +598,6 @@ int SitechAltAz::startResync ()
 		return -1;
 
 	wasStopped = false;
-
-	az_osc_speed = NAN;
-	if (az_osc_limit->isWarning ())
-		oscOff ('Y');
-
-	alt_osc_speed = NAN;
-	if (alt_osc_limit->isWarning ())
-		oscOff ('X');
 
 	ret = sitechMove (azc, altc);
 	if (ret < 0)
@@ -1233,6 +1203,7 @@ void SitechAltAz::getTel ()
 			alt_last->setValueLong (le32toh (*(uint32_t*) &(telConn->last_status.x_last)));
 			break;
 		case rts2core::ConnSitech::FORCE_ONE:
+		case rts2core::ConnSitech::FORCE_TWO:
 		{
 			// upper nimble
 			uint16_t az_val = telConn->last_status.y_last[0] << 4;
@@ -1341,9 +1312,6 @@ void SitechAltAz::getTel ()
 			az_pos_error->addValue (az_err, 20);
 			alt_pos_error->addValue (alt_err, 20);
 
-			correctOscillations ('Y', az_pos_error, az_osc_limit, az_track_PID, az_osc_PID);
-			correctOscillations ('X', alt_pos_error, alt_osc_limit, alt_track_PID, alt_osc_PID);
-
 			if (az_pos_error->getRange () > 50 || abs (az_pos_error->getMin ()) > 50 || abs (az_pos_error->getMax ()) > 50)
 				valueWarning (az_pos_error);
 			else
@@ -1384,8 +1352,7 @@ void SitechAltAz::getPIDs ()
 	}
 	if (alt_track_PID)
 	{
-		if (!alt_osc_limit->isWarning ())
-			alt_track_PID->setPID (telConn->getSiTechValue ('X', "P"), telConn->getSiTechValue ('X', "I"), telConn->getSiTechValue ('X', "D"));
+		alt_track_PID->setPID (telConn->getSiTechValue ('X', "P"), telConn->getSiTechValue ('X', "I"), telConn->getSiTechValue ('X', "D"));
 	}
 
 	az_curr_PID->setPID (telConn->getSiTechValue ('Y', "PPP"), telConn->getSiTechValue ('Y', "III"), telConn->getSiTechValue ('Y', "DDD"));
@@ -1395,8 +1362,7 @@ void SitechAltAz::getPIDs ()
 	}
 	if (az_track_PID)
 	{
-		if (!az_osc_limit->isWarning ())
-			az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
+		az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
 	}
 
 	if (alt_integral_limit)
@@ -1459,56 +1425,6 @@ void SitechAltAz::setTrackPID (rts2core::ValuePID *pid, char axis)
 	telConn->setSiTechValue (axis, "P", pid->getP ());
 	telConn->setSiTechValue (axis, "I", pid->getI ());
 	telConn->setSiTechValue (axis, "D", pid->getD ());
-}
-
-void SitechAltAz::correctOscillations (char axis, rts2core::ValueDoubleStat *err, rts2core::ValueDouble *limit, rts2core::ValuePID *trackPID, rts2core::ValuePID *oscPID)
-{
-	if (isnan (limit->getValueDouble ()))
-		return;
-
-	if (err->getMin () < 0 && err->getMax () > 0 && (abs (err->getValueDouble () / err->getRange ()) < limit->getValueDouble ()))
-	{
-		if (!limit->isWarning ())
-		{
-			logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << " setting oscillation PIDs" << sendLog;
-			setTrackPID (oscPID, axis);
-			valueWarning (limit);
-			if (axis == 'X')
-				alt_osc_speed = alt_sitech_speed_stat->getValueDouble ();
-			else
-				az_osc_speed = az_sitech_speed_stat->getValueDouble ();
-		}
-	}
-	else
-	{
-		if (limit->isWarning ())
-		{
-			// wait for speed to drop before changing PID
-			if (axis == 'X')
-			{
-				if (!isnan (alt_osc_speed) && alt_sitech_speed_stat->getValueDouble () > alt_osc_speed * 0.7)
-					return;
-				alt_osc_speed = NAN;
-			}
-			else
-			{
-				if (!isnan (az_osc_speed) && az_sitech_speed_stat->getValueDouble () > az_osc_speed * 0.7)
-					return;
-				az_osc_speed = NAN;
-			}
-
-			logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << " setting normal tracking PIDs" << sendLog;
-			setTrackPID (trackPID, axis);
-			valueGood (limit);
-		}
-	}
-}
-
-void SitechAltAz::oscOff (char axis)
-{
-	logStream (MESSAGE_INFO) << (axis == 'X' ? "Alt" : "Az") << " setting normal tracking PIDs" << sendLog;
-	setTrackPID ((axis == 'X' ? alt_track_PID : az_track_PID), axis);
-	valueGood (axis == 'X' ? alt_osc_limit : az_osc_limit);
 }
 
 int main (int argc, char **argv)
