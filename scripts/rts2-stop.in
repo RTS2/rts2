@@ -6,6 +6,9 @@ CENTRALD_FILE=@CONFDIR@/rts2/centrald
 DEVICE_CONFIG=@CONFDIR@/rts2/devices
 SERVICE_CONFIG=@CONFDIR@/rts2/services
 
+function stop
+{
+
 if [ "x$1" == "x" ]; then
 	echo "stopping everything"
 	name="all"
@@ -24,11 +27,11 @@ if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
 		stopped=$?
 		[ $stopped == 0 ] && echo "killed" || echo "failed"
 		if [ $stopped != 0 -a "x$name" != "xall" ]; then
-			exit 1
+			return 1
 		fi
 	done < <(grep '^centrald' $CENTRALD_FILE)
 	if [ "x$name" != "xall" ]; then
-		exit $stopped
+		return $stopped
 	fi
 fi
 
@@ -53,4 +56,28 @@ else
 	[ $stopped == 0 ] && echo "killed" || echo "failed"
 fi
 
-[ "x$name" != "xall" ] && exit $stopped || exit 0
+[ "x$name" != "xall" ] && return $stopped || return 0
+
+}
+
+count=0
+ret=0
+
+for x in $*; do
+	count=1
+	stop $x
+	r=$?
+	if [ $r -ne 0 ]; then
+		ret=$r
+	fi
+done
+
+if [ $count -eq 0 ]; then
+	stop ""
+	r=$?
+	if [ $r -ne 0]; then
+		ret=$r
+	fi
+fi
+
+exit $ret
