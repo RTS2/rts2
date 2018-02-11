@@ -83,8 +83,6 @@ LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
 EOF
 exit 1])
 
-PKG_CHECK_MODULES([EIGEN3],[eigen3])
-
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)
 

@@ -55,7 +55,6 @@ matrix:
             libecpg-dev
             wget
             check
-            libeigen3-dev
       env: PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
     - python: "2.7"
       addons:
@@ -86,7 +85,6 @@ matrix:
             libecpg-dev
             wget
             check
-            libeigen3-dev
       env: PKG_CONFIG_PATH=''
 
 install:
