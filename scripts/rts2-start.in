@@ -21,6 +21,10 @@ else
 	name=$1
 fi
 
+if [ $localstart == 1 ]; then
+	extraargs="-i --debug"
+fi
+
 if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
 	started=1
 	while read centrald centrald_port centrald_options; do
