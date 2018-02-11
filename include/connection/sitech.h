@@ -207,7 +207,7 @@ class ConnSitech: public ConnSerial
 		double PIDSampleRate;
 
 		// which controller is connected
-		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
+		enum {SERVO_I, SERVO_II, FORCE_ONE, FORCE_TWO} sitechType;
 
 		void startLogging (const char *logFileName);
 		void endLogging ();
