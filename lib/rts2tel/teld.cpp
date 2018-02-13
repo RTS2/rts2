@@ -503,7 +503,7 @@ void Telescope::setModelTarAltAz (struct ln_hrz_posn *hrz)
 	modelTarAltAz->setValueAltAz (hrz->alt, hrz->az);
 }
 
-int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, struct ln_hrz_posn *out_hrz, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	double tar_distance = NAN;
 
@@ -558,23 +558,24 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	if (writeValues)
 		setObject (out_tar->ra, out_tar->dec);
 
-	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
+	return sky2counts (utc1, utc2, out_tar, out_hrz, ac, dc, writeValues, haMargin, forceShortest);
 }
 
 int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, double &ac_speed, double &dc_speed, double &ea_speed, double &ed_speed, double &speed_angle, double &err_angle)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
+	struct ln_hrz_posn hrz, t_hrz;
 	// refresh current target..
 
 	int32_t c_ac = ac;
 	int32_t c_dc = dc;
 	int32_t t_ac = ac;
 	int32_t t_dc = dc;
-	int ret = calculateTarget (utc1, utc2, &eqpos, c_ac, c_dc, true, 0, true);
+	int ret = calculateTarget (utc1, utc2, &eqpos, &hrz, c_ac, c_dc, true, 0, true);
 	if (ret)
 		return ret;
 
-	ret = calculateTarget (utc1, utc2 + sec_step / 86400.0, &t_eqpos, t_ac, t_dc, false, 0, true);
+	ret = calculateTarget (utc1, utc2 + sec_step / 86400.0, &t_eqpos, &t_hrz, t_ac, t_dc, false, 0, true);
 	if (ret)
 		return ret;
 
@@ -606,7 +607,7 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	return 0;
 }
 
-int Telescope::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Telescope::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	return -1;
 }

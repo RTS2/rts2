@@ -590,9 +590,10 @@ int SitechAltAz::startResync ()
 	utc2 = 0;
 #endif
 	struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
 
 	int32_t azc = r_az_pos->getValueLong (), altc = r_alt_pos->getValueLong ();
-	int ret = calculateTarget (utc1, utc2, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
+	int ret = calculateTarget (utc1, utc2, &tar, &hrz, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
 
 	if (ret)
 		return -1;

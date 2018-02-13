@@ -74,7 +74,7 @@ class GEM: public Telescope
 
 		virtual int updateLimits () = 0;
 
-		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
+		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
 
 		/**
 		 * Convert counts to RA&Dec coordinates.

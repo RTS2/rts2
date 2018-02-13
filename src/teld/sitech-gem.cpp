@@ -832,9 +832,10 @@ int Sitech::startResync ()
 	utc2 = 0;
 #endif
         struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
-	int ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
+	int ret = calculateTarget (utc1, utc2, &tar, &hrz, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
 	if (ret)
 		return -1;
 

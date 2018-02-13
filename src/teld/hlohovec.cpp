@@ -311,7 +311,8 @@ int Hlohovec::startResync ()
 	utc2 = 0;
 #endif
 	struct ln_equ_posn tar;
-	int ret = calculateTarget (utc1, utc2, &tar, tAc, dc, true, haSlewMargin->getValueDouble (), false);
+	struct ln_hrz_posn hrz;
+	int ret = calculateTarget (utc1, utc2, &tar, &hrz, tAc, dc, true, haSlewMargin->getValueDouble (), false);
 	if (ret)
 		return -1;
 	raDrive->setTargetPos (tAc);
@@ -337,7 +338,8 @@ int Hlohovec::isMoving ()
 			utc2 = 0;
 #endif
 			struct ln_equ_posn tar;
-			int ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
+			struct ln_hrz_posn hrz;
+			int ret = calculateTarget (utc1, utc2, &tar, &hrz, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
 				return -1;
 			diffAc = ac - tAc;

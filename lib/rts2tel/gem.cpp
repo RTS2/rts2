@@ -303,7 +303,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 	return 0;
 }
 
-int GEM::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
+int GEM::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
 {
 	int used_flipping = forceShortes ? 0 : (useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ());
         bool use_flipped;
@@ -404,6 +404,7 @@ GEM::~GEM (void)
 int GEM::peek (double ra, double dec)
 {
 	struct ln_equ_posn peekPos;
+	struct ln_hrz_posn hrzPeek;
 	peekPos.ra = ra;
 	peekPos.dec = dec;
 
@@ -421,7 +422,7 @@ int GEM::peek (double ra, double dec)
 	utc2 = 0;
 #endif
 
-	int ret = calculateTarget (utc1, utc2, &peekPos, ac, dc, false, 0, false);
+	int ret = calculateTarget (utc1, utc2, &peekPos, &hrzPeek, ac, dc, false, 0, false);
 	if (ret)
 		return ret;
 

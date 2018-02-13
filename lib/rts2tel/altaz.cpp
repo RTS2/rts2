@@ -85,7 +85,7 @@ int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_a
 	return 0;
 }
 
-int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
+int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
 {
 	struct ln_equ_posn tar_pos;
 	tar_pos.ra = pos->ra;
