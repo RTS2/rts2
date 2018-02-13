@@ -409,4 +409,19 @@ int parseVariableName (const char *name, char **device, char **variable);
  */
 void parallacticAngle (double ha, double dec, double sin_lat, double cos_lat, double tan_lat, double &pa, double &parate);
 
+/**
+ * Converts spherical coordinates to vector.
+ */
+void sph2cart (double a, double b, double *xyz);
+
+/**
+ * Converts vector coordinates to spherical.
+ */
+void cart2sph (double *xyz, double &a, double &b);
+
+/**
+ * Calculates position angle between two points.
+ */
+double posangle (double *xyz0, double *xyz1);
+
 #endif							 /* !__RTS_UTILSFUNC__ */
