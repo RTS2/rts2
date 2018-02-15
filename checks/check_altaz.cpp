@@ -23,12 +23,12 @@ void teardown_altcaz (void)
 	altAzTest = NULL;
 }
 
-void test_pa (double ha, double dec, double pa, double parate)
+void test_pa (double ha, double dec, double pa, double parate, double prec = 10e-4)
 {
 	double c_pa, c_parate;
-	altAzTest->test_parallactic_angle (ha, dec, c_pa, c_parate);
-	ck_assert_dbl_eq (c_pa, pa, 10e-4);
-	ck_assert_dbl_eq (c_parate, parate, 10e-4);
+	altAzTest->test_meanParallacticAngle (ha, dec, c_pa, c_parate);
+	ck_assert_dbl_eq (c_pa, pa, prec);
+	ck_assert_dbl_eq (c_parate, parate, prec);
 }
 
 START_TEST(derotator_1)
@@ -129,6 +129,66 @@ START_TEST(zenith_pa)
 }
 END_TEST
 
+void test_effective_pa (double utc1, double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double pa, double parate)
+{
+	double c_pa, c_parate;
+
+	altAzTest->test_effectiveParallacticAngle (utc1, utc2, pos, hrz, c_pa, c_parate);
+	ck_assert_dbl_eq (c_pa, pa, 10e-4);
+	//ck_assert_dbl_eq (c_parate, parate, 10e-4);
+}
+
+void run_effective_test (double utc1, double utc2, double ra, double dec, double az, double alt, double pa, double pa_rate)
+{
+	struct ln_equ_posn tar;
+
+	tar.ra = ra;
+	tar.dec = dec;
+
+	altAzTest->test_setOrigin (tar.ra, tar.dec);
+
+	struct ln_equ_posn tar1;
+
+	struct ln_hrz_posn hrz;
+	int32_t ac = 0;
+	int32_t dc = 0;
+
+	hrz.az = 11;
+	hrz.alt = 12;
+
+	int ret = altAzTest->test_calculateTarget (utc1, utc2, &tar1, &hrz, ac, dc, false, 0, true);
+
+	ck_assert_int_eq (ret, 0);
+
+	double lst = altAzTest->test_getLocSidTime (utc1 + utc2);
+
+	ck_assert_dbl_eq (hrz.az, az, 10e-4);
+	ck_assert_dbl_eq (hrz.alt, alt, 10e-4);
+
+	test_effective_pa (utc1, utc2, &tar, &hrz, pa, 1);
+
+	test_pa (lst * 15.0 - ra, dec, pa, pa_rate, 0.5);
+}
+
+START_TEST(effective_der1)
+{
+	struct ln_date test_t;
+	test_t.years = 2018;
+	test_t.months = 3;
+	test_t.days = 21;
+	test_t.hours = 0;
+	test_t.minutes = 20;
+	test_t.seconds = 47;
+
+	double JD = ln_get_julian_day (&test_t);
+	ck_assert_dbl_eq (JD, 2458198.5144328703, 10e-10);
+
+	run_effective_test (JD, 0, 178, 0, 178.9548683597, 49.9953060206, 179.1992622849, -17.8715851172);
+
+	run_effective_test (JD, 0, 178, -38, 165.1566352266, 87.9329913663, 165.5217798960, -307.9498131399);
+}
+END_TEST
+
 START_TEST(test_altaz_1)
 {
 	// test 1, 2016-01-12T19:20:47 HST = 2016-01-13U05:20:47
@@ -167,7 +227,7 @@ START_TEST(test_altaz_1)
 
 	altAzTest->modelOff ();
 
-	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
+	ret = altAzTest->test_sky2counts (JD, 0, &pos, &hrz, azc, altc);
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, 16135692);
@@ -193,7 +253,7 @@ START_TEST(test_altaz_1)
 	pos.ra = 344.16613;
 	pos.dec = -80.3703305;
 
-	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
+	ret = altAzTest->test_sky2counts (JD, 0, &pos, &hrz, azc, altc);
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, 49514704);
@@ -275,6 +335,7 @@ Suite * altaz_suite (void)
 	tcase_add_test (tc_altaz_pointings, derotator_3);
 	tcase_add_test (tc_altaz_pointings, derotator_4);
 	tcase_add_test (tc_altaz_pointings, zenith_pa);
+	tcase_add_test (tc_altaz_pointings, effective_der1);
 	tcase_add_test (tc_altaz_pointings, test_altaz_1);
 	tcase_add_test (tc_altaz_pointings, test_altaz_2);
 	suite_add_tcase (s, tc_altaz_pointings);

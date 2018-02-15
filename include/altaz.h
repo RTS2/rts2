@@ -56,7 +56,12 @@ class AltAz: public Telescope
 		/**
 		 * Returns parallactic angle and its change (in deg/h).
 		 */
-		void parallactic_angle (double ha, double dec, double &pa, double &parate) { parallacticAngle (ha, dec, sin_lat, cos_lat, tan_lat, pa, parate); }
+		void meanParallacticAngle (double ha, double dec, double &pa, double &parate);
+
+		/**
+		 * Returns effective (calculated by projecting a line to focal plane) parallactic angle.
+		 */
+		void effectiveParallacticAngle (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double &pa, double &parate, double up_change = 30 / 3600.0);
 
 		/**
 		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does

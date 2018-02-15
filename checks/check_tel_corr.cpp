@@ -348,7 +348,7 @@ START_TEST(test_nutation)
 	pos.ra = 270;
 	pos.dec = -85;
 
-	ret = altazTestNutation->test_sky2counts (utc1, utc2, &pos, azc, altc);
+	ret = altazTestNutation->test_sky2counts (utc1, utc2, &pos, &hrz, azc, altc);
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, -17930964);
