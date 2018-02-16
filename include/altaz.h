@@ -105,6 +105,8 @@ class AltAz: public Telescope
 		rts2core::ValueDouble *parallAngle;
 		rts2core::ValueDouble *derRate;
 
+		rts2core::ValueDouble *meanParallAngle;
+
                 rts2core::ValueDouble *azSlewMargin;      //* margin for az axis during slew (used only on first call of startResync during new movement)
 
 		rts2core::ValueLong *az_ticks;

@@ -503,6 +503,14 @@ void Telescope::setModelTarAltAz (struct ln_hrz_posn *hrz)
 	modelTarAltAz->setValueAltAz (hrz->alt, hrz->az);
 }
 
+void Telescope::getModelTarAltAz (struct ln_hrz_posn *pos)
+{
+	if (modelTarAltAz == NULL)
+		return;
+
+	modelTarAltAz->getAltAz (pos);
+}
+
 int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, struct ln_hrz_posn *out_hrz, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	double tar_distance = NAN;

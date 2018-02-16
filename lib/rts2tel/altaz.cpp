@@ -30,6 +30,8 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (parallAngle, "PANGLE", "[deg] parallactic angle", true, RTS2_DT_DEGREES);
 	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
 
+	createValue (meanParallAngle, "mean_pa", "[deg] mean parallactic angle", false, RTS2_DT_DEGREES);
+
 	createValue (az_ticks, "_az_ticks", "[cnts] counts per full revolution on az axis", false);
 	createValue (alt_ticks, "_alt_ticks", "[cnts] counts per full revolution on alt axis", false);
 
@@ -61,14 +63,25 @@ int AltAz::infoUTCLST (const double utc1, const double utc2, double LST)
 	int ret = Telescope::infoUTCLST (utc1, utc2, LST);
 	if (ret)
 		return ret;
-	double HA = ln_range_degrees (LST - getTargetRa ());
-	double dec = getTargetDec ();
+
+	struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
+
+	getTarget (&tar);
+	getModelTarAltAz (&hrz);
+
+	double HA = ln_range_degrees (LST - tar.ra);
+	double dec = tar.dec;
 
 	double pa = 0;
 	double parate = 0;
 	meanParallacticAngle (HA, dec, pa, parate);
-	parallAngle->setValueDouble (pa);
+	meanParallAngle->setValueDouble (pa);
 	derRate->setValueDouble (parate);
+
+	effectiveParallacticAngle (utc1, utc2, &tar, &hrz, pa, parate, 0.1);
+	parallAngle->setValueDouble (pa);
+
 	return ret;
 }
 
