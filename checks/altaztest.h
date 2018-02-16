@@ -7,6 +7,7 @@ class AltAzTest:public rts2teld::AltAz
 		~AltAzTest ();
 
 		void setTelescope (double _lat, double _long, double _alt, long _az_ticks, long _alt_ticks, double _azZero, double _altZero, double _azCpd, double _altCpd, long _azMin, long _azMax, long _altMin, long _altMax);
+		int test_loadModelStream (std::istringstream &is) { return loadModelStream (is); }
 		void test_setOrigin (double ra, double dec) { setOrigin (ra, dec); }
 		double test_getLocSidTime (double JD) { return getLocSidTime (JD); }
 		int test_sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc);

@@ -1647,6 +1647,23 @@ void Telescope::setTelAltitude (float altitude)
 	telPressure->setValueFloat (getAltitudePressure (altitude, 1010));
 }
 
+int Telescope::loadModelStream (std::istream &is)
+{
+	delete model;
+	model = new rts2telmodel::GPointModel (getLatitude ());
+	model->load (is);
+	if (is.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "Failed to reload model from stream" << sendLog;
+		delete model;
+		model = NULL;
+		return -1;
+	}
+	calModel->setValueBool (true);
+	logStream (MESSAGE_INFO) << "Loaded model from stream" << sendLog;
+	return 0;
+}
+
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn telpos;

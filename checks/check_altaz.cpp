@@ -9,12 +9,24 @@
 // global telescope object
 AltAzTest* altAzTest;
 
+AltAzTest* altAzTestModel;
+
 void setup_altcaz (void)
 {
 	static const char *argv[] = {"testapp"};
 	altAzTest = new AltAzTest(0, (char **) argv);
 
 	altAzTest->setTelescope (-40, -5, 200, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
+
+	altAzTestModel = new AltAzTest(0, (char **) argv);
+
+	altAzTestModel->setTelescope (-40, -5, 200, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
+
+	std::istringstream iss ("RTS2_ALTAZ -32.9560351668\" 37.8603669032\" 33.69867556175\" -22.4029458503\" -6.3810740497\" -15.8279575851\" 9.97752718308\"\nAZ	6.52266606181\"	sincos	az;el	2.0;2.0\nAZ	2.86981868859\"	sincos	el;az	5.0;3.0\nEL	-0.142425289668\"	sincos	az;el	4.0;4.0\nEL	1.42907527224\"	sin	az	1.0");
+
+	int ret = altAzTestModel->test_loadModelStream (iss);
+
+	ck_assert_int_eq (ret, 0);
 }
 
 void teardown_altcaz (void)
@@ -23,129 +35,129 @@ void teardown_altcaz (void)
 	altAzTest = NULL;
 }
 
-void test_pa (double ha, double dec, double pa, double parate, double prec = 10e-4)
+void test_pa (AltAzTest *tel, double ha, double dec, double pa, double parate, double prec = 10e-4)
 {
 	double c_pa, c_parate;
-	altAzTest->test_meanParallacticAngle (ha, dec, c_pa, c_parate);
+	tel->test_meanParallacticAngle (ha, dec, c_pa, c_parate);
 	ck_assert_dbl_eq (c_pa, pa, prec);
 	ck_assert_dbl_eq (c_parate, parate, prec);
 }
 
 START_TEST(derotator_1)
 {
-	test_pa (0, -70, 0, 22.9813);
-	test_pa (1, -70, 1.5319, 22.9765);
-	test_pa (15, -70, 22.6356, 21.9735);
-	test_pa (-15, -70, -22.6356, 21.9735);
-	test_pa (30, -70, 43.5044, 19.6526);
-	test_pa (45, -70, 61.9054, 17.2009);
-	test_pa (60, -70, 78.0773, 15.2443);
-	test_pa (90, -70, 106.0128, 13.0227);
-	test_pa (120, -70, 131.1507, 12.2828);
-	test_pa (150, -70, 155.5714, 12.1934);
-	test_pa (179, -70, 179.1847, 12.2281);
-	test_pa (180, -70, 180.0, 12.2281);
-	test_pa (181, -70, -179.1847, 12.2281);
-	test_pa (210, -70, -155.5714, 12.1934);
-	test_pa (240, -70, -131.1507, 12.2828);
-	test_pa (270, -70, -106.0128, 13.0227);
-	test_pa (300, -70, -78.0773, 15.2443);
-	test_pa (315, -70, -61.9054, 17.2009);
-	test_pa (330, -70, -43.5044, 19.6526);
-	test_pa (359, -70, -1.5319, 22.9765);
-	test_pa (360, -70, 0, 22.9813);
+	test_pa (altAzTest, 0, -70, 0, 22.9813);
+	test_pa (altAzTest, 1, -70, 1.5319, 22.9765);
+	test_pa (altAzTest, 15, -70, 22.6356, 21.9735);
+	test_pa (altAzTest, -15, -70, -22.6356, 21.9735);
+	test_pa (altAzTest, 30, -70, 43.5044, 19.6526);
+	test_pa (altAzTest, 45, -70, 61.9054, 17.2009);
+	test_pa (altAzTest, 60, -70, 78.0773, 15.2443);
+	test_pa (altAzTest, 90, -70, 106.0128, 13.0227);
+	test_pa (altAzTest, 120, -70, 131.1507, 12.2828);
+	test_pa (altAzTest, 150, -70, 155.5714, 12.1934);
+	test_pa (altAzTest, 179, -70, 179.1847, 12.2281);
+	test_pa (altAzTest, 180, -70, 180.0, 12.2281);
+	test_pa (altAzTest, 181, -70, -179.1847, 12.2281);
+	test_pa (altAzTest, 210, -70, -155.5714, 12.1934);
+	test_pa (altAzTest, 240, -70, -131.1507, 12.2828);
+	test_pa (altAzTest, 270, -70, -106.0128, 13.0227);
+	test_pa (altAzTest, 300, -70, -78.0773, 15.2443);
+	test_pa (altAzTest, 315, -70, -61.9054, 17.2009);
+	test_pa (altAzTest, 330, -70, -43.5044, 19.6526);
+	test_pa (altAzTest, 359, -70, -1.5319, 22.9765);
+	test_pa (altAzTest, 360, -70, 0, 22.9813);
 }
 END_TEST
 
 START_TEST(derotator_2)
 {
-	test_pa (1, -40, 0, 4.8211);
-	test_pa (-1, -40, 0, 4.8211);
-	test_pa (0, -39.99, 180, -65836.6706);
-	test_pa (0, -40.01, 0, 65836.6705);
-	test_pa (0.01, -40.01, 37.4549, 41493.6137);
-	test_pa (-0.01, -40.01, -37.4549, 41493.6137);
-	test_pa (0.01, -39.99, 142.5474, -41485.5540);
-	test_pa (-0.01, -39.99, -142.5474, -41485.5540);
+	test_pa (altAzTest, 1, -40, 0, 4.8211);
+	test_pa (altAzTest, -1, -40, 0, 4.8211);
+	test_pa (altAzTest, 0, -39.99, 180, -65836.6706);
+	test_pa (altAzTest, 0, -40.01, 0, 65836.6705);
+	test_pa (altAzTest, 0.01, -40.01, 37.4549, 41493.6137);
+	test_pa (altAzTest, -0.01, -40.01, -37.4549, 41493.6137);
+	test_pa (altAzTest, 0.01, -39.99, 142.5474, -41485.5540);
+	test_pa (altAzTest, -0.01, -39.99, -142.5474, -41485.5540);
 }
 END_TEST
 
 START_TEST(derotator_3)
 {
-	test_pa (15, -40, 94.8371, 4.8695);
-	test_pa (30, -40, 99.7724, 5.0181);
-	test_pa (60, -40, 110.3605, 5.6497);
-	test_pa (90, -40, 122.7324, 6.8227);
-	test_pa (120, -40, 138.0698, 8.6105);
-	test_pa (150, -40, 157.3709, 10.6542);
-	test_pa (179, -40, 179.2221, 11.6666);
-	test_pa (180, -40, 180, 11.6679);
-	test_pa (181, -40, -179.2221, 11.6666);
-	test_pa (210, -40, -157.3709, 10.6542);
-	test_pa (240, -40, -138.0698, 8.6105);
-	test_pa (270, -40, -122.7324, 6.8227);
-	test_pa (300, -40, -110.3605, 5.6497);
-	test_pa (330, -40, -99.7724, 5.0181);
-	test_pa (345, -40, -94.8371, 4.8695);
+	test_pa (altAzTest, 15, -40, 94.8371, 4.8695);
+	test_pa (altAzTest, 30, -40, 99.7724, 5.0181);
+	test_pa (altAzTest, 60, -40, 110.3605, 5.6497);
+	test_pa (altAzTest, 90, -40, 122.7324, 6.8227);
+	test_pa (altAzTest, 120, -40, 138.0698, 8.6105);
+	test_pa (altAzTest, 150, -40, 157.3709, 10.6542);
+	test_pa (altAzTest, 179, -40, 179.2221, 11.6666);
+	test_pa (altAzTest, 180, -40, 180, 11.6679);
+	test_pa (altAzTest, 181, -40, -179.2221, 11.6666);
+	test_pa (altAzTest, 210, -40, -157.3709, 10.6542);
+	test_pa (altAzTest, 240, -40, -138.0698, 8.6105);
+	test_pa (altAzTest, 270, -40, -122.7324, 6.8227);
+	test_pa (altAzTest, 300, -40, -110.3605, 5.6497);
+	test_pa (altAzTest, 330, -40, -99.7724, 5.0181);
+	test_pa (altAzTest, 345, -40, -94.8371, 4.8695);
 }
 END_TEST
 
 START_TEST(derotator_4)
 {
-	test_pa (0, -80, 0, 17.8763);
-	test_pa (1, -80, 1.1917, 17.8754);
-	test_pa (-1, -80, -1.1917, 17.8754);
-	test_pa (15, -80, 17.8120, 17.6857);
-	test_pa (30, -80, 35.2623, 17.1706);
-	test_pa (60, -80, 68.1823, 15.7197);
-	test_pa (90, -80, 98.2901, 14.4650);
-	test_pa (120, -80, 126.3838, 13.7099);
-	test_pa (150, -80, 153.4022, 13.3623);
-	test_pa (179, -80, 179.1154, 13.2682);
-	test_pa (180, -80, 180, 13.2682);
-	test_pa (181, -80, -179.1154, 13.2682);
-	test_pa (210, -80, -153.4022, 13.3623);
-	test_pa (240, -80, -126.3838, 13.7099);
-	test_pa (270, -80, -98.2901, 14.4650);
-	test_pa (300, -80, -68.1823, 15.7197);
-	test_pa (330, -80, -35.2623, 17.1706);
-	test_pa (345, -80, -17.8120, 17.6857);
+	test_pa (altAzTest, 0, -80, 0, 17.8763);
+	test_pa (altAzTest, 1, -80, 1.1917, 17.8754);
+	test_pa (altAzTest, -1, -80, -1.1917, 17.8754);
+	test_pa (altAzTest, 15, -80, 17.8120, 17.6857);
+	test_pa (altAzTest, 30, -80, 35.2623, 17.1706);
+	test_pa (altAzTest, 60, -80, 68.1823, 15.7197);
+	test_pa (altAzTest, 90, -80, 98.2901, 14.4650);
+	test_pa (altAzTest, 120, -80, 126.3838, 13.7099);
+	test_pa (altAzTest, 150, -80, 153.4022, 13.3623);
+	test_pa (altAzTest, 179, -80, 179.1154, 13.2682);
+	test_pa (altAzTest, 180, -80, 180, 13.2682);
+	test_pa (altAzTest, 181, -80, -179.1154, 13.2682);
+	test_pa (altAzTest, 210, -80, -153.4022, 13.3623);
+	test_pa (altAzTest, 240, -80, -126.3838, 13.7099);
+	test_pa (altAzTest, 270, -80, -98.2901, 14.4650);
+	test_pa (altAzTest, 300, -80, -68.1823, 15.7197);
+	test_pa (altAzTest, 330, -80, -35.2623, 17.1706);
+	test_pa (altAzTest, 345, -80, -17.8120, 17.6857);
 }
 END_TEST
 
 START_TEST(zenith_pa)
 {
-	test_pa (0, -39.5, 180, -1316.750118);
-	test_pa (0, -39.5 + 2 / 60.0, 180, -1234.455394);
-	test_pa (0, -39.5 - 2 / 60.0, 180, -1410.801390);
-	test_pa (0 + 2 / 60.0, -39.5, 177.076456, -1313.287352);
-	test_pa (0 - 2 / 60.0, -39.5, -177.076456, -1313.287352);
+	test_pa (altAzTest, 0, -39.5, 180, -1316.750118);
+	test_pa (altAzTest, 0, -39.5 + 2 / 60.0, 180, -1234.455394);
+	test_pa (altAzTest, 0, -39.5 - 2 / 60.0, 180, -1410.801390);
+	test_pa (altAzTest, 0 + 2 / 60.0, -39.5, 177.076456, -1313.287352);
+	test_pa (altAzTest, 0 - 2 / 60.0, -39.5, -177.076456, -1313.287352);
 
-	test_pa (15, -39.5, 97.280406, 2.350959);
-	test_pa (15, -39.5 - 2 / 60.0, 97.118261, 2.517749);
-	test_pa (15, -39.5 + 2 / 60.0, 97.442431, 2.184371);
-	test_pa (15 + 2 / 60.0, -39.5, 97.285642, 2.362140);
-	test_pa (15 - 2 / 60.0, -39.5, 97.275194, 2.339706);
+	test_pa (altAzTest, 15, -39.5, 97.280406, 2.350959);
+	test_pa (altAzTest, 15, -39.5 - 2 / 60.0, 97.118261, 2.517749);
+	test_pa (altAzTest, 15, -39.5 + 2 / 60.0, 97.442431, 2.184371);
+	test_pa (altAzTest, 15 + 2 / 60.0, -39.5, 97.285642, 2.362140);
+	test_pa (altAzTest, 15 - 2 / 60.0, -39.5, 97.275194, 2.339706);
 }
 END_TEST
 
-void test_effective_pa (double utc1, double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double pa, double parate)
+void test_effective_pa (AltAzTest *tel, double utc1, double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double pa, double parate)
 {
 	double c_pa, c_parate;
 
-	altAzTest->test_effectiveParallacticAngle (utc1, utc2, pos, hrz, c_pa, c_parate);
+	tel->test_effectiveParallacticAngle (utc1, utc2, pos, hrz, c_pa, c_parate);
 	ck_assert_dbl_eq (c_pa, pa, 10e-4);
 	//ck_assert_dbl_eq (c_parate, parate, 10e-4);
 }
 
-void run_effective_test (double utc1, double utc2, double ra, double dec, double az, double alt, double pa, double pa_rate)
+void run_effective_test (AltAzTest *tel, double utc1, double utc2, double ra, double dec, double az, double alt, double pa, double pa_rate, double pa_diff_prec)
 {
 	struct ln_equ_posn tar;
 
 	tar.ra = ra;
 	tar.dec = dec;
 
-	altAzTest->test_setOrigin (tar.ra, tar.dec);
+	tel->test_setOrigin (tar.ra, tar.dec);
 
 	struct ln_equ_posn tar1;
 
@@ -156,18 +168,18 @@ void run_effective_test (double utc1, double utc2, double ra, double dec, double
 	hrz.az = 11;
 	hrz.alt = 12;
 
-	int ret = altAzTest->test_calculateTarget (utc1, utc2, &tar1, &hrz, ac, dc, false, 0, true);
+	int ret = tel->test_calculateTarget (utc1, utc2, &tar1, &hrz, ac, dc, false, 0, true);
 
 	ck_assert_int_eq (ret, 0);
 
-	double lst = altAzTest->test_getLocSidTime (utc1 + utc2);
+	double lst = tel->test_getLocSidTime (utc1 + utc2);
 
 	ck_assert_dbl_eq (hrz.az, az, 10e-4);
 	ck_assert_dbl_eq (hrz.alt, alt, 10e-4);
 
-	test_effective_pa (utc1, utc2, &tar, &hrz, pa, 1);
+	test_effective_pa (tel, utc1, utc2, &tar, &hrz, pa, 1);
 
-	test_pa (lst * 15.0 - ra, dec, pa, pa_rate, 0.5);
+	test_pa (tel, lst * 15.0 - ra, dec, pa, pa_rate, pa_diff_prec);
 }
 
 START_TEST(effective_der1)
@@ -183,9 +195,23 @@ START_TEST(effective_der1)
 	double JD = ln_get_julian_day (&test_t);
 	ck_assert_dbl_eq (JD, 2458198.5144328703, 10e-10);
 
-	run_effective_test (JD, 0, 178, 0, 178.9548683597, 49.9953060206, 179.1992622849, -17.8715851172);
+#ifdef RTS2_LIBERFA
+	run_effective_test (altAzTest, JD, 0, 178, 0, 179.3191475033, 50.1134436347, 179.4765394496, -17.8715851172, 0.5);
 
-	run_effective_test (JD, 0, 178, -38, 165.1566352266, 87.9329913663, 165.5217798960, -307.9498131399);
+	run_effective_test (altAzTest, JD, 0, 178, -38, 169.7336986827, 88.0723103499, 169.9676776162, -307.9498131399, 5);
+
+	run_effective_test (altAzTestModel, JD, 0, 178, 0, 179.3450924305, 50.1092157528, 179.4998764927, -17.8715851172, 5);
+
+	run_effective_test (altAzTestModel, JD, 0, 178, -38, 170.2043690700, 88.0682166462, 170.4531202431, -307.9498131399, 5);
+
+	run_effective_test (altAzTestModel, JD, 0, 180, -38, 213.3171175204, 87.7365693875, -147.6359055237, -307.9498131399, 50);
+
+	run_effective_test (altAzTestModel, JD, 0, 176, -38, 134.6901504859, 87.3233741912, 136.0964746936, -156.0539908989, 50);
+#else
+	run_effective_test (altAzTest, JD, 0, 178, 0, 178.9548683597, 49.9953060206, 179.1992622849, -17.8715851172);
+
+	run_effective_test (altAzTest, JD, 0, 178, -38, 165.1566352266, 87.9329913663, 165.5217798960, -307.9498131399);
+#endif
 }
 END_TEST
 

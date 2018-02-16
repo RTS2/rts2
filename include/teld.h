@@ -900,6 +900,8 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int loadModel () { return -1; }
 
+		int loadModelStream (std::istream &is);
+
 		virtual int resetMount () { return 0; }
 
 		/**
