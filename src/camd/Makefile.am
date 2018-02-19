@@ -153,3 +153,12 @@ endif
 else
 EXTRA_DIST += sx.cpp
 endif
+
+if ASI
+bin_PROGRAMS += rts2-camd-asi
+rts2_camd_asi_SOURCES = asi.cpp
+rts2_camd_asi_LDADD = -L@ASI_LIB@ -lASICamera2 ${LDADD}
+rts2_camd_asi_CXXFLAGS = -I@ASI_INCLUDE@ ${AM_CXXFLAGS}
+else
+EXTRA_DIST += asi.cpp
+endif

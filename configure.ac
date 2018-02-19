@@ -418,6 +418,21 @@ AC_SUBST(ARC)
 AC_SUBST(LIB_ARC)
 AC_SUBST(INC_ARC)
 
+# check for ASI SDK
+AC_ARG_WITH(asi,
+[  --with-asi                ASI SDK path],
+ASI="${withval}";
+ASI_INCLUDE=${ASI}/include;
+AS_IF([test `uname -i` == 'x86_64'], [ASI_LIB=${ASI}/lib/x64],
+	[AS_IF([test `uname -i` == 'i686'], [ASI_LIB=${ASI}/lib/x86])]
+),
+[ASI=no])
+
+AM_CONDITIONAL(ASI, test x$ASI != xno)
+AC_SUBST(ASI)
+AC_SUBST(ASI_INCLUDE)
+AC_SUBST(ASI_LIB)
+
 # for Alta we need special library:(
 AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
@@ -1116,6 +1131,7 @@ CCDs:
   sbig include  ${SBIG_INC}
   sbig lib      ${SBIG_LIB}
   SI3097        ${SI3097}
+  ASI           ${ASI}
 
 MOUNTs:
   paralib       ${PARALIB}
