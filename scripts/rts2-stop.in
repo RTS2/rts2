@@ -75,7 +75,7 @@ done
 if [ $count -eq 0 ]; then
 	stop ""
 	r=$?
-	if [ $r -ne 0]; then
+	if [ $r -ne 0 ]; then
 		ret=$r
 	fi
 fi
