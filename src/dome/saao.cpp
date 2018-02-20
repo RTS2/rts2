@@ -276,6 +276,9 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv, true)
 	createValue (closedPowerFailure, "closed_power_failure", "closed due to power failure", false);
 	createValue (watchdogStatus, "watchdog", "watchdog status (true = tripped)", false);
 
+	createValue (resetPowerClosure, "reset_power_closure", "reset power failure", false);
+	resetPowerClosure->setValueBool (false);
+
 	addOption ('f', NULL, 1, "path to device file, default is /dev/ttyS0");
 }
 
