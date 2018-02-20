@@ -276,7 +276,7 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv, true)
 	createValue (closedPowerFailure, "closed_power_failure", "closed due to power failure", false);
 	createValue (watchdogStatus, "watchdog", "watchdog status (true = tripped)", false);
 
-	createValue (resetPowerClosure, "reset_power_closure", "reset power failure", false);
+	createValue (resetPowerClosure, "reset_power_closure", "reset power failure", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	resetPowerClosure->setValueBool (false);
 
 	addOption ('f', NULL, 1, "path to device file, default is /dev/ttyS0");
@@ -550,6 +550,9 @@ void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char
 {
 	size_t dl = strlen (data);
 	char buf[8 + dl];
+	memset (buf, 0, 8 + dl);
+	memset (ret, 0, retl);
+
 	buf[0] = STX;
 	snprintf (buf + 1, 3, "%02X", address);
 	memcpy (buf + 3, cmd, 2);
@@ -574,6 +577,8 @@ void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char
 	if (retl < (retc - 9))
 		throw rts2core::Error ("too short buffer for reply");
 	memcpy (ret, retb + 5, retc - 9);
+
+	logStream (MESSAGE_DEBUG) << "command: " << buf << ", reply " << retb << sendLog;
 }
 
 void SAAO::readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *rbuf)
