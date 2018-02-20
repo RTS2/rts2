@@ -123,7 +123,7 @@ class SAAO:public Cupola
 		void readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *rbuf);
 		void setRegisters (uint8_t address, uint16_t regaddr, int len, const uint16_t *sbuf);
 
-		void setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition);
+		void setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition, bool doResetPowerClosure);
 		void setSlewLights (bool lights);
 		void resetPower (uint16_t bit);
 
@@ -154,6 +154,7 @@ class SAAO:public Cupola
 		rts2core::ValueBool *closedPowerFailure;
 		rts2core::ValueBool *watchdogStatus;
 
+		rts2core::ValueBool *resetPowerClosure;
 
 		rts2core::ValueBool *shutterPower;
 		rts2core::ValueBool *rotatPower;
@@ -428,7 +429,7 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == lightsOn)
 	{
-		setDome (((rts2core::ValueBool *) newValue)->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
+		setDome (((rts2core::ValueBool *) newValue)->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN, resetPowerClosure->getValueBool ());
 		return 0;
 	}
 	if (oldValue == slewLightsOn)
@@ -438,12 +439,17 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	}
 	if (oldValue == rotatPower)
 	{
-		setDome (lightsOn->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
+		setDome (lightsOn->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), shutterPower->getValueBool (), false, false, NAN, resetPowerClosure->getValueBool ());
 		return 0;
 	}
 	if (oldValue == shutterPower)
 	{
-		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), false, false, NAN);
+		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), false, false, NAN, resetPowerClosure->getValueBool ());
+		return 0;
+	}
+	if (oldValue == resetPowerClosure)
+	{
+		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN, dynamic_cast <rts2core::ValueBool *> (newValue)->getValueBool ());
 		return 0;
 	}
 	if (oldValue == resetAG1)
@@ -475,7 +481,7 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 int SAAO::moveStart ()
 {
-	setDome (lightsOn->getValueBool (), true, shutterPower->getValueBool (), false, false, getTargetAz ());
+	setDome (lightsOn->getValueBool (), true, shutterPower->getValueBool (), false, false, getTargetAz (), resetPowerClosure->getValueBool ());
 	return 0;
 }
 
@@ -487,7 +493,7 @@ long SAAO::isMoving ()
 
 int SAAO::startOpen ()
 {
-	setDome (lightsOn->getValueBool (), true, true, false, true, NAN);
+	setDome (lightsOn->getValueBool (), true, true, false, true, NAN, resetPowerClosure->getValueBool ());
 	return 0;
 }
 
@@ -505,7 +511,7 @@ int SAAO::endOpen ()
 
 int SAAO::startClose ()
 {
-	setDome (lightsOn->getValueBool (), true, true, true, false, NAN);
+	setDome (lightsOn->getValueBool (), true, true, true, false, NAN, resetPowerClosure->getValueBool ());
 	return 0;
 }
 
@@ -528,7 +534,7 @@ int SAAO::stop ()
 	data[1] = 0x8000;
 	setRegisters (1, 0x1064, 2, data);
 
-//	setDome (lightsOn->getValueBool (), false, false, false, false, getCurrentAz ());
+//	setDome (lightsOn->getValueBool (), false, false, false, false, getCurrentAz (), resetPowerClosure->getValueBool ());
 	return 0;
 }
 
@@ -592,7 +598,7 @@ void SAAO::setRegisters (uint8_t address, uint16_t regaddr, int len, const uint1
 	sendCommand (address, CMD_PRESET_MULTI_REG, payload, rbuf, 8);
 }
 
-void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition)
+void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition, bool doResetPowerClosure)
 {
 	uint16_t data[4];
 	memset (data, 0, sizeof (data));
@@ -626,6 +632,9 @@ void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, 
 		else if (shutterOpen)
 			data[0] |= 0x0002;
 	}
+
+	if (doResetPowerClosure)
+		data[0] |= 0x0080;
 
 	if (lights)
 		data[0] |= 0x0100;
