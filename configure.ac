@@ -1038,6 +1038,7 @@ AC_OUTPUT([Makefile
 	   python/rts2/db/Makefile
 	   scripts/Makefile
 	   src/Makefile
+	   src/axisd/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile

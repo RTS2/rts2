@@ -1,6 +1,7 @@
 
 SUBDIRS = \
 	centrald \
+	axisd \
 	phot	\
 	dome	\
 	focusd  \
