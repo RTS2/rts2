@@ -39,14 +39,17 @@ class Ucac5Idx:public rts2core::App
 		virtual int run();
 	
 	protected:
+		virtual int processOption (int opt);
 		virtual int processArgs (const char *arg);
 	
 	private:
 		std::vector <const char *> files;
+		bool dump;
 };
 
-Ucac5Idx::Ucac5Idx (int argc, char **argv):App (argc, argv)
+Ucac5Idx::Ucac5Idx (int argc, char **argv):App (argc, argv), dump(false)
 {
+	addOption('d', NULL, 0, "prints processed stars");
 }
 
 int Ucac5Idx::run()
@@ -96,6 +99,8 @@ int Ucac5Idx::run()
 		while ((char*) dp < ((char *) data + s.st_size))
 		{
 			UCAC5Record rec(dp);
+			if (dump)
+				std::cout << rec.getString() << std::endl;
 			double c[3];
 			rec.getXYZ(c);
 			write(fo, c, sizeof(c));
@@ -109,6 +114,19 @@ int Ucac5Idx::run()
 		std::cout << " " << s.st_size << " bytes, " << rn << " records" << std::endl;
 
 		munmap(data, s.st_size);
+	}
+	return 0;
+}
+
+int Ucac5Idx::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 'd':
+			dump = true;
+			break;
+		default:
+			return App::processOption(opt);
 	}
 	return 0;
 }

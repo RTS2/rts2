@@ -2,8 +2,8 @@ noinst_HEADERS = UCAC5Record.hpp
 
 if LIBERFA
 
-LDADD += -L../rts2 -lrts2 @ERFA_LIBS@
-AM_CXXFLAGS= @ERFA_CFLAGS@ -I../../include
+LDADD += -L../rts2 -lrts2 @ERFA_LIBS@ @LIB_NOVA@
+AM_CXXFLAGS= @ERFA_CFLAGS@ @NOVA_CFLAGS@ -I../../include
 
 bin_PROGRAMS = ucac5-idx
 

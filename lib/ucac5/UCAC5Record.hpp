@@ -1,9 +1,29 @@
+/* 
+ * UCAC5 Record class
+ * Copyright (C) 2018 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __UCAC5RECORD__
 #define __UCAC5RECORD__
 
 #include "erfa.h"
 
 #include <stdint.h>
+#include <string>
 
 // This structure describes one record of data read from the UCAC4 catalog.
 // This is 40 bytes long. The references to notes refer to notes listed in
@@ -50,10 +70,14 @@ class UCAC5Record
 		 * Returns XYZ unit vector of RA DEC coordinates.
 		 */
 		void getXYZ (double c[3]);
+
+		std::string getString();
+
+		double getRaDeg () { return data.rag / (1000.0 * 3600.0); }
+		double getDecDeg () { return data.dcg / (1000.0 * 3600.0); }
 	
 	private:
 		struct ucac5 data;
-
 };
 
 #endif // !__UCAC5RECORD__
