@@ -20,10 +20,11 @@
 #ifndef __UCAC5RECORD__
 #define __UCAC5RECORD__
 
-#include "erfa.h"
+#include <erfa.h>
 
 #include <stdint.h>
 #include <string>
+#include <libnova/libnova.h>
 
 // This structure describes one record of data read from the UCAC4 catalog.
 // This is 40 bytes long. The references to notes refer to notes listed in
@@ -73,8 +74,11 @@ class UCAC5Record
 
 		std::string getString();
 
-		double getRaDeg () { return data.rag / (1000.0 * 3600.0); }
+		double getRADeg () { return data.rag / (1000.0 * 3600.0); }
 		double getDecDeg () { return data.dcg / (1000.0 * 3600.0); }
+
+		double getRARad () { return ln_deg_to_rad(getRADeg()); }
+		double getDecRad () { return ln_deg_to_rad(getDecDeg()); }
 	
 	private:
 		struct ucac5 data;

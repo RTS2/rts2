@@ -33,12 +33,12 @@ UCAC5Record::UCAC5Record (struct ucac5 *_data)
 
 void UCAC5Record::getXYZ (double c[3])
 {
-	eraS2c(data.rag, data.dcg, c);
+	eraS2c(getRARad(), getDecRad(), c);
 }
 
 std::string UCAC5Record::getString ()
 {
 	std::ostringstream os;
-	os << std::setw(8) << std::setfill('0') << data.srcid << " " << LibnovaRa(getRaDeg()) << " " << LibnovaDec(getDecDeg());
+	os << std::setw(8) << std::setfill('0') << data.srcid << " " << LibnovaRa(getRADeg()) << " " << LibnovaDec(getDecDeg());
 	return os.str();
 }
