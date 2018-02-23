@@ -1033,6 +1033,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2tel/Makefile
 	   lib/libindi/Makefile
 	   lib/sep/Makefile
+	   lib/ucac5/Makefile
 	   python/Makefile
 	   python/rts2/Makefile
 	   python/rts2/db/Makefile
