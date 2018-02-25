@@ -1,0 +1,9 @@
+#!/bin/bash
+
+${UCAC5_URL:=ftp://cdsarc.u-strasbg.fr/pub/cats/I/340/UCAC5/u5z}
+
+wget -c $UCAC5_URL/u5index.unf
+
+for ((x=1; $x < 901; x = $x + 1)); do
+	wget -c $UCAC5_URL/z`printf %03d $x`
+done

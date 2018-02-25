@@ -94,6 +94,12 @@ int Ucac5Idx::run()
 		}
 
 		struct ucac5 *data = (struct ucac5*) mmap(NULL, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
+		if (data == MAP_FAILED)
+		{
+			std::cerr << "Cannot map memory file of size " << s.st_size << " for file " << *iter << ": " << strerror(errno) << std::endl;
+			close(fd);
+			return -1;
+		}
 		struct ucac5 *dp = data;
 		size_t rn = 0;
 		while ((char*) dp < ((char *) data + s.st_size))
