@@ -132,6 +132,7 @@ class AzCam3:public rts2camd::Camera
 
 		rts2core::ValueFloat *exposureRemaining;
 		rts2core::ValueLong *pixelsRemaining;
+		rts2core::ValueString *lastImagePath;
 
 		char rbuf[200];
 
@@ -174,6 +175,7 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 
 	createValue (exposureRemaining, "exposure_rem", "[s] AZCam remaining exposure time", false);
 	createValue (pixelsRemaining, "pixels_rem", "AZCam remaining readout pixels", false);
+	createValue (lastImagePath, "last_img_path", "Path to most recent image", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
 	addOption ('n', NULL, 1, "local hostname, hostname of the computer running RTS2");
