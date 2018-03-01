@@ -137,13 +137,6 @@ class AzCam3:public rts2camd::Camera
 		rts2core::ValueFloat *exposureRemaining;
 		rts2core::ValueLong *pixelsRemaining;
 		rts2core::ValueString *lastImagePath;
-		
-
-		rts2core::ValueBool *parShiftFocus;
-		rts2core::ValueLong *parShiftNexposures;
-		rts2core::ValueLong *parShiftFocusSteps;
-		rts2core::ValueLong *parShiftDetShifts;
-		rts2core::ValueFloat *parShiftExposureTime;
 
 		char rbuf[200];
 
@@ -193,24 +186,6 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 	createValue (exposureRemaining, "exposure_rem", "[s] AZCam remaining exposure time", false);
 	createValue (pixelsRemaining, "pixels_rem", "AZCam remaining readout pixels", false);
 	createValue (lastImagePath, "last_img_path", "Path to most recent image", false, RTS2_VALUE_WRITABLE);
-	
-
-
-
-	//par shift focus variables
-	createValue (parShiftFocus, "shiftfocus", "Do an azcam focus run", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftNexposures, "SHIFT_N", "Number of exposure to take during shift focus", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftFocusSteps, "SHIFT_FO", "Number of steps to move in focus during shift focus", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftDetShifts, "SHIFT_PX", "Number of pixels to shift during shift focus", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftExposureTime, "SHIFT_EX", "Time in seconds of each exposure during shift focus. ", false, RTS2_VALUE_WRITABLE);
-
-	//handy defaults
-	parShiftFocus->setValueBool(false);
-	parShiftNexposures->setValueLong( 7 );
-	parShiftFocusSteps->setValueLong( 45 );
-	parShiftDetShifts->setValueLong( 50  );
-	parShiftExposureTime->setValueDouble( 10.0 );
-	//end par shift
 
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
 	addOption ('n', NULL, 1, "local hostname, hostname of the computer running RTS2");
