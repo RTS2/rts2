@@ -1958,7 +1958,7 @@ int Connection::paramNextDouble (double *num)
 	int ret;
 	if (paramNextString (&str_num, ","))
 		return -1;
-	if (!strcmp (str_num, "nan"))
+	if (!strcasecmp (str_num, "nan"))
 	{
 		*num = NAN;
 		return 0;
@@ -1972,18 +1972,71 @@ int Connection::paramNextDouble (double *num)
 int Connection::paramNextDoubleTime (double *num)
 {
 	char *str_num;
-	int ret;
 	if (paramNextString (&str_num, ","))
 		return -1;
-	if (!strcmp (str_num, "nan"))
+	if (!strcasecmp (str_num, "nan"))
 	{
 		*num = NAN;
 		return 0;
 	}
-	ret = sscanf (str_num, "%lf", num);
-	if (ret != 1)
-		return -1;
-	if (str_num[0] == '+')
+	*num = 0;
+	double cur = 0;
+	bool plus = str_num[0] == '+';
+	int div = 0;
+	if (plus)
+		str_num++;
+	// converts d,h,m to seconds..
+	while (*str_num != '\0')
+	{
+		if (isdigit(*str_num))
+		{
+			if (div > 0)
+			{
+				cur = cur + (float) (*str_num - '0') / div;
+				div *= 10;
+			}
+			else
+			{
+				cur = cur * 10 + (*str_num - '0');
+			}
+		}
+		else if (*str_num == '.')
+		{
+			div = 1;
+		}
+		else if (*str_num == 'D')
+		{
+			*num += cur * 86400;
+			cur = 0;
+			div = 0;
+		}
+		else if (*str_num == 'h')
+		{
+			*num += cur * 3600;
+			cur = 0;
+			div = 0;
+		}
+		else if (*str_num == 'm')
+		{
+			*num += cur * 60;
+			cur = 0;
+			div = 0;
+		}
+		else if (*str_num == 's')
+		{
+			*num += cur;
+			cur = 0;
+			div = 0;
+		}
+		else
+		{
+			return -1;
+		}
+
+		str_num++;
+	}
+	*num += cur;
+	if (plus)
 		*num += getNow ();
 	return 0;
 }

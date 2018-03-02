@@ -456,11 +456,12 @@ void ConnExecute::processCommand (char *cmd)
 			getMaster ()->getOpenConnectionType (DEVICE_TYPE_SELECTOR, iter);
 			if (iter != getMaster ()->getConnections ()->end ())
 			{
+				(*iter)->queCommand (new rts2core::CommandQueueAt (getMaster (), queueName, 1, getNow () + delay, NAN));
 				writeToProcess ((*iter)->getName ());
 			}
 			else
 			{
-				writeToProcess ("! cannot find device with given name");
+				writeToProcess ("! cannot find any selector");
 			}
 		}
 		else

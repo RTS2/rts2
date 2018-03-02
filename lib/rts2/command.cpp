@@ -636,6 +636,13 @@ CommandQueueNowOnce::CommandQueueNowOnce (Block *_master, const char *queue, int
 	setCommand (_os);
 }
 
+CommandQueueAt::CommandQueueAt (Block * _master, const char *queue, int tar_id, double t_start, double t_end):Command (_master)
+{
+	std::ostringstream _os;
+	_os << "queue_at " << queue << " " << tar_id << " " << t_start << " " << t_end;
+	setCommand (_os);
+}
+
 CommandExecShower::CommandExecShower (Block * _master):Command (_master)
 {
 	setCommand ("shower");

@@ -18,6 +18,7 @@
  */
 
 #include "app.h"
+#include "radecparser.h"
 #include "UCAC5Record.hpp"
 
 #include <errno.h>
@@ -43,10 +44,15 @@ class UCAC5Search:public rts2core::App
 		virtual int processArgs (const char *arg);
 	
 	private:
-		
+		std::string radec;
+		double ra;
+		double dec;
+		double minRad;
+		double maxRad;
+		int argCount;
 };
 
-UCAC5Search::UCAC5Search (int argc, char **argv):App (argc, argv)
+UCAC5Search::UCAC5Search (int argc, char **argv):App (argc, argv), radec(""), ra(NAN), dec(NAN), minRad(NAN), maxRad(NAN), argCount(0)
 {
 }
 
@@ -71,6 +77,23 @@ int UCAC5Search::processOption (int opt)
 
 int UCAC5Search::processArgs (const char *arg)
 {
+	switch (argCount)
+	{
+		case 0:
+		case 1:
+			radec += std::string(" ") + arg;
+			if (argCount == 1)
+				parseRaDec(radec.c_str(), ra, dec);
+			break;
+		case 2:
+			minRad = atof(arg);
+			break;
+		case 3:
+			maxRad = atof(arg);
+			break;
+	}
+	argCount++;
+
 	return 0;
 }
 
