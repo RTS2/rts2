@@ -79,7 +79,7 @@ int AltAz::infoUTCLST (const double utc1, const double utc2, double LST)
 	meanParallAngle->setValueDouble (pa);
 	derRate->setValueDouble (parate);
 
-	effectiveParallacticAngle (utc1, utc2, &tar, &hrz, pa, parate, 0.1);
+	effectiveParallacticAngle (utc1, utc2, &tar, &hrz, pa, parate, 0.01);
 	parallAngle->setValueDouble (pa);
 
 	return ret;

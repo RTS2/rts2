@@ -1391,6 +1391,10 @@ int Telescope::init ()
 int Telescope::initValues ()
 {
 	int ret;
+	ret = rts2core::Device::initValues ();
+	if (ret)
+		return ret;
+
 	ret = info ();
 	if (ret)
 		return ret;
@@ -1418,8 +1422,6 @@ int Telescope::initValues ()
 
 	tle_rho_cos_phi->setValueDouble (r_c);
 	tle_rho_sin_phi->setValueDouble (r_s);
-
-	ret = rts2core::Device::initValues ();
 
 	updateDUT1 ();
 
