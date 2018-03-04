@@ -20,6 +20,10 @@
 #include "app.h"
 #include "radecparser.h"
 #include "UCAC5Record.hpp"
+#include "UCAC5Idx.hpp"
+#include "UCAC5Bands.hpp"
+
+#include <libnova_cpp.h>
 
 #include <errno.h>
 #include <string>
@@ -50,10 +54,14 @@ class UCAC5Search:public rts2core::App
 		double minRad;
 		double maxRad;
 		int argCount;
+		int verbose;
+		const char *base;
 };
 
-UCAC5Search::UCAC5Search (int argc, char **argv):App (argc, argv), radec(""), ra(NAN), dec(NAN), minRad(NAN), maxRad(NAN), argCount(0)
+UCAC5Search::UCAC5Search (int argc, char **argv):App (argc, argv), radec(""), ra(NAN), dec(NAN), minRad(NAN), maxRad(NAN), argCount(0), verbose(0), base("~/ucac5")
 {
+	addOption('v', NULL, 0, "increases verbosity");
+	addOption('b', NULL, 1, "UCAC5 base path");
 }
 
 int UCAC5Search::run()
@@ -61,6 +69,34 @@ int UCAC5Search::run()
 	int ret = init();
 	if (ret)
 		return ret;
+	ret = chdir(base);
+	if (ret)
+	{
+		std::cerr << "cannot change directory to " << base << ":" << strerror(errno) << std::endl;
+		return -1;
+	}
+
+	std::cout << "# searching " << LibnovaRaDec(ra, dec) << " <" << minRad << "," << maxRad << ">" << std::endl;
+
+	UCAC5Bands bands;
+	ret = bands.openBand("u5index.unf");
+	if (ret)
+	{
+		std::cerr << "cannot open band index file " << base << "/u5index.unf" << std::endl;
+		return -1;
+	}
+
+	double ra_r = D2R * ra, dec_r = D2R * dec, min_r = AS2R * minRad, max_r = AS2R * maxRad;
+
+	UCAC5Idx index;
+	uint16_t dec_b = 0, ra_b = 0;
+	uint32_t ra_start = 0;
+	int32_t len;
+	while ((bands.nextBand(ra_r, dec_r, max_r, dec_b, ra_b, ra_start, len)) == 0)
+	{
+		if (verbose)
+			std::cout << "# band " << dec_b << " RA " << ra_b << " (" << ra_start << ".." << len << ")" << std::endl;
+	}
 
 	return 0;
 }
@@ -69,6 +105,12 @@ int UCAC5Search::processOption (int opt)
 {
 	switch (opt)
 	{
+		case 'v':
+			verbose++;
+			break;
+		case 'b':
+			base = optarg;
+			break;
 		default:
 			return App::processOption(opt);
 	}

@@ -32,6 +32,8 @@ int UCAC5Idx::openIdx (const char *idx)
 	data = (Vector*) mmap(NULL, dataSize, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (data == MAP_FAILED)
 		return -1;
+	current = data;
+	currentEnd = data + dataSize;
 	return 0;
 }
 
