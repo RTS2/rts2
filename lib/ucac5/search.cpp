@@ -30,6 +30,8 @@
 #include <vector>
 #include <iostream>
 
+#include <erfa.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -88,15 +90,66 @@ int UCAC5Search::run()
 
 	double ra_r = D2R * ra, dec_r = D2R * dec, min_r = AS2R * minRad, max_r = AS2R * maxRad;
 
-	UCAC5Idx index;
+	UCAC5Idx *index = NULL;
 	uint16_t dec_b = 0, ra_b = 0;
 	uint32_t ra_start = 0;
 	int32_t len;
+
+	Vector tar;
+	eraS2c(ra_r, dec_r, tar.data);
+
 	while ((bands.nextBand(ra_r, dec_r, max_r, dec_b, ra_b, ra_start, len)) == 0)
 	{
 		if (verbose)
 			std::cout << "# band " << dec_b << " RA " << ra_b << " (" << ra_start << ".." << len << ")" << std::endl;
+		// open index file..
+		if (index == NULL || index->getBand() != dec_b)
+		{
+			delete index;
+			index = new UCAC5Idx();
+			ret = index->openIdx(dec_b);
+			if (ret)
+			{
+				std::cerr << "Error opening index file for band " << dec_b << ":" << strerror(errno) << std::endl;
+				return -1;
+			}
+		}
+		index->select(ra_start, len);
+		struct ucac5 *data = NULL;
+		char fn[5];
+		snprintf(fn, 5, "z%03d", dec_b + 1);
+		int fd = open(fn, O_RDONLY);
+		if (fd < 0)
+		{
+			std::cerr << "Cannot open " << fn << ":" << strerror(errno) << std::endl;
+			return -1;
+		}
+		struct stat sb;
+		ret = fstat(fd, &sb);
+		if (ret)
+		{
+			std::cerr << "Cannot get size of " << fn << ":" << strerror(errno) << std::endl;
+			return -1;
+		}
+		data = (struct ucac5*) mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+		if (data == MAP_FAILED)
+			return -1;
+
+		while(true)
+		{
+			double d;
+			int star = index->nextMatched(&tar, min_r, max_r, d);
+			if(star < 0)
+				break;
+			if(verbose)
+				std::cout << "# star " << star << " " << LibnovaDegDist(ln_rad_to_deg(d)) << std::endl;
+			UCAC5Record rec(data + star);
+			std::cout << rec.getString() << std::endl;
+		}
+		munmap(data, sb.st_size);
+		close(fd);
 	}
+	delete index;
 
 	return 0;
 }

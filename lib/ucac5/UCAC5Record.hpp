@@ -74,8 +74,8 @@ class UCAC5Record
 
 		std::string getString();
 
-		double getRADeg () { return data.rag / (1000.0 * 3600.0); }
-		double getDecDeg () { return data.dcg / (1000.0 * 3600.0); }
+		double getRADeg () { return data.ira / (1000.0 * 3600.0); }
+		double getDecDeg () { return data.idc / (1000.0 * 3600.0); }
 
 		double getRARad () { return ln_deg_to_rad(getRADeg()); }
 		double getDecRad () { return ln_deg_to_rad(getDecDeg()); }

@@ -17,16 +17,19 @@ class UCAC5Idx
 		UCAC5Idx ();
 		virtual ~UCAC5Idx ();
 
-		int openIdx (const char *idx);
+		int openIdx (int dec_band);
 
 		int select (size_t offset, size_t length);
+
+		int getBand() { return band; }
 
 		/**
 		 * Returns index of the next matching star
 		 */
-		int nextMatched (Vector *fc, double minRad, double maxRad);
+		int nextMatched (Vector *fc, double minRad, double maxRad, double &d);
 	
 	private:
+		int band;
 		int fd;
 		Vector *data;
 		size_t dataSize;

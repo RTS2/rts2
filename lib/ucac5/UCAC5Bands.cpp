@@ -38,7 +38,7 @@ int UCAC5Bands::openBand(const char *bfn)
 	
 	dataSize /= 2;
 
-	data = (uint32_t*) mmap(NULL, dataSize, PROT_READ, MAP_PRIVATE, fd, 0);
+	data = (uint32_t*) mmap(NULL, dataSize, PROT_READ, MAP_SHARED, fd, 0);
 	if (data == MAP_FAILED)
 		return -1;
 
