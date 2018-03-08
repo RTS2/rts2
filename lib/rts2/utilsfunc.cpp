@@ -212,6 +212,21 @@ int parseDate (const char *in_date, time_t *out_time, bool forceUT, bool *only_d
 	return 0;
 }
 
+std::vector<Point> parsePoly (const char *polygon)
+{
+	std::vector<std::string> po = SplitStr(std::string(polygon), std::string(" "));
+	std::vector <Point> ret;
+	for (std::vector<std::string>::iterator iter = po.begin(); iter != po.end(); iter++)
+	{
+		std::size_t si = iter->find(':');
+		if (si != std::string::npos)
+		{
+			ret.push_back(Point(atof(iter->substr(0, si).c_str()), atof(iter->substr(si+1).c_str())));
+		}
+	}
+	return ret;
+}
+
 void getDateObs (const time_t t, const suseconds_t usec, char buf[25])
 {
 	struct tm t_tm;

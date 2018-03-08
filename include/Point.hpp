@@ -1,3 +1,5 @@
+#ifndef __POINT__
+#define __POINT__
 
 /**
  * Class representing 2D point.
@@ -9,3 +11,5 @@ class Point
 		double x;
 		double y;
 };
+
+#endif // !__POINT__

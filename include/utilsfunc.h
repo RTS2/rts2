@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#include "Point.hpp"
 #include "rts2-config.h"
 #include "nan.h"
 #include <math.h>
@@ -89,6 +91,11 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT = fal
 int parseDate (const char *in_date, double &JD, bool forceUT = false, bool *only_date = NULL);
 
 int parseDate (const char *in_date, time_t *out_time, bool forceUT = false, bool *only_date = NULL);
+
+/**
+ * Parse polygon (array of points) from char*.
+ */
+std::vector<Point> parsePoly (const char *polygon);
 
 /**
  * Return date in FITS format.

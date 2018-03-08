@@ -28,15 +28,15 @@ inline int isLeft( Point P0, Point P1, Point P2 )
 
 // cn_PnPoly(): crossing number test for a point in a polygon
 //      Input:   P = a point,
-//               V[] = vertex points of a polygon V[n+1] with V[n]=V[0]
+//               V[] = vertex points of a polygon with V[n]=V[0]
 //      Return:  0 = outside, 1 = inside
 // This code is patterned after [Franklin, 2000]
-int cn_PnPoly( Point P, Point* V, int n )
+int cn_PnPoly( Point P, const std::vector<Point> &V )
 {
     int    cn = 0;    // the  crossing number counter
 
     // loop through all edges of the polygon
-    for (int i=0; i<n; i++) {    // edge from V[i]  to V[i+1]
+    for (int i=0; i < V.size(); i++) {    // edge from V[i]  to V[i+1]
        if (((V[i].y <= P.y) && (V[i+1].y > P.y))     // an upward crossing
         || ((V[i].y > P.y) && (V[i+1].y <=  P.y))) { // a downward crossing
             // compute  the actual edge-ray intersect x-coordinate
@@ -53,14 +53,14 @@ int cn_PnPoly( Point P, Point* V, int n )
 
 // wn_PnPoly(): winding number test for a point in a polygon
 //      Input:   P = a point,
-//               V[] = vertex points of a polygon V[n+1] with V[n]=V[0]
+//               V[] = vertex points of a polygon with V[n]=V[0]
 //      Return:  wn = the winding number (=0 only when P is outside)
-int wn_PnPoly( Point P, Point* V, int n )
+int wn_PnPoly( Point P, const std::vector<Point> &V )
 {
     int    wn = 0;    // the  winding number counter
 
     // loop through all edges of the polygon
-    for (int i=0; i<n; i++) {   // edge from V[i] to  V[i+1]
+    for (int i=0; i<V.size(); i++) {   // edge from V[i] to  V[i+1]
         if (V[i].y <= P.y) {          // start y <= P.y
             if (V[i+1].y  > P.y)      // an upward crossing
                  if (isLeft( V[i], V[i+1], P) > 0)  // P left of  edge
