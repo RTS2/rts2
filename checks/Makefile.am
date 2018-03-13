@@ -38,7 +38,7 @@ check_sep_SOURCES = check_sep.cpp
 check_sep_LDFLAGS = -L../lib/sep -lsep
 
 check_ppoly_SOURCES = check_ppoly.cpp
-check_ppoly_LDFLAGS = -L../lib/gtp -lgtp
+check_ppoly_LDFLAGS = -L../lib/gtp -lgtp -L../lib/rts2 -lrts2
 
 else
 EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp check_dut1.cpp check_expander.cpp check_pid.cpp check_sep.cpp check_ppoly.cpp
