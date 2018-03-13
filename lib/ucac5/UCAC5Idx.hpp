@@ -7,7 +7,7 @@
  * @author Petr Kubanek <petr@rts2.org>
  */
 
-#include "Vector.h"
+#include "gtp/Vector.h"
 
 #include <sys/types.h>
 

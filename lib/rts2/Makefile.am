@@ -25,7 +25,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp clirotator.cpp slitazimuth.c connthorlabs.cpp \
 	dirsupport.cpp userpermissions.cpp conntcsng.cpp connsitech.cpp \
-	catd.cpp dut1.cpp pid.cpp ppoly.cpp Axisd.cpp
+	catd.cpp dut1.cpp pid.cpp Axisd.cpp
 
 librts2_la_LIBADD = ../xmlrpc++/librts2xmlrpc.la ../sep/libsep.la @LIB_NOVA@ @LIBXML_LIBS@
 

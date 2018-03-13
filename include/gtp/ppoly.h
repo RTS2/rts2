@@ -20,3 +20,8 @@ int cn_PnPoly( Point P, const std::vector<Point> &V );
 //               V = vertex points of a polygon with V[n]=V[0]
 //      Return:  wn = the winding number (=0 only when P is outside)
 int wn_PnPoly( Point P, const std::vector<Point> &V );
+
+/**
+ * Parse polygon (array of points) from char*.
+ */
+std::vector<Point> parsePoly (const char *polygon);

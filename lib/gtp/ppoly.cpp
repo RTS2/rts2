@@ -6,7 +6,9 @@
 // Users of this code must verify correctness for their application.
 
 #include "ppoly.h"
- 
+#include "utilsfunc.h"
+
+#include <string>
 
 // a Point is defined by its coordinates {int x, y;}
 //===================================================================
@@ -36,7 +38,7 @@ int cn_PnPoly( Point P, const std::vector<Point> &V )
     int    cn = 0;    // the  crossing number counter
 
     // loop through all edges of the polygon
-    for (int i=0; i < V.size(); i++) {    // edge from V[i]  to V[i+1]
+    for (size_t i=0; i < V.size(); i++) {    // edge from V[i]  to V[i+1]
        if (((V[i].y <= P.y) && (V[i+1].y > P.y))     // an upward crossing
         || ((V[i].y > P.y) && (V[i+1].y <=  P.y))) { // a downward crossing
             // compute  the actual edge-ray intersect x-coordinate
@@ -60,7 +62,7 @@ int wn_PnPoly( Point P, const std::vector<Point> &V )
     int    wn = 0;    // the  winding number counter
 
     // loop through all edges of the polygon
-    for (int i=0; i<V.size(); i++) {   // edge from V[i] to  V[i+1]
+    for (size_t i=0; i<V.size(); i++) {   // edge from V[i] to  V[i+1]
         if (V[i].y <= P.y) {          // start y <= P.y
             if (V[i+1].y  > P.y)      // an upward crossing
                  if (isLeft( V[i], V[i+1], P) > 0)  // P left of  edge
@@ -73,4 +75,19 @@ int wn_PnPoly( Point P, const std::vector<Point> &V )
         }
     }
     return wn;
+}
+
+std::vector<Point> parsePoly (const char *polygon)
+{
+	std::vector<std::string> po = SplitStr(std::string(polygon), std::string(" "));
+	std::vector <Point> ret;
+	for (std::vector<std::string>::iterator iter = po.begin(); iter != po.end(); iter++)
+	{
+		std::size_t si = iter->find(':');
+		if (si != std::string::npos)
+		{
+			ret.push_back(Point(atof(iter->substr(0, si).c_str()), atof(iter->substr(si+1).c_str())));
+		}
+	}
+	return ret;
 }

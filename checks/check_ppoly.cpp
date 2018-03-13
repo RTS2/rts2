@@ -1,4 +1,4 @@
-#include "ppoly.h"
+#include "gtp/ppoly.h"
 #include "utilsfunc.h"
 
 #include <check.h>

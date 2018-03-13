@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = connection rts2db rts2script rts2fits rts2lx200 rts2scheduler vermes rts2json xmlrpc++ sep
+SUBDIRS = connection rts2db rts2script rts2fits rts2lx200 rts2scheduler vermes rts2json xmlrpc++ sep gtp
 
 noinst_HEADERS = rts2.h imghdr.h status.h bbstatus.h imgdisplay.h connection.h logstream.h \
 		message.h strtok.h xmlerror.h teld.h camd.h dome.h cupola.h sensord.h sensorgpib.h focusd.h filterd.h phot.h rotad.h \
@@ -12,4 +12,4 @@ noinst_HEADERS = rts2.h imghdr.h status.h bbstatus.h imgdisplay.h connection.h l
 		telmodel.h gpointmodel.h simbadtarget.h \
 		tpointmodel.h tpointmodelterm.h expander.h expression.h counted_ptr.h infoval.h userlogins.h userpermissions.h \
 		door_vermes.h vermes.h slitazimuth.h OakHidBase.h OakFeatureReports.h tsqueue.h dirsupport.h altaz.h constsitech.h
-		sgp4.h catd.h dut1.h pid.h Point.hpp Axisd.hpp Vector.h
+		sgp4.h catd.h dut1.h pid.h Axisd.hpp
