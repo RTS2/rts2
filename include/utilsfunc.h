@@ -46,11 +46,11 @@
 #endif
 
 #ifndef D2R
-#define D2R (M_PI / 180.0)
+const double D2R  = M_PI / 180.0;
 #endif
 
 #ifndef AS2R
-#define AS2R (D2R / 3600.0)
+const double AS2R = D2R / 3600.0;
 #endif
 
 /**
