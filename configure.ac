@@ -1009,6 +1009,7 @@ AC_OUTPUT([Makefile
 	   include/xmlrpc++/Makefile
 	   include/pluto/Makefile
 	   include/sep/Makefile
+	   include/ucac5/Makefile
 	   include/gtp/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
@@ -1085,6 +1086,7 @@ AC_OUTPUT([Makefile
 	   src/catd/Makefile
 	   src/thrift/Makefile
 	   src/redis/Makefile
+	   src/ucac5/Makefile
 	   tests/Makefile
 	   checks/Makefile
 	   checks/data/Makefile

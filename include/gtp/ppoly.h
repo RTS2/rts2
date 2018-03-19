@@ -6,6 +6,7 @@
 // Users of this code must verify correctness for their application.
  
 #include <vector>
+#include <string>
 #include "Point.hpp"
 
 // cn_PnPoly(): crossing number test for a point in a polygon
@@ -22,6 +23,7 @@ int cn_PnPoly( Point P, const std::vector<Point> &V );
 int wn_PnPoly( Point P, const std::vector<Point> &V );
 
 /**
- * Parse polygon (array of points) from char*.
+ * Parse polygon (array of points) from string. Points are separated with ' '
+ * (space), x:y are : separated.
  */
-std::vector<Point> parsePoly (const char *polygon);
+std::vector<Point> parsePoly (const std::string &polygon);

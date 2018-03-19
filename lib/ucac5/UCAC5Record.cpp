@@ -18,7 +18,7 @@
  */
 
 
-#include "UCAC5Record.hpp"
+#include "ucac5/UCAC5Record.hpp"
 #include "libnova_cpp.h"
 
 #include <libnova/libnova.h>

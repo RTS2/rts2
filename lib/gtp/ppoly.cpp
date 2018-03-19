@@ -8,8 +8,6 @@
 #include "ppoly.h"
 #include "utilsfunc.h"
 
-#include <string>
-
 // a Point is defined by its coordinates {int x, y;}
 //===================================================================
  
@@ -77,17 +75,21 @@ int wn_PnPoly( Point P, const std::vector<Point> &V )
     return wn;
 }
 
-std::vector<Point> parsePoly (const char *polygon)
+std::vector<Point> parsePoly (const std::string &polygon)
 {
-	std::vector<std::string> po = SplitStr(std::string(polygon), std::string(" "));
 	std::vector <Point> ret;
-	for (std::vector<std::string>::iterator iter = po.begin(); iter != po.end(); iter++)
+	size_t beg = 0;
+	size_t sep;
+	do
 	{
-		std::size_t si = iter->find(':');
+		sep = polygon.find(' ', beg);
+		std::string member = polygon.substr(beg, sep - beg);
+		size_t si = member.find(':');
 		if (si != std::string::npos)
 		{
-			ret.push_back(Point(atof(iter->substr(0, si).c_str()), atof(iter->substr(si+1).c_str())));
+			ret.push_back(Point(atof(member.substr(0, si).c_str()), atof(member.substr(si+1).c_str())));
 		}
-	}
+		beg = sep + 1;
+	} while (sep != std::string::npos);
 	return ret;
 }

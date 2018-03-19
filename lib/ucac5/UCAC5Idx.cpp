@@ -1,4 +1,4 @@
-#include "UCAC5Idx.hpp"
+#include "ucac5/UCAC5Idx.hpp"
 
 #include <erfa.h>
 #include <sys/mman.h>

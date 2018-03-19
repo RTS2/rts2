@@ -19,9 +19,9 @@
 
 #include "app.h"
 #include "radecparser.h"
-#include "UCAC5Record.hpp"
-#include "UCAC5Idx.hpp"
-#include "UCAC5Bands.hpp"
+#include "ucac5/UCAC5Record.hpp"
+#include "ucac5/UCAC5Idx.hpp"
+#include "ucac5/UCAC5Bands.hpp"
 
 #include <libnova_cpp.h>
 

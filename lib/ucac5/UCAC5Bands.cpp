@@ -1,4 +1,4 @@
-#include "UCAC5Bands.hpp"
+#include "ucac5/UCAC5Bands.hpp"
 
 #include <erfa.h>
 

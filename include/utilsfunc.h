@@ -45,8 +45,13 @@
 #define JD_TO_MJD_OFFSET  2400000.5
 #endif
 
-const double D2R = M_PI / 180.0;
-const double AS2R = D2R / 3600.0;
+#ifndef D2R
+#define D2R (M_PI / 180.0)
+#endif
+
+#ifndef AS2R
+#define AS2R (D2R / 3600.0)
+#endif
 
 /**
  * Return random number in 0-1 range.

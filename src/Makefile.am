@@ -28,4 +28,5 @@ SUBDIRS = \
 	pluto \
 	catd \
 	redis \
-	thrift
+	thrift \
+	ucac5

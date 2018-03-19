@@ -18,7 +18,7 @@
  */
 
 #include "app.h"
-#include "UCAC5Record.hpp"
+#include "ucac5/UCAC5Record.hpp"
 
 #include <errno.h>
 #include <string>
