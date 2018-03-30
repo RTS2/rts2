@@ -442,7 +442,7 @@ class Rts2Comm:
 			selector=self.getDeviceByType(DEVICE_SELECTOR)
 		return self.sendCommand('insert {0} {1} {2}'.format(queue, index, target_id), selector)
 
-	def requeue(self, queue, delay, selector=None):
-		if selector is None:
-			selector=self.getDeviceByType(DEVICE_SELECTOR)
-		return self.sendCommand('requeue {0} {1}'.format(queue, delay), selector)
+	def requeue(self, queue, delay):
+		print('requeue {0} {1}'.format(queue, delay))
+		sys.stdout.flush()
+		return self.readline()
