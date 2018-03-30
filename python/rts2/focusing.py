@@ -50,6 +50,8 @@ from scipy import *
 from scipy import optimize
 import numpy
 import pickle
+from kuiper_reduction.merge import merge_fitsfd
+
 
 LINEAR = 0
 """Linear fit"""
@@ -266,6 +268,7 @@ class Focusing (scriptcomm.Rts2Comm):
 		for self.num in range(1,self.attempts+1):
 		  	self.log('I','starting {0}s exposure on offset {1}'.format(self.exptime,self.off))
 			img = self.exposure(self.beforeReadout,'%b/foc_%N_{0}.fits'.format(self.num))
+
 			
 			tries[self.current_focus] = img
 

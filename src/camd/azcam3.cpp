@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <fcntl.h>
 #include "camd.h"
 #include "connection/tcp.h"
@@ -33,6 +34,7 @@ class AzCam3DataConn:public rts2core::ConnTCP
 
 		ssize_t getDataSize () { return dataSize; }
 		int getRecvs() {return recvs;}
+		bool imgWasRecvd() {return wasRecvd;}
 
 	private:
 		ssize_t dataSize;
@@ -40,6 +42,7 @@ class AzCam3DataConn:public rts2core::ConnTCP
 		char header[257];
 		int outFile;
 		int recvs;
+		bool wasRecvd;
 };
 
 AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
@@ -49,6 +52,7 @@ AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_m
 	memset (header, 0, sizeof (header));
 	outFile = 0;
 	recvs = 0;
+	wasRecvd = false;
 }
 
 int AzCam3DataConn::receive (rts2core::Block *block)
@@ -74,6 +78,7 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 			{
 				std::cerr << "header " << header << std::endl;
 				sscanf (header, "%ld", &dataSize);
+				headerSize = 256+1;
 			}
 			return 0;
 		}
@@ -92,13 +97,14 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 			}
 			write (outFile, rbuf, rec);
 			fsync (outFile);
-
+			
 			dataSize -= rec;
 			if (dataSize <= 0)
 			{
 				close (outFile);
 				dataSize = 0;
 				headerSize = 0;
+				wasRecvd = true;
 				return rec;
 			}
 		}
@@ -106,6 +112,7 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 	}
 	return 0;
 }
+
 
 class AzCam3:public rts2camd::Camera
 {
@@ -133,6 +140,13 @@ class AzCam3:public rts2camd::Camera
 		rts2core::ValueFloat *exposureRemaining;
 		rts2core::ValueLong *pixelsRemaining;
 		rts2core::ValueString *lastImagePath;
+		
+
+		rts2core::ValueBool *parShiftFocus;
+		rts2core::ValueLong *parShiftNexposures;
+		rts2core::ValueLong *parShiftFocusSteps;
+		rts2core::ValueLong *parShiftDetShifts;
+		rts2core::ValueFloat *parShiftExposureTime;
 
 		char rbuf[200];
 
@@ -143,6 +157,7 @@ class AzCam3:public rts2camd::Camera
 		int callCommand (const char *cmd, double p1, const char *p2, const char *p3);
 		int callExposure (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
+		int callShiftExposure( );
 
 		int callArg (const char *cmd);
 
@@ -176,6 +191,24 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 	createValue (exposureRemaining, "exposure_rem", "[s] AZCam remaining exposure time", false);
 	createValue (pixelsRemaining, "pixels_rem", "AZCam remaining readout pixels", false);
 	createValue (lastImagePath, "last_img_path", "Path to most recent image", false, RTS2_VALUE_WRITABLE);
+	
+
+
+
+	//par shift focus variables
+	createValue (parShiftFocus, "shiftfocus", "Do an azcam focus run", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftNexposures, "shift_nexp", "Number of exposure to take during shift focus", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftFocusSteps, "shift_steps", "Number of steps to move in focus during shift focus", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftDetShifts, "detshifts", "Number of pixels to shift during shift focus", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftExposureTime, "shift_exptime", "Time in seconds of each exposure during shift focus. ", false, RTS2_VALUE_WRITABLE);
+
+	//handy defaults
+	parShiftFocus->setValueBool(false);
+	parShiftNexposures->setValueLong( 7 );
+	parShiftFocusSteps->setValueLong( 45 );
+	parShiftDetShifts->setValueLong( 50  );
+	parShiftExposureTime->setValueDouble( 10.0 );
+	//end par shift
 
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
 	addOption ('n', NULL, 1, "local hostname, hostname of the computer running RTS2");
@@ -302,6 +335,34 @@ int AzCam3::callExposure (const char *cmd, double p1, const char *p2)
 	}
 }
 
+
+int AzCam3::callShiftExposure (  )
+{
+
+	logStream (MESSAGE_INFO) << "Shift Exposure called. " << sendLog;
+	char buf[200];
+	snprintf (buf, 200, "focus.set_pars %f %ld %ld %ld \r\n", 
+		parShiftExposureTime->getValueFloat(), 
+		parShiftNexposures->getValueLong(), 
+		parShiftFocusSteps->getValueLong(), 
+		parShiftDetShifts->getValueLong() );
+	callCommand(buf);
+
+	try
+	{
+		
+		logStream (MESSAGE_INFO) << "Sending focus.run right ... now " << sendLog;
+		commandConn->sendData ("focus.run\r\n");
+		return 0;
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << "cannot start shift store exposure " << err << sendLog;
+		return -1;
+	}
+}
+
+
 int AzCam3::callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6)
 {
 	char buf[200];
@@ -392,11 +453,21 @@ int AzCam3::startExposure()
 
 	const char *imgType[3] = {"object", "dark", "zero"};
 
-	ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue());
-	if (ret)
+	if( parShiftFocus->getValueBool() )
+	{
+		callShiftExposure( );
+		ret = 0;
+	}
+	else
+	{
+		ret = callCommand ( "exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue() );
+	}
+
+	if ( ret )
 		return ret;
-	sleep (5);
+	sleep ( 5 );
 	return 0;
+
 }
 
 int AzCam3::stopExposure ()
@@ -410,14 +481,31 @@ long AzCam3::isExposing ()
 {
 	try
 	{
-		exposureRemaining->setValueFloat (getDouble ("controller.update_exposuretime_remaining\r\n"));
-		sendValueAll (exposureRemaining);
-		if (exposureRemaining->getValueFloat () > 0)
-			return exposureRemaining->getValueFloat () * USEC_SEC;
+		if ( !parShiftFocus->getValueBool())
+		{
+			exposureRemaining->setValueFloat (getDouble ("controller.update_exposuretime_remaining\r\n"));
+			sendValueAll (exposureRemaining);
+			if (exposureRemaining->getValueFloat () > 0)
+				return exposureRemaining->getValueFloat () * USEC_SEC;
 		// else exposureRemaining is 0..or negative in case of AzCam bug..
 		long camExp = Camera::isExposing ();
-		if (camExp > USEC_SEC)
-			return camExp;
+			if (camExp > USEC_SEC)
+				return camExp;
+		}
+		else
+		{
+			if( dataConn->imgWasRecvd() )
+			{
+				
+				return -2;
+			}
+			else
+			{
+				//check again in a second
+				return USEC_SEC;
+			}
+
+		}
 	}
 	catch (rts2core::Error &er)
 	{
@@ -439,10 +527,26 @@ int AzCam3::doReadout ()
 			{
 				if (!(getState () & CAM_SHIFT))
 				{
-					
-					pixelsRemaining->setValueLong (getLong ("controller.get_pixels_remaining\r\n"));
-					sendValueAll (pixelsRemaining);
+					if (!parShiftFocus->getValueBool())
+					{
+						pixelsRemaining->setValueLong (getLong ("controller.get_pixels_remaining\r\n"));
+
+
+						sendValueAll (pixelsRemaining);
+					}
+					else
+					{
+						removeConnection (dataConn);
+						dataConn = NULL;
+				                fitsDataTransfer ("/tmp/m.fits");
+						//Don't assume par shift for the next
+						//exposure. 
+						parShiftFocus->setValueBool(false);
+						sendValueAll(parShiftFocus);
+						return -2;
+					}
 				}
+				
 				return USEC_SEC;
 			}
 			catch (rts2core::Error &er)
@@ -483,82 +587,39 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
 	int ret = setupDataConnection ();
 	if (ret)
-		return -2;
+		return ret;
+	
+//	int ret = callCommand ("setROI", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+//	if (ret)
+//		return ret;
 
-	ret = callCommand ("exposure.set_image_type", "object");
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
-		return -2;
-	}
+	
+	//ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue());
+	//ret = callCommand("focus.run\r\n");
+	commandConn->sendData("focus.run\r\n");
 
-	ret = callCommand ("exposure.set_exposure_time", exptime);
 	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
-		return -2;
-	}
-	lastShiftExpTime = exptime;
-	ret = Camera::shiftStoreStart (conn, exptime);
-	if (ret)
-		return -2;
-	ret = callCommand ("exposure.begin\r\n");
-	if (ret)
-		return -2;
-
-	ret = callCommand ("exposure.integrate\r\n");
-	if (ret)
-		return -2;
-
+		return ret;
+	sleep (5);
 	return 0;
 }
 
+
 int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
 {
-	int ret;
-	if (lastShiftExpTime != exptime)
-	{
-		ret = callCommand ("exposure.set_exposure_time", exptime);
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
-			return -2;
-		}
-		lastShiftExpTime = exptime;
-	}
-	ret = callCommand ("controller.parshift", shift);
-	if (ret)
-		return -2;
-	ret = callCommand ("exposure.integrate\r\n");
+	//int ret;
+	removeConnection( dataConn );
+	dataConn = NULL;
+	fitsDataTransfer("/tmp/m.fits");
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
 int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
-	int ret;
-	if (lastShiftExpTime != exptime)
-	{
-		ret = callCommand ("exposure.set_exposure_time", exptime);
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
-			return -2;
-		}
-		lastShiftExpTime = exptime;
-	}
-
-	ret = callCommand ("controller.parshift", shift);
-	if (ret)
-		return -2;
-	ret = callCommand ("exposure.integrate\r\n");
-	if (ret)
-		return -2;
-	ret = callCommand ("exposure.readout\r\n");
-	if (ret)
-		return -2;
-	commandConn->sendData ("exposure.end\r\n");
+	//int ret;
 	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
+
 
 int main (int argc, char **argv)
 {
