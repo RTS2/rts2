@@ -7,7 +7,7 @@ EXTRA_DIST = flat.py guide.py guide-altaz.py masterflat.py center.py match.py sy
 	rts2-queue rts2-json rts2-astrometry.net rts2-sextractor imgp_analysis.py rts2-focusing \
 	acquire.py \
 	rts2-queue rts2-json rts2-bb-json rts2-astrometry.net rts2-log subtract.py \
-	plot-model.py rts2-parse-bsc rts2-start.in rts2-stop.in
+	plot-model.py rts2-parse-bsc rts2-start.in rts2-stop.in requeue.py
 
 # fully expand variables in rts2-start
 do_subst = $(SED) \
