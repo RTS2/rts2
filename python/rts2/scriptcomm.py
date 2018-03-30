@@ -435,9 +435,14 @@ class Rts2Comm:
 	def queueAppend(self, queue, target_id, selector=None):
 		if selector is None:
 			selector=self.getDeviceByType(DEVICE_SELECTOR)
-		return self.command('queue {0} {1}'.format(queue, target_id), selector)
+		return self.sendCommand('queue {0} {1}'.format(queue, target_id), selector)
 
 	def queueInsert(self, queue, target_id, index=0, selector=None):
 		if selector is None:
 			selector=self.getDeviceByType(DEVICE_SELECTOR)
-		return self.command('insert {0} {1} {2}'.format(queue, index, target_id), selector)
+		return self.sendCommand('insert {0} {1} {2}'.format(queue, index, target_id), selector)
+
+	def requeue(self, queue, delay, selector=None):
+		if selector is None:
+			selector=self.getDeviceByType(DEVICE_SELECTOR)
+		return self.sendCommand('requeue {0} {1}'.format(queue, delay), selector)

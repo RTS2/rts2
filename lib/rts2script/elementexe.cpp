@@ -456,7 +456,7 @@ void ConnExecute::processCommand (char *cmd)
 			getMaster ()->getOpenConnectionType (DEVICE_TYPE_SELECTOR, iter);
 			if (iter != getMaster ()->getConnections ()->end ())
 			{
-				(*iter)->queCommand (new rts2core::CommandQueueAt (getMaster (), queueName, 1, getNow () + delay, NAN));
+				(*iter)->queCommand (new rts2core::CommandQueueAt (getMaster (), queueName, masterElement->getTarget ()->getTargetID (), getNow () + delay, NAN));
 				writeToProcess ((*iter)->getName ());
 			}
 			else
