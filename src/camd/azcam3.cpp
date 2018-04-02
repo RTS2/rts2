@@ -200,10 +200,10 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 
 	//par shift focus variables
 	createValue (parShiftFocus, "shiftfocus", "Do an azcam focus run", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftNexposures, "shift_nexp", "Number of exposure to take during shift focus", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftFocusSteps, "shift_steps", "Number of steps to move in focus during shift focus", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftDetShifts, "detshifts", "Number of pixels to shift during shift focus", false, RTS2_VALUE_WRITABLE);
-	createValue (parShiftExposureTime, "shift_exptime", "Time in seconds of each exposure during shift focus. ", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftNexposures, "SHIFT_N", "Number of exposure to take during shift focus", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftFocusSteps, "SHIFT_FO", "Number of steps to move in focus during shift focus", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftDetShifts, "SHIFT_PX", "Number of pixels to shift during shift focus", false, RTS2_VALUE_WRITABLE);
+	createValue (parShiftExposureTime, "SHIFT_EX", "Time in seconds of each exposure during shift focus. ", false, RTS2_VALUE_WRITABLE);
 
 	//handy defaults
 	parShiftFocus->setValueBool(false);
