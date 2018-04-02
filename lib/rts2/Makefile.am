@@ -3,6 +3,11 @@
 AM_CXXFLAGS=@NOVA_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
 AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
 
+if MACOSX
+AM_CFLAGS += -include ../../include/compat/osx/compat.h
+AM_CXXFLAGS += -include ../../include/compat/osx/compat.h
+endif
+
 EXTRA_DIST =
 
 lib_LTLIBRARIES = librts2.la librts2users.la librts2gpib.la
@@ -19,8 +24,8 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp clirotator.cpp slitazimuth.c connthorlabs.cpp \
-	dirsupport.cpp userpermissions.cpp conntcsng.cpp connethernet.cpp connremotes.cpp connsitech.cpp \
-	catd.cpp dut1.cpp pid.cpp
+	dirsupport.cpp userpermissions.cpp conntcsng.cpp connsitech.cpp \
+	catd.cpp dut1.cpp pid.cpp Axisd.cpp
 
 librts2_la_LIBADD = ../xmlrpc++/librts2xmlrpc.la ../sep/libsep.la @LIB_NOVA@ @LIBXML_LIBS@
 
@@ -35,9 +40,9 @@ EXTRA_DIST += conngpiblinux.cpp
 endif
 
 if SUNCYGMAC
-EXTRA_DIST += OakFeatureReports.c OakHidBase.c
+EXTRA_DIST += OakFeatureReports.c OakHidBase.c connethernet.cpp connremotes.cpp
 else
-librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
+librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c connethernet.cpp connremotes.cpp
 endif
 
 librts2users_la_SOURCES = userlogins.cpp

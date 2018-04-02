@@ -8,17 +8,21 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-cryocon rts2-sensor-keithley-scpi rts2-sensor-colamp \
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
 	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
-	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
+	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab \
 	rts2-sensor-thermocube rts2-sensor-reinhardt rts2-sensor-davis \
-	rts2-sensor-servodrive-r272 rts2-sensor-tbt rts2-sensor-binder \
-	rts2-sensor-saao rts2-sensor-cpx400
+	rts2-sensor-tbt rts2-sensor-binder \
+	rts2-sensor-saao rts2-sensor-cpx400 rts2-sensor-afg
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
 
-EXTRA_DIST = 
+EXTRA_DIST =
 
 LDADD = -L../../lib/rts2 -lrts2gpib -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
+
+if MACOSX
+AM_CXXFLAGS += -include ../../include/compat/osx/compat.h
+endif
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
@@ -90,12 +94,12 @@ rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
 
 rts2_sensor_aws_mlab_SOURCES = aws-mlab.cpp
 
-rts2_sensor_clarity_SOURCES = clarity.cpp
-
 rts2_sensor_saao_SOURCES = saao.cpp
 rts2_sensor_saao_LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD}
 
 rts2_sensor_cpx400_SOURCES = cpx400.cpp
+
+rts2_sensor_afg_SOURCES = afg.cpp
 
 if LIBJSONCPP
 
@@ -112,15 +116,17 @@ EXTRA_DIST += allnet.cpp
 endif
 
 if SUNCYGMAC
-EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp
+EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp clarity.cpp
 else
-bin_PROGRAMS += rts2-sensor-tps534 rts2-sensor-niratir
+bin_PROGRAMS += rts2-sensor-tps534 rts2-sensor-niratir rts2-sensor-clarity
 
-rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c 
+rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c
 rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD}
 rts2_sensor_tps534_CFLAGS = @LIB_NOVA@ -I../../include
 
 rts2_sensor_niratir_SOURCES = niratir.cpp
+
+rts2_sensor_clarity_SOURCES = clarity.cpp
 endif
 
 rts2_sensor_flwo_weather_SOURCES = flwo-weather.cpp
@@ -148,8 +154,6 @@ rts2_sensor_thermocube_SOURCES = thermocube.cpp
 rts2_sensor_reinhardt_SOURCES = reinhardt.cpp
 
 rts2_sensor_davis_SOURCES = davis.cpp
-
-rts2_sensor_servodrive_r272_SOURCES = servodrive-r272.cpp
 
 rts2_sensor_tbt_SOURCES = tbt.cpp
 
@@ -211,7 +215,7 @@ else
 
 EXTRA_DIST += boltwood.cpp
 
-endif 
+endif
 
 if BIGNG
 
@@ -219,11 +223,10 @@ bin_PROGRAMS += rts2-sensor-bigng
 
 rts2_sensor_bigng_SOURCES = bigng.cpp
 rts2_sensor_bigng_CXXFLAGS = @INC_BIGNG@ -I../../include
-rts2_sensor_bigng_LDADD = @LIB_BIGNG@ ${LDADD} 
+rts2_sensor_bigng_LDADD = @LIB_BIGNG@ ${LDADD}
 
 else
 
 EXTRA_DIST += bigng.cpp
 
 endif
-

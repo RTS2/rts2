@@ -71,7 +71,8 @@ App::App (int argc, char **argv):Object ()
 	addOption (OPT_DEBUG, "debug", 0, "print debug messages");
 	addOption (OPT_UTTIME, "UT", 0, "use UT (not local) time for time displays");
 
-	masterApp = this;
+	if (masterApp == NULL)
+		masterApp = this;
 }
 
 App::~App ()

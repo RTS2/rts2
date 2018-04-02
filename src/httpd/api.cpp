@@ -575,7 +575,16 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 
 				throw XmlRpc::XmlRpcAsynchronous ();
 			}
-			// execute command on server
+			else if (vals[0] == "object")
+			{
+				const char *name = params->getString ("n", "");
+				double ra = params->getDouble ("ra", NAN);
+				double dec = params->getDouble ("dec", NAN);
+				if (ra == NAN && dec == NAN)
+					throw JSONException ("object coordinates must be provided");
+				//queCommand (
+			}
+			// execute command on device
 			else if (vals[0] == "cmd")
 			{
 				const char *device = params->getString ("d", "");

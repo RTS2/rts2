@@ -15,6 +15,10 @@ librts2xmlrpc_la_SOURCES = \
 
 librts2xmlrpc_la_CXXFLAGS = @NOVA_CFLAGS@ -I../../include -I../../include/xmlrpc++
 
+if MACOSX
+librts2xmlrpc_la_CXXFLAGS += -include ../../include/compat/osx/compat.h
+endif
+
 if SSL
 
 librts2xmlrpc_la_SOURCES += XmlRpcSocketSSL.cpp

@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "sensord.h"
+#include "Axisd.hpp"
 #include "connection/serial.h"
 
-namespace rts2sensord
+namespace rts2axisd
 {
 
 /**
@@ -28,7 +28,7 @@ namespace rts2sensord
  * http://www.servo-drive.com/pdf_catalog/manual_r272.pdf
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ServoDrive:public Sensor
+class ServoDrive:public Axis
 {
 	public:
 		ServoDrive (int in_argc, char **in_argv);
@@ -40,7 +40,7 @@ class ServoDrive:public Sensor
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
-		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
+		virtual int moveTo(int tcounts);
 		virtual int processOption (int in_opt);
 
 	private:
@@ -64,22 +64,17 @@ class ServoDrive:public Sensor
 
 };
 
-using namespace rts2sensord;
+using namespace rts2axisd;
 
-ServoDrive::ServoDrive (int argc, char **argv):Sensor (argc, argv)
+ServoDrive::ServoDrive (int argc, char **argv):Axis (argc, argv)
 {
 	servoDev = NULL;
 	dev = "/dev/ttyS0";
 
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 
-	createValue (target, "TARGET", "target position", false, RTS2_VALUE_WRITABLE);
 	createValue (homeHigh, "home_high", "high home position", false, RTS2_VALUE_WRITABLE);
 	homeHigh->setValueLong (3400);
-	createValue (minTarget , "MIN", "minimal axis value",  false, RTS2_VALUE_WRITABLE);
-	createValue (maxTarget, "MAX", "maximal target value", false, RTS2_VALUE_WRITABLE);
-	minTarget->setValueLong (INT_MIN);
-	maxTarget->setValueLong (INT_MAX);
 
 	createValue (lastCommand, "last_cmd", "start last movement", false);
 
@@ -91,35 +86,6 @@ ServoDrive::~ServoDrive (void)
 	delete servoDev;
 }
 
-int ServoDrive::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
-{
-	if (old_value == target)
-	{
-		if (new_value->getValueLong () < minTarget->getValueLong () || new_value->getValueLong () > maxTarget->getValueLong ())
-			return -2;
-		servoDev->flushPortIO ();
-		beginLoading ();
-		long diff = new_value->getValueLong () - old_value->getValueLong ();
-		sendCommand ("BG*");
-		sendCommand ("EN*");
-		if (diff == 0)
-			return 0;
-		if (diff > 0)
-			sendCommand ("DL*");
-		else
-			sendCommand ("DR*");
-		char cmd[20];
-		snprintf (cmd, 20, "MV%ld*", labs (diff));
-		sendCommand (cmd);
-		sendCommand ("ED*");
-		executeProgramme ();
-		lastCommand->setNow ();
-		lastDiff = new_value->getValueInteger () - old_value->getValueInteger ();
-		return 0;
-	}
-	return Sensor::setValue (old_value, new_value);
-}
-
 int ServoDrive::processOption (int in_opt)
 {
 	switch (in_opt)
@@ -128,7 +94,7 @@ int ServoDrive::processOption (int in_opt)
 			dev = optarg;
 			break;
 		default:
-			return Sensor::processOption (in_opt);
+			return Axis::processOption (in_opt);
 	}
 	return 0;
 }
@@ -151,7 +117,30 @@ int ServoDrive::info ()
 	{
 		
 	}
-	return Sensor::info ();
+	return Axis::info ();
+}
+
+int ServoDrive::moveTo (int tcounts)
+{
+	servoDev->flushPortIO ();
+	beginLoading ();
+	long diff = tcounts - getTarget();
+	sendCommand ("BG*");
+	sendCommand ("EN*");
+	if (diff == 0)
+		return 0;
+	if (diff > 0)
+		sendCommand ("DL*");
+	else
+		sendCommand ("DR*");
+	char cmd[20];
+	snprintf (cmd, 20, "MV%ld*", labs (diff));
+	sendCommand (cmd);
+	sendCommand ("ED*");
+	executeProgramme ();
+	lastCommand->setNow ();
+	lastDiff = diff;
+	return 0;
 }
 
 int ServoDrive::commandAuthorized (rts2core::Connection * conn)
@@ -182,7 +171,7 @@ int ServoDrive::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return sendCommand ("SP*") == 0 ? 0 : -2;
 	}
-	return Sensor::commandAuthorized (conn);
+	return Axis::commandAuthorized (conn);
 }
 
 int ServoDrive::sendCommand (const char *cmd)

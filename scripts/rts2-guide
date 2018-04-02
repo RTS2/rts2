@@ -30,7 +30,7 @@ parser.add_argument('--not-guide', help=('only record changes, do not guide'), a
 
 options = parser.parse_args()
 
-j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+j = rts2.rtsapi.JSONProxy(options.server, options.user, options.password, verbose=options.verbose > 2)
 
 tn = j.getDevicesByType(rts2.rtsapi.DEVICE_TYPE_MOUNT)
 if tn is None:
@@ -51,7 +51,7 @@ def find_star(ccd):
 		d.set('frame 0')
 		d.set_np2arr(data)
 
-	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, exclusion=30)
+	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, exclusion=30, pix_treshold=25)
 	print _('Found star: {0} {1} {2:.1}').format(x, y, flux)
 	if x is None or flux < options.min_flux:
 		sys.exit(_('No suitable guiding star'))

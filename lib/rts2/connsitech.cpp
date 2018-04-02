@@ -10,7 +10,7 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details. 
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
@@ -23,7 +23,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef RTS2_HAVE_ENDIAN_H
 #include <endian.h>
+#endif
 
 using namespace rts2core;
 
@@ -37,6 +39,8 @@ ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName
 	logCount = 0;
 
 	memset (&last_status, 0, sizeof (last_status));
+
+	memset (&flashBuffer, 0, sizeof (flashBuffer));
 }
 
 int ConnSitech::init ()
@@ -65,12 +69,20 @@ int ConnSitech::init ()
 	{
 		sitechType = SERVO_II;
 	}
-	else
+	else if (version < 180)
 	{
 		sitechType = FORCE_ONE;
 		countUp = getSiTechValue ('Y', "XHC");
 		PIDSampleRate = (CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp);
 	}
+	else
+	{
+		sitechType = FORCE_TWO;
+		countUp = getSiTechValue ('Y', "XHC");
+		PIDSampleRate = (CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp);
+	}
+
+
 	return 0;
 }
 
@@ -265,14 +277,6 @@ void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
 {
 }
 
-void ConnSitech::getConfiguration (SitechControllerConfiguration &config)
-{
-	switchToBinary ();
-	siTechCommand ('S', "C");
-
-	readConfiguration (config);
-}
-
 void ConnSitech::readAxisStatus ()
 {
 	char ret[42];
@@ -289,7 +293,9 @@ void ConnSitech::readAxisStatus ()
 
 	if ((*((uint16_t *) (ret + 39))) != checksum)
 	{
-		throw Error ("invalid checksum in readAxisStatus");
+		std::ostringstream oss;
+		oss << "invalid checksum in readAxisStatus, expected " <<  (*((uint16_t *) (ret + 39))) << ", calculated " << checksum;
+		throw Error (oss.str());
 	}
 
 	// fill in proper return values..
@@ -313,103 +319,6 @@ void ConnSitech::readAxisStatus ()
 
 	if (logFile > 0)
 		logBuffer ('A', ret, 41);
-}
-
-void ConnSitech::readConfiguration (SitechControllerConfiguration &config)
-{
-	char ret[400];
-	size_t len = readPort (ret, 400);
-
-	if (len != 130)
-	{
-		std::cout << "len " << len << std::endl;
-		flushPortIO ();
-		throw Error ("cannot read Sitech configuration");
-	}
-
-	// checksum checks
-	uint16_t checksum = binaryChecksum (ret, 128, false);
-	if ((*((uint16_t *) (ret + 129))) != checksum)
-	{
-		std::cerr << *((uint16_t *) (ret + 129)) << " " << checksum << std::endl;
-		throw Error ("invalid checksum in readConfiguration");
-	}
-
-	// fill in proper values
-
-	config.x_acc = le32toh (*((uint32_t *) (ret + 0)));
-	config.x_backlash = le32toh (*((uint32_t *) (ret + 4)));
-	config.x_error_limit = le16toh (*((uint16_t *) (ret + 8)));
-	config.x_p_gain = le16toh (*((uint16_t *) (ret + 10)));
-	config.x_i_gain = le16toh (*((uint16_t *) (ret + 12)));
-	config.x_d_gain = le16toh (*((uint16_t *) (ret + 14)));
-	config.x_o_limit = le16toh (*((uint16_t *) (ret + 16)));
-	config.x_c_limit = le16toh (*((uint16_t *) (ret + 18)));
-	config.x_i_limit = le16toh (*((uint16_t *) (ret + 20)));
-	config.x_bits = ret[21];
-
-	config.p_0 = ret[22];
-
-	config.y_acc = le32toh (*((uint32_t *) (ret + 23)));
-	config.y_backlash = le32toh (*((uint32_t *) (ret + 27)));
-	config.y_error_limit = le16toh (*((uint16_t *) (ret + 31)));
-	config.y_p_gain = le16toh (*((uint16_t *) (ret + 33)));
-	config.y_i_gain = le16toh (*((uint16_t *) (ret + 35)));
-	config.y_d_gain = le16toh (*((uint16_t *) (ret + 37)));
-	config.y_o_limit = le16toh (*((uint16_t *) (ret + 39)));
-	config.y_c_limit = le16toh (*((uint16_t *) (ret + 41)));
-	config.y_i_limit = le16toh (*((uint16_t *) (ret + 43)));
-	config.y_bits = ret[44];
-
-	config.p_1 = ret[45];
-
-	config.address = ret[46];
-
-	config.p_2 = ret[47];
-
-	config.eq_rate = le32toh (*((uint32_t *) (ret + 48)));
-	config.eq_updown = le32toh (*((uint32_t *) (ret + 52)));
-	
-	config.tracking_goal = le32toh (*((uint32_t *) (ret + 56)));
-
-	config.latitude = be16toh (*((uint16_t *) (ret + 60)));
-
-	config.y_enc_ticks = be32toh (*((uint32_t *) (ret + 62)));
-	config.x_enc_ticks = be32toh (*((uint32_t *) (ret + 66)));
-
-	config.y_mot_ticks = be32toh (*((uint32_t *) (ret + 70)));
-	config.x_mot_ticks = be32toh (*((uint32_t *) (ret + 74)));
-
-	config.x_slew_rate = le32toh (*((uint32_t *) (ret + 78)));
-	config.y_slew_rate = le32toh (*((uint32_t *) (ret + 82)));
-
-	config.x_pan_rate = le32toh (*((uint32_t *) (ret + 86)));
-	config.y_pan_rate = le32toh (*((uint32_t *) (ret + 90)));
-
-	config.x_guide_rate = le32toh (*((uint32_t *) (ret + 94)));
-	config.y_guide_rate = le32toh (*((uint32_t *) (ret + 98)));
-
-	config.pec_auto = ret[102];
-
-	config.p_3 = ret[103];
-	config.p_4 = ret[104];
-
-	config.p_5 = ret[105];
-
-	config.p_6 = ret[106];
-
-	config.p_7 = ret[107];
-
-	config.local_deg = le32toh (*((uint32_t *) (ret + 108)));
-	config.local_speed = le32toh (*((uint32_t *) (ret + 112)));
-
-	config.backhlash_speed = le32toh (*((uint32_t *) (ret + 116)));
-
-	config.y_pec_ticks = le32toh (*((uint32_t *) (ret + 120)));
-
-	config.p_8 = ret[121];
-	config.p_9 = ret[122];	 
-
 }
 
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
@@ -450,6 +359,7 @@ double ConnSitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double
 		case SERVO_II:
 			return ((loop_ticks / full_circle) * dps) / 1953;
 		case FORCE_ONE:
+		case FORCE_TWO:
 			return ((loop_ticks / full_circle) * dps) / PIDSampleRate;
 		default:
 			return 0;
@@ -464,6 +374,7 @@ double ConnSitech::ticksPerSec2MotorSpeed (double tps)
 		case SERVO_II:
 			return tps * SPEED_MULTI / 1953;
 		case FORCE_ONE:
+		case FORCE_TWO:
 			return tps * SPEED_MULTI / PIDSampleRate;
 		default:
 			return 0;
@@ -478,6 +389,7 @@ double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
 		case SERVO_II:
 			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
 		case FORCE_ONE:
+		case FORCE_TWO:
 			return (double) speed / loop_ticks * (360.0 * PIDSampleRate / SPEED_MULTI);
 		default:
 			return 0;
@@ -507,6 +419,106 @@ void ConnSitech::endLogging ()
 		close (logFile);
 	}
 	logFile = -1;
+}
+
+int ConnSitech::flashLoad ()
+{
+	switchToBinary ();
+	siTechCommand ('S', "C");
+
+	size_t l = 0;
+
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			l = 130;
+			break;
+		case FORCE_ONE:
+		case FORCE_TWO:
+			l = 514;
+			break;
+	}
+	size_t ret = readPort ((char *) flashBuffer, l);
+	if (ret != l)
+		return -1;
+
+	uint16_t checksum = binaryChecksum ((char *) flashBuffer, l - 2, true);
+
+	if ((*((uint16_t *) (flashBuffer + l - 2))) != checksum)
+	{
+		return -2;
+	}
+
+	return 0;
+}
+
+int ConnSitech::flashStore ()
+{
+	return -1;
+}
+
+/**
+Flash content - integers etc. are low endian.
+
+Starting at location 0 is Secondary Axis (dec/alt) Configuration bytes:
+0 long int (4 bytes) Secondary Axis Acceleration
+4 UInt (2 bytes) Secondary Axis Servo PID Sample Rate Count Up Value 61440 to 63718
+6 Short int (2 bytes) Spare, not used yet.
+8 long int (4 bytes) Secondary Axis Position Error Limit
+12 int (2 bytes) Secondary axis Proportional while tracking 0-32767
+14 int (2 bytes) Secondary axis Integral while tracking 0-32767
+16 int (2 bytes) Secondary axis Derivative while tracking 0-32767
+18 int (2 bytes) Secondary axis Output Limit 0-32767
+20 int (2 bytes) Secondary axis Current Limit 0-255 = 0-48.45 amps.  Max is 10 amps, or 53, so in effect, only 1 byte is used.
+22 UInt (2 bytes) Secondary Axis X_Bits 0-65535
+24 int (2 bytes) Secondary axis Integral Limit 0-32767
+26 long int (4 bytes) Secondary Axis Motor Location at 270 motor electrical deg's
+	note: this one is read only.  You can't write to this.  It's calculated during the axis initilization process.
+30 long int (4 bytes) Secondary Axis Slew Rate
+34 long int (4 bytes) Secondary Axis Pan Rate
+38 long int (4 bytes) Secondary Axis Tweak Rate
+42 long int (4 bytes) Secondary Axis Guide Rate
+46 long int (4 bytes) Secondary Axis Ticks per motor electrical angle
+50 long int (4 bytes) Secondary Axis Ticks per axis revolution for motor encoder
+54 long int (4 bytes) Secondary Axis Ticks per axis revolution for scope encoder
+58 long int (4 bytes) Secondary Axis Ticks per Worm revolution for scope encoder (not used yet)
+62 int (2 bytes) Secondary axis six pole data
+64 int (2 bytes) Secondary axis Not used
+66 int (2 bytes) Secondary axis Proportional while Slewing 0-32767
+68 int (2 bytes) Secondary axis Integral while Slewing 0-32767
+70 int (2 bytes) Secondary axis Derivative while Slewing 0-32767
+72 int (2 bytes) Secondary axis PID Deadband (Zero Crossing Filter) 0-255, but spare byte after
+74 int (2 bytes) Secondary axis PID Deadband (Zero Crossing Filter) 0-255, but spare byte after
+76 int (2 bytes) Secondary axis Initialization Ending Winding PWM Value, 0-4095.
+78 int (2 bytes) Secondary axis Initialization Starting Winding PWM Value, 0-4095.
+80 int (2 bytes) Secondary axis Brake Threshold.  WHen the PID output reaches this value, the brake is released if in Auto
+
+From bytes 84 to 99 is spare bytes;
+Starting at location 100 is Primary Axis Configuration bytes, see above
+
+from bytes 184 to 399 is spare bytes
+
+Starting at location 400 is common configuration bytes.  Note: None of these are used yet:
+400 int (2 bytes) Latitude
+402 long int (4 bytes) Sidereal Rate
+406 long int (4 bytes) Sidereal Up/Down
+410 long int (4 bytes) Sidereal Goal
+414 long int (4 bytes) Spiral Distance
+418 long int (4 bytes) Spiral Speed
+422 int (2 bytes) Baud Rate
+424 int (2 bytes) Argo Navis Bits
+426 int (2 bytes) Address of controller.
+*/
+
+int16_t ConnSitech::getFlashInt16 (int i)
+{
+	return le16toh (*((uint16_t*) (flashBuffer + i)));
+}
+
+int32_t ConnSitech::getFlashInt32 (int i)
+{
+	return le32toh (*((uint32_t*) (flashBuffer + i)));
 }
 
 void ConnSitech::logBuffer (char spec, void *data, size_t len)

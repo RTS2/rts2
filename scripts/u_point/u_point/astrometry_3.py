@@ -147,7 +147,7 @@ class AstrometryScript:
     solve_field.append(self.infpath)
 
     if verbose:
-      self.lg.info( 'running',' '.join(solve_field))
+      self.lg.info( 'running: {}'.format(' '.join(solve_field)))
       
     proc=subprocess.Popen(solve_field, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=lambda:os.setpgid(0, 0))
 

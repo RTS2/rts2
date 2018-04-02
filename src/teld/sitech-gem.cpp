@@ -318,8 +318,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true, true, false)
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
-	createValue (ra_errors, "ra_errors", "RA errors (only for FORCE ONE)", false);
-	createValue (dec_errors, "dec_errors", "DEC errors (only for FORCE_ONE)", false);
+	createValue (ra_errors, "ra_errors", "RA errors (only for FORCE family)", false);
+	createValue (dec_errors, "dec_errors", "DEC errors (only for FORCE family)", false);
 
 	createValue (ra_errors_val, "ra_errors_val", "RA errors value", false);
 	createValue (dec_errors_val, "dec_erorrs_val", "DEC errors value", false);
@@ -470,6 +470,7 @@ void Sitech::getTel ()
 			dec_last->setValueLong (le32toh (*(uint32_t*) &(serConn->last_status.x_last)));
 			break;
 		case rts2core::ConnSitech::FORCE_ONE:
+		case rts2core::ConnSitech::FORCE_TWO:
 		{
 			// upper nimble
 			uint16_t ra_val = serConn->last_status.y_last[0] << 4;
@@ -724,7 +725,7 @@ int Sitech::initHardware ()
 	sitechVersion->setValueDouble (numread);
 	sitechSerial->setValueInteger (serConn->getSiTechValue ('Y', "V"));
 
-	if (serConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
+	if (serConn->sitechType == rts2core::ConnSitech::FORCE_ONE || serConn->sitechType == rts2core::ConnSitech::FORCE_TWO)
 	{
 		createValue (countUp, "count_up", "CPU count up", false);
 		countUp->setValueInteger (serConn->getSiTechValue ('Y', "XHC"));
@@ -735,11 +736,6 @@ int Sitech::initHardware ()
 		getPIDs ();
 	}
 
-	//SitechControllerConfiguration sconfig;
-	//serConn->getConfiguration (sconfig);
-
-	//serConn->resetController ();
-	
 	/* Flush the input buffer in case there is something left from startup */
 
 	serConn->flushPortIO();
@@ -836,9 +832,10 @@ int Sitech::startResync ()
 	utc2 = 0;
 #endif
         struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
-	int ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
+	int ret = calculateTarget (utc1, utc2, &tar, &hrz, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
 	if (ret)
 		return -1;
 

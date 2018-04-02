@@ -36,7 +36,8 @@ void GemTest::setTelescope (double _lat, double _long, double _alt, long _ra_tic
 
 int GemTest::test_sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
 {
-	return sky2counts (utc1, utc2, pos, ac, dc, false, 0, false);
+	struct ln_hrz_posn hrz;
+	return sky2counts (utc1, utc2, pos, &hrz, ac, dc, false, 0, false);
 }
 
 int GemTest::test_counts2sky (const double utc1, const double utc2, int32_t ac, int32_t dc, double &ra, double &dec)

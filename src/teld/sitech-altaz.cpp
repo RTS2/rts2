@@ -128,6 +128,14 @@ class SitechAltAz:public AltAz
 		rts2core::ValuePID *alt_slew_PID;
 		rts2core::ValuePID *alt_track_PID;
 
+		rts2core::ValueInteger *az_integral_limit;
+		rts2core::ValueInteger *alt_integral_limit;
+		rts2core::ValueInteger *az_output_limit;
+		rts2core::ValueInteger *alt_output_limit;
+		rts2core::ValueInteger *az_current_limit;
+		rts2core::ValueInteger *alt_current_limit;
+
+
 		rts2core::ValueLong *az_enc;
 		rts2core::ValueLong *alt_enc;
 
@@ -173,6 +181,11 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueDoubleStat *az_sitech_speed_stat;
 		rts2core::ValueDoubleStat *alt_sitech_speed_stat;
+
+#ifdef ERR_DEBUG
+		rts2core::ValueDoubleStat *az_err_speed_stat;
+		rts2core::ValueDoubleStat *alt_err_speed_stat;
+#endif
 
 		rts2core::ValueDouble *az_acceleration;
 		rts2core::ValueDouble *alt_acceleration;
@@ -220,6 +233,9 @@ class SitechAltAz:public AltAz
 		int alt_last_errors;
 
 		long last_loop;
+
+		void setSlewPID (rts2core::ValuePID *pid, char axis);
+		void setTrackPID (rts2core::ValuePID *pid, char axis);
 };
 
 }
@@ -302,6 +318,13 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	alt_slew_PID = NULL;
 	alt_track_PID = NULL;
 
+	az_integral_limit = NULL;
+	alt_integral_limit = NULL;
+	az_output_limit = NULL;
+	alt_output_limit = NULL;
+	az_current_limit = NULL;
+	alt_current_limit = NULL;
+
 	createValue (az_enc, "ENCAZ", "AZ encoder readout", true);
 	createValue (alt_enc, "ENCALT", "ALT encoder readout", true);
 
@@ -315,8 +338,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	createValue (az_last, "az_last", "AZ motor location at last AZ scope encoder location change", false);
 	createValue (alt_last, "alt_last", "ALT motor location at last ALT scope encoder location change", false);
 
-	createValue (az_errors, "az_errors", "AZ errors (only for FORCE ONE)", false);
-	createValue (alt_errors, "alt_errors", "ALT errors (only for FORCE_ONE)", false);
+	createValue (az_errors, "az_errors", "AZ errors (only for FORCE family)", false);
+	createValue (alt_errors, "alt_errors", "ALT errors (only for FORCE family)", false);
 
 	createValue (az_errors_val, "az_errors_val", "AZ errors value", false);
 	createValue (alt_errors_val, "alt_erorrs_val", "ALT errors value", false);
@@ -344,6 +367,11 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (az_sitech_speed_stat, "az_s_speed_stat", "sitech speed statistics", false);
 	createValue (alt_sitech_speed_stat, "alt_s_speed_stat", "sitech speed statistics", false);
+
+#ifdef ERR_DEBUG
+	createValue (az_err_speed_stat, "az_err_speed_stat", "sitech error speed statistics", false);
+	createValue (alt_err_speed_stat, "alt_err_speed_stat", "sitech error speed statistics", false);
+#endif
 
 	firstSlewCall = true;
 	wasStopped = false;
@@ -382,10 +410,24 @@ int SitechAltAz::processOption (int in_opt)
 			createValue (alt_slew_PID, "PID_alt_slew", "Alt slew PID", false, RTS2_VALUE_WRITABLE);
 			createValue (alt_track_PID, "PID_alt_track", "Alt tracking PID", false, RTS2_VALUE_WRITABLE);
 
+			createValue (az_integral_limit, "az_integral_limit", "Az integral limit", false);
+			createValue (alt_integral_limit, "alt_integral_limit", "Alt integral limit", false);
+			createValue (az_output_limit, "az_output_limit", "Az output limit", false);
+			createValue (alt_output_limit, "alt_output_limit", "Alt output limit", false);
+			createValue (az_current_limit, "az_current_limit", "Az current limit", false);
+			createValue (alt_current_limit, "alt_current_limit", "Alt current limit", false);
+
 			updateMetaInformations (az_slew_PID);
 			updateMetaInformations (az_track_PID);
 			updateMetaInformations (alt_slew_PID);
 			updateMetaInformations (alt_track_PID);
+
+			updateMetaInformations (az_integral_limit);
+			updateMetaInformations (alt_integral_limit);
+			updateMetaInformations (az_output_limit);
+			updateMetaInformations (alt_output_limit);
+			updateMetaInformations (az_current_limit);
+			updateMetaInformations (alt_current_limit);
 			break;
 
 		default:
@@ -434,7 +476,7 @@ int SitechAltAz::initHardware ()
 	if (alt_curr_PID == NULL)
 		createValue (alt_curr_PID, "PID_ALT", "Altitude current PID", false);
 
-	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
+	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE || telConn->sitechType == rts2core::ConnSitech::FORCE_TWO)
 	{
 		createValue (countUp, "count_up", "CPU count up", false);
 		countUp->setValueInteger (telConn->countUp);
@@ -445,11 +487,6 @@ int SitechAltAz::initHardware ()
 		getPIDs ();
 	}
 
-	//SitechControllerConfiguration sconfig;
-	//telConn->getConfiguration (sconfig);
-
-	//telConn->resetController ();
-	
 	/* Flush the input buffer in case there is something left from startup */
 
 	telConn->flushPortIO ();
@@ -553,9 +590,10 @@ int SitechAltAz::startResync ()
 	utc2 = 0;
 #endif
 	struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
 
 	int32_t azc = r_az_pos->getValueLong (), altc = r_alt_pos->getValueLong ();
-	int ret = calculateTarget (utc1, utc2, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
+	int ret = calculateTarget (utc1, utc2, &tar, &hrz, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
 
 	if (ret)
 		return -1;
@@ -598,6 +636,8 @@ int SitechAltAz::moveAltAz ()
 
 int SitechAltAz::stopMove ()
 {
+	if (telConn == NULL)
+		return -1;
 	try
 	{
 		telConn->siTechCommand ('X', "N");
@@ -620,7 +660,7 @@ int SitechAltAz::isMoving ()
 		return -1;
 
 	time_t now = time (NULL);
-	if ((getTargetStarted () + 120) < now)
+	if ((getTargetStarted () + 180) < now)
 	{
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
@@ -698,6 +738,10 @@ int SitechAltAz::startPark ()
 	{
 		return 0;
 	}
+	if (telConn == NULL)
+	{
+		return -1;
+	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
 	wasStopped = false;
 	return moveAltAz ();
@@ -760,30 +804,22 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	else if (oldValue == alt_slew_PID)
 	{
 		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
-		telConn->setSiTechValue ('X', "PP", newP->getP ());
-		telConn->setSiTechValue ('X', "II", newP->getI ());
-		telConn->setSiTechValue ('X', "DD", newP->getD ());
+		setSlewPID (newP, 'X');
 	}
 	else if (oldValue == alt_track_PID)
 	{
 		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
-		telConn->setSiTechValue ('X', "P", newP->getP ());
-		telConn->setSiTechValue ('X', "I", newP->getI ());
-		telConn->setSiTechValue ('X', "D", newP->getD ());
+		setTrackPID (newP, 'X');
 	}
 	else if (oldValue == az_slew_PID)
 	{
 		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
-		telConn->setSiTechValue ('Y', "PP", newP->getP ());
-		telConn->setSiTechValue ('Y', "II", newP->getI ());
-		telConn->setSiTechValue ('Y', "DD", newP->getD ());
+		setSlewPID (newP, 'Y');
 	}
 	else if (oldValue == az_track_PID)
 	{
 		rts2core::ValuePID *newP = dynamic_cast <rts2core::ValuePID*> (newValue);
-		telConn->setSiTechValue ('Y', "P", newP->getP ());
-		telConn->setSiTechValue ('Y', "I", newP->getI ());
-		telConn->setSiTechValue ('Y', "D", newP->getD ());
+		setTrackPID (newP, 'Y');
 	}
 
 
@@ -806,19 +842,23 @@ void SitechAltAz::scaleTrackingLook ()
 		// scale trackingLook as needed
 		if (speedAngle->getStdev () > 2)
 		{
-			if (trackingLook->getValueFloat () < 1)
+			if (trackingLook->getValueFloat () < 5)
 				change = 0.1;
-			else if (trackingLook->getValueFloat () < 5)
-				change = 0.5;
 			else
 				change = 2;
 		}
-		else if (trackingLook->getValueFloat () > 1)
+		else if (isTracking () && trackingLook->getValueFloat () < 10 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
+		{
+			trackingLook->setValueFloat (10);
+		}
+		else if (trackingLook->getValueFloat () < 2.5 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
+		{
+			trackingLook->setValueFloat (2.5);
+		}
+		else if (trackingLook->getValueFloat () > 1.5)
 		{
 			if (trackingLook->getValueFloat () > 5)
 				change = -2;
-			else if (trackingLook->getValueFloat () > 1)
-				change = -0.5;
 			else
 				change = -0.1;
 		}
@@ -828,8 +868,10 @@ void SitechAltAz::scaleTrackingLook ()
 			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
 			if (trackingLook->getValueFloat () > 15)
 				trackingLook->setValueFloat (15);
-			else if (trackingLook->getValueFloat () < 0.5)
-				trackingLook->setValueFloat (0.5);
+			else if (trackingLook->getValueFloat () < 2.5 && az_sitech_speed_stat->getMax () < 10000 && alt_sitech_speed_stat->getMax () < 10000)
+				trackingLook->setValueFloat (2.5);
+			else if (trackingLook->getValueFloat () < 1.5)
+				trackingLook->setValueFloat (1.5);
 		}
 		sendValueAll (trackingLook);
 		lastTrackingNum = trackingNum;
@@ -843,6 +885,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	int32_t a_azc = r_az_pos->getValueLong ();
 	int32_t a_altc = r_alt_pos->getValueLong ();
+
+	int32_t old_azc = a_azc;
+	int32_t old_altc = a_altc;
 
 	double azc_speed = 0;
 	double altc_speed = 0;
@@ -865,49 +910,62 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	double az_change = 0;
 	double alt_change = 0;
 
-	az_change = a_azc - r_az_pos->getValueLong ();
-	alt_change = a_altc - r_alt_pos->getValueLong ();
+	az_change = (a_azc - r_az_pos->getValueLong ()) * 300;
+	alt_change = (a_altc - r_alt_pos->getValueLong ()) * 300;
 
-	a_azc += az_change * 300;
-	a_altc += alt_change * 300;
+	//std::cout << std::fixed << "aa " << a_azc << " " << az_change << " " << a_altc << " " << alt_change << " " << az_change << " " << alt_change << " " << azc_speed << " " << altc_speed << " " << aze_speed << " " << alte_speed << std::endl;
 
-	if (a_azc > azMax->getValueLong ())
-		a_azc = azMax->getValueLong ();
-	if (a_azc < azMin->getValueLong ())
-		a_azc = azMin->getValueLong ();
-
-	if (a_altc > altMax->getValueLong ())
-		a_altc = altMax->getValueLong ();
-	if (a_altc < altMin->getValueLong ())
-		a_altc = altMin->getValueLong ();
+	a_azc += az_change;
+	a_altc += alt_change;
 
 	double loop_sec = (mclock->getValueLong () - last_loop) / 1000.0;
 
 	if (loop_sec < 1)
 	{
-		// if (abs (aze_speed) > 25 || !isTracking ())
-		if (!isTracking ())
+		if (abs (aze_speed) > 3 || !isTracking ())
 		{
-			int32_t err_sp = azErrPID->loop (aze_speed, loop_sec);
-			if (isTracking ())
+			double err_sp = azErrPID->loop (aze_speed, loop_sec);
+			if (getTargetDistanceMax () < trackingDist->getValueDouble ())
 			{
-				int32_t err_cap = abs(azc_speed * 0.005);
+				double err_cap = abs(azc_speed * 0.1);
+				if (abs(azc_speed) < 10)
+					err_cap = 10;
+
 				if (err_sp > err_cap)
 					err_sp = err_cap;
 				else if (err_sp < -err_cap)
 					err_sp = -err_cap;
 			}
 
+			// properly handles sign change
 			azc_speed += err_sp;
+#ifdef ERR_DEBUG
+			az_err_speed_stat->addValue (err_sp, 20);
+			az_err_speed_stat->calculate ();
+			sendValueAll (az_err_speed_stat);
+#endif
+
+			if (azc_speed > 0)
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
+			else
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
 		}
 
-		// if (abs (alte_speed) > 25 || !isTracking ())
-		if (!isTracking ())
+		if (abs (alte_speed) > 3 || !isTracking ())
 		{
-			int32_t err_sp = altErrPID->loop (alte_speed, loop_sec);
-			if (isTracking ())
+			double err_sp = altErrPID->loop (alte_speed, loop_sec);
+			if (getTargetDistanceMax () < trackingDist->getValueDouble ())
 			{
-				int32_t err_cap = abs(altc_speed * 0.005);
+				double err_cap = abs(altc_speed * 0.1);
+				if (abs(altc_speed) < 10)
+					err_cap = 10;
+
 				if (err_sp > err_cap)
 					err_sp = err_cap;
 				else if (err_sp < -err_cap)
@@ -915,6 +973,22 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			}
 
 			altc_speed += err_sp;
+#ifdef ERR_DEBUG
+			alt_err_speed_stat->addValue (err_sp, 20);
+			alt_err_speed_stat->calculate ();
+			sendValueAll (alt_err_speed_stat);
+#endif
+
+			if (altc_speed > 0)
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
+			else
+			{
+				a_azc = old_azc + az_change;
+				a_altc = old_altc + alt_change;
+			}
 		}
 	}
 
@@ -942,6 +1016,16 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		usleep (USEC_SEC / 15);
 	}
 
+	if (a_azc > azMax->getValueLong ())
+		a_azc = azMax->getValueLong ();
+	if (a_azc < azMin->getValueLong ())
+		a_azc = azMin->getValueLong ();
+
+	if (a_altc > altMax->getValueLong ())
+		a_altc = altMax->getValueLong ();
+	if (a_altc < altMin->getValueLong ())
+		a_altc = altMin->getValueLong ();
+
 	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
 	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
 
@@ -951,8 +1035,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
 	alt_sitech_speed->setValueLong (altaz_Xrequest.x_speed);
 
-	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 15);
-	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 15);
+	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 20);
+	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 20);
 
 	az_sitech_speed_stat->calculate ();
 	alt_sitech_speed_stat->calculate ();
@@ -995,7 +1079,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		delete telConn;
 		telConn = NULL;
 
-		logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
+		logStream (MESSAGE_ERROR) << "closing connection to serial port, " << e << sendLog;
 		usleep (USEC_SEC / 15);
 	}
 }
@@ -1086,7 +1170,7 @@ void SitechAltAz::getTel ()
 			delete telConn;
 			telConn = NULL;
 
-			logStream (MESSAGE_ERROR) << "closign connection to serial port" << sendLog;
+			logStream (MESSAGE_ERROR) << "closing connection to serial port, " << e << sendLog;
 			usleep (USEC_SEC / 15);
 			return;
 		}
@@ -1120,6 +1204,7 @@ void SitechAltAz::getTel ()
 			alt_last->setValueLong (le32toh (*(uint32_t*) &(telConn->last_status.x_last)));
 			break;
 		case rts2core::ConnSitech::FORCE_ONE:
+		case rts2core::ConnSitech::FORCE_TWO:
 		{
 			// upper nimble
 			uint16_t az_val = telConn->last_status.y_last[0] << 4;
@@ -1228,6 +1313,16 @@ void SitechAltAz::getTel ()
 			az_pos_error->addValue (az_err, 20);
 			alt_pos_error->addValue (alt_err, 20);
 
+			if (az_pos_error->getRange () > 50 || abs (az_pos_error->getMin ()) > 50 || abs (az_pos_error->getMax ()) > 50)
+				valueWarning (az_pos_error);
+			else
+				valueGood (az_pos_error);
+
+			if (alt_pos_error->getRange () > 50 || abs (alt_pos_error->getMin ()) > 50 || abs (alt_pos_error->getMax ()) > 50)
+				valueWarning (alt_pos_error);
+			else
+				valueGood (alt_pos_error);
+
 			r_az_pos->setValueLong (telConn->last_status.y_pos);
 			r_alt_pos->setValueLong (telConn->last_status.x_pos);
 
@@ -1249,6 +1344,8 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 
 void SitechAltAz::getPIDs ()
 {
+	telConn->flashLoad ();
+
 	alt_curr_PID->setPID (telConn->getSiTechValue ('X', "PPP"), telConn->getSiTechValue ('X', "III"), telConn->getSiTechValue ('X', "DDD"));
 	if (alt_slew_PID)
 	{
@@ -1268,6 +1365,36 @@ void SitechAltAz::getPIDs ()
 	{
 		az_track_PID->setPID (telConn->getSiTechValue ('Y', "P"), telConn->getSiTechValue ('Y', "I"), telConn->getSiTechValue ('Y', "D"));
 	}
+
+	if (alt_integral_limit)
+	{
+		alt_integral_limit->setValueInteger (telConn->getFlashInt16 (24));
+	}
+
+	if (az_integral_limit)
+	{
+		az_integral_limit->setValueInteger (telConn->getFlashInt16 (124));
+	}
+
+	if (alt_output_limit)
+	{
+		alt_output_limit->setValueInteger (telConn->getFlashInt16 (18));
+	}
+
+	if (az_output_limit)
+	{
+		az_output_limit->setValueInteger (telConn->getFlashInt16 (118));
+	}
+
+	if (alt_current_limit)
+	{
+		alt_current_limit->setValueInteger (telConn->getFlashInt16 (20));
+	}
+
+	if (az_current_limit)
+	{
+		az_current_limit->setValueInteger (telConn->getFlashInt16 (120));
+	}
 }
 
 void SitechAltAz::changeSitechLogFile ()
@@ -1277,13 +1404,28 @@ void SitechAltAz::changeSitechLogFile ()
 		if (sitechLogExpander)
 		{
 			sitechLogExpander->setExpandDate ();
-			telConn->startLogging (sitechLogExpander->expandPath (sitechLogFile->getValue ()).c_str ());
+			if (telConn)
+				telConn->startLogging (sitechLogExpander->expandPath (sitechLogFile->getValue ()).c_str ());
 		}
 	}
 	catch (rts2core::Error er)
 	{
 		logStream (MESSAGE_WARNING) << "cannot expand " << sitechLogFile->getValue () << sendLog;
 	}
+}
+
+void SitechAltAz::setSlewPID (rts2core::ValuePID *pid, char axis)
+{
+	telConn->setSiTechValue (axis, "PP", pid->getP ());
+	telConn->setSiTechValue (axis, "II", pid->getI ());
+	telConn->setSiTechValue (axis, "DD", pid->getD ());
+}
+
+void SitechAltAz::setTrackPID (rts2core::ValuePID *pid, char axis)
+{
+	telConn->setSiTechValue (axis, "P", pid->getP ());
+	telConn->setSiTechValue (axis, "I", pid->getI ());
+	telConn->setSiTechValue (axis, "D", pid->getD ());
 }
 
 int main (int argc, char **argv)

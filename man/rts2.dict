@@ -1,4 +1,4 @@
-personal_ws-1.1 en 127 
+personal_ws-1.1 en 147 
 API
 airmass
 solarDistance
@@ -12,7 +12,9 @@ xsi
 CEDEA
 dec
 XMLRPC
+de
 www
+rotad
 DF
 seltest
 CCDs
@@ -25,13 +27,19 @@ TCP
 gxccd
 cadency
 RPC
+rotators
 ds
+Rotads
 Petr
 fo
+merr
+ia
 outlier
-AltAz
 altaz
+AltAz
+ie
 ncurses
+ih
 dir
 fitskeys
 substates
@@ -45,13 +53,18 @@ solarAltitude
 filterd
 lunarPhase
 Markus
+parallactic
 xmlrpcclient
 Prouza
 httpd
 nd
 rts
-GPoint
 gpoint
+GPoint
+derotator's
+derotators
+SiTech
+sitech
 Ronan
 noNamespaceSchemaLocation
 docroot
@@ -65,6 +78,9 @@ Stanislav
 tpm
 Wildi
 chanstarts
+autofix
+AZALOFFS
+rotator
 focuser
 teld
 py
@@ -82,12 +98,14 @@ GRBs
 xmlns
 detsize
 xpaset
+parangle
 ctime
 lunarDistance
 cmon
 hostname
 FOV
 exe
+TELALTAZ
 telmodeltest
 FPU
 XY
@@ -121,8 +139,10 @@ CCD
 augershooter
 chandeltas
 xpa
+derotator
 sexadecimal
 http
+POS
 lunarAltitude
 ini
 json

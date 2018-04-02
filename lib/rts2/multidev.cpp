@@ -31,6 +31,8 @@ void MultiDev::initMultidev (int debug)
 	{
 		(*iter)->setMulti ();
 		(*iter)->setDebug (debug);
+		optind = 0;
+		(*iter)->initOptions ();
 		(*iter)->initDaemon ();
 		(*iter)->beforeRun ();
 	}

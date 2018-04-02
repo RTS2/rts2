@@ -54,8 +54,15 @@ rts2db::Target * rts2json::getTarget (XmlRpc::HttpParams *params, const char *pa
 
 void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, std::ostringstream &os)
 {
+	// returns all targets in database
+	if (vals[0] == "tlist")
+	{
+		rts2db::TargetSet tar_set;
+		tar_set.load ();
+		jsonTargets (tar_set, os, params);
+	}
 	// returns target information specified by target name
-	if (vals[0] == "tbyname")
+	else if (vals[0] == "tbyname")
 	{
 		rts2db::TargetSet tar_set;
 		const char *name = params->getString ("n", "");

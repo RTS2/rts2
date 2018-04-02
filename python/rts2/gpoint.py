@@ -280,57 +280,47 @@ class GPoint:
                 return
         raise NonExistentExtra(pn)
 
-    def model_ha(self, params, a_ha, a_dec):
-        ret = - params['ih'] \
+    def model_hadec(self, params, a_ha, a_dec):
+        ret_ha = - params['ih'] \
             - params['ch'] / np.cos(a_dec) \
             - params['np'] * np.tan(a_dec) \
-            - (params['me'] * np.sin(a_ha) \
-            - params['ma'] * np.cos(a_ha)) * np.tan(a_dec) \
+            - (params['me'] * np.sin(a_ha) - params['ma'] * np.cos(a_ha)) * np.tan(a_dec) \
             - params['tf'] * np.cos(self.latitude_r) * np.sin(a_ha) / np.cos(a_dec) \
             - params['daf'] * (np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
-        for e in self.extra:
-            if e.axis == 'ha':
-                ret += params[e.parname()] * self.cal_extra(e, 'ha', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
-        return ret
-
-    def model_dec(self, params, a_ha, a_dec):
-        ret = - params['id'] \
+        ret_dec = - params['id'] \
             - params['me'] * np.cos(a_ha) \
             - params['ma'] * np.sin(a_ha) \
             - params['tf'] * (np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
             - params['fo'] * np.cos(a_ha)
+
         for e in self.extra:
+            if e.axis == 'ha':
+                ret_ha += params[e.parname()] * self.cal_extra(e, 'ha', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
             if e.axis == 'dec':
-                ret += params[e.parname()] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
-        return ret
+                ret_dec += params[e.parname()] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
+        return ret_ha, ret_dec
 
-    def model_az(self, params, a_az, a_el):
-        return self.model_az_hadec(params, a_az, a_el, self.rad_aa_ha, self.rad_aa_dec)
+    def model_azel(self, params, a_az, a_el):
+        return self.model_azel_hadec(params, a_az, a_el, self.rad_aa_ha, self.rad_aa_dec)
 
-    def model_az_hadec(self, params, a_az, a_el, a_ha, a_dec):
+    def model_azel_hadec(self, params, a_az, a_el, a_ha, a_dec):
         tan_el = np.tan(a_el)
-        ret = - params['ia'] \
+        ret_az = - params['ia'] \
             + params['tn'] * np.sin(a_az) * tan_el \
             - params['te'] * np.cos(a_az) * tan_el \
             - params['npae'] * tan_el \
             + params['npoa'] / np.cos(a_el)
-        for e in self.extra:
-            if e.axis == 'az':
-                ret += params[e.parname()] * self.cal_extra(e, 'az', a_ha, a_dec, a_az, a_el)
-        return ret
 
-    def model_el(self, params, a_az, a_el):
-        return self.model_el_hadec(params, a_az, a_el, self.rad_aa_ha, self.rad_aa_dec)
-
-    def model_el_hadec(self, params, a_az, a_el, a_ha, a_dec):
-        ret = - params['ie'] \
+        ret_el = - params['ie'] \
             + params['tn'] * np.cos(a_az) \
             + params['te'] * np.sin(a_az) \
             + params['tf'] * np.cos(a_el)
         for e in self.extra:
+            if e.axis == 'az':
+                ret_az += params[e.parname()] * self.cal_extra(e, 'az', a_ha, a_dec, a_az, a_el)
             if e.axis == 'el':
-                ret += params[e.parname()] * self.cal_extra(e, 'el', a_ha, a_dec, a_az, a_el)
-        return ret
+                ret_el += params[e.parname()] * self.cal_extra(e, 'el', a_ha, a_dec, a_az, a_el)
+        return ret_az, ret_el
 
     # Fit functions.
     # a_ha - target HA (hour angle)
@@ -338,27 +328,25 @@ class GPoint:
     # a_dec - target DEC)
     # r_dec - calculated (real) DEC
     # DEC > 90 or < -90 means telescope flipped (DEC axis continues for modelling purposes)
-    def fit_model_ha(self, params, a_ha, r_ha, a_dec, r_dec):
-        return a_ha - r_ha + self.model_ha(params, a_ha, a_dec)
-
-    def fit_model_dec(self, params, a_ha, r_ha, a_dec, r_dec):
-        return a_dec - r_dec + self.model_dec(params, a_ha, a_dec)
+    def fit_model_hadec(self, params, a_ha, r_ha, a_dec, r_dec):
+        m_ha, m_dec = self.model_hadec(params, a_ha, a_dec)
+        return a_ha - r_ha + m_ha, a_dec - r_dec + m_dec
 
     def fit_model_gem(self, params, a_ra, r_ra, a_dec, r_dec):
         if self.verbose > 1:
             print('computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec)
-        return libnova.angular_separation(np.degrees(a_ra + self.model_ha(params, a_ra, a_dec)), np.degrees(a_dec + self.model_dec(params, a_ra, a_dec)), np.degrees(r_ra), np.degrees(r_dec))
+        m_ha, m_dec = self.model_hadec(params, a_ra, a_dec)
+        return libnova.angular_separation(np.degrees(a_ra + m_ha), np.degrees(a_dec + m_dec), np.degrees(r_ra), np.degrees(r_dec))
 
-    def fit_model_az(self, params, a_az, r_az, a_el, r_el):
-        return a_az - r_az + self.model_az(params, a_az, a_el)
-
-    def fit_model_el(self, params, a_az, r_az, a_el, r_el):
-        return a_el - r_el + self.model_el(params, a_az, a_el)
+    def fit_model_azel(self, params, a_az, r_az, a_el, r_el):
+        m_az, m_el = self.model_azel(params, a_az, a_el)
+        return a_az - r_az + m_az, a_el - r_el + m_el
 
     def fit_model_altaz(self, params, a_az, r_az, a_el, r_el):
         if self.verbose > 1:
             print('computing', self.latitude, self.latitude_r, params, a_az, r_az, a_el, r_el)
-        return libnova.angular_separation(np.degrees(a_az + self.model_az(params, a_az, a_el)), np.degrees(a_el + self.model_el(params, a_az, a_el)), np.degrees(r_az), np.degrees(r_el))
+        m_az, m_el = self.model_azel(params, a_az, a_el)
+        return libnova.angular_separation(np.degrees(a_az + m_az), np.degrees(a_el + m_el), np.degrees(r_az), np.degrees(r_el))
 
     # open file, produce model
     # expected format:
@@ -593,8 +581,7 @@ class GPoint:
         self.print_parameters(self.best.params, True)
 
         if self.altaz:
-            self.f_model_az = self.fit_model_az(self.best.params, self.rad_aa_az, self.rad_ar_az, self.rad_aa_alt, self.rad_ar_alt)
-            self.f_model_alt = self.fit_model_el(self.best.params, self.rad_aa_az, self.rad_ar_az, self.rad_aa_alt, self.rad_ar_alt)
+            self.f_model_az, self.f_model_alt = self.fit_model_azel(self.best.params, self.rad_aa_az, self.rad_ar_az, self.rad_aa_alt, self.rad_ar_alt)
 
             self.diff_model_az = np.degrees(self.f_model_az)
             self.diff_model_alt = np.degrees(self.f_model_alt)
@@ -607,8 +594,7 @@ class GPoint:
             self.diff_model_angular = self.fit_model_altaz(self.best.params, self.rad_aa_az, self.rad_ar_az, self.rad_aa_alt, self.rad_ar_alt)
         else:
             # feed parameters to diff, obtain model differences. Closer to zero = better
-            self.f_model_ha = self.fit_model_ha(self.best.params, self.rad_aa_ha, self.rad_ar_ha, self.rad_aa_dec, self.rad_ar_dec)
-            self.f_model_dec = self.fit_model_dec(self.best.params, self.rad_aa_ha, self.rad_ar_ha, self.rad_aa_dec, self.rad_ar_dec)
+            self.f_model_ha, self.f_model_dec = self.fit_model_hadec(self.best.params, self.rad_aa_ha, self.rad_ar_ha, self.rad_aa_dec, self.rad_ar_dec)
 
             self.diff_model_ha = np.degrees(self.f_model_ha)
             self.diff_model_dec = np.degrees(self.f_model_dec)
@@ -708,6 +694,19 @@ class GPoint:
 
         return removed
 
+    def autofix_terms(self, max_pcnt=100):
+        """Removes from fit any terms with error greater than"""
+        mt = self.find_max_error()
+        while mt is not None and 100 * abs(np.divide(self.best.params[mt].stderr, self.best.params[mt].value)) > max_pcnt:
+            print('Fixing {0} (stderr {1:>3.1f}")'.format(mt, 100 * abs(self.best.params[mt].stderr / self.best.params[mt].value)))
+            self.set_fixed([mt])
+            self.fit()
+            self.print_params()
+            mt = self.find_max_error()
+
+    def find_max_error(self):
+        return max(self.best.params.iterkeys(), key=lambda k: abs(np.divide(self.best.params[k].stderr, self.best.params[k].value)))
+
     def print_params(self):
         if self.verbose is False:
             print()
@@ -719,29 +718,30 @@ class GPoint:
 
         print()
 
-        if self.altaz:
-            print('Zero point in AZ ................................. {0:>9.2f}"'.format(degrees(self.best.params['ia']) * 3600.0))
-            print('Zero point in ALT ................................ {0:>9.2f}"'.format(degrees(self.best.params['ie']) * 3600.0))
-            print('Tilt of az-axis against N ........................ {0:>9.2f}"'.format(degrees(self.best.params['tn']) * 3600.0))
-            print('Tilt of az-axis against E ........................ {0:>9.2f}"'.format(degrees(self.best.params['te']) * 3600.0))
-            print('Non-perpendicularity of alt to az axis ........... {0:>9.2f}"'.format(degrees(self.best.params['npae']) * 3600.0))
-            print('Non-perpendicularity of optical axis to alt axis . {0:>9.2f}"'.format(degrees(self.best.params['npoa']) * 3600.0))
-            print('Tube flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
-        else:
-            print('Zero point in DEC ................................ {0:>9.2f}"'.format(degrees(self.best.params['id']) * 3600.0))
-            print('Zero point in RA ................................. {0:>9.2f}"'.format(degrees(self.best.params['ih']) * 3600.0))
-            i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
-            print('Angle between true and instrumental poles ........ {0:>9.2f}"'.format(degrees(i) * 3600.0))
-            print('Angle between line of pole and true meridian ..... {0:>9.2f}"'.format(degrees(atan2(self.best.params['ma'], self.best.params['me'])) * 3600.0))
-            print('Telescope tube drop in HA and DEC ................ {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
-            print('Angle between optical and telescope tube axes .... {0:>9.2f}"'.format(degrees(self.best.params['np']) * 3600.0))
-            print('Mechanical orthogonality of RA and DEC axes ...... {0:>9.2f}"'.format(degrees(self.best.params['ma']) * 3600.0))
-            print('DEC axis flexure ................................. {0:>9.2f}"'.format(degrees(self.best.params['daf']) * 3600.0))
-            print('Fork flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['fo']) * 3600.0))
-
-        for e in self.extra:
-            print('{0}\t{1:.2f}"\t{2}'.format(e.axis.upper(), np.degrees(self.best.params[e.parname()].value) * 3600.0, e))
-
+# TODO move model term names to manual page
+#        if self.altaz:
+#            print('Zero point in AZ ................................. {0:>9.2f}"'.format(degrees(self.best.params['ia']) * 3600.0))
+#            print('Zero point in ALT ................................ {0:>9.2f}"'.format(degrees(self.best.params['ie']) * 3600.0))
+#            print('Tilt of az-axis against N ........................ {0:>9.2f}"'.format(degrees(self.best.params['tn']) * 3600.0))
+#            print('Tilt of az-axis against E ........................ {0:>9.2f}"'.format(degrees(self.best.params['te']) * 3600.0))
+#            print('Non-perpendicularity of alt to az axis ........... {0:>9.2f}"'.format(degrees(self.best.params['npae']) * 3600.0))
+#            print('Non-perpendicularity of optical axis to alt axis . {0:>9.2f}"'.format(degrees(self.best.params['npoa']) * 3600.0))
+#            print('Tube flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
+#        else:
+#            print('Zero point in DEC ................................ {0:>9.2f}"'.format(degrees(self.best.params['id']) * 3600.0))
+#            print('Zero point in RA ................................. {0:>9.2f}"'.format(degrees(self.best.params['ih']) * 3600.0))
+#            i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
+#            print('Angle between true and instrumental poles ........ {0:>9.2f}"'.format(degrees(i) * 3600.0))
+#            print('Angle between line of pole and true meridian ..... {0:>9.2f}"'.format(degrees(atan2(self.best.params['ma'], self.best.params['me'])) * 3600.0))
+#            print('Telescope tube drop in HA and DEC ................ {0:>9.2f}"'.format(degrees(self.best.params['tf']) * 3600.0))
+#            print('Angle between optical and telescope tube axes .... {0:>9.2f}"'.format(degrees(self.best.params['np']) * 3600.0))
+#            print('Mechanical orthogonality of RA and DEC axes ...... {0:>9.2f}"'.format(degrees(self.best.params['ma']) * 3600.0))
+#            print('DEC axis flexure ................................. {0:>9.2f}"'.format(degrees(self.best.params['daf']) * 3600.0))
+#            print('Fork flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['fo']) * 3600.0))
+#
+#        for e in self.extra:
+#            print('{0}\t{1:.2f}"\t{2}'.format(e.axis.upper(), np.degrees(self.best.params[e.parname()].value) * 3600.0, e))
+#
     def get_model_type(self):
         if self.altaz:
             return 'RTS2_ALTAZ'
@@ -1060,8 +1060,7 @@ class GPoint:
             for ha in ha_range:
                 ha_r = np.radians(ha)
                 el, az = libnova.equ_to_hrz(-ha, dec, 0, self.latitude)
-                el_off = self.model_el_hadec(best, np.radians(az), np.radians(el), ha_r, dec_r)
-                az_off = self.model_az_hadec(best, np.radians(az), np.radians(el), ha_r, dec_r)
+                az_off, el_off = self.model_azel_hadec(best, np.radians(az), np.radians(el), ha_r, dec_r)
                 if self.verbose:
                     print('{0}\t{1}\t{2}\t{3}\t{4}'.format(ha, az, el, az_off * 3600.0, el_off * 3600.0))
                 el_offsets.append(np.degrees(el_off))
@@ -1075,8 +1074,7 @@ class GPoint:
                 print('ha\tha_off\tdec_off')
             for ha in ha_range:
                 ha_r = np.radians(ha)
-                ha_off = self.model_ha(best, ha_r, dec_r)
-                dec_off = self.model_dec(best, ha_r, dec_r)
+                ha_off, dec_off = self.model_hadec(best, ha_r, dec_r)
                 if self.verbose:
                     print('{0}\t{1}\t{2}'.format(ha, ha_off * 3600.0, dec_off * 3600.0))
                 ha_offsets.append(np.degrees(ha_off))

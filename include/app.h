@@ -267,6 +267,11 @@ class App:public Object
 		 */
 		virtual int init ();
 
+		/**
+		 * Call to process options and arguments.
+		 */
+		int initOptions ();
+
 		void setDebug (int d) { debug = d; }
 
 	private:
@@ -274,11 +279,6 @@ class App:public Object
 		 * Holds options which might be passed to the program.
 		 */
 		std::vector < Option > options;
-
-		/**
-		 * Call to process options and arguments.
-		 */
-		int initOptions ();
 
 		/**
 		 * Setup signal handling.

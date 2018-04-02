@@ -30,6 +30,8 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (parallAngle, "PANGLE", "[deg] parallactic angle", true, RTS2_DT_DEGREES);
 	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
 
+	createValue (meanParallAngle, "mean_pa", "[deg] mean parallactic angle", false, RTS2_DT_DEGREES);
+
 	createValue (az_ticks, "_az_ticks", "[cnts] counts per full revolution on az axis", false);
 	createValue (alt_ticks, "_alt_ticks", "[cnts] counts per full revolution on alt axis", false);
 
@@ -61,14 +63,25 @@ int AltAz::infoUTCLST (const double utc1, const double utc2, double LST)
 	int ret = Telescope::infoUTCLST (utc1, utc2, LST);
 	if (ret)
 		return ret;
-	double HA = ln_range_degrees (LST - getTargetRa ());
-	double dec = getTargetDec ();
+
+	struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
+
+	getTarget (&tar);
+	getModelTarAltAz (&hrz);
+
+	double HA = ln_range_degrees (LST - tar.ra);
+	double dec = tar.dec;
 
 	double pa = 0;
 	double parate = 0;
-	parallactic_angle (HA, dec, pa, parate);
-	parallAngle->setValueDouble (pa);
+	meanParallacticAngle (HA, dec, pa, parate);
+	meanParallAngle->setValueDouble (pa);
 	derRate->setValueDouble (parate);
+
+	effectiveParallacticAngle (utc1, utc2, &tar, &hrz, pa, parate, 0.01);
+	parallAngle->setValueDouble (pa);
+
 	return ret;
 }
 
@@ -85,27 +98,27 @@ int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_a
 	return 0;
 }
 
-int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
+int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
 {
 	struct ln_equ_posn tar_pos;
 	tar_pos.ra = pos->ra;
 	tar_pos.dec = pos->dec;
 
-	struct ln_hrz_posn hrz, hrz_modelled;
+	struct ln_hrz_posn hrz;
 
 	applyCorrections (&tar_pos, utc1, utc2, &hrz, writeValue);
 
-	hrz_modelled.alt = hrz.alt;
-	hrz_modelled.az = hrz.az;
+	hrz_out->alt = hrz.alt;
+	hrz_out->az = hrz.az;
 
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;
 
 	struct ln_hrz_posn model_change;
 
-	applyModelAltAz (&hrz_modelled, pos, &model_change);
+	applyModelAltAz (hrz_out, pos, &model_change);
 
-	int ret = hrz2counts (&hrz_modelled, azc, altc, used_flipping, use_flipped, writeValue, haMargin, false);
+	int ret = hrz2counts (hrz_out, azc, altc, used_flipping, use_flipped, writeValue, haMargin, false);
 	if (ret)
 		return ret;
 
@@ -113,7 +126,7 @@ int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 	{
 		setTelTarget (tar_pos.ra, tar_pos.dec);
 		setTarTelAltAz (&hrz);
-		setModelTarAltAz (&hrz_modelled);
+		setModelTarAltAz (hrz_out);
 	}
 	return 0;
 }
@@ -204,6 +217,30 @@ void AltAz::counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double
 	getEquFromHrz (&hrz, JD, &pos);
 	ra = pos.ra;
 	dec = pos.dec;
+}
+
+void AltAz::meanParallacticAngle (double ha, double dec, double &pa, double &parate)
+{
+	parallacticAngle (ha, dec, sin_lat, cos_lat, tan_lat, pa, parate);
+}
+
+void AltAz::effectiveParallacticAngle (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double &pa, double &parate, double up_change)
+{
+	struct ln_equ_posn pos_up;
+	struct ln_hrz_posn hrz_up;
+	pos_up.ra = pos->ra;
+	double fabs_up = up_change;
+	pos_up.dec = pos->dec + (getLatitude () > 0 ? fabs_up : -fabs_up);
+	int32_t up_ac, up_dc;
+	sky2counts (utc1, utc2, &pos_up, &hrz_up, up_ac, up_dc, false, 0, true);
+
+	struct ln_equ_posn t1, t2;
+	t1.ra = hrz->az;
+	t1.dec = hrz->alt;
+	t2.ra = hrz_up.az;
+	t2.dec = hrz_up.alt;
+
+	pa = ln_get_rel_posn_angle (&t1, &t2);
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)

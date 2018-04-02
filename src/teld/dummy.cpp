@@ -241,12 +241,13 @@ void Dummy::runTracking ()
 	utc2 = 0;
 #endif
 	struct ln_equ_posn target;
+	struct ln_hrz_posn hrz;
 	int32_t t_ac, t_dc;
 
 	t_ac = t_axRa->getValueLong ();
 	t_dc = t_axDec->getValueLong ();
 
-	int ret = calculateTarget (utc1, utc2 + 2 / 86400.0, &target, t_ac, t_dc, true, 0, false);
+	int ret = calculateTarget (utc1, utc2 + 2 / 86400.0, &target, &hrz, t_ac, t_dc, true, 0, false);
 	if (ret)
 	{
 		setTracking (0);

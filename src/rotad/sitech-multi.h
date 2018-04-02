@@ -68,6 +68,8 @@ class SitechMulti:public rts2core::MultiBase
 
 		uint8_t xbits;
 		uint8_t ybits;
+
+		uint8_t paTrack;
 };
 
 }

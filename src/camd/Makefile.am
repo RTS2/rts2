@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao si8821 sxccd
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-azcam3 rts2-camd-si8821
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-azcam3
 
 noinst_HEADERS = ccd_msg.h reflex.h
 
@@ -22,9 +22,14 @@ rts2_camd_sidecar_SOURCES = sidecar.cpp
 rts2_camd_azcam_SOURCES = azcam.cpp
 rts2_camd_azcam3_SOURCES = azcam3.cpp
 
-rts2_camd_si8821_SOURCES = si8821.cpp
+EXTRA_DIST =
 
-EXTRA_DIST = 
+if SUNCYGMAC
+EXTRA_DIST += si8821.cpp
+else
+bin_PROGRAMS += rts2-camd-si8821
+rts2_camd_si8821_SOURCES = si8821.cpp
+endif
 
 if SUNCYGMAC
 EXTRA_DIST += urvc2.cpp apogee.cpp v4l.cpp
@@ -57,7 +62,7 @@ else
 EXTRA_DIST += sbig.cpp
 endif
 
-if ANDOR 
+if ANDOR
 bin_PROGRAMS += rts2-camd-andor
 rts2_camd_andor_SOURCES = andor.cpp
 rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@
@@ -136,6 +141,7 @@ else
 EXTRA_DIST += si3097.cpp
 endif
 
+if !SUNCYGMAC
 if LIBUSB1
 bin_PROGRAMS += rts2-camd-sx
 rts2_camd_sx_SOURCES = sx.cpp
@@ -143,4 +149,16 @@ rts2_camd_sx_LDADD = -Lsxccd -lsxccdusb ${LDADD} @USB1_LIBS@
 rts2_camd_sx_CXXFLAGS = @USB1_CFLAGS@ -I../../include
 else
 EXTRA_DIST += sx.cpp
+endif
+else
+EXTRA_DIST += sx.cpp
+endif
+
+if ASI
+bin_PROGRAMS += rts2-camd-asi
+rts2_camd_asi_SOURCES = asi.cpp
+rts2_camd_asi_LDADD = -L@ASI_LIB@ -lASICamera2 ${LDADD}
+rts2_camd_asi_CXXFLAGS = -I@ASI_INCLUDE@ ${AM_CXXFLAGS}
+else
+EXTRA_DIST += asi.cpp
 endif

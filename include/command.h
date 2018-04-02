@@ -825,6 +825,12 @@ class CommandQueueNowOnce:public Command
 		CommandQueueNowOnce (Block * _master, const char *queue, int tar_id);
 };
 
+class CommandQueueAt:public Command
+{
+	public:
+		CommandQueueAt (Block * _master, const char *queue, int tar_id, double t_start, double t_end);
+};
+
 class CommandExecShower:public Command
 {
 	public:

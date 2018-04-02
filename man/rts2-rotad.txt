@@ -1,0 +1,107 @@
+RTS2-ROTAD(7)
+============
+
+NAME
+----
+
+rts2-rotad - generic manual page for rotators (or derotators)
+
+SYNOPSIS
+--------
+
+*rts2-rotad-'rotator driver'* [-s 'hostname[:port]'] [--modefile 'filename'] [-d 'device name']
+
+DESCRIPTION
+-----------
+
+Rotads represent various hardware used to position instruments, so they are
+correctly oriented. Rotators are natural part of Alt-Az telescope, where they
+have to offset for parallactic angle. Rotators can also be part of various
+instrument setups attached to the telescope.
+
+For description of options common to all devices, please consult
+linkman:rts2-device[7].
+
+SETTING UP ALT-AZ DEROTATORS
+-----------------------------
+
+Alt-Az derotators must have configured zero angle offsets, so when they are 
+tracking, parallactic angle is correctly applied. Also hard coded min and max
+values are required. Follow those steps to setup a derotator (once you have working instrument
+driver):
+
+* see maximal and minimal allowed rotation in **CUR_POS**, move rotator (disengage
+  motor if possible, e.g. if rotator has encoders independent to motor operation)
+
+* put those values to **MIN** and **MAX** fields of the derotator, and write
+  those to derotator default file (see linkman:rts2-device[1] for details).
+
+* make sure **parangle_track** is set to **off**, so the derotator will not move
+  when you move attached telescope
+
+* verify that the derotator will not move outside limits, particularly with new
+  hardware - by setting **TAR_POS** to angles both inside and outside the limits
+
+ADJUSTING ZENITH BASED LIMITS
+-----------------------------
+
+Usually rotators are used for rotating field in Alt-Az telescopes, so north
+keeps same orientation on the image plane, regardless of the telescope
+orientation. In order to facilitate this job, the derotator is usually attached
+to altitude axis - so it (if held at position) move as the telescope altitude
+axis moves.
+
+You might be happy with specifying only **MIN** and **MAX** limits put above.
+Put please keep in mind, that those are limits in derotator plane. So if you
+move telescope in altitude, those limits will not move (but derotator will
+move) - in a sense, those are the limits attached to altitude axis.
+
+Your telescope will have some instruments attached to derotators, which would
+need cables to being powered and commanded. Those of course form a problem, as
+those are fixed in altitude, humming peacefully on azimuth support platform. In
+order to calibrate zenith angle based limits, independent of telescope axis
+orientation, please follow this procedure (after completing basic setup,
+described above):
+
+* if possible, make sure that motor is powered down (if you have encoders independent of motor)
+
+* make sure that **parangle_track** is set to off
+
+* point telescope somewhere
+
+* check that telescope altitude and azimuth are visible in **TELALTAZ** field
+  (hit **F5** in monitor or execute **info** command to make sure you are
+  getting actual value)
+
+* make sure that **TELALTAZ** altitude and azimuth corresponds to telescope
+  position
+
+* move derotator, and see how **zenith** value moves to reflect zenith angle
+
+* adjust **ZEN_MIN** and **ZEN_MAX** values so the derotator stays within limit
+
+* turn derotator motor on
+
+* turn **parangle_track** on
+
+* move telescope to various position (derotator's zenith angle depends just on
+  altitude, so moving telescope close to zenith, doing tests and then close to
+  horizon and doing tests would be enough) and check that derotator stays
+  within **ZEN_MIN** and **ZEN_MAX** limits (change **OFFSET** value).
+
+OPTIONS
+-------
+
+Please see linkman:rts2-device[1] for options description.
+
+Rotator drivers
+---------------
+
+* linkman:rts2-rotad-sitech[1] SiTech custom made (de)rotator
+
+SEE ALSO
+--------
+
+* linkman:rts2[7]
+
+* linkman:rts2-device[7]

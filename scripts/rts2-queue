@@ -189,6 +189,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
     parser.add_option(
         '--create-radec', help="create target with following ra/dec; needs --create option",
                       action='store', dest='create_radec', default=None)
+    parser.add_option('--list', help="list possible targets", action='store_true', dest='list', default=False)
 
     (options, args) = parser.parse_args()
 
@@ -240,6 +241,11 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
     if len(args):
         test_q()
+
+    if options.list:
+        tl = rts2.target.list()
+	print(tl)
+	print(rts2.target.print_list(tl))
 
     # above test make sure create_radec is also defined
     if options.create is not None:

@@ -8,7 +8,7 @@ gpoint - GPL (Telescope) Pointing error modelling and corrections
 SYNOPSIS
 --------
 
-*gpoint* [--refine 'model'] [--latitude 'latitude'] [-p 'plots'] [-v] [--basic-plots] [--altaz-plots] [--altaz-heat-maps] [--flip 'both|west|east'] [-o 'output'] 'input file'
+*gpoint* [--latitude 'latitude'] [-p 'plots'] [-v] [--basic-plots] [--altaz-plots] [--altaz-heat-maps] [--flip 'both|west|east'] [-o 'output'] [--filter 'filtering'] [--refine 'existing model'] [--autofix 'max percents'] 'input file'
 
 *gpoint* [-v] [--latitude 'latitude'] [--plot-offsets 'ha:from-dec:to-dec'] --model-file 'model file'
 
@@ -26,11 +26,11 @@ either by mechanical or electronic components of the telescope.  GPoint is a
 tool to generate and verify such pointing model.
 
 For model generation, input file is needed. This can be prepared from pointing
-run images, where correct WCS is recorded, or from run pointing and centering
+run images, where correct WCS is recorded, or from run pointing and centring
 bright stars.  GPoint itself cannot prepare the input file.  Input file must
 contain local sidereal time, relevant RA and DEC of the telescope (in telescope
 coordinates, where e.g. on GEM DEC axis values continue to count above 90/below
--90) and true RA DEC coordinates (of center pixel on camera).
+-90) and true RA DEC coordinates (of centre pixel on camera).
 
 RTS2 provides a way to run pointing model target. Either by getting offsets
 through astrometry, or better by getting offsets from astrometry of bright
@@ -70,7 +70,7 @@ limit, continues with the step number 1
 
 6. select the brightest star, calculate its X Y coordinates
 
-7. if the star is closer to specified center than specified limit
+7. if the star is closer to specified centre than specified limit
 distance, record az alt offsets, and continues with the step number 1
 
 8. otherwise computes alt/az or ha/dec offsets, feeds those to
@@ -86,7 +86,7 @@ You can use \-- (two dashes with a space) to escape arguments which start with
 '-'. So to run command with -1 as an argument, you must specify \-- -1 on
 the command line.
 
-* **-h**,**\--help** show help message
+* **-h**,**--help** show help message
 
 * **-o** output model file.
 
@@ -94,16 +94,26 @@ the command line.
 
 * **-s** save plots to a file
 
-* **\--basic-plots** generate basic sets of plots
+* **--basic-plots** generate basic sets of plots
 
-* **\--stat-only** don't try to fit the model - only print statistics.
+* **--stat-only** don't try to fit the model - only print statistics.
   Useful if you don't have (yet) enough points for a complete fit
 
-* **\--altaz-plots** 
+* **--altaz-plots** 
 
-* **\--model-input** existing model file(s) to load and investigate
+* **--model-input** existing model file(s) to load and investigate
 
-* **\--filter** filter outliers. Expect two values separated with : - the first is value name, second is value in arc-seconds
+* **--filter** filter outliers. Expect two values separated with : - the first
+  is value name, second is value in arc-seconds
+
+* **--refine** refine existing model. Specify the existing model as argument.
+  **gpoint** will merge terms from the existing model with any extra terms
+  added, and use all terms in a fit. That way you can improve your existing
+  pointing model after performing some pointing relevant adjustments of the
+  telescope.
+
+* **--autofix** will remove all terms with percentage error above given value.
+  Please see below for description of good fit.
 
 Input file format
 -----------------
@@ -122,7 +132,9 @@ Plotting options
 ----------------
 [[plotting]]
 
-Various plots can be generated. Moreover, the plots can include additional graphics.
+Various plots can be generated. Moreover, the plots can include additional graphics. GPoint can
+also generate pointing model report (a PDF file based on template, describing
+telescope properties).
 
 
 Input files examples
@@ -173,11 +185,94 @@ from simple AltAz by listing RA DEC coordinates, skipping axis counts, and
 listing azimuth and altitude errors instead of real altitude and azimuth.
 
 ----
-# observatory 20.8 degrees W, 32.53 degrees S, 1850 m altitude
-# altaz-manual -20.8 -32.53 1850.0
-1    50000.0 356.214  -23.34 1.000 1.000 10.000 20.000
+# model file created on Sat Sep  9 23:29:31 2017
+# altaz-manual 20.8105 -32.3796 1811.0
+1	2458006.3955	344.199166667	-47.9691666667	0.00299667286773	0.0115139876045	71.9134799271	332.80575281
+2	2458006.39597	44.6991666667	-64.0713888889	0.00118032347207	-0.00329354687079	36.3660811294	328.772616105
+3	2458006.39684	335.379583333	12.2052777778	-0.00248005321551	-0.00168196155522	45.2809246782	184.055968841
+4	2458006.39766	279.895833333	-43.1861111111	-0.000485102119392	0.00560965468031	47.6159088397	59.5120597184
+5	2458006.39836	357.838333333	9.31333333333	-0.000989430282641	8.2340430367e-05	42.0020430448	213.883773738
+6	2458006.39917	266.03625	-51.8341666667	-0.000944229724077	0.00333253209624	38.5562264531	46.7337557828
+7	2458006.39972	244.71625	-57.8997222222	-8.03079129312e-05	0.00125539955906	27.6444315581	36.8023520427
+8	2458006.40047	298.562083333	8.46138888889	-0.00266659067016	0.00211948350159	37.1102220731	134.33192348
+9	2458006.40215	26.5241666667	-50.8163888889	0.000947937195389	0.00358273776885	47.9765084367	311.795113933
+10	2458006.40264	321.756666667	-42.5477777778	-2.08140426139e-05	-0.0023701942639	75.6954006023	41.335333116
+11	2458006.40321	330.84	-56.7861111111	0.0024371413226	-0.0190789827098	65.4807496207	5.12656510256
+12	2458006.40377	301.846666667	-52.8808333333	0.000916336520874	-0.00437690819547	58.67711886	39.3255288826
+13	2458006.40463	0.5425	27.0819444444	-0.0026546857427	0.00337769998214	25.8286901946	204.96828524
+14	2458006.40545	18.79625	-45.5313888889	0.000324167523132	0.00539819303236	54.434416469	304.386367662
+15	2458006.40608	331.153333333	-26.8225	-0.000575419691913	0.000200977345457	83.0905214583	143.226788962
 ----
 
+MODEL BOOTSTRAPPING
+------------------
+
+It is always good to have pointing model so your target is at least in FOV of
+your instrument. When you start with telescope with so bad model (or no model
+at all), that your target does not appear in instrument fit, there are some
+hints to help:
+
+* if starting with an existing pointing model, try to point to some bright
+  star. Centre the star using **OFFS** (GEM) or **AZALOFFS** (Alt-Az) telescope
+  values. Use values to adjust the existing index error (ih, id for GEM; ia,
+  ie for AltAz) (you have to change sign of what you get as an offset, since
+  model is additive). Verify that you put correct values by restarting mount with
+  the new model, and let it point to same star you found before.
+
+* if you don't have pointing model at all, find few bright stars, record their
+  offsets and fit the first model.
+
+After you get at least some pointing, collect more data points and use
+**--refine** gpoint option to refine the existing pointing model. You should
+not need to move back (e.g. discard the model you are building and start with
+the new one).
+
+GENERATING GOOD FIT
+-------------------
+
+The model creation is rather an art, requiring some experience with how the
+pointing is done. Here are some rules of thumb to follow:
+
+* disregard terms with error value greater than what's their value. **gpoint**
+  allows to do that steps automatically by providing **--autofix 100** on command
+  line (or even below 100).
+
+* collect more data points that you think you should. GEM mounts, where hour
+  axis corresponds with one of the telescope axis, can live with fewer data
+  points than AltAz. Some of the terms needs more that enough data points to be
+  disentangled properly - once you have first model, so your target is in FOV
+  of your instrument, try to collect over 100 points. Watch for progress as
+  more points are collected. You might be surprised how the pointing model
+  changes.
+
+* filter outliers, but be vigilant. Errors might happen, but having too much outliers
+  rather suggest there is something fundamentally wrong.
+
+* plot model errors (residuals) dependence on telescope axis to see if you can
+  improve the model. See examples for the options
+
+EXAMPLES
+--------
+
+* **gpoint** --stat align - print outs pointing statistics
+
+* **gpoint** align - generates basic model
+
+* **gpoint** --autofix 100 align - generates basic model, removes all terms
+  with error greater than 100%
+
+* **gpoint** -p 'ha:ha-corr-merr,dec:ha-corr-merr' --autofix 80 --filter
+  'model-err:25' align - will   remove all points where model
+  (distance) residual is greater than 25 arc seconds, all the term  with error
+  greater than 80%, and will plot graph showing dependence of HA Dec corrected
+  (*cos(dec)) (=HA residual) on HA and DEC axis.
+
+BUGS
+----
+
+Interactive command shell is (yet) not fully operative. AltAz values for GEM
+are calculated, as are Ra-Dec values for AltAz. Try to stay in mount native
+coordinate system.
 
 SEE ALSO
 --------

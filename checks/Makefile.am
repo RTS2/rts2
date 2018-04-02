@@ -2,14 +2,14 @@ LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pl
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
 TESTS = check_python_libnova check_python_gpoint_altaz check_python_gpoint_gem check_python_rts2 check_python_bsc \
-	check_flats
+	check_flats check_python_mpcephem
 EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily gpoint_template altaz_check rts2.ini flat_single flat_multi
 
 SUBDIRS = data
 
 if LIBCHECK
-TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi check_sep
-check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_sep
+TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_rtsapi check_sep check_ppoly
+check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16 check_dut1 check_expander check_pid check_sep check_ppoly
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
 
@@ -37,8 +37,11 @@ check_pid_SOURCES = check_pid.cpp
 check_sep_SOURCES = check_sep.cpp
 check_sep_LDFLAGS = -L../lib/sep -lsep
 
+check_ppoly_SOURCES = check_ppoly.cpp
+check_ppoly_LDFLAGS = -L../lib/gtp -lgtp -L../lib/rts2 -lrts2
+
 else
-EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp check_dut1.cpp check_expander.cpp check_pid.cpp check_sep.cpp
+EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp check_dut1.cpp check_expander.cpp check_pid.cpp check_sep.cpp check_ppoly.cpp
 endif
 
 clean-local:

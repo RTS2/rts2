@@ -40,7 +40,7 @@ class AltAz: public Telescope
 	protected:
 		int calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc);
 
-		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest);
+		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest);
 
 		/**
 		 * Converts horizontal position into axis counts.
@@ -56,7 +56,12 @@ class AltAz: public Telescope
 		/**
 		 * Returns parallactic angle and its change (in deg/h).
 		 */
-		void parallactic_angle (double ha, double dec, double &pa, double &parate) { parallacticAngle (ha, dec, sin_lat, cos_lat, tan_lat, pa, parate); }
+		void meanParallacticAngle (double ha, double dec, double &pa, double &parate);
+
+		/**
+		 * Returns effective (calculated by projecting a line to focal plane) parallactic angle.
+		 */
+		void effectiveParallacticAngle (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double &pa, double &parate, double up_change = 30 / 3600.0);
 
 		/**
 		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does
@@ -99,6 +104,8 @@ class AltAz: public Telescope
 
 		rts2core::ValueDouble *parallAngle;
 		rts2core::ValueDouble *derRate;
+
+		rts2core::ValueDouble *meanParallAngle;
 
                 rts2core::ValueDouble *azSlewMargin;      //* margin for az axis during slew (used only on first call of startResync during new movement)
 

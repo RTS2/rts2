@@ -154,7 +154,7 @@ int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::
 		}
 	}
 	// change values of the exposure
-	if (callProgress == FILTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
+	if (callProgress == FILTER && camera->getConnection ()->getValue ("exposure"))
 	{
 		callProgress = EXPOSURE;
 		*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "exposure", '=', expTime);

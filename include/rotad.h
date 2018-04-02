@@ -37,8 +37,9 @@ class Rotator:public rts2core::Device
 		 *
 		 * @param ownTimer   if true, rotator own timer to keep trackign will be disabled. Usefully for inteligent devices,
 		 *                   which has own tracking, or for multidev where timer is in base device.
+		 * @param leftRotator rotator is on left side of Nasmyth focus
 		 */
-		Rotator (int argc, char **argv, const char *defname = "R0", bool ownTimer = false);
+		Rotator (int argc, char **argv, const char *defname = "R0", bool ownTimer = false, bool _leftRotator = false);
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
@@ -51,6 +52,8 @@ class Rotator:public rts2core::Device
 		virtual void postEvent (rts2core::Event * event);
 
 		void checkRotators ();
+
+		void unsetPaTracking () { paTracking->setValueBool (false); }
 
 	protected:
 		virtual int idle ();
@@ -105,7 +108,7 @@ class Rotator:public rts2core::Device
 		/**
 		 * Returns zenith angle from target angle.
 		 */
-		double getZenithAngleFromTarget(double angle) { return angle - 90 + telAltAz->getAlt(); }
+		double getZenithAngleFromTarget(double angle);
 
 	private:
 		rts2core::ValueDouble *zeroOffs;
@@ -142,6 +145,9 @@ class Rotator:public rts2core::Device
 		// autorotating in plus direction..
 		bool autoPlus;
 		bool autoOldTrack;
+
+		// rotator on left Nasmyth axe
+		bool leftRotator;
 };
 
 }

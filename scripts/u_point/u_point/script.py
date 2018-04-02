@@ -318,8 +318,12 @@ class Script(object):
         else:
           cat_ll_ap=SkyCoord(az=rw['cat_ll_ap_lon'],alt=rw['cat_ll_ap_lat'], unit=(u.radian,u.radian), frame='altaz',obstime=dt_end,location=self.obs)
       else:
-        cat_ll_ap=None
-        
+        if eq_mount:
+          # ToDO icrs, cirs
+          cat_ll_ap=SkyCoord(ra=rw['mnt_ra_rdb_ra'],dec=rw['mnt_ra_rdb_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+        else:
+          cat_ll_ap=SkyCoord(az=rw['mnt_aa_rdb_az'],alt=rw['mnt_aa_rdb_alt'], unit=(u.radian,u.radian), frame='altaz',obstime=dt_end,location=self.obs)
+
       if 'mnt_ll_sxtr_lon' in cols and pd.notnull(rw['mnt_ll_sxtr_lon']) and pd.notnull(rw['mnt_ll_sxtr_lat']):
         if eq_mount:
           # ToDO icrs, cirs

@@ -41,7 +41,7 @@ def generate_model(args):
 		model.add_extra(*es)
 	
 	if args.fixed:
-		if args.fixed[0] == '-':
+		if args.fixed[0] == '!':
 			model.set_vary(args.fixed[1:].split(','))
 		else:
 			model.set_fixed(args.fixed.split(','))
@@ -63,6 +63,10 @@ def generate_model(args):
 				break
 			for r in removed:
 				print('removed line:\n{0}'.format('\n'.join(r)))
+
+		if args.autofix is not None:
+			model.autofix_terms(args.autofix)
+
 	model.print_stat()
 
 	if args.model_output is not None:
@@ -184,7 +188,7 @@ parser.add_argument('--show-offset-terms',dest='show_offset_terms',action='store
 parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
 parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
 parser.add_argument('--refine',dest='refine',action='store',help='refine existing model - use the same extra parameters, do fit, add two together')
-parser.add_argument('--fixed',dest='fixed',action='store',help='list (, separated) of parameters to fix (ie,ia,..)')
+parser.add_argument('--fixed',dest='fixed',action='store',help='list (, separated) of parameters to fix (ie,ia,..); !negates the selection')
 parser.add_argument('--autofix',dest='autofix',action='store',help='fix terms with highest error until all errors are below given value',type=float)
 parser.add_argument('--extra',dest='extra',action='append',default=[],help='extra (harmonics,...) functions')
 parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)

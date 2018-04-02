@@ -68,82 +68,6 @@ typedef struct
 	int32_t k;		//* Handpaddle status bits
 } SitechControllerStatus;
 
-typedef struct
-{
-	int32_t x_acc;		//* Alt/Dec Default Acceleration
-	int32_t x_backlash;	//* Alt/Dec Backlash
-	int16_t x_error_limit;	//* Alt/Dec Error Limit
-	int16_t x_p_gain;	//* Alt/Dec Proportional Gain
-	int16_t x_i_gain;	//* Alt/Dec Integral Gain
-	int16_t x_d_gain;	//* Alt/Dec Derivative Gain
-	int16_t x_o_limit;	//* Alt/Dec Output Limit, 0xFF = 100.0
-	int16_t x_c_limit;	//* Alt/Dec Current Limit * 100
-	int16_t x_i_limit;	//* Alt/Dec Integral Limit
-	int8_t x_bits;		//* XBits
-
-	int8_t p_0;		//* Unused / Padding??
-
-	int32_t y_acc;		//* Azm/RA Default Acceleration
-	int32_t y_backlash;	//* Azm/RA Backlash
-	int16_t y_error_limit;	//* Azm/RA Error Limit
-	int16_t y_p_gain;	//* Azm/RA Proportional Gain
-	int16_t y_i_gain;	//* Azm/RA Integral Gain
-	int16_t y_d_gain;	//* Azm/RA Derivative Gain
-	int16_t y_o_limit;	//* Azm/RA Output Limit, 0xFF = 100.0
-	int16_t y_c_limit;	//* Azm/RA Current Limit * 100
-	int16_t y_i_limit;	//* Azm/RA Integral Limit
-	int8_t y_bits;		//* YBits
-
-	int8_t p_1;		//* Unused / Padding??
-
-	int8_t address;		//* Address
-
-	int8_t p_2;		//* Unused / padding??
-
-	int32_t eq_rate;	//* Equatorial Rate
-	int32_t eq_updown;	//* Equatorial UpDown adjust
-	
-	int32_t tracking_goal;	//* Tracking Platform Goal
-
-	int16_t latitude;	//* Latitude * 100, MSB FIRST!!
-
-	int32_t y_enc_ticks;	//* Azm Scope Encoder Ticks Per Rev, MSB FIRST!!
-	int32_t x_enc_ticks;	//* Alt Scope Encoder Ticks Per Rev, MSB FIRST!!
-
-	int32_t y_mot_ticks;	//* Azm Motor Ticks Per Rev, MSB FIRST!!
-	int32_t x_mot_ticks;	//* Alt Motor Ticks Per Rev, MSB FIRST!!
-
-	int32_t x_slew_rate;	//* Alt/Dec Slew Rate
-	int32_t y_slew_rate;	//* Azm/RA Slew Rate
-
-	int32_t x_pan_rate;	//* Alt/Dec Pan Rate
-	int32_t y_pan_rate;	//* Azm/RA Pan Rate
-
-	int32_t x_guide_rate;	//* Alt/Dec Guide Rate
-	int32_t y_guide_rate;	//* Azm/RA Guide Rate
-
-	int8_t pec_auto;	//* R/A PEC Auto Sync Enable (if low bit = 1), or PicServo Comm Timeout??
-
-	int8_t p_3;		//* Unused / Padding??
-	int8_t p_4;		//* Baud Rate??
-
-	int8_t p_5;		//* Unused / Padding??
-
-	int8_t p_6;		//* 1 = Enable Argo Navis, 2 = Enable Sky Commander
-
-	int8_t p_7;		//* Unused / Padding??
-
-	int32_t local_deg;	//* Local Search Degrees * 100
-	int32_t local_speed;	//* Local Search Speed, arcsec per sec
-
-	int32_t backhlash_speed;	//* Backlash speed
-
-	int32_t y_pec_ticks;	//* RA/Azm PEC Ticks
-
-	int8_t p_8;		//* Unused / Padding??
-	int8_t p_9;		//* Unused / Padding??	 
-} SitechControllerConfiguration;
-
 /**
  * Parameters of the request (XXR) command.
  *
@@ -273,8 +197,6 @@ class ConnSitech: public ConnSerial
 		 */
 		void getControllerStatus (SitechControllerStatus &controller_status);
 
-		void getConfiguration (SitechControllerConfiguration &config);
-
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle);
 		double ticksPerSec2MotorSpeed (double tps);
@@ -285,23 +207,27 @@ class ConnSitech: public ConnSerial
 		double PIDSampleRate;
 
 		// which controller is connected
-		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
+		enum {SERVO_I, SERVO_II, FORCE_ONE, FORCE_TWO} sitechType;
 
 		void startLogging (const char *logFileName);
 		void endLogging ();
 
 		SitechAxisStatus last_status;
 
+		/**
+		 * SiTech FLASH ROM load/get/store.
+		 */
+		int flashLoad ();
+		int flashStore ();
+
+		int16_t getFlashInt16 (int i);
+		int32_t getFlashInt32 (int i);
+
 	private:
 		/**
 		 * Reads XXS, XXR and YXR status replies.
 		 */
 		void readAxisStatus ();
-
-		/**
-		 * Reads configuration of Sitech controller.
-		 */
-		void readConfiguration (SitechControllerConfiguration &config);
 
 		void writePortChecksumed (const char *cmd, size_t len);
 
@@ -318,6 +244,9 @@ class ConnSitech: public ConnSerial
 		 * Log sitech communication to a file.
 		 */
 		void logBuffer (char spec, void *data, size_t len);
+
+		// SiTech flash
+		uint8_t flashBuffer[1000];
 };
 
 }

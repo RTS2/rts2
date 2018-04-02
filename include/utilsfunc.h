@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #include "rts2-config.h"
 #include "nan.h"
 #include <math.h>
@@ -42,6 +43,14 @@
 
 #ifndef JD_TO_MJD_OFFSET
 #define JD_TO_MJD_OFFSET  2400000.5
+#endif
+
+#ifndef D2R
+const double D2R  = M_PI / 180.0;
+#endif
+
+#ifndef AS2R
+const double AS2R = D2R / 3600.0;
 #endif
 
 /**
@@ -408,5 +417,20 @@ int parseVariableName (const char *name, char **device, char **variable);
  * @param parate calculated object paralactic rate (in degrees/hours)
  */
 void parallacticAngle (double ha, double dec, double sin_lat, double cos_lat, double tan_lat, double &pa, double &parate);
+
+/**
+ * Converts spherical coordinates to vector.
+ */
+void sph2cart (double a, double b, double *xyz);
+
+/**
+ * Converts vector coordinates to spherical.
+ */
+void cart2sph (double *xyz, double &a, double &b);
+
+/**
+ * Calculates position angle between two points.
+ */
+double posangle (double *xyz0, double *xyz1);
 
 #endif							 /* !__RTS_UTILSFUNC__ */

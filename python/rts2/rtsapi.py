@@ -110,7 +110,7 @@ class ChunkResponse(http.client.HTTPResponse):
         if not(self.read_by_chunks):
             return http.client.HTTPResponse._read_chunked(self, amt)
 
-        assert self.chunked != http.client._UNKNOWN
+        #assert self.chunked != http.client._UNKNOWN
         line = self.fp.readline(http.client._MAXLINE + 1)
         if len(line) > http.client._MAXLINE:
             raise http.client.LineTooLong("chunk size")

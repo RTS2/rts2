@@ -113,7 +113,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (gOffsRaDec, "GOFFS", "guiding offsets", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	gOffsRaDec->setValueRaDec (0, 0);
 
-	createValue (guidingTime, "GTIME", "time the telescope is guiding", false, RTS2_VALUE_WRITABLE);
+	createValue (guidingTime, "GTIME", "time the telescope is guiding", false);
+	createValue (lastGuideTime, "LGTIME", "time when last guide command was received", false);
 
 	if (hasAltAzDiff)
 	{
@@ -502,7 +503,15 @@ void Telescope::setModelTarAltAz (struct ln_hrz_posn *hrz)
 	modelTarAltAz->setValueAltAz (hrz->alt, hrz->az);
 }
 
-int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+void Telescope::getModelTarAltAz (struct ln_hrz_posn *pos)
+{
+	if (modelTarAltAz == NULL)
+		return;
+
+	modelTarAltAz->getAltAz (pos);
+}
+
+int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, struct ln_hrz_posn *out_hrz, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	double tar_distance = NAN;
 
@@ -557,27 +566,28 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	if (writeValues)
 		setObject (out_tar->ra, out_tar->dec);
 
-	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
+	return sky2counts (utc1, utc2, out_tar, out_hrz, ac, dc, writeValues, haMargin, forceShortest);
 }
 
 int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, double &ac_speed, double &dc_speed, double &ea_speed, double &ed_speed, double &speed_angle, double &err_angle)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
+	struct ln_hrz_posn hrz, t_hrz;
 	// refresh current target..
 
 	int32_t c_ac = ac;
 	int32_t c_dc = dc;
 	int32_t t_ac = ac;
 	int32_t t_dc = dc;
-	int ret = calculateTarget (utc1, utc2, &eqpos, c_ac, c_dc, true, 0, true);
+	int ret = calculateTarget (utc1, utc2, &eqpos, &hrz, c_ac, c_dc, true, 0, true);
 	if (ret)
 		return ret;
 
-	ret = calculateTarget (utc1, utc2 + sec_step / 86400.0, &t_eqpos, t_ac, t_dc, false, 0, true);
+	ret = calculateTarget (utc1, utc2 + sec_step / 86400.0, &t_eqpos, &t_hrz, t_ac, t_dc, false, 0, true);
 	if (ret)
 		return ret;
 
-	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " current " << c_ac << " " < c_dc << " target " << t_ac << " " << t_dc << std::endl;
+	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " current " << c_ac << " " << c_dc << " target " << t_ac << " " << t_dc << " ac " << ac << " " << dc << std::endl;
 
 	// for speed vector calculation..
 	double ra_diff = t_eqpos.ra - eqpos.ra;
@@ -605,7 +615,7 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	return 0;
 }
 
-int Telescope::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Telescope::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	return -1;
 }
@@ -994,9 +1004,12 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	{
 		maskState (TEL_MASK_OFFSETING, TEL_OFFSETING, "offseting telescope");
 	}
-	else if (old_value == gOffsRaDec && std::isnan (guidingTime->getValueDouble ()))
+	else if (old_value == gOffsRaDec)
 	{
-		guidingTime->setNow ();
+		double now = getNow ();
+		if (std::isnan (guidingTime->getValueDouble ()))
+			guidingTime->setValueDouble (now);
+		lastGuideTime->setValueDouble (now);
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -1134,6 +1147,7 @@ void Telescope::incMoveNum ()
 	gOffsRaDec->resetValueChanged ();
 
 	guidingTime->setValueDouble (NAN);
+	lastGuideTime->setValueDouble (NAN);
 
 	if (offsAltAz)
 	{
@@ -1377,6 +1391,10 @@ int Telescope::init ()
 int Telescope::initValues ()
 {
 	int ret;
+	ret = rts2core::Device::initValues ();
+	if (ret)
+		return ret;
+
 	ret = info ();
 	if (ret)
 		return ret;
@@ -1404,8 +1422,6 @@ int Telescope::initValues ()
 
 	tle_rho_cos_phi->setValueDouble (r_c);
 	tle_rho_sin_phi->setValueDouble (r_s);
-
-	ret = rts2core::Device::initValues ();
 
 	updateDUT1 ();
 
@@ -1639,6 +1655,23 @@ void Telescope::setTelAltitude (float altitude)
 {
 	telAltitude->setValueDouble (altitude);
 	telPressure->setValueFloat (getAltitudePressure (altitude, 1010));
+}
+
+int Telescope::loadModelStream (std::istream &is)
+{
+	delete model;
+	model = new rts2telmodel::GPointModel (getLatitude ());
+	model->load (is);
+	if (is.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "Failed to reload model from stream" << sendLog;
+		delete model;
+		model = NULL;
+		return -1;
+	}
+	calModel->setValueBool (true);
+	logStream (MESSAGE_INFO) << "Loaded model from stream" << sendLog;
+	return 0;
 }
 
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)

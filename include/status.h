@@ -417,6 +417,7 @@ typedef uint32_t rts2_status_t;
 #define DEVICE_TYPE_AUGERSH   14
 #define DEVICE_TYPE_SENSOR    15
 #define DEVICE_TYPE_CAT       16
+#define DEVICE_TYPE_AXIS      18
 
 #define DEVICE_TYPE_EXECUTOR  20
 #define DEVICE_TYPE_IMGPROC   21

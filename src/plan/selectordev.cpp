@@ -54,19 +54,6 @@ class Rts2DevClientTelescopeSel:public rts2core::DevClientTelescope
 		}
 };
 
-class Rts2DevClientExecutorSel:public rts2core::DevClientExecutor
-{
-	public:
-		Rts2DevClientExecutorSel (rts2core::Connection * in_connection):rts2core::DevClientExecutor (in_connection) {}
-
-	protected:
-		virtual void lastReadout ()
-		{
-			connection->getMaster ()->postEvent (new rts2core::Event (EVENT_IMAGE_OK));
-			rts2core::DevClientExecutor::lastReadout ();
-		}
-};
-
 class SelectorDev:public rts2db::DeviceDb
 {
 	public:

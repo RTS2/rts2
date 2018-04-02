@@ -1,6 +1,7 @@
 
 SUBDIRS = \
 	centrald \
+	axisd \
 	phot	\
 	dome	\
 	focusd  \
@@ -27,4 +28,5 @@ SUBDIRS = \
 	pluto \
 	catd \
 	redis \
-	thrift
+	thrift \
+	ucac5

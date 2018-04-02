@@ -32,7 +32,7 @@ class SitechMulti;
 class SitechRotator: public Rotator
 {
 	public:
-		SitechRotator (const char axis, const char *name, rts2core::ConnSitech *conn, SitechMulti *multiBase, const char *defaults);
+		SitechRotator (const char axis, const char *name, rts2core::ConnSitech *conn, SitechMulti *multiBase, const char *defaults, bool _leftRotator);
 
 		void calculateTarget (double pa_current, double pa_future, double t_diff, uint32_t tarpos, uint32_t tarspeed);
 
