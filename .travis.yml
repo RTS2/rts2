@@ -37,6 +37,7 @@ matrix:
             libncurses5-dev
             libgraphicsmagick++1-dev
             libx11-dev
+            liberfa-dev
             dblatex
             docbook-xsl
             docbook-xsl-ns
