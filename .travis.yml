@@ -12,7 +12,7 @@ addons:
 
 env:
   matrix:
-    - PKG_CONFIG_PATH=`pwd`/erfa-1.2.0/build/lib/pkgconfig
+    - PKG_CONFIG_PATH=/home/travis/build/RTS2/rts2/erfa-1.2.0/build/lib/pkgconfig
     - PKG_CONFIG_PATH=""
 
 matrix:
