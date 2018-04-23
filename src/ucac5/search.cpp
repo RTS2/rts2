@@ -37,6 +37,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 class UCAC5Search:public rts2core::App
 {
@@ -48,6 +49,8 @@ class UCAC5Search:public rts2core::App
 	protected:
 		virtual int processOption (int opt);
 		virtual int processArgs (const char *arg);
+
+		virtual void usage ();
 	
 	private:
 		std::string radec;
@@ -57,7 +60,7 @@ class UCAC5Search:public rts2core::App
 		double maxRad;
 		int argCount;
 		int verbose;
-		const char *base;
+		std::string base;
 };
 
 UCAC5Search::UCAC5Search (int argc, char **argv):App (argc, argv), radec(""), ra(NAN), dec(NAN), minRad(NAN), maxRad(NAN), argCount(0), verbose(0), base("~/ucac5")
@@ -71,7 +74,13 @@ int UCAC5Search::run()
 	int ret = init();
 	if (ret)
 		return ret;
-	ret = chdir(base);
+	if (isnan(ra) || isnan(dec) || isnan(minRad) || isnan(maxRad))
+	{
+		std::cerr << "you must provide ra dec min max, please see -h for details" << std::endl;
+		return -2;
+	}
+	base.replace(base.find("~"), 1, getenv("HOME"));
+	ret = chdir(base.c_str());
 	if (ret)
 	{
 		std::cerr << "cannot change directory to " << base << ":" << strerror(errno) << std::endl;
@@ -190,6 +199,14 @@ int UCAC5Search::processArgs (const char *arg)
 	argCount++;
 
 	return 0;
+}
+
+void UCAC5Search::usage ()
+{
+	std::cout << "Provide RA DEC minRadius maxRadius, and you will receive list of matched stars:" << std::endl
+		<< std::endl
+		<< "Example:" << std::endl
+		<< "\tucac5-search 10:20:33 +20:56:14 0 1000" << std::endl;
 }
 
 int main (int argc, char **argv)
