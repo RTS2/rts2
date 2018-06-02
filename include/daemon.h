@@ -655,6 +655,7 @@ class Daemon:public Block
 		void addGroup (const char *groupname);
 
 		void setDefaultsFile (const char *fn) { optDefaultsFile = fn; }
+		void setAutosaveFile (const char *fn) { optAutosaveFile = fn; }
 
 	private:
 		rts2core::StringArray *groups;
