@@ -757,6 +757,14 @@ void Device::setMulti ()
 	setNoLock ();
 } 
 
+void Device::initAutoSave ()
+{
+	Daemon::initAutoSave ();
+	// add suffix for autosave filenames
+	if (multidevPart && autosaveFile.length() > 0)
+		autosaveFile += std::string("-") + getDeviceName();
+}
+
 void Device::beforeRun ()
 {
 	if (doCheck && checkNotNulls ())

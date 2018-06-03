@@ -1,6 +1,6 @@
 /* 
  * Container holding multiple daemons.
- * Copyright (C) 2012 Petr Kubanek, Institute of Physics AS CR  <kubanek@fzu.cz>
+ * Copyright (C) 2012-2018 Petr Kubánek, Institute of Physics AS CR  <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

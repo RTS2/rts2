@@ -52,12 +52,12 @@ class MultiSensor: public SensorWeather
 
 MultiSensor::MultiSensor (int argc, char **argv, const char *sn):SensorWeather (argc, argv, 120, sn)
 {
-	createValue (testDouble, "test_double", "test double variable", true, RTS2_VALUE_WRITABLE);
+	createValue (testDouble, "test_double", "test double variable", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (testString, "test_string", "test string variable", true);
 
-	createValue (timerEnabled, "timer_enabled", "enable timer every 5 seconds", false, RTS2_VALUE_WRITABLE);
+	createValue (timerEnabled, "timer_enabled", "enable timer every 5 seconds", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	timerEnabled->setValueBool (true);
-	createValue (timerCount, "timer_count", "timer count - increased every 5 seconds if timer_enabled is true", false, RTS2_VALUE_WRITABLE);
+	createValue (timerCount, "timer_count", "timer count - increased every 5 seconds if timer_enabled is true", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	timerCount->setValueInteger (0);
 
 	createValue (generateCriticalMessages, "generate_critical", "generate critical messages with timer", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);

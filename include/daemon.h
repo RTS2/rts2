@@ -71,7 +71,7 @@ class Daemon:public Block
 		 * functions to complete daemon initialization.
 		 */
 		void initDaemon ();
-		
+
 		/**
 		 * Set timer to send updates every interval seconds. This method is designed to keep user 
 		 * infromed about progress of actions which rapidly changes values read by info call.
@@ -269,6 +269,8 @@ class Daemon:public Block
 		{
 			return daemonize == DONT_DAEMONIZE;
 		}
+
+		virtual void initAutoSave () { };
 
 		/**
 		 * Called before main daemon loop.
@@ -654,8 +656,10 @@ class Daemon:public Block
 		 */
 		void addGroup (const char *groupname);
 
+		std::string autosaveFile; /// Location of autosave file.
+
 		void setDefaultsFile (const char *fn) { optDefaultsFile = fn; }
-		void setAutosaveFile (const char *fn) { optAutosaveFile = fn; }
+		void setAutosaveFile (const char *fn) { autosaveFile = fn; }
 
 	private:
 		rts2core::StringArray *groups;
@@ -700,11 +704,6 @@ class Daemon:public Block
 		 */
 		const char *lockPrefix;
 
-		/**
-		 * File where to store autosaved values.
-		 */
-		const char *autosaveFile;
-		const char *optAutosaveFile;
 		const char *optDefaultsFile;
 
 		/**

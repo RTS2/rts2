@@ -37,12 +37,22 @@ class MultiDev: public std::list < Device* >
 };
 
 /**
- * Master class for multidevs.
+ * Master class for multidevs. This is used if two or more device shares single
+ * communication channel (serial link,..). Device classes are added with
+ * Daemon::addDevice method. Methods in added devices are then called as need
+ * to allow devices to control devices and gets events and data from network
+ * sockets.
  */
 class MultiBase:public Daemon
 {
 	public:
 		MultiBase (int argc, char **argv, const char *default_name);
+
+		/**
+		 * Adds device to controlled devices.
+		 *
+		 * @param dev device instance
+		 */
 		void addDevice (Device *dev);
 		virtual int init ();
 		virtual int run ();
