@@ -81,8 +81,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	valueFile = NULL;
 
-	autosaveFile = NULL;
-	optAutosaveFile = NULL;
+	autosaveFile = "";
 	optDefaultsFile = NULL;
 
 	state = _init_state;
@@ -143,7 +142,7 @@ int Daemon::processOption (int in_opt)
 			modefile = optarg;
 			break;
 		case OPT_AUTOSAVE:
-			optAutosaveFile = optarg;
+			autosaveFile = optarg;
 			break;
 		case OPT_DEFAULTS:
 			optDefaultsFile = optarg;
@@ -400,10 +399,10 @@ int Daemon::initValues ()
 	ret = loadValuesFile (optDefaultsFile, true);
 	if (ret)
 		return ret;
-	ret = loadValuesFile (optAutosaveFile);
+	initAutoSave();
+	ret = loadValuesFile (autosaveFile.c_str());
 	if (ret)
 		return ret;
-	autosaveFile = optAutosaveFile;
 	return 0;
 }
 
@@ -1500,7 +1499,7 @@ int Daemon::setInitValue (rts2core::Value *val, rts2core::Value *new_value)
 
 int Daemon::autosaveValues ()
 {
-	if (autosaveFile == NULL)
+	if (autosaveFile.length() == 0)
 		return -2;
 
 	std::ofstream of (autosaveFile, std::ios_base::out | std::ios_base::trunc);

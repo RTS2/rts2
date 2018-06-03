@@ -329,6 +329,8 @@ class Device:public Daemon
 		 */
 		virtual int initHardware () { return 0; }
 
+		virtual void initAutoSave ();
+
 		virtual void beforeRun ();
 
 		virtual bool isRunning (Connection *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }
