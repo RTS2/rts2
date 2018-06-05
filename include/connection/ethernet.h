@@ -67,17 +67,20 @@ class ConnEthernet:public ConnNoSend
 		void setDebug (bool _debug = true) { debug = _debug; }
 
 		/**
-		 * Send data, wait for reply.
+		 * Send data, wait for reply. 
+		 * It should be noted the package or response can be lost quite often, and it
+		 * should be solved on higher level. Simple resending the same content might
+		 * not work everywhere, so it is not implemented in this class.
 		 *
 		 * @param wbuf    buffer with data to write
 		 * @param wlne    length of the write buffer
 		 * @param rbuf    buffer where read data will be stored
 		 * @param rlen    length of the read buffer
-		 * @param wtime   connection timeout
+		 * @param wtime   connection timeout in usec
 		 *
 		 * @return size of data read on success.
 		 */
-		int writeRead (const void* wbuf, int wlen, void *rbuf, int rlen, int wtime = 1);
+		int writeRead (const void* wbuf, int wlen, void *rbuf, int rlen, long int wtime = USEC_SEC);
 
 	protected:
 		bool getDebug () { return debug; }
