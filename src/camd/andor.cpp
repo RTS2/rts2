@@ -81,6 +81,15 @@ using namespace std;
 
 // #define TEMP_SAFETY // turns out not to be supported ... :(
 
+
+// There is a bug in Andor Linux SDK 2.102.30045, one of the readout modes on 
+// iXon Ultra 888 is wrongly reported as not-available (by function 
+// IsPreAmpGainAvailable() ). 
+// This is dirty fix to avoid this misbehaviour and include this mode in 
+// selection.
+//#define SDK_2_102_U888_FIX
+
+
 const char outputAmpDescShort[3][3] = { "EM", "CO", "XX" };
 const char outputAmpDescLong[3][32] = { "EMCCD", "CONVENTIONAL", "UNKNOWN" };
 
@@ -1469,7 +1478,15 @@ int Andor::initAndorADCModes ()
 					GetPreAmpGain (pa, &pag);
 					IsPreAmpGainAvailable (ad, oa, hs, pa, &isPreAmp);
 					GetSensitivity (ad, hs, oa, pa, &sens);
+
+					//fprintf (stderr, "+ mode:%d ad:%d oa:%d hs:%d pa:%d -- pag:%f, isPreAmp: %d, sens: %f\n", adcModes, ad, oa, hs, pa, pag, isPreAmp, sens);
+
+#ifdef SDK_2_102_U888_FIX
+					if (isPreAmp || (ad==0 && oa==1 && hs==0 && pa==1) )
+#else
 					if (isPreAmp)
+#endif
+
 					{
 						if (adcModes < MAX_ADC_MODES)
 						{
@@ -1478,7 +1495,7 @@ int Andor::initAndorADCModes ()
 							adcModeCodes[2][adcModes] = hs;
 							adcModeCodes[3][adcModes] = pa;
 
-							//      fprintf (stderr, "mode:%d ad:%d oa:%d hs:%d pa:%d\n", adcModes, ad, oa, hs, pa);
+							//fprintf (stderr, "mode:%d ad:%d oa:%d hs:%d pa:%d\n", adcModes, ad, oa, hs, pa);
 
 							adcModes++;
 						}
@@ -1500,8 +1517,7 @@ int Andor::initAndorADCModes ()
 	}			//  end of output amplifiers
 	logStream (MESSAGE_INFO) << "defaultADCMode = " << defaultADCMode << sendLog;
 
-	// And when finished, actually set the mode:
-	adcMode->setValueInteger (defaultADCMode);
+	// We have to wait with setting the default mode for chip initialization (to know the CCD size)
 
 	// get VSpeed(s) (luckily these are well independent on the rest)
 	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
@@ -1557,8 +1573,11 @@ int Andor::initHardware ()
 	ret = initChips ();
 	checkRet ("initHardware()", "initChips()");
 
-	ret = setTiming ();
-	checkRet ("initHardware()", "setTiming()");
+	// After we know the chip parameters, we can set default adcMode, which also does setTiming () implicitly...
+	//changeValue (adcMode, defaultADCMode);
+	adcMode->setValueInteger (defaultADCMode);
+	ret = setADCMode (defaultADCMode);
+	checkRet ("initHardware()", "setADCMode()");
 
 	// added the following code to get quick updates in rts2-mon.. (SG)
 	setIdleInfoInterval (2);
