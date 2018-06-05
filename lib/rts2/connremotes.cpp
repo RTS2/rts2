@@ -78,10 +78,16 @@ int ConnREMOTES::write (unsigned short registerCode, unsigned char *writeBuf, in
 
 	writeChecksums (remotesWriteBuffer);
 
-	ret = ConnEthernet::writeRead ((const void *) &remotesWriteBuffer, 10 + payloadLength, (void *) &remotesReadBuffer, sizeof (RemotesCommandBlock));
+	// raw ethernet is unreliable, we have to deal with it
+	for (int i=0; i<5; i++)
+	{
+		ret = ConnEthernet::writeRead ((const void *) &remotesWriteBuffer, 10 + payloadLength, (void *) &remotesReadBuffer, sizeof (RemotesCommandBlock));
+		if (ret > 0)
+			break;
+	}
 	if (ret <= 0)
 	{
-		logStream (MESSAGE_ERROR) << "ConnREMOTES::write writeRead: " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnREMOTES::write writeRead permanent error: " << strerror (errno) << sendLog;
 		return -1;
 	}
 

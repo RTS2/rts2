@@ -47,6 +47,7 @@ int ConnEthernet::init ()
 
 	// let's start with opening the socket...
 	sockE = socket (AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	//sockE = socket (AF_PACKET, SOCK_RAW, htons(0xFFFF));
         if (sockE == -1)
 	{
 		logStream (MESSAGE_ERROR) << "ConnEthernet::writeRead socket: " << strerror (errno) << sendLog;
@@ -88,6 +89,7 @@ int ConnEthernet::init ()
 	socket_address.sll_family   = PF_PACKET;
 	// we don't use a protocoll above ethernet layer -> just use anything here
 	socket_address.sll_protocol = htons(ETH_P_IP);
+	//socket_address.sll_protocol = htons(0xFFFF);
 	// index of the network device
 	socket_address.sll_ifindex  = 2;
 	// ARP hardware identifier is ethernet
@@ -109,12 +111,11 @@ int ConnEthernet::init ()
         return 0;
 }
 
-int ConnEthernet::writeRead (const void* wbuf, int wlen, void *rbuf, int rlen, int wtime)
+int ConnEthernet::writeRead (const void* wbuf, int wlen, void *rbuf, int rlen, long int wtime)
 {
 	int ret;
 	int packetLength;
-	struct timeval readTout;
-	time_t readToutDline;
+	struct timeval readTout, actTime, readToutDline;
 	fd_set read_set;
 
         if (wlen > ETH_FRAME_LEN - 14)
@@ -155,44 +156,35 @@ int ConnEthernet::writeRead (const void* wbuf, int wlen, void *rbuf, int rlen, i
 	}
 
 	// and now take care of response...
-	// readTout.tv_sec = wtime;
-	// readTout.tv_usec = 0;
-	readToutDline = time (0) + wtime;
-
-	// docasna testovaci nahrada za select:
-	usleep (100000);
+	readTout.tv_sec = wtime / USEC_SEC;
+	readTout.tv_usec = wtime % USEC_SEC;
+	gettimeofday(&actTime, NULL);
+	timeradd (&actTime, &readTout, &readToutDline);
 
 	while (true)
 	{
 		FD_ZERO (&read_set);
 		FD_SET (sockE, &read_set);
 
-		// docasna testovaci nahrada za select:
-		usleep (10000);
-
-		/*ret = select (FD_SETSIZE, &read_set, NULL, NULL, &readTout);
+		ret = select (FD_SETSIZE, &read_set, NULL, NULL, &readTout);
+		gettimeofday(&actTime, NULL);
 		if (ret < 0)
 		{
 			logStream (MESSAGE_ERROR) << "ConnEthernet::writeRead : error calling select function : " << strerror (errno) << sendLog;
 			return -1;
 		}
-		else if (ret == 0 || time (0) > readToutDline)
+		else if (ret == 0 || timercmp (&actTime, &readToutDline, >))
 		{
 			logStream (MESSAGE_ERROR) << "ConnEthernet::writeRead : zero response or timeout reached : " << strerror (errno) << sendLog;
 			return -1;
-		}*/
-		if (time (0) > readToutDline)
-		{
-			logStream (MESSAGE_ERROR) << "ConnEthernet::writeRead : timeout reached (without select!) : " << strerror (errno) << sendLog;
-			return -1;
 		}
-
 
 		//packetLength = recvfrom (sockE, ethInBuffer, ETH_FRAME_LEN, 0, NULL, NULL);
 		packetLength = recvfrom (sockE, ethInBuffer, ETH_FRAME_LEN, MSG_DONTWAIT, NULL, NULL);
 		if (packetLength == -1)
 		{
-			logStream (MESSAGE_ERROR) << "ConnEthernet::writeRead recvfrom: " << strerror (errno) << sendLog;
+			// this is an error, as there should be something after select
+			logStream (MESSAGE_ERROR) << "ConnEthernet::writeRead recvfrom error: " << strerror (errno) << sendLog;
 			return -1;
 		}
 
