@@ -1290,7 +1290,7 @@ int Daemon::loadCreateFile ()
 
 int Daemon::loadValuesFile (const char *filename, bool use_extenstions)
 {
-	if (filename == NULL)
+	if (filename == NULL || strlen(filename) == 0)
 		return 0;
 	
 	IniParser *autosave = new IniParser (true);
