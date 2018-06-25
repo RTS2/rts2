@@ -37,136 +37,171 @@ import os
 import tempfile
 import traceback
 
+sepPresent = False
+try:
+    import sep
+    sepPresent = True
+except Exception:
+    pass
+
+
 class Sextractor:
-	"""Class for a catalogue (SExtractor result)"""
-	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE','EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535, verbose=False):
-		self.sexpath = sexpath
-		self.sexconfig = sexconfig
-		self.starnnw = starnnw
+    """Class for a catalogue (SExtractor result)"""
 
-		self.fields = fields
-		self.objects = []
-		self.threshold = threshold
-		self.deblendmin = deblendmin
-		self.saturlevel = saturlevel
+    def __init__(self, fields=['FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin=0.03, saturlevel=65535, verbose=False):
+        self.sexpath = sexpath
+        self.sexconfig = sexconfig
+        self.starnnw = starnnw
 
-		self.verbose = verbose
+        self.fields = fields
+        self.objects = []
+        self.threshold = threshold
+        self.deblendmin = deblendmin
+        self.saturlevel = saturlevel
 
-	def get_field(self,fieldname):
-		return self.fields.index(fieldname)
+        self.verbose = verbose
 
-	def runSExtractor(self,filename):
-	    	pf,pfn = tempfile.mkstemp()
-		ofd,output = tempfile.mkstemp()
-		pfi = os.fdopen(pf,'w')
-		for f in self.fields:
-			pfi.write(f + '\n')
-		pfi.flush()
+    def get_field(self, fieldname):
+        return self.fields.index(fieldname)
 
-		cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output]
-		if not(self.verbose):
-			cmd.append('-VERBOSE_TYPE')
-			cmd.append('QUIET')
-		try:
-			proc = subprocess.Popen(cmd)
-			proc.wait()
-		except OSError as err:
-			print('canot run command: "', ' '.join(cmd), '", error ',err, file=sys.stderr)
-			raise err
+    def __run_SExtractor(self, filename):
+        pf, pfn = tempfile.mkstemp()
+        ofd, output = tempfile.mkstemp()
+        pfi = os.fdopen(pf, 'w')
+        for f in self.fields:
+            pfi.write(f + '\n')
+        pfi.flush()
 
-		# parse output
-		self.objects = []
-		of = os.fdopen(ofd,'r')
-		while (True):
-		 	x=of.readline()
-			if self.verbose:
-				print(x, end=' ')
-			if x == '':
-				break
-			if x[0] == '#':
-				continue
-			self.objects.append(list(map(float,x.split())))
-	
-		# unlink tmp files
-		pfi.close()
-		of.close()
+        cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(
+            self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output]
+        if not(self.verbose):
+            cmd.append('-VERBOSE_TYPE')
+            cmd.append('QUIET')
+        try:
+            proc = subprocess.Popen(cmd)
+            proc.wait()
+        except OSError as err:
+            print('canot run command: "', ' '.join(cmd), '", error ', err, file=sys.stderr)
+            raise err
 
-		os.unlink(pfn)
-		os.unlink(output)
+        # parse output
+        self.objects = []
+        of = os.fdopen(ofd, 'r')
+        while (True):
+            x = of.readline()
+            if self.verbose:
+                print(x, end=' ')
+            if x == '':
+                break
+            if x[0] == '#':
+                continue
+            self.objects.append(list(map(float, x.split())))
 
-	def sortObjects(self,col):
-	        """Sort objects by given collumn."""
-	    	self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
+        # unlink tmp files
+        pfi.close()
+        of.close()
 
-	def reverseObjects(self,col):
-		"""Reverse sort objects by given collumn."""
-		self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
-		self.objects.reverse()
+        os.unlink(pfn)
+        os.unlink(output)
 
-	def filter_galaxies(self,limit=0.2):
-		"""Filter possible galaxies"""
-		try:
-			i_class = self.get_field('CLASS_STAR')
-			ret = []
-			for x in self.objects:
-				if x[i_class] > limit:
-					ret.append(x)
-			return ret
-		except ValueError as ve:
-			print('result does not contain CLASS_STAR')
-			traceback.print_exc()
-	
-	def get_FWHM_stars(self,starsn=None,filterGalaxies=True,segments=None):
-		"""Returns candidate stars for FWHM calculations. """
-		if len(self.objects) == 0:
-			raise Exception('Cannot find FWHM on empty source list')
+        return len(self.objects)
 
-		obj = None
-		if filterGalaxies:
-			obj = self.filter_galaxies()
-			if len(obj) == 0:
-				raise Exception('Cannot find FWHM - all detected sources were filtered out as galaxies')
-		else:
-			obj = self.objects
+    def process(self, filename):
+        """
+	Find stars in FITS filename. Populate internal dictionaries.
 
-		try:
-			# sort by magnitude
-			i_mag_best = self.get_field('MAG_BEST')
-			obj.sort(cmp=lambda x,y: cmp(x[i_mag_best],y[i_mag_best]))
-			fwhmlist = []
+	Parameters
+	----------
+	filename: name (full path) of FITS file to run on
 
-			a = 0
-			b = 0
+	Returns
+	-------
+        Nothing
+	"""
+        if sepPresent:
+            from astropy.io import fits
+            import numpy
+            ff = fits.open(filename)
+            for i in range(1, len(ff)):
+                data = ff[i].data
+                bkg = sep.Background(numpy.array(data, numpy.float))
+                self.objects, self.segmap = sep.extract(data - bkg, 5.0 * bkg.globalrms, segmentation_map=True)
+        else:
+            return self.__run_SExtractor(filename)
 
-			i_flags = self.get_field('FLAGS')
-			i_class = self.get_field('CLASS_STAR')
-			i_seg = self.get_field('EXT_NUMBER')
+    def sort_objects(self, col):
+        """Sort objects by given collumn."""
+        self.objects.sort(cmp=lambda x, y: cmp(x[col], y[col]))
 
-			for x in obj:
-				if segments and x[i_seg] not in segments:
-					continue
-				if x[i_flags] == 0 and (filterGalaxies == False or x[i_class] != 0):
-					fwhmlist.append(x)
-					if starsn and len(fwhmlist) >= starsn:
-						break
-				else:
-					if self.verbose:
-						print('rejected - FLAGS:', x[i_flags], ', CLASS_STAR:', x[i_class], 'line ', x)
+    def reverse_objects(self, col):
+        """Reverse sort objects by given collumn."""
+        self.objects.sort(col)
+        self.objects.reverse()
 
-			return fwhmlist
-		except ValueError as ve:
-			traceback.print_exc()
-			return []
+    def filter_galaxies(self, limit=0.2):
+        """Filter possible galaxies"""
+        try:
+            i_class = self.get_field('CLASS_STAR')
+            ret = []
+            for x in self.objects:
+                if x[i_class] > limit:
+                    ret.append(x)
+            return ret
+        except ValueError as ve:
+            print('result does not contain CLASS_STAR')
+            traceback.print_exc()
 
+    def get_FWHM_stars(self, starsn=None, filterGalaxies=True, segments=None):
+        """Returns candidate stars for FWHM calculations. """
+        if len(self.objects) == 0:
+            raise Exception('Cannot find FWHM on empty source list')
 
-	def calculate_FWHM(self,starsn=None,filterGalaxies=True,segments=None):
-		obj = self.get_FWHM_stars(starsn,filterGalaxies,segments)
-		try:
-			i_fwhm = self.get_field('FWHM_IMAGE')
-			import numpy
-			fwhms = [x[i_fwhm] for x in obj]
- 			return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
- 		#	return numpy.average(obj), len(obj)
-		except ValueError as ve:
-			traceback.print_exc()
-			raise Exception('cannot find FWHM_IMAGE value')
+        obj = None
+        if filterGalaxies:
+            obj = self.filter_galaxies()
+            if len(obj) == 0:
+                raise Exception(
+                    'Cannot find FWHM - all detected sources were filtered out as galaxies')
+        else:
+            obj = self.objects
+
+        try:
+            # sort by magnitude
+            i_mag_best = self.get_field('MAG_BEST')
+            obj.sort(cmp=lambda x, y: cmp(x[i_mag_best], y[i_mag_best]))
+            fwhmlist = []
+
+            a = 0
+            b = 0
+
+            i_flags = self.get_field('FLAGS')
+            i_class = self.get_field('CLASS_STAR')
+            i_seg = self.get_field('EXT_NUMBER')
+
+            for x in obj:
+                if segments and x[i_seg] not in segments:
+                    continue
+                if x[i_flags] == 0 and (filterGalaxies is False or x[i_class] != 0):
+                    fwhmlist.append(x)
+                    if starsn and len(fwhmlist) >= starsn:
+                        break
+                else:
+                    if self.verbose:
+                        print('rejected - FLAGS:',
+                              x[i_flags], ', CLASS_STAR:', x[i_class], 'line ', x)
+
+            return fwhmlist
+        except ValueError as ve:
+            traceback.print_exc()
+            return []
+
+    def calculate_FWHM(self, starsn=None, filterGalaxies=True, segments=None):
+        obj = self.get_FWHM_stars(starsn, filterGalaxies, segments)
+        try:
+            i_fwhm = self.get_field('FWHM_IMAGE')
+            import numpy
+            fwhms = [x[i_fwhm] for x in obj]
+            return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
+        except ValueError as ve:
+            traceback.print_exc()
+            raise Exception('cannot find FWHM_IMAGE value')

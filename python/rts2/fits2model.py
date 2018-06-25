@@ -46,7 +46,7 @@ def model_line(fitsname, of, center=None):
 
     try:
         imgid = h['IMGID']
-    except KeyError, ke:
+    except KeyError as ke:
         imgid = ln
 
     if w.wcs.radesys == '':

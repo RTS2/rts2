@@ -35,7 +35,7 @@
 import sys
 import string
 import time
-import scriptcomm
+import rts2.scriptcomm
 
 # email communication
 import smtplib
@@ -100,7 +100,7 @@ class Flat:
         return '{0}_{1}_{2}'.format(fs, self.binning, self.window)
 
 
-class FlatScript (scriptcomm.Rts2Comm):
+class FlatScript (rts2.scriptcomm.Rts2Comm):
 
     """Class for taking and processing skyflats.
 
@@ -117,7 +117,7 @@ class FlatScript (scriptcomm.Rts2Comm):
         maxBias=0, maxDarks=0,
         expTimes=list(range(1, 20))
     ):
-        scriptcomm.Rts2Comm.__init__(self)
+        rts2.scriptcomm.Rts2Comm.__init__(self)
         # Configuration (filters, binning, ..) for evening, we will use
         # reverse for morning. You fill array with Flat objects, which
         # describes configuration. If you do not have filters, use None
@@ -292,7 +292,7 @@ class FlatScript (scriptcomm.Rts2Comm):
             return
         if (self.shiftRa != 0 or self.shiftDec != 0):
             self.incrementValueType(
-                scriptcomm.DEVICE_TELESCOPE, "OFFS",
+                rts2.scriptcomm.DEVICE_TELESCOPE, "OFFS",
                 self.shiftRa.__str__() + ' ' + self.shiftDec.__str__())
 
     def fullWindow(self):
@@ -605,7 +605,7 @@ class FlatScript (scriptcomm.Rts2Comm):
         try:
             self.getData(domeDevice, tmpDirectory)
             self.produceMasterFlats(tmpDirectory)
-        except scriptcomm.Rts2NotActive as noa:
+        except rts2.scriptcomm.Rts2NotActive as noa:
             self.log('W', 'flat script interruped')
 
             if (

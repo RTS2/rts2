@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Astrometry routines.
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 # (C) 2011-2012, Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -19,8 +17,6 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from __future__ import print_function
-
 __author__ = 'kubanek@fzu.cz'
 
 import os
@@ -35,165 +31,174 @@ import tempfile
 import numpy
 import math
 import signal
+import logging
 
 from . import dms
 
+
 class WCSAxisProjection:
-	def __init__(self,fkey):
-		self.wcs_axis = None
-		self.projection_type = None
-		self.sip = False
+    def __init__(self, fkey):
+        self.wcs_axis = None
+        self.projection_type = None
+        self.sip = False
 
-		for x in fkey.split('-'):
-			if x == 'RA' or x == 'DEC':
-				self.wcs_axis = x
-			elif x == 'TAN':
-				self.projection_type = x
-			elif x == 'SIP':
-				self.sip = True
-		if self.wcs_axis is None or self.projection_type is None:
-			raise Exception('uknown projection type {0}'.format(fkey))
+        for x in fkey.split('-'):
+            if x == 'RA' or x == 'DEC':
+                self.wcs_axis = x
+            elif x == 'TAN':
+                self.projection_type = x
+            elif x == 'SIP':
+                self.sip = True
+        if self.wcs_axis is None or self.projection_type is None:
+            raise Exception('uknown projection type {0}'.format(fkey))
 
-def transformProjection(proj,ra,ra0,dec,dec0):
-	if proj == 'TAN':
-		xi = math.radians(ra)
-	        eta = math.radians(dec)
-		ra0 = math.radians(ra0)
-		dec0 = math.radians(dec0)
-		ra = math.atan((xi / (math.cos(dec0)-eta*math.sin(dec0)))) + ra0
-		dec = math.atan( ((eta*math.cos(dec0)+math.sin(dec0)) / (math.sqrt((math.cos(dec0)-eta*math.sin(dec0))**2 + xi**2))) )
-		return math.degrees(ra),math.degrees(dec)
-	raise Exception('unsuported projection type {0}'.format(proj))
 
-def xy2wcs(x,y,fitsh):
-	"""Transform XY pixel coordinates to WCS coordinates"""
-	wcs1 = WCSAxisProjection(fitsh['CTYPE1'])
-	wcs2 = WCSAxisProjection(fitsh['CTYPE2'])
-	# retrieve CD matrix
-	cd = numpy.array([[fitsh['CD1_1'],fitsh['CD1_2']],[fitsh['CD2_1'],fitsh['CD2_2']]])
-	# subtract reference pixel
-	xy = numpy.array([x,y]) - numpy.array([fitsh['CRPIX1'],fitsh['CRPIX2']])
-	xy = numpy.dot(cd,xy)
+def transformProjection(proj, ra, ra0, dec, dec0):
+    if proj == 'TAN':
+        xi = math.radians(ra)
+        eta = math.radians(dec)
+        ra0 = math.radians(ra0)
+        dec0 = math.radians(dec0)
+        ra = math.atan((xi / (math.cos(dec0)-eta*math.sin(dec0)))) + ra0
+        dec = math.atan(((eta*math.cos(dec0)+math.sin(dec0)) /
+                         (math.sqrt((math.cos(dec0)-eta*math.sin(dec0))**2 + xi**2))))
+        return math.degrees(ra), math.degrees(dec)
+    raise Exception('unsuported projection type {0}'.format(proj))
 
-	if wcs1.wcs_axis == 'RA' and wcs2.wcs_axis == 'DEC':
-		return transformProjection (wcs1.projection_type, xy[0], fitsh['CRVAL1'], xy[1], fitsh['CRVAL2'])
-	if wcs1.wcs_axis == 'DEC' and wcs2.wcs_axis == 'RA':
-		return transformProjection (wcs1.projection_type, xy[1], fitsh['CRVAL2'], xy[0], fitsh['CRVAL1'])
-	raise Exception('unsuported axis combination {0} {1]'.format(wcs1.wcs_axis,wcs2.wcs_axis))
+
+def xy2wcs(x, y, fitsh):
+    """Transform XY pixel coordinates to WCS coordinates"""
+    wcs1 = WCSAxisProjection(fitsh['CTYPE1'])
+    wcs2 = WCSAxisProjection(fitsh['CTYPE2'])
+    # retrieve CD matrix
+    cd = numpy.array([[fitsh['CD1_1'], fitsh['CD1_2']],
+                      [fitsh['CD2_1'], fitsh['CD2_2']]])
+    # subtract reference pixel
+    xy = numpy.array([x, y]) - numpy.array([fitsh['CRPIX1'], fitsh['CRPIX2']])
+    xy = numpy.dot(cd, xy)
+
+    if wcs1.wcs_axis == 'RA' and wcs2.wcs_axis == 'DEC':
+        return transformProjection(wcs1.projection_type, xy[0], fitsh['CRVAL1'], xy[1], fitsh['CRVAL2'])
+    if wcs1.wcs_axis == 'DEC' and wcs2.wcs_axis == 'RA':
+        return transformProjection(wcs1.projection_type, xy[1], fitsh['CRVAL2'], xy[0], fitsh['CRVAL1'])
+    raise Exception('unsuported axis combination {0} {1]'.format(
+        wcs1.wcs_axis, wcs2.wcs_axis))
+
 
 def cd2crota(fitsh):
-	"""Read FITS CDX_Y headers, returns rotangs"""
-	cd1_1 = fitsh['CD1_1']
-	cd1_2 = fitsh['CD1_2']
-	cd2_1 = fitsh['CD2_1']
-	cd2_2 = fitsh['CD2_2']
-	return (math.atan2(cd2_1,cd1_1),math.atan2(-cd1_2,cd2_2))
+    """Read FITS CDX_Y headers, returns rotangs"""
+    cd1_1 = fitsh['CD1_1']
+    cd1_2 = fitsh['CD1_2']
+    cd2_1 = fitsh['CD2_1']
+    cd2_2 = fitsh['CD2_2']
+    return (math.atan2(cd2_1, cd1_1), math.atan2(-cd1_2, cd2_2))
+
 
 class AstrometryScript:
-	"""calibrate a fits image with astrometry.net."""
-	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
-		self.scale_relative_error=scale_relative_error
-		self.astrometry_bin=astrometry_bin
+    """calibrate a fits image with astrometry.net."""
 
-		self.fits_file = fits_file
-		self.odir = odir
-		if self.odir is None:
-			self.odir=tempfile.mkdtemp()
+    def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
+        self.scale_relative_error = scale_relative_error
+        self.astrometry_bin = astrometry_bin
 
-		self.use_sextractor=use_sextractor
-		self.sextractor_bin=sextractor_bin
+        self.fits_file = fits_file
+        self.odir = odir
+        if self.odir is None:
+            self.odir = tempfile.mkdtemp()
 
-		self.infpath=self.odir + '/input.fits'
-		shutil.copy(self.fits_file, self.infpath)
+        self.use_sextractor = use_sextractor
+        self.sextractor_bin = sextractor_bin
 
-	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None):
+        self.infpath = self.odir + '/input.fits'
+        shutil.copy(self.fits_file, self.infpath)
 
-		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
+    def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None):
 
-		if scale is not None:
-			scale_low=scale*(1-self.scale_relative_error)
-			scale_high=scale*(1+self.scale_relative_error)
-			solve_field.append('-u')
-			solve_field.append('app')
-			solve_field.append('-L')
-			solve_field.append(str(scale_low))
-			solve_field.append('-H')
-			solve_field.append(str(scale_high))
+        solve_field = [self.astrometry_bin + '/solve-field',
+                       '-D', self.odir, '--no-plots', '--no-fits2fits']
 
-		if ra is not None and dec is not None:
-			solve_field.append('--ra')
-			solve_field.append(str(ra))
-			solve_field.append('--dec')
-			solve_field.append(str(dec))
-			solve_field.append('--radius')
-			solve_field.append(str(radius))
+        if scale is not None:
+            scale_low = scale*(1-self.scale_relative_error)
+            scale_high = scale*(1+self.scale_relative_error)
+            solve_field.append('-u')
+            solve_field.append('app')
+            solve_field.append('-L')
+            solve_field.append(str(scale_low))
+            solve_field.append('-H')
+            solve_field.append(str(scale_high))
 
-		if self.use_sextractor == True:
-			solve_field.append('--use-sextractor')
-			solve_field.append('--sextractor-path')
-			solve_field.append(self.sextractor_bin)
+        if ra is not None and dec is not None:
+            solve_field.append('--ra')
+            solve_field.append(str(ra))
+            solve_field.append('--dec')
+            solve_field.append(str(dec))
+            solve_field.append('--radius')
+            solve_field.append(str(radius))
 
-		if extension is not None:
-			solve_field.append('-6')
-			solve_field.append(extension)
+        if self.use_sextractor == True:
+            solve_field.append('--use-sextractor')
+            solve_field.append('--sextractor-path')
+            solve_field.append(self.sextractor_bin)
 
-		if center:
-			solve_field.append('--crpix-center')
+        if extension is not None:
+            solve_field.append('-6')
+            solve_field.append(extension)
 
-		if downsample is not None:
-			solve_field.append('-z')
-			solve_field.append(downsample)
+        if center:
+            solve_field.append('--crpix-center')
 
-		solve_field.append(self.infpath)
+        if downsample is not None:
+            solve_field.append('-z')
+            solve_field.append(downsample)
 
-		if verbose:
-			print('running',' '.join(solve_field))
-	    
-		proc=subprocess.Popen(solve_field, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=lambda:os.setpgid(0, 0))
+        solve_field.append(self.infpath)
 
-		if timeout is not None:
-			def __term_proc(sig, stack):
-				os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-				if verbose:
-					print('killing process, as timeout was reached')
-			signal.signal(signal.SIGALRM, __term_proc)
-			signal.alarm(timeout)
+        logging.debug('running %s', ' '.join(solve_field))
 
-		radecline=re.compile('Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
+        proc = subprocess.Popen(solve_field, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, preexec_fn=lambda: os.setpgid(0, 0))
 
-		ret = None
+        if timeout is not None:
+            def __term_proc(sig, stack):
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                logging.debug('killing process, as timeout was reached')
+            signal.signal(signal.SIGALRM, __term_proc)
+            signal.alarm(timeout)
 
-		while True:
-			try:
-				a=proc.stdout.readline()
-			except IOError:
-				break	
-			if a == '':
-				break
-			if verbose:
-				print(a, end=' ')
-			match=radecline.match(a)
-			if match:
-				ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
-		if replace and ret is not None:
-			shutil.move(self.odir+'/input.new',self.fits_file)
-	       
-                shutil.rmtree(self.odir)
-		return ret
+        radecline = re.compile(
+            'Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
 
-	# return offset from 
-	def getOffset(self,x=None,y=None):
-		ff=pyfits.open(self.fits_file,'readonly')
-		fh=ff[0].header
-		ff.close()
+        ret = None
 
-		if x is None:
-			x=fh['NAXIS1']/2.0
-		if y is None:
-			y=fh['NAXIS2']/2.0
+        while True:
+            try:
+                a = proc.stdout.readline()
+            except IOError:
+                break
+            if a == '':
+                break
+            match = radecline.match(a)
+            if match:
+                ret = [dms.parse(match.group(1)), dms.parse(match.group(2))]
+        if replace and ret is not None:
+            shutil.move(self.odir+'/input.new', self.fits_file)
 
-		rastrxy = xy2wcs(x,y,fh)
-		ra=fh['OBJRA']
-		dec=fh['OBJDEC']
+        shutil.rmtree(self.odir)
+        return ret
 
-		return (ra-rastrxy[0],dec-rastrxy[1])
+    # return offset from
+    def getOffset(self, x=None, y=None):
+        ff = pyfits.open(self.fits_file, 'readonly')
+        fh = ff[0].header
+        ff.close()
+
+        if x is None:
+            x = fh['NAXIS1']/2.0
+        if y is None:
+            y = fh['NAXIS2']/2.0
+
+        rastrxy = xy2wcs(x, y, fh)
+        ra = fh['OBJRA']
+        dec = fh['OBJDEC']
+
+        return (ra-rastrxy[0], dec-rastrxy[1])

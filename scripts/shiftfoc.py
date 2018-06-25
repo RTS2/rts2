@@ -34,81 +34,85 @@
 import rts2.scriptcomm
 import shiftstore
 
+
 class ShiftFoc (rts2.scriptcomm.Rts2Comm):
-	"""Take and process focussing data."""
+    """Take and process focussing data."""
 
-	def __init__(self):
-		rts2.scriptcomm.Rts2Comm.__init__(self)
-		self.exptime = 10 # 60 # 10
-		self.step = 0.03 # 0.2
-		self.shifts = [50]*9  # shift in pixels
-		self.shifts.append(100)  # last offset
-		self.attempts = len(self.shifts) + 1
-		self.focuser = self.getValue('focuser')
+    def __init__(self):
+        rts2.scriptcomm.Rts2Comm.__init__(self)
+        self.exptime = 10  # 60 # 10
+        self.step = 0.03  # 0.2
+        self.shifts = [50]*9  # shift in pixels
+        self.shifts.append(100)  # last offset
+        self.attempts = len(self.shifts) + 1
+        self.focuser = self.getValue('focuser')
 
-	def beforeReadout(self):
-		self.current_focus = self.getValueFloat('FOC_POS',self.focuser)
-		if (self.num == self.attempts):
-			self.setValue('FOC_TOFF',0,self.focuser)
-		else:
-			self.off += self.step
-			self.setValue('FOC_TOFF',self.off,self.focuser)
+    def beforeReadout(self):
+        self.current_focus = self.getValueFloat('FOC_POS', self.focuser)
+        if (self.num == self.attempts):
+            self.setValue('FOC_TOFF', 0, self.focuser)
+        else:
+            self.off += self.step
+            self.setValue('FOC_TOFF', self.off, self.focuser)
 
-	def takeImages(self):
-		self.setValue('exposure',self.exptime)
-		self.setValue('WINDOW','1000 1000 100 100')
-		self.setValue('SHUTTER','LIGHT')
-		self.off = -1 * self.step * (self.attempts / 2)
-		self.setValue('FOC_TOFF',self.off,self.focuser)
-		# must be overwritten in beforeReadout
-		self.current_focus = None
+    def takeImages(self):
+        self.setValue('exposure', self.exptime)
+        self.setValue('WINDOW', '1000 1000 100 100')
+        self.setValue('SHUTTER', 'LIGHT')
+        self.off = -1 * self.step * (self.attempts / 2)
+        self.setValue('FOC_TOFF', self.off, self.focuser)
+        # must be overwritten in beforeReadout
+        self.current_focus = None
 
-		# test exposure..
-		self.log('I','starting empty 10 sec exposure')
-		self.exposure()
+        # test exposure..
+        self.log('I', 'starting empty 10 sec exposure')
+        self.exposure()
 
-		self.setValue('clrccd',0)
+        self.setValue('clrccd', 0)
 
-		lastshift = 0
+        lastshift = 0
 
-		tries = {}
+        tries = {}
 
-		self.num = 0
+        self.num = 0
 
-		while self.num < (self.attempts - 1):
-			# change shifts
-			if self.shifts[self.num] != lastshift:
-				lastshift = self.shifts[self.num]
-				self.setValue('WINDOW','0 0 2048 {0}'.format(lastshift))
-			self.num += 1
+        while self.num < (self.attempts - 1):
+            # change shifts
+            if self.shifts[self.num] != lastshift:
+                lastshift = self.shifts[self.num]
+                self.setValue('WINDOW', '0 0 2048 {0}'.format(lastshift))
+            self.num += 1
 
-		  	self.log('I','starting {0}s exposure #{1}. focusing offset {2}, shifted by {3}'.format(self.exptime,self.num,self.off,lastshift))
-			img = self.exposure(self.beforeReadout)
-			tries[self.current_focus] = img
+            self.log('I','starting {0}s exposure #{1}. focusing offset {2}, shifted by {3}'.format(
+                self.exptime, self.num, self.off, lastshift))
+            img = self.exposure(self.beforeReadout)
+            tries[self.current_focus] = img
 
-		self.num = self.attempts
+        self.num = self.attempts
 
-		self.log('I','last exposure with full readout')
-		self.setValue('WINDOW','-1 -1 -1 -1')
-		lastimg = self.exposure(self.beforeReadout)
+        self.log('I', 'last exposure with full readout')
+        self.setValue('WINDOW', '-1 -1 -1 -1')
+        lastimg = self.exposure(self.beforeReadout)
 
-		self.log('I','all focusing exposures finished, processing data')
-		lastimg = self.rename(lastimg,'/disk-b/obs12_images/%N/focusing/%f')
+        self.log('I', 'all focusing exposures finished, processing data')
+        lastimg = self.rename(lastimg, '/disk-b/obs12_images/%N/focusing/%f')
 
-		sc = shiftstore.ShiftStore(shifts=self.shifts)
-		
-		return sc.runOnImage(lastimg,False)
+        sc = shiftstore.ShiftStore(shifts=self.shifts)
 
-	def run(self):
-		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
-		#a.altaz (82,10)
+        return sc.runOnImage(lastimg, False)
 
-		b,fit = self.takeImages()
-		# transform value..
-		tar = self.getValueFloat('FOC_DEF',self.focuser) + (b - (self.attempts / 2)) * self.step
-		self.log('I','calculated {0} from {1} offset'.format(tar,b))
-		self.setValue('FOC_DEF',tar,self.focuser)
+    def run(self):
+        # send to some other coordinates if you wish so, or disable this for target for fixed coordinates
+        # a.altaz (82,10)
+
+        b, fit = self.takeImages()
+        # transform value..
+        tar = self.getValueFloat('FOC_DEF', self.focuser) + \
+            (b - (self.attempts / 2)) * self.step
+        self.log('I', 'calculated {0} from {1} offset'.format(tar, b))
+        self.setValue('FOC_DEF', tar, self.focuser)
+
 
 if __name__ == "__main__":
-	a = ShiftFoc()
-	a.run()
+    a = ShiftFoc()
+    a.run()

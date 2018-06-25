@@ -21,7 +21,7 @@ AX_CXX_COMPILE_STDCXX_11
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
-AM_PATH_PYTHON
+AM_PATH_PYTHON([3])
 
 libcheck="no"
 
@@ -1123,6 +1123,7 @@ echo "
   libthrift     ${libthrift} ${THRIFT_CFLAGS} ${THRIFT_LIBS}
   hiredis	${hiredis}
   liberfa	${liberfa} ${ERFA_CFLAGS} ${ERFA_LIBS}
+  python	${PYTHON_VERSION} ${PYTHON}
 
 CCDs:
   alta          ${ALTA}

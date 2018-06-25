@@ -19,50 +19,52 @@ from . import queue
 from . import rtsapi
 import xml.dom.minidom
 
+
 class Queues:
-	def __init__(self, jsonProxy):
-		self.jsonProxy = jsonProxy
-		self.queues = {}
-	
-	def load(self):
-		for d in self.jsonProxy.getDevicesByType(rtsapi.DEVICE_TYPE_SELECTOR):
-			for q in self.jsonProxy.getValue(d, 'queue_names', refresh_not_found=True)[:-1]:
-				if q not in list(self.queues.keys()):
-					self.queues[q] = queue.Queue(self.jsonProxy, q, service=d)
-				self.queues[q].load()
-	
-	def load_xml(self, fn, queues=None):
-		f = open(fn, 'r')
-		document = xml.dom.minidom.parse(f)
-		f.close()
-		self.queues = {}
-		self.from_xml(document.documentElement, queues)
+    def __init__(self, jsonProxy):
+        self.jsonProxy = jsonProxy
+        self.queues = {}
 
-	def from_xml(self, node, queues=None):
-		for qu in node.getElementsByTagName('queue'):
-		  	qname = qu.getAttribute('name')
-			if queues is not None and not(qname in queues):
-				continue
-			q = queue.Queue(self.jsonProxy, qname)
-			q.from_xml(qu)
-			self.queues[qname] = q
+    def load(self):
+        for d in self.jsonProxy.getDevicesByType(rtsapi.DEVICE_TYPE_SELECTOR):
+            for q in self.jsonProxy.getValue(d, 'queue_names', refresh_not_found=True)[:-1]:
+                if q not in list(self.queues.keys()):
+                    self.queues[q] = queue.Queue(self.jsonProxy, q, service=d)
+                self.queues[q].load()
 
-	def save(self, clear=False):
-		list(map(lambda q: self.queues[q].save(clear), self.queues))
+    def load_xml(self, fn, queues=None):
+        f = open(fn, 'r')
+        document = xml.dom.minidom.parse(f)
+        f.close()
+        self.queues = {}
+        self.from_xml(document.documentElement, queues)
 
-	def save_xml(self, fn):
-		document = self.get_xml()
-		f = open(fn, 'w')
-		document.writexml(f, addindent='\t', newl='\n')
-		f.close()
+    def from_xml(self, node, queues=None):
+        for qu in node.getElementsByTagName('queue'):
+            qname = qu.getAttribute('name')
+            if queues is not None and not(qname in queues):
+                continue
+            q = queue.Queue(self.jsonProxy, qname)
+            q.from_xml(qu)
+            self.queues[qname] = q
 
-	def get_xml(self, queues=None):
-		document = xml.dom.minidom.getDOMImplementation().createDocument('http://rts2.org', 'queues', None)
-		for q in self.queues:
-			if queues is not None and not(q in queues):
-				continue
-			node = document.createElement('queue')
-			node.setAttribute('name', q)
-			self.queues[q].to_xml(document, node)
-			document.documentElement.appendChild(node)
-		return document	
+    def save(self, clear=False):
+        list(map(lambda q: self.queues[q].save(clear), self.queues))
+
+    def save_xml(self, fn):
+        document = self.get_xml()
+        f = open(fn, 'w')
+        document.writexml(f, addindent='\t', newl='\n')
+        f.close()
+
+    def get_xml(self, queues=None):
+        document = xml.dom.minidom.getDOMImplementation(
+        ).createDocument('http://rts2.org', 'queues', None)
+        for q in self.queues:
+            if queues is not None and not(q in queues):
+                continue
+            node = document.createElement('queue')
+            node.setAttribute('name', q)
+            self.queues[q].to_xml(document, node)
+            document.documentElement.appendChild(node)
+        return document

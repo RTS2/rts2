@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # (C) 2013, Markus Wildi, markus.wildi@bluewin.ch
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -72,14 +71,14 @@ class TemperatureFocPosModel(object):
         for rFF in self.resultFitFwhm:
             try:
                 self.temp.append(float(rFF.ambientTemp))
-            except Exception, e:
+            except Exception as e:
                 self.temp.append(rFF.ambientTemp)
                 if self.debug: self.logger.debug('temperaturemodel: new list created, error: {}'.format(e))                
 
             self.tempErr.append(0.01)
             try:
                 self.minFitPos.append(float(rFF.extrFitPos))
-            except Exception, e:
+            except Exception as e:
                 self.logger.error('temperaturemodel: serious error: could not append type: {}, error: {}'.format(type(rFF.extrFitPos), e))
                 
             self.minFitPosErr.append(2.5) 
@@ -88,7 +87,7 @@ class TemperatureFocPosModel(object):
         self.flag=None
         try:
             self.par, self.flag  = optimize.leastsq(self.errfunc, par, args=(np.asarray(self.temp), np.asarray(self.minFitPos),np.asarray(self.tempErr),np.asarray(self.minFitPosErr)))
-        except Exception, e:
+        except Exception as e:
             self.logger.error('temperaturemodel: fit failed:\n{0}'.format(e))                
             return None, None
 
@@ -104,7 +103,7 @@ class TemperatureFocPosModel(object):
 
         try:
             x_temp = np.linspace(min(self.temp), max(self.temp))
-        except Exception, e:
+        except Exception as e:
             self.logger.error('temperaturemodel: numpy error:\n{0}'.format(e))                
             return e
 
@@ -132,7 +131,7 @@ class TemperatureFocPosModel(object):
         try:
             self.fig.savefig(self.plotFn)
             return self.plotFn
-        except Exception, e:
+        except Exception as e:
             self.logger.error('temperaturemodel: can not save plot to: {0}, matplotlib msg: {1}'.format(self.plotFn, e))                
             return e
 

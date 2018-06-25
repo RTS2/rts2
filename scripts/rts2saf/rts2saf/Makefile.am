@@ -1,5 +1,5 @@
-pkgpython_rts2safdir = ${pythondir}/rts2saf
-pkgpython_rts2saf_PYTHON = __init__.py \
+rts2safdir = ${pythondir}/rts2saf
+rts2saf_PYTHON = __init__.py \
 	acquire.py \
 	analyze.py \
 	analyzeruns.py \

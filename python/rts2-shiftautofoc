@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+# Focusing script.
+# (C) 2018 Petr Kubanek
+#
+
+import rts2.shiftstore
+
+import argparse
+import gettext
+gettext.install('rts2-shiftautofoc')
+
+parser = argparse.ArgumentParser(
+    description=_('Command line processing of shiftstore packages'))
+
+parser.add_argument('files', help=_('files to process'),
+    action='append', default=[], type=argparse.FileType('r'))
+
+options = parser.parse_args()
+
+sc = rts2.shiftstore.ShiftStore()
+
+for f in options.files:
+    sc.run_on_image(f.name, None, True)
+
+    # partial match
+    # sc = ShiftStore([25,75,50,50])
+    # for fn in sys.argv[1:]:
+    #   sc.runOnImage(fn,3,True)
