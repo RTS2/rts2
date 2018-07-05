@@ -21,8 +21,6 @@ AX_CXX_COMPILE_STDCXX_11
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
-AM_PATH_PYTHON([3])
-
 libcheck="no"
 
 PKG_CHECK_MODULES([CHECK],[check >= 0.9.6],,AC_MSG_RESULT(not found))
@@ -1037,9 +1035,6 @@ AC_OUTPUT([Makefile
 	   lib/sep/Makefile
 	   lib/ucac5/Makefile
 	   lib/gtp/Makefile
-	   python/Makefile
-	   python/rts2/Makefile
-	   python/rts2/db/Makefile
 	   scripts/Makefile
 	   src/Makefile
 	   src/axisd/Makefile
@@ -1090,9 +1085,7 @@ AC_OUTPUT([Makefile
 	   tests/Makefile
 	   checks/Makefile
 	   checks/data/Makefile
-	   scripts/rts2saf/Makefile
-	   scripts/rts2saf/rts2saf/Makefile]
-)
+])
 
 echo "
 ****************************************************************************
@@ -1123,7 +1116,6 @@ echo "
   libthrift     ${libthrift} ${THRIFT_CFLAGS} ${THRIFT_LIBS}
   hiredis	${hiredis}
   liberfa	${liberfa} ${ERFA_CFLAGS} ${ERFA_LIBS}
-  python	${PYTHON_VERSION} ${PYTHON}
 
 CCDs:
   alta          ${ALTA}
