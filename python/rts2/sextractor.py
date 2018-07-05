@@ -35,36 +35,49 @@ import sys
 import subprocess
 import os
 import tempfile
-import traceback
+import numpy
+from astropy.io import fits
+import rts2.image
 
-sepPresent = False
-try:
-    import sep
-    sepPresent = True
-except Exception:
-    pass
 
+def _get_numpy_array(fields):
+    __i = ['NUMBER', 'FLAGS', 'CLASS_STAR', 'EXT_NUMBER']
+    # make result compatible with sep
+    __trans = {
+        'X_IMAGE':'x',
+        'Y_IMAGE':'y',
+        'FLAGS':'flag'
+    }
+    ret = []
+    for f in fields:
+        try:
+            tf = __trans[f]
+        except KeyError:
+            tf = f
+        if f in __i:
+            ret.append((tf, 'i'))
+        else:
+            ret.append((tf, 'f'))
+
+    return ret
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
 
-    def __init__(self, fields=['FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin=0.03, saturlevel=65535, verbose=False):
+    def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin=0.03, saturlevel=65535, verbose=False):
         self.sexpath = sexpath
         self.sexconfig = sexconfig
         self.starnnw = starnnw
 
         self.fields = fields
-        self.objects = []
+        self.objects = None
         self.threshold = threshold
         self.deblendmin = deblendmin
         self.saturlevel = saturlevel
 
         self.verbose = verbose
 
-    def get_field(self, fieldname):
-        return self.fields.index(fieldname)
-
-    def __run_SExtractor(self, filename):
+    def process(self, filename):
         pf, pfn = tempfile.mkstemp()
         ofd, output = tempfile.mkstemp()
         pfi = os.fdopen(pf, 'w')
@@ -85,17 +98,9 @@ class Sextractor:
             raise err
 
         # parse output
-        self.objects = []
+        self.objects = numpy.array([], _get_numpy_array(self.fields))
         of = os.fdopen(ofd, 'r')
-        while (True):
-            x = of.readline()
-            if self.verbose:
-                print(x, end=' ')
-            if x == '':
-                break
-            if x[0] == '#':
-                continue
-            self.objects.append(list(map(float, x.split())))
+        self.objects = numpy.append(self.objects, numpy.loadtxt(of, dtype=self.objects.dtype))
 
         # unlink tmp files
         pfi.close()
@@ -104,54 +109,38 @@ class Sextractor:
         os.unlink(pfn)
         os.unlink(output)
 
-        return len(self.objects)
+        # shift x,y if multiext
 
-    def process(self, filename):
-        """
-	Find stars in FITS filename. Populate internal dictionaries.
+        ext = numpy.unique(self.objects['EXT_NUMBER'])
 
-	Parameters
-	----------
-	filename: name (full path) of FITS file to run on
+        if len(ext) > 1:
+            f = fits.open(filename)
+            exts = numpy.array([], dtype = self.objects.dtype)
+            for e in ext:
+                offs = rts2.image.parse_detsec(f[e].header['DETSEC'])
+                o = self.objects[self.objects['EXT_NUMBER'] == e]
+                for c in ['x']:
+                    o[c] += offs[0]
+                for c in ['y']:
+                    o[c] += offs[2]
+                exts = numpy.append(exts, o)
+            f.close()
+            self.objects = exts
 
-	Returns
-	-------
-        Nothing
-	"""
-        if sepPresent:
-            from astropy.io import fits
-            import numpy
-            ff = fits.open(filename)
-            for i in range(1, len(ff)):
-                data = ff[i].data
-                bkg = sep.Background(numpy.array(data, numpy.float))
-                self.objects, self.segmap = sep.extract(data - bkg, 5.0 * bkg.globalrms, segmentation_map=True)
-        else:
-            return self.__run_SExtractor(filename)
-
-    def sort_objects(self, col):
+    def sort(self, col):
         """Sort objects by given collumn."""
-        self.objects.sort(cmp=lambda x, y: cmp(x[col], y[col]))
+        self.objects = numpy.sort(self.objects, order=col)
 
-    def reverse_objects(self, col):
+    def reverse(self, col):
         """Reverse sort objects by given collumn."""
-        self.objects.sort(col)
+        self.objects.sort(cmp=lambda x, y: cmp(x[col], y[col]))
         self.objects.reverse()
 
     def filter_galaxies(self, limit=0.2):
         """Filter possible galaxies"""
-        try:
-            i_class = self.get_field('CLASS_STAR')
-            ret = []
-            for x in self.objects:
-                if x[i_class] > limit:
-                    ret.append(x)
-            return ret
-        except ValueError as ve:
-            print('result does not contain CLASS_STAR')
-            traceback.print_exc()
+        return self.objects[self.objects['class_star'] > limit]
 
-    def get_FWHM_stars(self, starsn=None, filterGalaxies=True, segments=None):
+    def get_FWHM_stars(self, starsn=None, filterGalaxies=True):
         """Returns candidate stars for FWHM calculations. """
         if len(self.objects) == 0:
             raise Exception('Cannot find FWHM on empty source list')
@@ -165,43 +154,25 @@ class Sextractor:
         else:
             obj = self.objects
 
-        try:
-            # sort by magnitude
-            i_mag_best = self.get_field('MAG_BEST')
-            obj.sort(cmp=lambda x, y: cmp(x[i_mag_best], y[i_mag_best]))
-            fwhmlist = []
+        # sort by magnitude
+        obj = numpy.sort(obj, order='MAG_BEST')
+        obj = obj[obj['flag'] == 0]
 
-            a = 0
-            b = 0
+        if starsn is None:
+            starsn = len(obj)
 
-            i_flags = self.get_field('FLAGS')
-            i_class = self.get_field('CLASS_STAR')
-            i_seg = self.get_field('EXT_NUMBER')
+        fwhmlist = obj[:starsn]
 
-            for x in obj:
-                if segments and x[i_seg] not in segments:
-                    continue
-                if x[i_flags] == 0 and (filterGalaxies is False or x[i_class] != 0):
-                    fwhmlist.append(x)
-                    if starsn and len(fwhmlist) >= starsn:
-                        break
-                else:
-                    if self.verbose:
-                        print('rejected - FLAGS:',
-                              x[i_flags], ', CLASS_STAR:', x[i_class], 'line ', x)
+        return fwhmlist
 
-            return fwhmlist
-        except ValueError as ve:
-            traceback.print_exc()
-            return []
-
-    def calculate_FWHM(self, starsn=None, filterGalaxies=True, segments=None):
-        obj = self.get_FWHM_stars(starsn, filterGalaxies, segments)
+    def calculate_FWHM(self, starsn=None, filterGalaxies=True):
+        obj = self.get_FWHM_stars(starsn, filterGalaxies)
         try:
             i_fwhm = self.get_field('FWHM_IMAGE')
             import numpy
             fwhms = [x[i_fwhm] for x in obj]
             return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
+            # return numpy.average(obj), len(obj)
         except ValueError as ve:
             traceback.print_exc()
             raise Exception('cannot find FWHM_IMAGE value')

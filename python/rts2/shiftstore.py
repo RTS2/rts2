@@ -214,13 +214,13 @@ class ShiftStore:
 
         """
 
-        c = rts2.sextractor.Sextractor(['NUMBER', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE'],
+        c = rts2.sextractor.Sextractor(['NUMBER', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'],
                                        sexpath='/usr/bin/sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw')
         c.process(fn)
+        c.sort('MAG_BEST')
 
         self.objects = c.objects
         # sort by flux/brightness
-        self.objects.sort('flux')
 
         logging.debug(
             'from {0} extracted {1} sources'.format(fn, len(c.objects)))
@@ -228,14 +228,14 @@ class ShiftStore:
         d = None
 
         if interactive:
-            import ds9
-            d = ds9.ds9()
+            import pyds9
+            d = pyds9.DS9()
             # display in ds9
-            d.set('file {0}'.format(fn))
+            d.set('mosaicimage {0}'.format(fn))
 
             for x in self.objects:
                 d.set(
-                    'regions', 'image; point {0} {1} # point=x 5 color=red'.format(x[1], x[2]))
+                    'regions', 'physical; point {0} {1} # point=x 5 color=red'.format(x[1] * 2, x[2] * 2))
 
         sequences = []
         usednum = []

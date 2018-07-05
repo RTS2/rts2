@@ -24,5 +24,6 @@ from .flats import Flat,FlatScript
 from .rtsapi import getProxy,createProxy
 from .queue import Queue,QueueEntry
 from .queues import Queues
+from .septrator import Septrator
 from .sextractor import Sextractor
 from .focusing import Focusing
