@@ -46,7 +46,8 @@ def _get_numpy_array(fields):
     __trans = {
         'X_IMAGE':'x',
         'Y_IMAGE':'y',
-        'FLAGS':'flag'
+        'FLAGS':'flag',
+        'NUMBER':'id'
     }
     ret = []
     for f in fields:
@@ -64,7 +65,14 @@ def _get_numpy_array(fields):
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
 
-    def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin=0.03, saturlevel=65535, verbose=False):
+    def __init__(self,
+        fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE',
+            'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE',
+            'B_IMAGE', 'EXT_NUMBER'
+        ], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex',
+        starnnw='/usr/share/sextractor/default.nnw', threshold=2.7,
+        deblendmin=0.03, saturlevel=65535, verbose=False
+    ):
         self.sexpath = sexpath
         self.sexconfig = sexconfig
         self.starnnw = starnnw
@@ -85,8 +93,13 @@ class Sextractor:
             pfi.write(f + '\n')
         pfi.flush()
 
-        cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(
-            self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output]
+        cmd = [
+            self.sexpath, filename, '-c', self.sexconfig, 
+            '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold),
+            '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL',
+            str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME',
+            self.starnnw, '-CATALOG_NAME', output
+        ]
         if not(self.verbose):
             cmd.append('-VERBOSE_TYPE')
             cmd.append('QUIET')
@@ -94,13 +107,18 @@ class Sextractor:
             proc = subprocess.Popen(cmd)
             proc.wait()
         except OSError as err:
-            print('canot run command: "', ' '.join(cmd), '", error ', err, file=sys.stderr)
+            logging.error('canot run command {0} : error {1}'.format(
+                join(cmd), err
+            ))
             raise err
 
         # parse output
         self.objects = numpy.array([], _get_numpy_array(self.fields))
         of = os.fdopen(ofd, 'r')
-        self.objects = numpy.append(self.objects, numpy.loadtxt(of, dtype=self.objects.dtype))
+        self.objects = numpy.append(
+            self.objects,
+            numpy.loadtxt(of, dtype=self.objects.dtype)
+        )
 
         # unlink tmp files
         pfi.close()
@@ -114,15 +132,18 @@ class Sextractor:
         ext = numpy.unique(self.objects['EXT_NUMBER'])
 
         if len(ext) > 1:
+            segoff = 10 ** (len(self.objects) % 10 + 1)
             f = fits.open(filename)
             exts = numpy.array([], dtype = self.objects.dtype)
             for e in ext:
-                offs = rts2.image.parse_detsec(f[e].header['DETSEC'])
+                detsec = rts2.image.parse_detsec(f[e].header['DETSEC'])
+                scale, offs = rts2.image.scale_offset(detsec, f[e].data.shape)
                 o = self.objects[self.objects['EXT_NUMBER'] == e]
                 for c in ['x']:
-                    o[c] += offs[0]
+                    o[c] = o[c] * scale[0] + offs[0]
                 for c in ['y']:
-                    o[c] += offs[2]
+                    o[c] = o[c] * scale[1] + offs[1]
+                o['id'] += segoff
                 exts = numpy.append(exts, o)
             f.close()
             self.objects = exts
@@ -130,11 +151,6 @@ class Sextractor:
     def sort(self, col):
         """Sort objects by given collumn."""
         self.objects = numpy.sort(self.objects, order=col)
-
-    def reverse(self, col):
-        """Reverse sort objects by given collumn."""
-        self.objects.sort(cmp=lambda x, y: cmp(x[col], y[col]))
-        self.objects.reverse()
 
     def filter_galaxies(self, limit=0.2):
         """Filter possible galaxies"""
@@ -149,8 +165,7 @@ class Sextractor:
         if filterGalaxies:
             obj = self.filter_galaxies()
             if len(obj) == 0:
-                raise Exception(
-                    'Cannot find FWHM - all detected sources were filtered out as galaxies')
+                raise Exception('Cannot get FWHM - all sources were galaxies??')
         else:
             obj = self.objects
 

@@ -1,10 +1,7 @@
-import re
-
-__fits_array = re.compile('\[(\d+):(\d+),(\d+):(\d+)\]')
-
 def parse_detsec(value):
     """
-    Parse FITS array header value ([x1:x2,y1:y2])
+    Parse FITS array header value ([x1:x2,y1:y2]). Throws exception if unable
+    to parse
 
     Parameters
     ----------
@@ -12,9 +9,27 @@ def parse_detsec(value):
 
     Returns
     -------
-    4 member array or none if 
+    4 member array
     """
-    try:
-        return list(map(float, __fits_array.match(value).groups()))
-    except AttributeError(er):
-        raise ValueError('wrong value format: ' + value)
+    return [float(q) for p in value[1:-1].split(',') for q in p.split(':')]
+
+
+def ccdsum(value):
+    """
+    Parses CCDSUM value to get image bin.
+    """
+    return [float(q) for q in value.split(' ')]
+
+def scale_offset(detsec, shape):
+    """
+    Returns scale factor and offset for linear amplifier
+    to physical transformations
+    """
+    w = detsec[1] - detsec[0]
+    h = detsec[3] - detsec[2]
+    scale = (w / shape[1], h / shape[0])
+    offs = (
+        detsec[0] if w > 0 else detsec[1],
+        detsec[2] if h > 0 else detsec[3]
+    )
+    return scale, offs

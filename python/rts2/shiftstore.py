@@ -52,10 +52,14 @@ class ShiftStore:
     to make sure they allow so, the algorithm does not check for this.
     """
 
-    def __init__(self, shifts=[100, 50, 50, 50, 50, 50, 50, 50], horizontal=True):
+    def __init__(
+        self, shifts=[100, 50, 50, 50, 50, 50, 50, 50], horizontal=True
+    ):
         """
-        @param shifts      shifts performed between exposures, in pixels. Lenght of this array is equal to ((number of sources in a row) - 1).
-        @param horizontal  search for horizontal trails (paraller to Y axis). If set to False, search for veritical trails (along X axis).
+        @param shifts shifts performed between exposures, in pixels.
+            Lenght of this array is equal to ((number of sources in a row) - 1).
+        @param horizontal  search for horizontal trails (paraller to Y axis).
+            If set to False, search for veritical trails (along X axis).
         """
         self.horizontal = horizontal
         self.objects = None
@@ -70,19 +74,22 @@ class ShiftStore:
         shifts.  Candidates are stars not far in X coordinate from
         source (here we assume we are looking for vertical lines on
         image; horizontal lines are searched just by changing otherc parameter
-        to the other axis index). Those are ordered by y and searched for stars at
-        expected positions. If multiple stars falls inside this box,
+        to the other axis index). Those are ordered by y and searched for stars
+        at the expected positions. If multiple stars falls inside this box,
         then the one closest in magnitude/brightness estimate is
         selected.
 
-        @param x       star sextractor row; ID X Y brightness estimate postion are expected and used
+        @param x       star sextractor row; ID X Y brightness estimate
+            postion are expected and used
         @param can     catalogue of candidate stars
         @param i       expected star index in shift pattern
-        @param otherc  index of other axis. Either 2 or 1 (for vertical or horizontal shifts)
+        @param otherc  index of other axis. Either 2 or 1
+            (for vertical or horizontal shifts)
         @param partial_len allow partial matches (e.g. where stars are missing)
         """
         ret = []
-        # here we assume y is otherc (either second or third), and some brightnest estimate fourth member in x
+        # here we assume y is otherc (either second or third),
+        # and some brightnest estimate fourth member in x
         yi = x[otherc]  # expected other axis position
         xb = x[3]  # expected brightness
         # calculate first expected shift..
@@ -95,9 +102,11 @@ class ShiftStore:
         while sh <= len(self.shifts):
             # now interate through candidates
             for j in range(0, len(can)):
-                # if the current shift index is equal to expected source position...
+                # if the current shift index is equal to expected
+                # source position...
                 if sh == i:
-                    # append x to sequence, and increase sh (and expected Y position)
+                    # append x to sequence, and increase sh
+                    # (and expected Y position)
                     try:
                         yi += self.shifts[sh]
                     except IndexError as ie:
@@ -136,7 +145,7 @@ class ShiftStore:
             else:
                 if len(ret) == len(self.shifts) + 1:
                     return ret
-
+ 
             # insert dummy postion..
             if otherc == 2:
                 ret.append([None, x[1], yi, None])
@@ -163,23 +172,30 @@ class ShiftStore:
         as one member. Return the sequence, or None if the sequence
         cannot be found."""
 
-        xid = x[0]   # running number
-        searchc = 1
-        otherc = 2
+        searchc = 'x'
+        otherc = 'y'
         if not(self.horizontal):
-            searchc = 2
-            otherc = 1
+            searchc = 'y'
+            otherc = 'x' 
 
         xcor = x[searchc]
 
-        can = []     # canditate stars
-        for y in self.objects:
-            if xid != y[0] and abs(xcor - y[searchc]) < self.xsep:
-                can.append(y)
+        # candidate array should contain x - that's expected
+        can = [x for x in self.objects
+           if abs(xcor - x[searchc]) < self.xsep
+        ]     # canditate stars
         # sort by Y axis..
-        can.sort(cmp=lambda x, y: cmp(x[otherc], y[otherc]))
+        can.sort(key=lambda x: x[otherc])
         # assume selected object is one in shift sequence
-        # place it at any possible position in shift sequence, and test if the sequence can be found
+        # place it at any possible position in shift sequence, and test if the
+        # sequence can be found
+        if len(can) < len(self.shifts):
+            return
+
+	# try to fit sequence. If sequence cannot be fit, carry on - 
+	# the middle star in sequence, which the algorithm tries to fit
+	# (under assumtion this will be brightest star if it is almost in focus)
+	# will be selected sometime
         max_ret = []
         for i in range(0, len(self.shifts) + 1):
             # test if sequence can be found..
@@ -196,7 +212,10 @@ class ShiftStore:
         # cannot found sequnce, so return None
         return None
 
-    def run_on_image(self, fn, partial_len=None, interactive=False, sequences_num=15, mag_limit_num=7):
+    def run_on_image(
+        self, fn, partial_len=None, interactive=False, sequences_num=15,
+        mag_limit_num=7
+    ):
         """
         Run algorithm on image. Extract sources with sextractor, and
         pass them through sequence finding algorithm, and fit focusing position.
@@ -214,13 +233,20 @@ class ShiftStore:
 
         """
 
-        c = rts2.sextractor.Sextractor(['NUMBER', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'],
-                                       sexpath='/usr/bin/sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw')
+        c = rts2.sextractor.Sextractor(
+                [
+                'NUMBER', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS',
+                'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'
+            ],
+            sexpath='/usr/bin/sextractor',
+            sexconfig='/usr/share/sextractor/default.sex',
+            starnnw='/usr/share/sextractor/default.nnw'
+        )
         c.process(fn)
+        # sort by flux/brightness
         c.sort('MAG_BEST')
 
         self.objects = c.objects
-        # sort by flux/brightness
 
         logging.debug(
             'from {0} extracted {1} sources'.format(fn, len(c.objects)))
@@ -235,7 +261,9 @@ class ShiftStore:
 
             for x in self.objects:
                 d.set(
-                    'regions', 'physical; point {0} {1} # point=x 5 color=red'.format(x[1] * 2, x[2] * 2))
+                    'regions',
+                    'physical; point {0} {1} # point=x 5 color=red'.format(x[1], x[2])
+                )
 
         sequences = []
         usednum = []
@@ -252,8 +280,11 @@ class ShiftStore:
             sequences.append(b)
             if d:
                 d.set('regions select none')
-                d.set('regions', 'image; circle {0} {1} 20 # color=yellow tag = sel'.format(
-                    x[1], x[2]))
+                d.set(
+                    'regions',
+                    'physical; circle {0} {1} 20 # color=yellow tag = sel'.format(
+                    x[1], x[2])
+                )
             for obj in b:
                 usednum.append(obj[0])
             if d:
@@ -262,15 +293,23 @@ class ShiftStore:
                 d.set('regions delete select')
                 for obj in b:
                     if obj[0] is None:
-                        d.set('regions', 'image; point {0} {1} # point=boxcircle 15 color = red'.format(
+                        d.set('regions',
+                            'physical; point {0} {1} # point=boxcircle 15 color = red'.format(
                             obj[1], obj[2]))
                     else:
-                        d.set('regions', 'image; circle {0} {1} 10 # color = green'.format(
-                            obj[1], obj[2]))
+                        d.set(
+                            'regions',
+                            'image; circle {0} {1} 10 # color = green'.format(
+                            obj[1], obj[2])
+                        )
             if len(sequences) > sequences_num:
                 break
         # if enough sequences were found, process them and try to fit results
-        if len(sequences) > sequences_num:
+        if len(sequences) < sequences_num:
+            logging.error('only {0} sequnces found, {1} required'.format(
+                len(sequences), sequences_num
+            ))
+        else:
             # get median of FWHM from each sequence
             fwhm = []
             for x in range(0, len(self.shifts) + 1):
@@ -284,7 +323,10 @@ class ShiftStore:
                     fwhm.append(m)
                 else:
                     if interactive:
-                        logging.debug('removing focuser position, because not enough matches were found: %s', self.focpos[x])
+                        logging.debug(
+                            'removing focuser position, because not enough matches were found: %s',
+                            self.focpos[x]
+                        )
                     self.focpos.remove(self.focpos[x])
             # fit it
             foc = rts2.focusing.Focusing()

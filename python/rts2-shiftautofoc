@@ -8,6 +8,8 @@ import rts2.shiftstore
 
 import argparse
 import gettext
+import logging
+
 gettext.install('rts2-shiftautofoc')
 
 parser = argparse.ArgumentParser(
