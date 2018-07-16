@@ -460,8 +460,7 @@ int AzCam3::startExposure()
 	if (ret)
 		return ret;
 
-	//ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
-	ret = setBinning( binningHorizontal(), binningVertical() );
+	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
 	if (ret)
 		return ret;
 
