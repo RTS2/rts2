@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao si8821 sxccd
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-azcam3
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam3
 
 noinst_HEADERS = ccd_msg.h reflex.h
 
@@ -19,7 +19,6 @@ rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @CFITSIO_LIBS@
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
 
-rts2_camd_azcam_SOURCES = azcam.cpp
 rts2_camd_azcam3_SOURCES = azcam3.cpp
 
 EXTRA_DIST =
