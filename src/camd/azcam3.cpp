@@ -447,9 +447,9 @@ int AzCam3::startExposure()
 	if (ret)
 		return ret;
 
-//	int ret = callCommand ("setROI", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
-//	if (ret)
-//		return ret;
+	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	if (ret)
+		return ret;
 
 	const char *imgType[3] = {"object", "dark", "zero"};
 
@@ -589,9 +589,9 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	if (ret)
 		return ret;
 	
-//	int ret = callCommand ("setROI", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
-//	if (ret)
-//		return ret;
+	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	if (ret)
+		return ret;
 
 	
 	//ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue());
