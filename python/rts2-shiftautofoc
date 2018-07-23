@@ -27,7 +27,12 @@ parser.add_argument('-s', help=_('focusing shifts'),
 parser.add_argument('--horizontal', help=_('shifts are horizontal'),
     action='store_true', dest='horizontal', default=False)
 
+parser.add_argument('-v', help=_('increse verbosity'),
+    action='count', dest='verbosity', default=0)
+
 options = parser.parse_args()
+
+logging.basicConfig(level=options.verbosity * 10)
 
 shifts = list(map(int, options.shifts.split()))
 

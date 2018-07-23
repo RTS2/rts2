@@ -47,7 +47,8 @@ def _get_numpy_array(fields):
         'X_IMAGE':'x',
         'Y_IMAGE':'y',
         'FLAGS':'flag',
-        'NUMBER':'id'
+        'NUMBER':'id',
+        'MAG_BEST':'mag'
     }
     ret = []
     for f in fields:
@@ -170,7 +171,7 @@ class Sextractor:
             obj = self.objects
 
         # sort by magnitude
-        obj = numpy.sort(obj, order='MAG_BEST')
+        obj = numpy.sort(obj, order='mag')
         obj = obj[obj['flag'] == 0]
 
         if starsn is None:

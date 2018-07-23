@@ -34,6 +34,10 @@ import sys
 import rts2.focusing
 import numpy
 import logging
+import math
+
+def __distance(x1, y1, x2, y2):
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
 class ShiftStore:
@@ -75,7 +79,7 @@ class ShiftStore:
         self.shifts = shifts
         self.focpos = range(0, len(self.shifts) + 1)
         self.d = None
-        self.process = progress
+        self.progress = progress
 
 
     def plot_point(self, x, y, args):
@@ -106,6 +110,22 @@ class ShiftStore:
             'physical; circle {1} {2} {3} # {4}'.format(x, y, r, args)
         )
 
+    def find_stars(self, can, x, y, radius, refbright, rb=0.5):
+        """
+        Returns stars within defined radius from x,y
+
+        Parameters
+        ----------
+        can : array
+           candidate list
+        """
+        for obj in can:
+            if __distance(x, y, obj['x'], obj['y']) < radius:
+                if abs((obj['mag'] - refbright) / refbright) - 1 < rb:
+                    return obj
+
+        return None
+
 
     def test_objects(self, x, can, i, otherc, partial_len=None):
         """
@@ -130,7 +150,7 @@ class ShiftStore:
         # here we assume y is otherc (either second or third),
         # and some brightnest estimate fourth member in x
         yi = x[otherc]  # expected other axis position
-        xb = x[3]  # expected brightness
+        xb = x['mag']  # expected brightness
         # calculate first expected shift..
         for j in range(0, i):
             yi -= self.shifts[j]
@@ -138,12 +158,15 @@ class ShiftStore:
         cs = None
         sh = 0
         pl = 0  # number of partial matches..
-        if self.process:
-            self.plot_point(can['x'], can['y'], 'point=x 20 color=yellow')
+        if self.progress:
+            self.d.set('regions group can delete')
+            self.plot_point(can['x'], can['y'],
+                'point=box 20 color=yellow tag={can}'
+            )
 
         while sh <= len(self.shifts):
             # now interate through candidates
-            for j in range(0, len(can)):
+            for j in range(len(can)):
                 # if the current shift index is equal to expected
                 # source position...
                 if sh == i:
@@ -156,16 +179,20 @@ class ShiftStore:
                     sh += 1
                     ret.append(x)
                 # get close enough..
-                if abs(can[j][otherc] - yi) < self.ysep:
+                dist = abs(can[j][otherc] - yi)
+                if dist < self.ysep:
                     # find all other sources in vicinity..
                     k = None
                     cs = can[j]  # _c_andidate _s_tar
                     for k in range(j+1, len(can)):
                         # something close enough..
                         if abs(can[k][otherc] - yi) < self.ysep:
-                            if abs(can[k][3] - xb) < abs(cs[3] - xb):
+                            if abs(can[k]['mag'] - xb) < abs(cs['mag'] - xb):
                                 cs = can[k]
+                            else:
+                                logging.debug('rejected brightness {0} {1}')
                         else:
+                            logging.debug('rejected close')
                             continue
 
                     # append candidate star
@@ -178,6 +205,10 @@ class ShiftStore:
                     except IndexError as ie:
                         break
                     sh += 1
+                else:
+                    logging.debug('rejected {0} and {1}, distance {2}'.format(
+                       can[j][otherc], yi, dist
+                    ))
 
             # no candiate exists
             if partial_len is None:
@@ -214,11 +245,11 @@ class ShiftStore:
         as one member. Return the sequence, or None if the sequence
         cannot be found."""
 
-        searchc = 'y'
-        otherc = 'x'
+        searchc = 'x'
+        otherc = 'y'
         if self.horizontal:
-            searchc = 'x'
-            otherc = 'y' 
+            searchc = 'y'
+            otherc = 'x' 
 
         xcor = x[searchc]
 
@@ -287,7 +318,7 @@ class ShiftStore:
         )
         c.process(fn)
         # sort by flux/brightness
-        c.sort('MAG_BEST')
+        c.sort('mag')
 
         self.objects = c.objects
 
@@ -299,6 +330,7 @@ class ShiftStore:
             self.d = pyds9.DS9()
             # display in ds9
             self.d.set('mosaicimage {0}'.format(fn))
+            self.d.set('zoom to fit')
 
             self.plot_point(self.objects['x'], self.objects['y'],
                 'point=x 5 color=red'
@@ -308,7 +340,7 @@ class ShiftStore:
 
         for x in self.objects:
             # do not examine already used objects..
-            if x[0] in usednum:
+            if x['id'] in usednum:
                 continue
 
             # find object in a row..
@@ -318,7 +350,9 @@ class ShiftStore:
             sequences.append(b)
             if self.d:
                 self.d.set('regions select none')
-                self.plot_circle(x[1], x[2], 10, 'color=yellow tag = sel')
+                self.d.set('regions', 'group can select')
+                self.d.set('regions', 'delete select')
+                self.plot_circle(x[1], x[2], 10, 'point=x color=yellow')
             for obj in b:
                 usednum.append(obj[0])
             if self.d:
