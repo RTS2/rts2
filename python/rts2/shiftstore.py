@@ -53,13 +53,20 @@ class ShiftStore:
     """
 
     def __init__(
-        self, shifts=[100, 50, 50, 50, 50, 50, 50, 50], horizontal=True
+        self, shifts, horizontal=True,
+        progress=False
     ):
         """
-        @param shifts shifts performed between exposures, in pixels.
-            Lenght of this array is equal to ((number of sources in a row) - 1).
-        @param horizontal  search for horizontal trails (paraller to Y axis).
-            If set to False, search for veritical trails (along X axis).
+        Parameters
+        ----------
+        shifts : array
+            shifts performed between exposures, in pixels. Lenght of this array
+            is equal to ((number of sources in a row) - 1).
+        horizontal : bool
+            search for horizontal trails (paraller to X axis). If set to False,
+            search for vertical trails (paraller to Y axis).
+        progress : bool
+            if true, display progress (plotting in DS9)
         """
         self.horizontal = horizontal
         self.objects = None
@@ -67,6 +74,38 @@ class ShiftStore:
         self.xsep = self.ysep = 5
         self.shifts = shifts
         self.focpos = range(0, len(self.shifts) + 1)
+        self.d = None
+        self.process = progress
+
+
+    def plot_point(self, x, y, args):
+        """
+        Plots X to mark stars.
+
+        Parameters
+        ----------
+        x : float
+        y : float
+        args : str
+        """
+        def __plot(x, y, args):
+            self.d.set(
+                'regions',
+                'physical; point {0} {1} # {2}'.format(x, y, args)
+            )
+
+        if numpy.isscalar(x) and numpy.isscalar(y):
+            __plot(x, y, args)
+        else:
+            for i in range(len(x)):
+                __plot(x[i], y[i], args)
+
+    def plot_circle(self, x, y, r, args):
+        self.d.set(
+            'regions',
+            'physical; circle {1} {2} {3} # {4}'.format(x, y, r, args)
+        )
+
 
     def test_objects(self, x, can, i, otherc, partial_len=None):
         """
@@ -99,6 +138,9 @@ class ShiftStore:
         cs = None
         sh = 0
         pl = 0  # number of partial matches..
+        if self.process:
+            self.plot_point(can['x'], can['y'], 'point=x 20 color=yellow')
+
         while sh <= len(self.shifts):
             # now interate through candidates
             for j in range(0, len(can)):
@@ -172,11 +214,11 @@ class ShiftStore:
         as one member. Return the sequence, or None if the sequence
         cannot be found."""
 
-        searchc = 'x'
-        otherc = 'y'
-        if not(self.horizontal):
-            searchc = 'y'
-            otherc = 'x' 
+        searchc = 'y'
+        otherc = 'x'
+        if self.horizontal:
+            searchc = 'x'
+            otherc = 'y' 
 
         xcor = x[searchc]
 
@@ -184,20 +226,21 @@ class ShiftStore:
         can = [x for x in self.objects
            if abs(xcor - x[searchc]) < self.xsep
         ]     # canditate stars
+        can = numpy.array(can, dtype=self.objects.dtype)
         # sort by Y axis..
-        can.sort(key=lambda x: x[otherc])
+        can = numpy.sort(can, order=otherc)
         # assume selected object is one in shift sequence
         # place it at any possible position in shift sequence, and test if the
         # sequence can be found
         if len(can) < len(self.shifts):
             return
 
-	# try to fit sequence. If sequence cannot be fit, carry on - 
-	# the middle star in sequence, which the algorithm tries to fit
-	# (under assumtion this will be brightest star if it is almost in focus)
-	# will be selected sometime
+        # try to fit sequence. If sequence cannot be fit, carry on - 
+        # the middle star in sequence, which the algorithm tries to fit
+        # (under assumtion this will be brightest star if it is almost in focus)
+        # will be selected sometime
         max_ret = []
-        for i in range(0, len(self.shifts) + 1):
+        for i in range(len(self.shifts) + 1):
             # test if sequence can be found..
             ret = self.test_objects(x, can, i, otherc, partial_len)
             # and if it is found, return it
@@ -251,20 +294,15 @@ class ShiftStore:
         logging.debug(
             'from {0} extracted {1} sources'.format(fn, len(c.objects)))
 
-        d = None
-
         if interactive:
             import pyds9
-            d = pyds9.DS9()
+            self.d = pyds9.DS9()
             # display in ds9
-            d.set('mosaicimage {0}'.format(fn))
+            self.d.set('mosaicimage {0}'.format(fn))
 
-            for x in self.objects:
-                d.set(
-                    'regions',
-                    'physical; point {0} {1} # point=x 5 color=red'.format(x[1], x[2])
-                )
-
+            self.plot_point(self.objects['x'], self.objects['y'],
+                'point=x 5 color=red'
+            )
         sequences = []
         usednum = []
 
@@ -278,30 +316,22 @@ class ShiftStore:
             if b is None:
                 continue
             sequences.append(b)
-            if d:
-                d.set('regions select none')
-                d.set(
-                    'regions',
-                    'physical; circle {0} {1} 20 # color=yellow tag = sel'.format(
-                    x[1], x[2])
-                )
+            if self.d:
+                self.d.set('regions select none')
+                self.plot_circle(x[1], x[2], 10, 'color=yellow tag = sel')
             for obj in b:
                 usednum.append(obj[0])
-            if d:
+            if self.d:
                 logging.debug('best mag: %d', x[3])
-                d.set('regions select group sel')
-                d.set('regions delete select')
+                self.d.set('regions select group sel')
+                self.d.set('regions delete select')
                 for obj in b:
                     if obj[0] is None:
-                        d.set('regions',
-                            'physical; point {0} {1} # point=boxcircle 15 color = red'.format(
-                            obj[1], obj[2]))
-                    else:
-                        d.set(
-                            'regions',
-                            'image; circle {0} {1} 10 # color = green'.format(
-                            obj[1], obj[2])
+                        self.plot_point(obj[1], obj[2],
+			    'boxcircle 15 color = red'
                         )
+                    else:
+                        self.plot_circle(obj[1], obj[2], 10, 'color = green')
             if len(sequences) > sequences_num:
                 break
         # if enough sequences were found, process them and try to fit results

@@ -27,3 +27,4 @@ from .queues import Queues
 from .septrator import Septrator
 from .sextractor import Sextractor
 from .focusing import Focusing
+from .shiftstore import ShiftStore

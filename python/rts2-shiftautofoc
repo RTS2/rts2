@@ -4,7 +4,7 @@
 # (C) 2018 Petr Kubanek
 #
 
-import rts2.shiftstore
+import rts2
 
 import argparse
 import gettext
@@ -18,9 +18,20 @@ parser = argparse.ArgumentParser(
 parser.add_argument('files', help=_('files to process'),
     action='append', default=[], type=argparse.FileType('r'))
 
+parser.add_argument('-p', help=_('show progress'),
+    action='store_true', dest='progress', default=False)
+
+parser.add_argument('-s', help=_('focusing shifts'),
+    action='store', dest='shifts', default='100 50 50 50 50 50 50')
+ 
+parser.add_argument('--horizontal', help=_('shifts are horizontal'),
+    action='store_true', dest='horizontal', default=False)
+
 options = parser.parse_args()
 
-sc = rts2.shiftstore.ShiftStore()
+shifts = list(map(int, options.shifts.split()))
+
+sc = rts2.ShiftStore(shifts, options.horizontal, progress=options.progress)
 
 for f in options.files:
     sc.run_on_image(f.name, None, True)
