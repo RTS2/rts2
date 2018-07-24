@@ -153,8 +153,15 @@ class ShiftStore:
         # and some brightnest estimate fourth member in x
         yi = x[otherc]  # expected other axis position
         xb = x['mag']  # expected brightness
-        # calculate first expected shift..
+        # limits for star positions
+        low_y = yi - numpy.sum(self.shifts[:i]) - self.ysep
+        high_y = yi + numpy.sum(self.shifts[i:]) + self.ysep
+
+        can = can[can[otherc] >= low_y]
+        can = can[can[otherc] <= high_y]
+
         yi -= numpy.sum(self.shifts[:i])
+
         # go through list, check for candidate stars..
         cs = None
         sh = 0
@@ -191,7 +198,7 @@ class ShiftStore:
                             if abs(can[k]['mag'] - xb) < abs(cs['mag'] - xb):
                                 cs = can[k]
                             else:
-                                logging.debug('rejected brightness {0} {1}')
+                                logging.debug('rejected')
                         else:
                             logging.debug('rejected close')
                             continue
