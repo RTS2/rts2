@@ -92,17 +92,19 @@ class ShiftStore:
         y : float
         args : str
         """
+        regions = []
         def __plot(x, y, args):
-            self.d.set(
-                'regions',
-                'physical; point {0} {1} # {2}'.format(x, y, args)
-            )
+            regions.append('physical; point {0} {1} # {2}'.format(x, y, args))
 
         if numpy.isscalar(x) and numpy.isscalar(y):
             __plot(x, y, args)
         else:
             for i in range(len(x)):
                 __plot(x[i], y[i], args)
+        self.d.set(
+            'regions',
+            '\n'.join(regions)
+        )
 
     def plot_circle(self, x, y, r, args):
         self.d.set(
@@ -119,9 +121,9 @@ class ShiftStore:
         can : array
            candidate list
         """
-        for obj in can:
+        for obj in numpy.sort(can, order='mag'):
             if __distance(x, y, obj['x'], obj['y']) < radius:
-                if abs((obj['mag'] - refbright) / refbright) - 1 < rb:
+                if abs((obj['mag'] - refbright) / refbright) < rb:
                     return obj
 
         return None
@@ -152,8 +154,7 @@ class ShiftStore:
         yi = x[otherc]  # expected other axis position
         xb = x['mag']  # expected brightness
         # calculate first expected shift..
-        for j in range(0, i):
-            yi -= self.shifts[j]
+        yi -= numpy.sum(self.shifts[:i])
         # go through list, check for candidate stars..
         cs = None
         sh = 0
@@ -308,7 +309,7 @@ class ShiftStore:
         """
 
         c = rts2.sextractor.Sextractor(
-                [
+            [
                 'NUMBER', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS',
                 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 'EXT_NUMBER'
             ],
