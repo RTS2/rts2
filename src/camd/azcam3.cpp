@@ -158,6 +158,8 @@ class AzCam3:public rts2camd::Camera
 		int callExposure (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
 		int callShiftExposure( );
+		int setBinning(int binx, int biny);
+		int setBinning();
 
 		int callArg (const char *cmd);
 
@@ -275,7 +277,7 @@ int AzCam3::initHardware()
 		commandConn->setDebug ();
 	}
 
-	int ret = callCommand ("exposure.abort\r\n");
+	int ret = callCommand ("abort\r\n");
 	if (ret)
 		return ret;
 
@@ -348,6 +350,22 @@ int AzCam3::callExposure (const char *cmd, double p1, const char *p2)
 	}
 }
 
+
+int AzCam3::setBinning(int binx, int biny)
+{
+	char buf[200];
+
+	snprintf(buf, 200, "binning %d %d", binx, biny );
+	return callCommand(buf);
+}
+
+int AzCam3::setBinning()
+{
+	char buf[200];
+
+	snprintf(buf, 200, "binning %d %d", binningHorizontal(), binningVertical() );
+	return callCommand(buf);
+}
 
 int AzCam3::callShiftExposure (  )
 {
@@ -460,7 +478,8 @@ int AzCam3::startExposure()
 	if (ret)
 		return ret;
 
-	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	//ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	ret = setBinning( binningHorizontal(), binningVertical() );
 	if (ret)
 		return ret;
 
