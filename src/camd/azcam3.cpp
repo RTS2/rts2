@@ -83,9 +83,9 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 			return 0;
 		}
 
-		static char rbuf[2048];
+		static char rbuf[2048*4];
 
-		rec = recv (sock, rbuf, 2048, 0);
+		rec = recv (sock, rbuf, 2048*4, 0);
 		
 		if (rec > 0)
 		{
@@ -281,9 +281,11 @@ int AzCam3::initHardware()
 	if (ret)
 		return ret;
 
-	callCommand ("controller.readout_abort\r\n");
+	callCommand ("readout_abort\r\n");
 
 	initCameraChip (101, 101, 0, 0);
+	//Default binning should be in the config. 
+	addBinning2D(3, 3);
 
 	return initChips ();
 }
@@ -353,7 +355,7 @@ int AzCam3::setBinning(int binx, int biny)
 {
 	char buf[200];
 
-	snprintf(buf, 200, "binning %d %d", binx, biny );
+	snprintf(buf, 200, "binning %d %d\r\n", binx, biny );
 	return callCommand(buf);
 }
 
@@ -361,7 +363,7 @@ int AzCam3::setBinning()
 {
 	char buf[200];
 
-	snprintf(buf, 200, "binning %d %d", binningHorizontal(), binningVertical() );
+	snprintf(buf, 200, "binning %d %d\r\n", binningHorizontal(), binningVertical() );
 	return callCommand(buf);
 }
 
@@ -509,11 +511,15 @@ int AzCam3::stopExposure ()
 
 long AzCam3::isExposing ()
 {
+
+
+	logStream (MESSAGE_ERROR) << "isExposing called"<<sendLog;
 	try
 	{
 		if ( !parShiftFocus->getValueBool())
 		{
-			exposureRemaining->setValueFloat (getDouble ("controller.update_exposuretime_remaining\r\n"));
+			logStream (MESSAGE_ERROR) << "isExposing called parshift"<<sendLog;
+			exposureRemaining->setValueFloat (getDouble ("timeleft\r\n"));
 			sendValueAll (exposureRemaining);
 			if (exposureRemaining->getValueFloat () > 0)
 				return exposureRemaining->getValueFloat () * USEC_SEC;
@@ -524,6 +530,7 @@ long AzCam3::isExposing ()
 		}
 		else
 		{
+			logStream (MESSAGE_ERROR) << "isExposing called normal"<<sendLog;
 			if( dataConn->imgWasRecvd() )
 			{
 				
@@ -531,6 +538,8 @@ long AzCam3::isExposing ()
 			}
 			else
 			{
+
+				logStream (MESSAGE_ERROR) << "datasize " << dataConn->getDataSize() << " recvs: "<< dataConn->getRecvs()<<sendLog;
 				//check again in a second
 				return USEC_SEC;
 			}
@@ -539,6 +548,8 @@ long AzCam3::isExposing ()
 	}
 	catch (rts2core::Error &er)
 	{
+		logStream (MESSAGE_ERROR) << "error: " << er <<sendLog;
+
 		return -1;
 	}
 	if (getState () & CAM_SHIFT)
@@ -559,10 +570,12 @@ int AzCam3::doReadout ()
 				{
 					if (!parShiftFocus->getValueBool())
 					{
-						pixelsRemaining->setValueLong (getLong ("controller.get_pixels_remaining\r\n"));
+						pixelsRemaining->setValueLong (getLong ("pixels_remaining\r\n"));
 
 
 						sendValueAll (pixelsRemaining);
+						
+						logStream (MESSAGE_ERROR) << "pixels remaining:"<< pixelsRemaining->getValueLong() <<sendLog;
 					}
 					else
 					{
@@ -581,11 +594,14 @@ int AzCam3::doReadout ()
 			}
 			catch (rts2core::Error &er)
 			{
+				logStream (MESSAGE_ERROR) << "doReadout " << er <<sendLog;
 				return -1;
 			}
 		}
 		else if (dataConn->getDataSize () > 0)
+		{
 			return 10;
+		}
 		if (getState () & CAM_SHIFT)
 		{
 			std::istringstream *is;
