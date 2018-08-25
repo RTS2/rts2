@@ -1,7 +1,7 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-apm rts2-dome-fram \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
-	rts2-cupola-maxdomeii rts2-cupola-saao
+	rts2-cupola-maxdomeii rts2-cupola-saao rts2-cupola-tcsng
 
 SUBDIRS = zelio
 
@@ -36,6 +36,8 @@ rts2_dome_ahe_SOURCES = ahe.cpp
 rts2_cupola_maxdomeii_SOURCES = maxdomeii.cpp
 
 rts2_cupola_saao_SOURCES = saao.cpp
+
+rts2_cupola_tcsng_SOURCES = tcsng_slit.cpp
 
 if ARMCPU
 EXTRA_DIST += watcher.cpp
