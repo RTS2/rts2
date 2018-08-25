@@ -83,9 +83,9 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 			return 0;
 		}
 
-		static char rbuf[2048];
+		static char rbuf[2048*4];
 
-		rec = recv (sock, rbuf, 2048, 0);
+		rec = recv (sock, rbuf, 2048*4, 0);
 		
 		if (rec > 0)
 		{
@@ -281,7 +281,7 @@ int AzCam3::initHardware()
 	if (ret)
 		return ret;
 
-	callCommand ("controller.readout_abort\r\n");
+	callCommand ("readout_abort\r\n");
 
 	initCameraChip (101, 101, 0, 0);
 	//Default binning should be in the config. 
@@ -355,7 +355,7 @@ int AzCam3::setBinning(int binx, int biny)
 {
 	char buf[200];
 
-	snprintf(buf, 200, "binning %d %d", binx, biny );
+	snprintf(buf, 200, "binning %d %d\r\n", binx, biny );
 	return callCommand(buf);
 }
 
@@ -363,7 +363,7 @@ int AzCam3::setBinning()
 {
 	char buf[200];
 
-	snprintf(buf, 200, "binning %d %d", binningHorizontal(), binningVertical() );
+	snprintf(buf, 200, "binning %d %d\r\n", binningHorizontal(), binningVertical() );
 	return callCommand(buf);
 }
 
@@ -529,6 +529,7 @@ long AzCam3::isExposing ()
 		}
 		else
 		{
+			logStream (MESSAGE_ERROR) << "isExposing called normal"<<sendLog;
 			if( dataConn->imgWasRecvd() )
 			{
 				
