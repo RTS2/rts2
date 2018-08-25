@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Astrometry routines. Works with the Astrometry.net package.
 #
 # (C) 2011-2014 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
-# This script integrates astrometry routines for use within RTS2 as a 
+# This script integrates astrometry routines for use within RTS2 as a
 # script, or within RTS2-F for scripting from tcsh.
 #
 # This program is free software; you can redistribute it and/or
@@ -21,20 +21,48 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import pyfits
+try:
+	import astropy.io.fits as pyfits
+except ImportError:
+	import pyfits
 import rts2
 import rts2.astrometry
 import rts2.dms
 import rts2.libnova
 
+import posixpath
 import math
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, extension=None, downsample=None):
+def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, extension=None, downsample=None, use_sextractor=False, order=2):
 	c = rts2.Rts2Comm()
 
-	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)
+	# Guess correct path to solve-field and sextractor
+	astrometry_bin = None
+	sextractor_bin = None
+
+	for _ in ['/usr/local/astrometry/bin', '/usr/astrometry/bin', '/opt/local/astrometry/bin', './astrometry/bin']:
+		if posixpath.exists(posixpath.join(_, 'solve-field')):
+			astrometry_bin = _
+			break
+	if astrometry_bin is None:
+		c.log('W', 'cannot find Astrometry.Net binary')
+		return 1
+
+	if use_sextractor:
+		for _ in ['/usr/local/bin', '/usr/bin', '/opt/local/bin', './bin', '.']:
+			for __ in ['sex', 'sextractor']:
+				if posixpath.exists(posixpath.join(_, __)):
+					sextractor_bin = posixpath.join(_, __)
+					break
+			if sextractor_bin:
+				break
+		if sextractor_bin is None:
+			c.log('W', 'cannot find SExtractor binary')
+			return 1
+
+	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir, astrometry_bin=astrometry_bin, use_sextractor=use_sextractor, sextractor_bin=sextractor_bin)
 	c.tempentry(a.odir[4:])
 
 	ff=pyfits.open(fn,'readonly')
@@ -83,13 +111,13 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 		object=ff[0].header['OBJECT']
 	except KeyError,ke:
 		pass
-			
+
 	ff.close()
 
-	ret=a.run(replace=True,verbose=verbose,extension=extension,center=center,downsample=downsample) if blind else a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose, extension=extension, center=center, downsample=downsample)
+	ret=a.run(replace=True,verbose=verbose,extension=extension,center=center,downsample=downsample, order=order) if blind else a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose, extension=extension, center=center, downsample=downsample, order=order)
 
 	if ret and print_results:
-		# script needs to reopen file 
+		# script needs to reopen file
 		if odir is None:
 			ff=pyfits.open(fn,'readonly')
 		else:
@@ -165,6 +193,8 @@ parser.add_option('--center', help="put reference pixel to center", action="stor
 parser.add_option('--extension', help="FITS extension to solve", action="store", dest="extension", default=None)
 parser.add_option('-z', help="downsample the image before running source extractions", action="store", dest="downsample", default=None)
 parser.add_option('--bashrc', help="write results into bash export file", action="store", dest="bashrc", default=None)
+parser.add_option('--sextractor', help="use SExtractor", action="store_true", dest="use_sextractor", default=False)
+parser.add_option('--order', help='SIP tweak order', action='store', dest='order', default=2)
 
 (options,args) = parser.parse_args()
 
@@ -198,9 +228,9 @@ if options.wcsscale is not None:
 		print 'Invalid WCS scale - expected arcdeg, arcmin or arcsec, received {0}'.format(options.wcsscale)
 		sys.exit(2)
 
-ret = 0	
+ret = 0
 
 for x in args:
-	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc, center=options.center, extension=options.extension, downsample=options.downsample)
+	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc, center=options.center, extension=options.extension, downsample=options.downsample, use_sextractor=options.use_sextractor, order=options.order)
 
 sys.exit(ret)

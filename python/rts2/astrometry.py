@@ -30,7 +30,10 @@ import subprocess
 import sys
 import re
 import time
-import pyfits
+try:
+	import astropy.io.fits as pyfits
+except ImportError:
+	import pyfits
 import tempfile
 import numpy
 import math
@@ -57,7 +60,7 @@ class WCSAxisProjection:
 def transformProjection(proj,ra,ra0,dec,dec0):
 	if proj == 'TAN':
 		xi = math.radians(ra)
-	        eta = math.radians(dec)
+		eta = math.radians(dec)
 		ra0 = math.radians(ra0)
 		dec0 = math.radians(dec0)
 		ra = math.atan((xi / (math.cos(dec0)-eta*math.sin(dec0)))) + ra0
@@ -106,7 +109,7 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None):
+	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
 
@@ -137,6 +140,10 @@ class AstrometryScript:
 			solve_field.append('-6')
 			solve_field.append(extension)
 
+		if order is not None:
+			solve_field.append('-t')
+			solve_field.append(order)
+
 		if center:
 			solve_field.append('--crpix-center')
 
@@ -146,42 +153,57 @@ class AstrometryScript:
 
 		solve_field.append(self.infpath)
 
-		if verbose:
-			print('running',' '.join(solve_field))
-	    
-		proc=subprocess.Popen(solve_field, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=lambda:os.setpgid(0, 0))
-
-		if timeout is not None:
-			def __term_proc(sig, stack):
-				os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-				if verbose:
-					print('killing process, as timeout was reached')
-			signal.signal(signal.SIGALRM, __term_proc)
-			signal.alarm(timeout)
-
-		radecline=re.compile('Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
-
-		ret = None
-
-		while True:
-			try:
-				a=proc.stdout.readline()
-			except IOError:
-				break	
-			if a == '':
-				break
+		for iter in ['initial', 'verify']:
 			if verbose:
-				print(a, end=' ')
-			match=radecline.match(a)
-			if match:
-				ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
+				print('running',' '.join(solve_field))
+
+			proc = subprocess.Popen(solve_field, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=lambda:os.setpgid(0, 0))
+
+			if timeout is not None:
+				def __term_proc(sig, stack):
+					os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+					if verbose:
+						print('killing process, as timeout was reached')
+				signal.signal(signal.SIGALRM, __term_proc)
+				signal.alarm(timeout)
+
+			radecline=re.compile('Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
+
+			ret = None
+
+			while True:
+				try:
+					a=proc.stdout.readline()
+				except IOError:
+					break
+				if a == '':
+					break
+				if verbose:
+					print(a, end=' ')
+				match=radecline.match(a)
+				if match:
+					ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
+
+			if ret and verify and iter == 'initial':
+				# TODO: reuse star list from first iteration to save some CPU time on second one
+				shutil.move(self.odir+'/input.new', self.odir+'/input.fits')
+				solve_field.append('--overwrite')
+				solve_field.append('--verify')
+				solve_field.append(self.odir+'/input.fits')
+				if extension is not None:
+					solve_field.append('--verify-ext')
+					solve_field.append(extension)
+			else:
+				# No verification phase
+				break
+
 		if replace and ret is not None:
-			shutil.move(self.odir+'/input.new',self.fits_file)
-	       
-                shutil.rmtree(self.odir)
+			shutil.move(self.odir+'/input.new', self.fits_file)
+
+		shutil.rmtree(self.odir)
 		return ret
 
-	# return offset from 
+	# return offset from
 	def getOffset(self,x=None,y=None):
 		ff=pyfits.open(self.fits_file,'readonly')
 		fh=ff[0].header
