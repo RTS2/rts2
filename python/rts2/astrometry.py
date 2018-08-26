@@ -142,7 +142,7 @@ class AstrometryScript:
 
 		if order is not None:
 			solve_field.append('-t')
-			solve_field.append(order)
+			solve_field.append(str(order))
 
 		if center:
 			solve_field.append('--crpix-center')

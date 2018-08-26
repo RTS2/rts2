@@ -35,7 +35,7 @@ import math
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, extension=None, downsample=None, use_sextractor=False, order=2):
+def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, extension=None, downsample=None, use_sextractor=False, order=None):
 	c = rts2.Rts2Comm()
 
 	# Guess correct path to solve-field and sextractor
@@ -194,7 +194,7 @@ parser.add_option('--extension', help="FITS extension to solve", action="store",
 parser.add_option('-z', help="downsample the image before running source extractions", action="store", dest="downsample", default=None)
 parser.add_option('--bashrc', help="write results into bash export file", action="store", dest="bashrc", default=None)
 parser.add_option('--sextractor', help="use SExtractor", action="store_true", dest="use_sextractor", default=False)
-parser.add_option('--order', help='SIP tweak order', action='store', dest='order', default=2)
+parser.add_option('--order', help='SIP tweak order', action='store', dest='order', default=None)
 
 (options,args) = parser.parse_args()
 
