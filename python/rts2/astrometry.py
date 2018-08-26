@@ -111,7 +111,7 @@ class AstrometryScript:
 
 	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True):
 
-		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
+		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots']
 
 		if scale is not None:
 			scale_low=scale*(1-self.scale_relative_error)
