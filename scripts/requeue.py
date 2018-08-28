@@ -16,4 +16,3 @@ s.requeue('requeue', 30*60 )
 
 s.setValue('exposure', 20)
 imname = s.exposure()
-

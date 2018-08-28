@@ -381,6 +381,8 @@ int AzCam3::callShiftExposure (  )
 
 	try
 	{
+		
+		logStream (MESSAGE_INFO) << "Sending focus.run right ... now " << sendLog;
 		commandConn->sendData ("focus.run\r\n");
 		return 0;
 	}
