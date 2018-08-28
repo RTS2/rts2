@@ -1,4 +1,4 @@
-/* 
+/*
  * Driver for dome board for FRAM telescope, Pierre-Auger observatory, Argentina
  * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -89,7 +89,7 @@ class Fram:public Ford
 		char *wdc_file;
 
 		rts2core::FordConn *extraSwitch;
-		
+
 		char *extraSwitchFile;
 
 		rts2core::ValueDouble *wdcTimeOut;
@@ -775,7 +775,7 @@ int Fram::init ()
 		maskState (DOME_DOME_MASK, DOME_OPENED, "dome is opened");
 		domeCloseStart ();
 	}
-		
+
 	return 0;
 }
 
@@ -880,7 +880,7 @@ int Fram::info ()
 	swOpenLeft->setValueBool (getPortState (KONCAK_OTEVRENI_LEVY));
 	swCloseRight->setValueBool(getPortState (KONCAK_ZAVRENI_PRAVY));
 	swCloseLeft->setValueBool(getPortState (KONCAK_ZAVRENI_LEVY));
-	if (wdcConn > 0)
+	if (wdcConn)
 	{
 	  	wdcTemperature->setValueDouble (getWDCTemp (2));
 	}

@@ -61,7 +61,7 @@ class ImageProc:public rts2core::Device
 
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
-		virtual int deleteConnection (rts2core::Connection * conn, int slot);
+		virtual int deleteConnection (rts2core::Connection * conn);
 
 		int getFreeSlot ();
 
@@ -229,7 +229,7 @@ ImageProc::~ImageProc (void)
 int ImageProc::reloadConfig ()
 {
 	int ret;
-	
+
 	std::string imgglob;
 #ifdef RTS2_HAVE_PGSQL
 	ret = rts2db::DeviceDb::reloadConfig ();
@@ -376,7 +376,7 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 			nightBadImages->setValueInteger (0);
 			nightDarks->setValueInteger (0);
 			nightFlats->setValueInteger (0);
-			
+
 			sendValueAll (nightGoodImages);
 			sendValueAll (nightTrashImages);
 			sendValueAll (nightBadImages);
@@ -411,26 +411,43 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 #endif
 }
 
-int ImageProc::deleteConnection (rts2core::Connection * conn, int slot)
+int ImageProc::deleteConnection (rts2core::Connection * conn)
 {
+	// Find the runningImage slot corresponding to the connection
+	int slot = -1;
+	int np = numProc->getValueInteger ();
+
+	for (int i = 0; i < np; i++)
+		if (runningImage[i] == conn){
+			slot = i;
+			break;
+		}
+
 	std::list < ConnProcess * >::iterator img_iter;
-	ConnProcess *rImage = runningImage[slot];
-	for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();)
+	ConnProcess *rImage = NULL;
+
+	if (slot >= 0)
 	{
-		(*img_iter)->deleteConnection (conn);
-		if (*img_iter == conn)
+		rImage = runningImage[slot];
+
+		for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();)
 		{
-			img_iter = imagesQue.erase (img_iter);
+			(*img_iter)->deleteConnection (conn);
+			if (*img_iter == conn)
+			{
+				img_iter = imagesQue.erase (img_iter);
+			}
+			else
+			{
+				img_iter++;
+			}
 		}
-		else
-		{
-			img_iter++;
-		}
+		queSize->setValueInteger (imagesQue.size ());
+		sendValueAll (queSize);
+		if (rImage)
+			rImage->deleteConnection (conn);
 	}
-	queSize->setValueInteger (imagesQue.size ());
-	sendValueAll (queSize);
-	if (rImage)
-		rImage->deleteConnection (conn);
+
 	if (conn == rImage)
 	{
 		// que next image
@@ -488,7 +505,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn, int slot)
 				logStream (MESSAGE_ERROR) << "wrong image state: " << rImage->getAstrometryStat () << sendLog;
 				break;
 		}
-		rImage = NULL;
+		runningImage[slot] = NULL;
 		img_iter = imagesQue.begin ();
 		if (img_iter != imagesQue.end ())
 		{
@@ -497,7 +514,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn, int slot)
 			changeRunning (cp, slot);
 		}
 		// still not image process running..
-		if (rImage == NULL)
+		if (runningImage[slot] == NULL)
 		{
 			maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_IDLE);
 			if (reprocessingPossible)
@@ -528,13 +545,12 @@ int ImageProc::deleteConnection (rts2core::Connection * conn, int slot)
 void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 {
 	int ret;
-	ConnProcess *rImage = runningImage[slot];
-	if (rImage)
+	if (runningImage[slot])
 	{
 		if (sendStop)
 		{
-			rImage->stop ();
-			imagesQue.push_front (rImage);
+			runningImage[slot]->stop ();
+			imagesQue.push_front (runningImage[slot]);
 		}
 		else
 		{
@@ -543,13 +559,13 @@ void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 			return;
 		}
 	}
-	rImage = newImage;
-	rImage->setConnectionDebug (getDebug ());
-	ret = rImage->init ();
+	runningImage[slot] = newImage;
+	runningImage[slot]->setConnectionDebug (getDebug ());
+	ret = runningImage[slot]->init ();
 	if (ret < 0)
 	{
-		deleteConnection (rImage, slot);
-		rImage = NULL;
+		deleteConnection (runningImage[slot]);
+		runningImage[slot] = NULL;
 		maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_IDLE);
 		infoAll ();
 		if (reprocessingPossible)
@@ -559,13 +575,13 @@ void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 	else if (ret == 0)
 	{
 #ifdef RTS2_HAVE_LIBJPEG
-		if (std::isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < rImage->getExposureEnd ())
-			rImage->setLastGoodJpeg (last_good_jpeg);
-		if (std::isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < rImage->getExposureEnd ())
-			rImage->setLastTrashJpeg (last_trash_jpeg);
+		if (std::isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < runningImage[slot]->getExposureEnd ())
+			runningImage[slot]->setLastGoodJpeg (last_good_jpeg);
+		if (std::isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < runningImage[slot]->getExposureEnd ())
+			runningImage[slot]->setLastTrashJpeg (last_trash_jpeg);
 #endif
-		addConnection (rImage);
-		processedImage->setValueCharArr (rImage->getProcessArguments ());
+		addConnection (runningImage[slot]);
+		processedImage->setValueCharArr (runningImage[slot]->getProcessArguments ());
 	}
 	maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_RUN);
 	infoAll ();
@@ -623,6 +639,8 @@ int ImageProc::checkNotProcessed ()
 	globC = 0;
 
 	// start files que..
+	// TODO: properly fill all workers with files to process.
+	// Will need run-time check whether given file is already being processed by any other worker
 	if (imageGlob.gl_pathc > 0)
 		return queImage (imageGlob.gl_pathv[0]);
 	return 0;
@@ -664,6 +682,17 @@ int ImageProc::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return queObs (obsId);
 	}
+	else if (conn->isCommand("reprocess")) // Re-process unprocessed images from queue dir
+	{
+		if (strlen (image_glob->getValue ()))
+		{
+			reprocessingPossible = 1;
+			if (getFreeSlot () >= 0 && imagesQue.size () == 0)
+				checkNotProcessed ();
+		}
+		return 0;
+	}
+
 #ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::commandAuthorized (conn);
 #else

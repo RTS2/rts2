@@ -74,6 +74,7 @@ int serial_timeout(int sd, int timeout_ms);
 /*  */
 //tser_dev * get_ser_port_descriptor(int sd);
 
+/* */
+void shutdown_serial(int fd);
 
 #endif    // #ifndef __serial_h__
-
