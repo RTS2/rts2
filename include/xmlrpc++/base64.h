@@ -12,6 +12,8 @@
 # include <iterator>
 #endif
 
+ #include <iostream>
+
 static
 int _base64Chars[]=
 {

@@ -1,4 +1,4 @@
-/* 
+/*
  * Driver for board for FRAM telescope, Pierre-Auger observatory, Argentina
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -47,7 +47,7 @@ class Fram:public Sensor
 		char *wdc_file;
 
 		rts2core::FordConn *extraSwitch;
-		
+
 		char *extraSwitchFile;
 
 		rts2core::ValueDouble *wdcTimeOut;
@@ -385,7 +385,7 @@ Fram::~Fram (void)
 
 int Fram::info ()
 {
-	if (wdcConn > 0)
+	if (wdcConn)
 	{
 	  	wdcTemperature->setValueDouble (getWDCTemp (2));
 	}
