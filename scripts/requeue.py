@@ -12,8 +12,7 @@ s = rts2.scriptcomm.Rts2Comm()
 
 s.setValue('filter', 2)
 
-for x in range(1,10):
-    s.setValue('exposure', x * 10)
-    s.exposure()
+s.requeue('manual', 2*60 )
 
-s.requeue('manual', '+2h')
+s.setValue('exposure', 20)
+s.exposure(fileexpand='%b/%t/requeue_test%f')

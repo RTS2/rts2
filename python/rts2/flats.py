@@ -523,7 +523,7 @@ class FlatScript (scriptcomm.Rts2Comm):
         """Process acquired flat images."""
         import numpy
         import os
-        import pyfits
+        from astropy.io import fits as pyfits
 
         f = pyfits.open(files[0])
         d = numpy.empty([len(files), len(f[0].data), len(f[0].data[0])])

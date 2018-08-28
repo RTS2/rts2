@@ -37,6 +37,7 @@
 
 from . import scriptcomm
 from . import sextractor
+from scottSock import scottSock
 sepPresent = False
 try:
 	import sep
@@ -48,6 +49,9 @@ from pylab import *
 from scipy import *
 from scipy import optimize
 import numpy
+import pickle
+from kuiper_reduction.merge import merge_fitsfd
+
 
 LINEAR = 0
 """Linear fit"""
@@ -63,22 +67,14 @@ H2 = 4
 class Focusing (scriptcomm.Rts2Comm):
 	"""Take and process focussing data."""
 
-	def __init__(self,exptime = 2,step=1,attempts=20,filterGalaxies=False):
+	def __init__(self,exptime = 10,step=20,attempts=10,filterGalaxies=False):
 		scriptcomm.Rts2Comm.__init__(self)
-		self.exptime = 2 # 60 # 10
-		self.focuser = self.getValue('focuser')
-		try:
-			self.getValueFloat('AF_step',self.focuser)
-		except NameError:
-			self.step = 1 # 0.2
-		else:
-			self.step = self.getValueFloat('AF_step',self.focuser)
-		try:
-			self.getValueFloat('AF_attempts',self.focuser)
-		except NameError:
-			self.attempts = 20 #30 # 20
-		else:
-			self.attempts = self.getValueInteger('AF_attempts',self.focuser)
+		self.log('I', 'This is a test')
+		self.exptime = exptime
+		self.step = step
+		self.focuser = "F0"
+		self.attempts = attempts
+
 		# if |offset| is above this value, try linear fit
 		self.linear_fit = self.step * self.attempts / 2.0
 		# target FWHM for linear fit
@@ -167,7 +163,7 @@ class Focusing (scriptcomm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def findBestFWHM(self,tries,defaultFit=H3,min_stars=95,ds9display=False,threshold=2.7,deblendmin=0.03):
+	def findBestFWHM(self,tries,defaultFit=P2,min_stars=95,ds9display=False,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
@@ -207,14 +203,20 @@ class Focusing (scriptcomm.Rts2Comm):
 				fwhms=[]
 				ff=fits.open(tries[k])
 				# loop on images..
-				for i in range(1,len(ff)):
+				for i in range(1,len(ff)-1):
 					data=ff[i].data
 					bkg=sep.Background(numpy.array(data,numpy.float))
 					sources=sep.extract(data-bkg, 5.0 * bkg.globalrms)
+					self.log('I','bkg gobalrms {}'.format(bkg.globalrms))
+					
 					for s in sources:
-						fwhms.append(2 * math.sqrt(ln2 * (s[12]**2 + s[13]**2)))
+						fwhms.append(2 * math.sqrt(ln2 * (s[9]**2 + s[10]**2)))
+
+				
 				im_fwhm=numpy.median(fwhms)
 				# find median from fwhms measurements..
+				
+				self.log('I','median fwhm {}'.format(numpy.median(fwhms)))
 				self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,im_fwhm,len(fwhms)))
 				focpos.append(k)
 				fwhm.append(im_fwhm)
@@ -223,6 +225,11 @@ class Focusing (scriptcomm.Rts2Comm):
 					fwhm_min = im_fwhm
 			except Exception as ex:
 				self.log('W','offset {0}: {1} {2}'.format(k,ex,traceback.format_exc()))
+		
+		self.log('I','pickling')
+		fd = open( "/home/scott/rts2.pkl", 'w' )
+		pickle.dump(sources, fd)
+		fd.close()
 		return focpos,fwhm,fwhm_min,fwhm_MinimumX
 
 
@@ -260,7 +267,9 @@ class Focusing (scriptcomm.Rts2Comm):
 
 		for self.num in range(1,self.attempts+1):
 		  	self.log('I','starting {0}s exposure on offset {1}'.format(self.exptime,self.off))
-			img = self.exposure(self.beforeReadout,'%b/focusing/%N/%o/%f')
+			img = self.exposure(self.beforeReadout,'%b/foc_%N_{0}.fits'.format(self.num))
+
+			
 			tries[self.current_focus] = img
 
 		self.log('I','all focusing exposures finished, processing data')
@@ -270,7 +279,7 @@ class Focusing (scriptcomm.Rts2Comm):
 	def run(self):
 		self.focuser = self.getValue('focuser')
 		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
-		self.altaz (89,90)
+		#self.altaz (89,90)
 		b,fit = self.takeImages()
 		if fit == LINEAR:
 			self.setValue('FOC_DEF',b,self.focuser)
@@ -300,3 +309,42 @@ class Focusing (scriptcomm.Rts2Comm):
 		plot (self.focpos, self.fwhm, "r+", x, fitfunc(self.fwhm_poly, x), "r-")
 
 		show()
+
+
+def to_dataserver( fname, outfile='test.fits', clobber=True ):
+
+	fitsfd = fits.open( fname )
+		
+
+        width = 0
+        height = 0
+        for ext in fitsfd:
+                if hasattr( ext, 'data' ):
+                        if ext.data is not None:
+                                width+=ext.data.shape[0]
+                                height+=ext.data.shape[1]
+
+        fitsfd.close()
+        fsize = os.stat(fname).st_size
+
+        fd = open(fname, 'rb')
+
+
+        if clobber:
+                clobber_char = '!'
+        else:
+                clobber_char = ''
+        meta = "          {} {}{} 1 {} {} 0".format( fsize, clobber_char, '/home/bigobs/data/rts2'+outfile, width, height )
+        meta = meta + (256-len(meta))*' '
+
+        data = meta+fd.read()
+        lendata = len(data)
+        soc = scottSock( '10.30.1.1', 6543 )
+
+        counter = 0
+        socsize = 1024
+        buffsize = 0
+        while buffsize < len(data):
+                sent = soc.send( data[buffsize:buffsize+1024] )
+                buffsize+=sent
+
