@@ -129,7 +129,7 @@ void ConnImgOnlyProcess::processLine ()
 
 	if (ret == 5)
 	{
-	 	ra_err /= 60.0;
+		ra_err /= 60.0;
 		dec_err /= 60.0;
 		astrometryStat = GET;
 		checkAstrometry ();
@@ -146,7 +146,7 @@ void ConnImgOnlyProcess::connectionError (int last_data_size)
 {
 	if (astrometryStat == NOT_ASTROMETRY)
 		astrometryStat = BAD;
-	ConnProcess::connectionError (last_data_size);	  
+	ConnProcess::connectionError (last_data_size);
 }
 
 ConnImgProcess::ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnImgOnlyProcess (_master, _exe, _path, _timeout)
@@ -158,7 +158,7 @@ int ConnImgProcess::newProcess ()
 {
 	if (astrometryStat == DARK)
 		return 0;
-	
+
 	return ConnImgOnlyProcess::newProcess ();
 }
 
@@ -177,7 +177,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 	ImageDb *image;
 	try
 	{
-	  	ImageDb *imagedb = new ImageDb ();
+		ImageDb *imagedb = new ImageDb ();
 		imagedb->openFile (imgPath.c_str ());
 		image = getValueImageType (imagedb);
 #else
@@ -193,7 +193,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			if (image->getImageType () == IMGTYPE_FLAT)
 				astrometryStat = FLAT;
 			else
-			  	astrometryStat = DARK;
+				astrometryStat = DARK;
 			delete image;
 			ConnImgOnlyProcess::connectionError (last_data_size);
 			return;
@@ -219,37 +219,41 @@ void ConnImgProcess::connectionError (int last_data_size)
 				image->setAstroResults (ra, dec, ra_err, dec_err);
 				if (end_event <= 0)
 					image->toArchive ();
-				// send correction to telescope..
-				telescopeName = image->getMountName ();
-				try
+
+				if (ra_err != 0 || dec_err != 0) // TODO: correct using only latest images, not any image!
 				{
-					image->getValue ("MOVE_NUM", corr_mark);
-					image->getValue ("CORR_IMG", corr_img);
-					if (telescopeName)
+					// send correction to telescope..
+					telescopeName = image->getMountName ();
+					try
 					{
-						rts2core::Connection *telConn;
-						telConn = master->findName (telescopeName);
-
-						rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");
-
-						// correction error should be in degrees
-						if (telConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
+						image->getValue ("MOVE_NUM", corr_mark);
+						image->getValue ("CORR_IMG", corr_img);
+						if (telescopeName)
 						{
-							struct ln_equ_posn pos1, pos2;
-							pos1.ra = ra;
-							pos1.dec = dec;
+							rts2core::Connection *telConn;
+							telConn = master->findName (telescopeName);
 
-							pos2.ra = ra - ra_err;
-							pos2.dec = dec - dec_err;
+							rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");
 
-							double posErr = ln_get_angular_separation (&pos1, &pos2);
+							// correction error should be in degrees
+							if (telConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
+							{
+								struct ln_equ_posn pos1, pos2;
+								pos1.ra = ra;
+								pos1.dec = dec;
 
-							telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, image->getImgId (), ra_err, dec_err, posErr));
+								pos2.ra = ra - ra_err;
+								pos2.dec = dec - dec_err;
+
+								double posErr = ln_get_angular_separation (&pos1, &pos2);
+
+								telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, image->getImgId (), ra_err, dec_err, posErr));
+							}
 						}
 					}
-				}
-				catch (rts2image::KeyNotFound &er)
-				{
+					catch (rts2image::KeyNotFound &er)
+					{
+					}
 				}
 				break;
 			case DARK:
@@ -279,7 +283,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 		// move file to bad directory..
 
 		int i = 0;
-	
+
 		for (std::string::iterator iter = imgPath.end () - 1; iter != imgPath.begin (); iter--)
 		{
 			if (*iter == '/')

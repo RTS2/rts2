@@ -35,7 +35,7 @@ import math
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, extension=None, downsample=None, use_sextractor=False, order=None):
+def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, extension=None, downsample=None, use_sextractor=False, order=None, pixscale=None):
 	c = rts2.Rts2Comm()
 
 	# Guess correct path to solve-field and sextractor
@@ -105,6 +105,10 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 				except KeyError,ke:
 					pass
 
+
+        if pixscale is not None:
+                scale = pixscale
+
 	object = None
 
 	try:
@@ -151,6 +155,9 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 
 			c.doubleValue('ora','[arcdeg] offsets ra as calculated from astrometry',ra_err * 3600.0,rts2.scriptcomm.DT_RA)
 			c.doubleValue('odec','[arcdeg] offsets dec as calculated from astrometry',dec_err * 3600.0,rts2.scriptcomm.DT_DEC)
+                else:
+                        # Have to send fake correction as connimgproc.cpp expects it for solved image
+			print "corrwerr 1 {0:.10f} {1:.10f} 0.0 0.0 0.0".format(rastrxy[0], rastrxy[1])
 
 		if x_offset is not None:
 			c.doubleValue('xoffs', '[arcsec] x offset', x_offset)
@@ -195,6 +202,7 @@ parser.add_option('-z', help="downsample the image before running source extract
 parser.add_option('--bashrc', help="write results into bash export file", action="store", dest="bashrc", default=None)
 parser.add_option('--sextractor', help="use SExtractor", action="store_true", dest="use_sextractor", default=False)
 parser.add_option('--order', help='SIP tweak order', action='store', dest='order', default=None)
+parser.add_option('--pixscale', help='Pixel scale in arcsec', action='store', type='float', dest='pixscale', default=None)
 
 (options,args) = parser.parse_args()
 
@@ -231,6 +239,6 @@ if options.wcsscale is not None:
 ret = 0
 
 for x in args:
-	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc, center=options.center, extension=options.extension, downsample=options.downsample, use_sextractor=options.use_sextractor, order=options.order)
+	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc, center=options.center, extension=options.extension, downsample=options.downsample, use_sextractor=options.use_sextractor, order=options.order, pixscale=options.pixscale)
 
 sys.exit(ret)

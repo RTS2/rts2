@@ -78,6 +78,9 @@ class ImageProc:public rts2core::Device
 		int queDarks ();
 		int queFlats ();
 
+		int queNextFromGlob ();
+		int numRunning ();
+
 		int checkNotProcessed ();
 		void changeRunning (ConnProcess * newImage, int slot);
 
@@ -136,7 +139,7 @@ class ImageProc:public rts2core::Device
 		std::string defaultImgProcess;
 		std::string defaultObsProcess;
 		glob_t imageGlob;
-		unsigned int globC;
+		unsigned int globPos;
 		int reprocessingPossible;
 
 		const char *last_processed_jpeg;
@@ -203,7 +206,7 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
-	globC = 0;
+	globPos = 0;
 	reprocessingPossible = 0;
 
 	sendStop = 0;
@@ -353,11 +356,7 @@ int ImageProc::idle ()
 
 int ImageProc::info ()
 {
-	int num_running = 0;
-	int np = numProc->getValueInteger ();
-	for (int i = 0; i < np; i++)
-		num_running += (runningImage[i] ? 1 : 0);
-	queSize->setValueInteger ((int) imagesQue.size () + num_running);
+	queSize->setValueInteger ((int) imagesQue.size () + numRunning ());
 	sendValueAll (queSize);
 #ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::info ();
@@ -390,7 +389,7 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 				{
 					globfree (&imageGlob);
 					imageGlob.gl_pathc = 0;
-					globC = 0;
+					globPos = 0;
 				}
 				reprocessingPossible = 0;
 				break;
@@ -442,7 +441,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 				img_iter++;
 			}
 		}
-		queSize->setValueInteger (imagesQue.size ());
+		queSize->setValueInteger (imagesQue.size () + numRunning () - 1); // Here we count all running slots except this one
 		sendValueAll (queSize);
 		if (rImage)
 			rImage->deleteConnection (conn);
@@ -516,22 +515,12 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 		// still not image process running..
 		if (runningImage[slot] == NULL)
 		{
-			maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_IDLE);
+			if (numRunning () == 0)
+				maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_IDLE);
+
 			if (reprocessingPossible)
 			{
-				if (imageGlob.gl_pathc > 0)
-				{
-					globC++;
-					if (globC < imageGlob.gl_pathc)
-					{
-						queImage (imageGlob.gl_pathv[globC]);
-					}
-					else
-					{
-						globfree (&imageGlob);
-						imageGlob.gl_pathc = 0;
-					}
-				}
+				queNextFromGlob();
 			}
 		}
 	}
@@ -566,7 +555,10 @@ void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 	{
 		deleteConnection (runningImage[slot]);
 		runningImage[slot] = NULL;
-		maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_IDLE);
+		if (numRunning () == 0)
+			maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_IDLE);
+		else
+			maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_RUN);
 		infoAll ();
 		if (reprocessingPossible)
 			checkNotProcessed ();
@@ -624,6 +616,52 @@ int ImageProc::queObs (int obsId)
 	return que (newObsConn);
 }
 
+int ImageProc::queNextFromGlob ()
+{
+	if (imageGlob.gl_pathc == 0)
+		return 0;
+
+	while (globPos < imageGlob.gl_pathc && getFreeSlot() >= 0)
+	{
+		// It is better to double check whether this file is already being processed by other worker slots
+		bool alreadyProcessing = false;
+
+		for (int i = 0; i < numProc->getValueInteger (); i++)
+			if (runningImage[i] && !strcmp(runningImage[i]->getProcessArguments(), imageGlob.gl_pathv[globPos]))
+			{
+				alreadyProcessing = true;
+				break;
+			}
+
+		if (!alreadyProcessing)
+		{
+			queImage (imageGlob.gl_pathv[globPos]);
+		}
+
+		globPos++;
+	}
+
+	if (globPos >= imageGlob.gl_pathc)
+	{
+		globfree (&imageGlob);
+		imageGlob.gl_pathc = 0;
+		globPos = 0;
+	}
+
+	return 1;
+}
+
+int ImageProc::numRunning ()
+{
+	int num = 0;
+
+	for (int i = 0; i < numProc->getValueInteger (); i++)
+		if (runningImage[i] != NULL)
+			num++;
+
+	return num;
+}
+
 int ImageProc::checkNotProcessed ()
 {
 	int ret;
@@ -636,13 +674,12 @@ int ImageProc::checkNotProcessed ()
 		return -1;
 	}
 
-	globC = 0;
+	globPos = 0;
 
-	// start files que..
-	// TODO: properly fill all workers with files to process.
-	// Will need run-time check whether given file is already being processed by any other worker
-	if (imageGlob.gl_pathc > 0)
-		return queImage (imageGlob.gl_pathv[0]);
+	// start files queue and fill all free worker slots
+	for (int i = 0; i < imageGlob.gl_pathc && getFreeSlot() >= 0; i++)
+		queNextFromGlob();
+
 	return 0;
 }
 
@@ -686,10 +723,21 @@ int ImageProc::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (strlen (image_glob->getValue ()))
 		{
+			logStream (MESSAGE_INFO) << "Initiating re-processing of " << image_glob->getValue () << sendLog;
+
 			reprocessingPossible = 1;
 			if (getFreeSlot () >= 0 && imagesQue.size () == 0)
 				checkNotProcessed ();
 		}
+		return 0;
+	}
+	else if (conn->isCommand("stop_reprocess")) // Re-process unprocessed images from queue dir
+	{
+		logStream (MESSAGE_INFO) << "Stopping re-processing of " << image_glob->getValue () << sendLog;
+
+		globfree (&imageGlob);
+		imageGlob.gl_pathc = 0;
+		globPos = 0;
 		return 0;
 	}
 
