@@ -155,6 +155,9 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 
 			c.doubleValue('ora','[arcdeg] offsets ra as calculated from astrometry',ra_err * 3600.0,rts2.scriptcomm.DT_RA)
 			c.doubleValue('odec','[arcdeg] offsets dec as calculated from astrometry',dec_err * 3600.0,rts2.scriptcomm.DT_DEC)
+                else:
+                        # Have to send fake correction as connimgproc.cpp expects it for solved image
+			print "corrwerr 1 {0:.10f} {1:.10f} 0.0 0.0 0.0".format(rastrxy[0], rastrxy[1])
 
 		if x_offset is not None:
 			c.doubleValue('xoffs', '[arcsec] x offset', x_offset)
