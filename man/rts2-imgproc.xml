@@ -55,7 +55,7 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       &help;
-    </cmdsynopsis>  
+    </cmdsynopsis>
 
   </refsynopsisdiv>
 
@@ -99,9 +99,9 @@
 	    error. The error is angular distance (in degrees) between recorded
 	    telescope position and calculated position.
 	  </para>
-	</listitem>  
+	</listitem>
       </varlistentry>
-    </variablelist>  
+    </variablelist>
   </refsect1>
   <refsect1>
     <title>Commands</title>
@@ -127,12 +127,27 @@
 	be passed to processing script as command line arguments.
       </para>
     </refsect2>
-  </refsect1>    
+    <refsect2>
+      <title>reprocess</title>
+      <para>
+        Initiate re-processing of images from disk queue located in <emphasis>imageglob</emphasis>. It is
+        typically initated automatically at day time, but this command allows to start
+        it manually, or just force the service to re-scan the list of images.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>stop_reprocess</title>
+      <para>
+        Stop this disk queue processing after finishing with current images. It will be re-started
+        automatically when the system decides it is a good time to do so, e.g. at day time.
+      </para>
+    </refsect2>
+  </refsect1>
   <refsect1>
     <title>Variables</title>
     <para>
       <command>&dhpackage;</command> exposes to system by default the following variables.
-    </para>  
+    </para>
     <variablelist>
       &infotime;
       <varlistentry>
@@ -191,11 +206,11 @@
 	  <para>
 	    Size of the images queue. If a new image is queued to image
 	    processor while another image is beeing processed, new image is put
-	    into queue. 
+	    into queue.
 	  </para>
 	</listitem>
       </varlistentry>
-    </variablelist>  
+    </variablelist>
   </refsect1>
   <refsect1>
     <title>OPTIONS</title>
@@ -205,7 +220,7 @@
     <variablelist>
       &deviceappdblist;
     </variablelist>
-  </refsect1> 
+  </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
