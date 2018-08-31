@@ -44,7 +44,7 @@ class ShiftFoc (rts2.scriptcomm.Rts2Comm):
 		self.shifts = [50]*9  # shift in pixels
 		self.shifts.append(100)  # last offset
 		self.attempts = len(self.shifts) + 1
-		self.focuser = 'F0' #self.getValue('focuser')
+		self.focuser = self.getValue('focuser')
 
 	def beforeReadout(self):
 		self.current_focus = self.getValueFloat('FOC_POS',self.focuser)
