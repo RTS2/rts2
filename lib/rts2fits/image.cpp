@@ -581,8 +581,7 @@ int Image::toDark ()
 
 int Image::toFlat ()
 {
-	return 0;
-	//return renameImageExpand (rts2core::Configuration::instance ()->observatoryFlatPath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryFlatPath ());
 }
 
 int Image::toMasterFlat ()
