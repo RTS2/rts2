@@ -2,8 +2,10 @@
 *.la
 *.lo
 *.o
+*.py[cod]
 .deps/
 .libs/
+.DS_Store
 Makefile
 Makefile.in
 autom4te.cache/
@@ -65,6 +67,7 @@ man/rts2.ent
 missing
 py-compile
 rts2.initd
+src/axisd/rts2-*
 src/bb/bbdb.cpp
 src/bb/rts2-bb
 src/bckimages/bckimages.cpp
@@ -107,7 +110,14 @@ src/rotad/rts2-rotad-*
 src/scheduler/rts2-scheduler
 src/sensord/rts2-sensor-*
 src/teld/rts2-*
+src/ucac5/ucac5-*
 checks/*.log
 stamp-h1
 test-driver
 **/.*pyc
+rts2-init
+scripts/rts2-start
+scripts/rts2-stop
+conf/logrotate/logrotate-rts2.conf
+conf/rts2.service
+conf/rts2@.service
