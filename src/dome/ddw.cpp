@@ -66,7 +66,7 @@ class DDW:public Cupola
 		/// remove this once the mount is implemented
 		long getTargetAlt() { return 15; }
 
-		
+
 	private:
 		rts2core::ConnSerial *sconn;
 		const char *devFile;
@@ -110,8 +110,6 @@ DDW::DDW (int argc, char **argv):Cupola (argc, argv)
 	shutter->setValueInteger(0);
 
 	createValue(dticks, "dticks", "number of azimuth ticks", false);
-
-
 }
 
 DDW::~DDW ()
