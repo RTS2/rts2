@@ -609,6 +609,9 @@ int NMonitor::deleteConnection (rts2core::Connection * conn)
 {
 	if (conn == connectionAt (deviceList->getSelRow ()))
 	{
+		if (getActiveWindow() == daemonWindow)
+			// If we are inside daemon window being deleted, let's escape to device list
+			changeActive(deviceList);
 		// that will trigger daemonWindow reregistration before repaint
 		daemonWindow = NULL;
 	}
