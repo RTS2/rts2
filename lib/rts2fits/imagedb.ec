@@ -1,4 +1,4 @@
-/* 
+/*
  * Database image access classes.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -363,7 +363,7 @@ int ImageSkyDb::updateAstrometry ()
 	d_img_err_dec = dec_err;
 	if (std::isnan (img_err))
 		d_img_err = getAstrometryErr ();
-	else	
+	else
 		d_img_err = img_err;
 
 	snprintf (s_astrometry.arr, 2000,
@@ -563,7 +563,7 @@ int ImageSkyDb::saveImage ()
 	return ImageDb::saveImage ();
 }
 
-int ImageSkyDb::deleteFormDB ()
+int ImageSkyDb::deleteFromDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_img_id = getImgId ();
