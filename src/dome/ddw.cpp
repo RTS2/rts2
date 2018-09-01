@@ -141,8 +141,6 @@ int DDW::initHardware ()
 
 	info();
 
-	sconn->writePort ("GHOM", 4);
-
 	return 0;
 }
 
