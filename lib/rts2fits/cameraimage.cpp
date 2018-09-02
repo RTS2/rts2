@@ -1,4 +1,4 @@
-/* 
+/*
  * Classes for camera image.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -31,6 +31,13 @@ CameraImage::~CameraImage (void)
 		delete *iter;
 	}
 	deviceWaits.clear ();
+
+	if (image && !dataWriten)
+	{
+		// Delete the image that did not receive any data - it is just a header
+		image->deleteImage();
+	}
+
 	delete image;
 	image = NULL;
 }

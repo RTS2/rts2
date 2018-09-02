@@ -1,4 +1,4 @@
-/* 
+/*
  * Database image access classes.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -107,7 +107,7 @@ class ImageSkyDb:public ImageDb
 		virtual int toTrash ();
 
 		virtual int saveImage ();
-		virtual int deleteFormDB ();
+		virtual int deleteFromDB ();
 		virtual int deleteImage ();
 
 		virtual bool haveOKAstrometry () { return (processBitfiedl & ASTROMETRY_OK); }
