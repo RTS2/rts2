@@ -1,4 +1,4 @@
-/* 
+/*
  * Device window display.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
@@ -50,7 +50,7 @@ void NDeviceWindow::printState ()
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
-#ifdef DEBUG	
+#ifdef DEBUG
 	mvwprintw (window, 0, 2, "%s %s (%x) %x %3.1f", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState (), connection->getProgress (getNow ()));
 #else
 	mvwprintw (window, 0, 2, "%s %s ", connection->getName (), connection->getStateString ().c_str ());
@@ -143,7 +143,7 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 					double v_rd ();
 					_os << std::fixed << std::setprecision (3) << ((rts2core::ValueRaDec *) value)->getRa () * 3600 << "\" " << ((rts2core::ValueRaDec *) value)->getDec () * 3600 << "\"";
 				}
-				else 
+				else
 				{
 					LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_radec;
@@ -181,7 +181,7 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 					_os << hrz;
 				}
 				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
-				
+
 			}
 			break;
 		case RTS2_VALUE_SELECTION:
@@ -375,7 +375,7 @@ NDeviceCentralWindow::~NDeviceCentralWindow (void)
 void NDeviceCentralWindow::printValues ()
 {
 	// print statusChanges
-
+	wcolor_set (getWriteWindow (), CLR_TEXT, NULL);
 	rts2core::Value *nextState = getConnection ()->getValue ("next_state");
 	if (nextState && nextState->getValueType () == RTS2_VALUE_SELECTION)
 	{
@@ -384,7 +384,8 @@ void NDeviceCentralWindow::printValues ()
 			std::ostringstream _os;
 			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime (), rts2core::Configuration::instance ()->getShowMilliseconds ()) << ")";
 
-			printValue (((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
+			printValue ((std::string("next ") + ((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ())).c_str(), _os.str ().c_str (), false);
+			maxrow++;
 		}
 	}
 }

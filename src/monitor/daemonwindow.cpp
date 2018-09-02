@@ -1,4 +1,4 @@
-/* 
+/*
  * NCurses layout engine
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -47,7 +47,7 @@ keyRet NSelWindow::injectKey (int key)
 			selrow = 0;
 			break;
 		case KEY_END:
-			selrow = -1;
+			selrow = maxrow - 1;
 			break;
 		case KEY_NPAGE:
 			changeSelRow (getHeight ());
@@ -68,8 +68,8 @@ keyRet NSelWindow::injectKey (int key)
 			}
 			else
 			{
-				beep ();
-				flash ();
+				// beep ();
+				// flash ();
 			}
 			break;
 		case KEY_RIGHT:
@@ -79,8 +79,8 @@ keyRet NSelWindow::injectKey (int key)
 			}
 			else
 			{
-				beep ();
-				flash ();
+				// beep ();
+				// flash ();
 			}
 			break;
 		default:
@@ -129,15 +129,14 @@ void NSelWindow::winrefresh ()
 void NSelWindow::changeSelRow (int change)
 {
 	if (selrow < 0)
-	{
-		if (change < 0)
-			selrow = (maxrow - 2);
-		else
-			selrow = 0;
-		return;
-	}
+		selrow = maxrow - 1;
+
 	selrow += change;
-	selrow %= maxrow;
+
+	if (selrow >= maxrow)
+		selrow = 0;
+	else if (selrow < 0)
+		selrow = maxrow - 1;
 }
 
 NDevListWindow::NDevListWindow (rts2core::Block * in_block, rts2core::connections_t *in_conns):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
@@ -189,6 +188,8 @@ void NCentraldWindow::printState (rts2core::Connection * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+	else
+		wcolor_set (getWriteWindow (), CLR_OK, NULL);
 	wprintw (getWriteWindow (), "%s %s (%x)\n", conn->getName (),
 		conn->getStateString ().c_str (), conn->getState ());
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
