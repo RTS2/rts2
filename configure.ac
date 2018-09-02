@@ -424,6 +424,19 @@ AC_SUBST(ASI)
 AC_SUBST(ASI_INCLUDE)
 AC_SUBST(ASI_LIB)
 
+# check for Princeton SDK
+AC_ARG_WITH(princeton,
+[  --with-princeton          Princeton SDK path],
+PRINCETON="${withval}";
+PI_INCLUDE=${PRINCETON}/include;
+PI_LIB=${PRINCETON}/lib,
+[PRINCETON=no])
+
+AM_CONDITIONAL(PRINCETON, test x$PRINCETON != xno)
+AC_SUBST(PRINCETON)
+AC_SUBST(PI_INCLUDE)
+AC_SUBST(PI_LIB)
+
 # for Alta we need special library:(
 AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
@@ -1131,6 +1144,7 @@ CCDs:
   sbig lib      ${SBIG_LIB}
   SI3097        ${SI3097}
   ASI           ${ASI}
+  princeton     ${PRINCETON}
 
 MOUNTs:
   paralib       ${PARALIB}
