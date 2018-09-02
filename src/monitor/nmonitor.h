@@ -1,4 +1,4 @@
-/* 
+/*
  * NCurses based monitoring
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -55,6 +55,8 @@
 #define CLR_FITS             8
 #define CLR_MENU             9
 #define CLR_SCRIPT_CURRENT  10
+#define CLR_SUBMENU         11
+#define CLR_INPUT           12
 
 #define K_ENTER             13
 #define K_ESC               27

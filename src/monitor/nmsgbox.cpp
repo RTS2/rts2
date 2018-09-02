@@ -1,4 +1,4 @@
-/* 
+/*
  * Ncurses message box.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -65,15 +65,17 @@ keyRet NMsgBox::injectKey (int key)
 
 void NMsgBox::draw ()
 {
+	wbkgd (window, COLOR_PAIR(CLR_SUBMENU));
 	NWindow::draw ();
 	printMessage ();
+	wbkgd (window, COLOR_PAIR(CLR_MENU));
 	for (int i = 0; i < butnum; i++)
 	{
 		if (i == exitState)
 			wattron (window, A_REVERSE);
 		else
 			wattroff (window, A_REVERSE);
-		mvwprintw (window, but_lo, 2 + i * 30 / 2, buttons[i]);
+		mvwprintw (window, but_lo, 2 + i * 30 / 2, " %s ", buttons[i]);
 	}
 	wattroff (window, A_REVERSE);
 	winrefresh ();
@@ -106,5 +108,6 @@ void NMsgBoxWin::winrefresh ()
 
 void NMsgBoxWin::printMessage ()
 {
+	wbkgd (msgw, COLOR_PAIR(CLR_SUBMENU));
 	mvwprintw (msgw, 0, 1, "%s", query);
 }

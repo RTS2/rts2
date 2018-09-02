@@ -1,4 +1,4 @@
-/* 
+/*
  * Ncurses message box.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *

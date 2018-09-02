@@ -1,4 +1,4 @@
-/* 
+/*
  * Dialog boxes for setting values.
  * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -60,6 +60,9 @@ keyRet ValueBoxBool::injectKey (int key)
 
 void ValueBoxBool::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
+
 	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	if (getValue ()->getValueDisplayType () & RTS2_DT_ONOFF)
@@ -89,7 +92,7 @@ bool ValueBoxBool::setCursor ()
 
 ValueBoxString::ValueBoxString (NWindow * top, rts2core::Value * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
-	setSize (strlen (_val->getValue ()) + 5, 3);
+	setSize (fmax (20, strlen (_val->getValue ()) + 5), 3);
 	wprintw (getWriteWindow (), "%s", _val->getValue ());
 }
 
@@ -100,6 +103,9 @@ keyRet ValueBoxString::injectKey (int key)
 
 void ValueBoxString::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+
 	NWindowEdit::draw ();
 	winrefresh ();
 }
@@ -132,6 +138,9 @@ keyRet ValueBoxInteger::injectKey (int key)
 
 void ValueBoxInteger::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+
 	NWindowEditIntegers::draw ();
 	winrefresh ();
 }
@@ -160,6 +169,9 @@ keyRet ValueBoxLongInteger::injectKey (int key)
 
 void ValueBoxLongInteger::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+
 	NWindowEditIntegers::draw ();
 	winrefresh ();
 }
@@ -197,6 +209,9 @@ keyRet ValueBoxFloat::injectKey (int key)
 
 void ValueBoxFloat::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+
 	NWindowEditDigits::draw ();
 	winrefresh ();
 }
@@ -238,6 +253,9 @@ keyRet ValueBoxDouble::injectKey (int key)
 
 void ValueBoxDouble::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+
 	NWindowEditDigits::draw ();
 	winrefresh ();
 }
@@ -263,9 +281,21 @@ bool ValueBoxDouble::setCursor ()
 	return NWindowEditDigits::setCursor ();
 }
 
-AbstractBoxSelection::AbstractBoxSelection (NWindow * top, rts2core::Value * _val, int _x, int _y):ValueBox (top, _val),NSelWindow (top->getX () + _x, top->getY () + _y, 15, 5)
+AbstractBoxSelection::AbstractBoxSelection (NWindow * top, rts2core::Value * _val, int _x, int _y):ValueBox (top, _val),NSelWindow (top->getX () + _x, top->getY () + _y, 3, 3)
 {
 	maxrow = 0;
+	rts2core::ValueSelection *vals = (rts2core::ValueSelection *) getValue ();
+	for (std::vector < rts2core::SelVal >::iterator iter = vals->selBegin (); iter != vals->selEnd (); iter++)
+	{
+		maxrow ++;
+		// Grow the window in horizontal direction to accommodate longest element, taking care to not overflow the parent window
+		grow (fmin (strlen ((*iter).name.c_str ()) + 4, getTopWindow ()->getWidth () + getTopWindow()->getX () - getX ()), 0);
+
+		// And now in vertical direction, taking care to not overflow the parent window
+		if (maxrow + 2 > getHeight () && getY () + getHeight () < getTopWindow ()->getHeight () + getTopWindow ()->getY ())
+			grow (0, 1);
+	}
+
 	setLineOffset (0);
 }
 
@@ -300,6 +330,9 @@ ValueBoxSelection::ValueBoxSelection (NWindow * top, rts2core::ValueSelection * 
 
 void ValueBoxSelection::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
+
 	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	rts2core::ValueSelection *vals = (rts2core::ValueSelection *) getValue ();
@@ -324,6 +357,9 @@ ValueBoxTimeDiff::ValueBoxTimeDiff (NWindow * top, rts2core::ValueTime *_val, in
 
 void ValueBoxTimeDiff::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+
 	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	for (maxrow = 0; maxrow < 5;)
@@ -390,17 +426,23 @@ keyRet ValueBoxRectangle::injectKey (int key)
 			return RKEY_HANDLED;
 	}
 
-	return edt[edtSelected]->injectKey (key);	
+	return edt[edtSelected]->injectKey (key);
 }
 
 void ValueBoxRectangle::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
+
 	// draw border..
 	NWindowEdit::draw ();
 	werase (getWriteWindow ());
 	// draws entry boxes..
 	for (int i = 0; i < 4; i++)
+	{
+		wbkgd (edt[i]->getWriteWindow (), COLOR_PAIR (CLR_INPUT));
 		edt[i]->draw ();
+	}
 
 	edt[edtSelected]->setUnderline ();
 
@@ -510,16 +552,22 @@ keyRet ValueBoxArray::injectKey (int key)
 
 void ValueBoxArray::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
+
 	// draw border..
 	NWindowEdit::draw ();
-	werase (getWriteWindow ());
+	werase (getWriteWindow ()) ;
 
 	if (edt.size () > (size_t) edtSelected)
 		edt[edtSelected]->setReverse ();
 
 	// draws entry boxes..
 	for (size_t i = 0; i < edt.size (); i++)
+	{
+		wbkgd (edt[i]->getWriteWindow (), COLOR_PAIR (CLR_INPUT));
 		edt[i]->draw ();
+	}
 
 	winrefresh ();
 	for (size_t i = 0; i < edt.size (); i++)
@@ -603,12 +651,18 @@ keyRet ValueBoxPair::injectKey (int key)
 
 void ValueBoxPair::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
+
 	// draw border..
 	NWindowEdit::draw ();
 	werase (getWriteWindow ());
 	// draws entry boxes..
 	for (int i = 0; i < 2; i++)
+	{
+		wbkgd (edt[i]->getWriteWindow (), COLOR_PAIR (CLR_INPUT));
 		edt[i]->draw ();
+	}
 
 	edt[edtSelected]->setUnderline ();
 
@@ -678,12 +732,18 @@ keyRet ValueBoxPID::injectKey (int key)
 
 void ValueBoxPID::draw ()
 {
+	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
+
 	// draw border..
 	NWindowEdit::draw ();
 	werase (getWriteWindow ());
 	// draws entry boxes..
 	for (int i = 0; i < 3; i++)
+	{
+		wbkgd (edt[i]->getWriteWindow (), COLOR_PAIR (CLR_INPUT));
 		edt[i]->draw ();
+	}
 
 	edt[edtSelected]->setUnderline ();
 
