@@ -215,6 +215,13 @@ void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 	ln_get_hrz_from_equ (&target, observer, JD, hrz);
 }
 
+void Cupola::setCurrentAz (double in_az, bool send)
+{
+	currentAz->setValueDouble(in_az);
+	if (send)
+		sendValueAll(currentAz);
+}
+
 bool Cupola::needSlitChange ()
 {
 	int ret;
