@@ -29,7 +29,7 @@ NMsgBox::NMsgBox (const char *in_query, const char *in_buttons[],int in_butnum, 
 	butnum = in_butnum;
 	exitState = 0;
 
-	but_lo = 2;
+	but_lo = getHeight() - 3;
 }
 
 NMsgBox::~NMsgBox (void)
@@ -88,9 +88,7 @@ void NMsgBox::printMessage ()
 
 NMsgBoxWin::NMsgBoxWin (const char *in_query, const char *in_buttons[], int in_butnum):NMsgBox (in_query, in_buttons, in_butnum, COLS / 2 - 25, LINES / 2 - 15, 50, 30)
 {
-	but_lo = 25;
-
-	msgw = newwin (28, 48, LINES / 2 - 14, COLS / 2 - 24);
+	msgw = newwin (getHeight() - 5, getWidth () - 2, getY() + 1, getX () + 1);
 	if (!msgw)
 		errorMove ("newwin msg", COLS / 2 - 24, LINES / 2 - 14, 48, 3);
 }
