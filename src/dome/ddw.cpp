@@ -148,6 +148,10 @@ int DDW::initHardware ()
 
 	info();
 
+	sconn->flushPortIO();
+
+	info();
+
 	return 0;
 }
 
