@@ -81,16 +81,7 @@ class DDW:public Cupola
 		rts2core::ValueInteger *shutter;
 		rts2core::ValueInteger *dticks;
 
-		void setAzimuthTicks(int adaz)
-			{
-				// setCurrentAz(getTargetAzFromDomeAz(
-				// 				 359*(double)(adaz)/(double)(dticks->getValueInteger())),
-				// 			 true); }
-				setCurrentAz(
-					getTargetAzFromDomeAz(
-						359*(double)(adaz)/(double)(dticks->getValueInteger())));
-			}
-
+		void setAzimuthTicks(int adaz) { setCurrentAz(359*(double)(adaz)/(double)(dticks->getValueInteger()), true); }
 };
 
 }
@@ -141,13 +132,15 @@ int DDW::initHardware ()
 
 	info();
 
+	sconn->flushPortIO();
+
+	info();
+
 	return 0;
 }
 
 int DDW::info ()
 {
-	//logStream(MESSAGE_WARNING) << "in info with cmdInProgress " << cmdInProgress << sendLog;
-	
 	if (cmdInProgress != IDLE)
 		return 0;
 
@@ -294,7 +287,6 @@ long DDW::isClosed ()
 			return -1;
 		return shutter->getValueInteger () == 1 ? -2 : 0;
 	}
-
 
 	return inProgress (false);
 }
