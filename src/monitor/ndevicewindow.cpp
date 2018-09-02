@@ -340,8 +340,14 @@ void NDeviceWindow::draw ()
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE,	(maxrow > getHeight () ? maxrow + 1 : getHeight ()));
+	if (isActive ())
+		wattron (window, A_REVERSE);
 	mvwaddch (window, 0, valueBegins + 1, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, valueBegins + 1, ACS_BTEE);
+	// Scrollbar
+	if (maxrow > 1)
+		mvwaddch (window, 1 + (getHeight () - 3)*getSelRow () / (maxrow - 1), getWidth()-1, ACS_DIAMOND);
+	wattroff (window, A_REVERSE);
 
 	printState ();
 	rts2core::Value *val = getSelValue ();
