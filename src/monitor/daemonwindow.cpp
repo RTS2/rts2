@@ -94,7 +94,7 @@ void NSelWindow::winrefresh ()
 	int x, y;
 	int w, h;
 	getmaxyx (scrolpad, h, w);
-	if (selrow >= maxrow)
+	if (selrow >= maxrow || selrow == -1)
 		selrow = maxrow - 1;
 	if (maxrow > 0)
 	{
