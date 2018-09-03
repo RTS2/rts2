@@ -69,7 +69,7 @@ void NDeviceWindow::printState ()
 
 void NDeviceWindow::printValue (const char *name, const char *value, bool writable)
 {
-	wprintw (getWriteWindow (), "%c %-*s %.*s\n", ((writable) ? 'W' : ' '), valueBegins, name, getScrollWidth () - valueBegins - 5, value);
+	wprintw (getWriteWindow (), "%c %-*s %30.*s\n", ((writable) ? 'W' : ' '), valueBegins, name, getScrollWidth () - valueBegins - 5, value);
 }
 
 void NDeviceWindow::printValue (rts2core::Value * value)
@@ -185,7 +185,7 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 			}
 			break;
 		case RTS2_VALUE_SELECTION:
-			wprintw (getWriteWindow (), "%c %-*s %5i %.*s\n", value->isWritable () ? 'W' : ' ', valueBegins, value->getName ().c_str (), value->getValueInteger (), getScrollWidth () - valueBegins - 10, ((rts2core::ValueSelection *) value)->getSelName ());
+			wprintw (getWriteWindow (), "%c %-*s %5i %24.*s\n", value->isWritable () ? 'W' : ' ', valueBegins, value->getName ().c_str (), value->getValueInteger (), getScrollWidth () - valueBegins - 10, ((rts2core::ValueSelection *) value)->getSelName ());
 			break;
 		default:
 			printValue (value->getName ().c_str (), getDisplayValue (value).c_str (), value->isWritable ());
