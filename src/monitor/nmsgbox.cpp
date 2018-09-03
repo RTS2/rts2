@@ -68,7 +68,7 @@ void NMsgBox::draw ()
 	wbkgd (window, COLOR_PAIR(CLR_SUBMENU));
 	NWindow::draw ();
 	printMessage ();
-	wbkgd (window, COLOR_PAIR(CLR_MENU));
+	wcolor_set (window, CLR_MENU, NULL);
 	for (int i = 0; i < butnum; i++)
 	{
 		if (i == exitState)
