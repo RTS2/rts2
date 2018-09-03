@@ -1,4 +1,4 @@
-/* 
+/*
  * Supporting classes for clients programs.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -72,7 +72,7 @@ int ConnClient::init ()
 	ret = fcntl (sock, F_SETFL, O_NONBLOCK);
 	if (ret == -1)
 		return -1;
-	
+
 	ret = connect (sock, device_addr->ai_addr, device_addr->ai_addrlen);
 	freeaddrinfo (device_addr);
 	if (ret == -1)
@@ -137,8 +137,10 @@ Client::Client (int in_argc, char **in_argv, const char *_name):Block (in_argc, 
 	central_host = "localhost";
 	central_port = RTS2_CENTRALD_PORT;
 
-	login = "petr";
-	password = "petr";
+	//login = "petr";
+	//password = "petr";
+	login = getlogin();
+	password = login;
 
 	name = _name;
 

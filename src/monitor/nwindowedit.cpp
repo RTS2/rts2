@@ -1,4 +1,4 @@
-/* 
+/*
  * Windows for edditing various variables.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -30,6 +30,11 @@ NWindowEdit::NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _e
 	ey = _ey;
 	eh = _eh;
 	ew = _ew;
+
+	// These values will be updated on first repaint
+	width = 0;
+	height = 0;
+
 	comwin = newpad (_eh, _ew);
 }
 
@@ -65,7 +70,7 @@ keyRet NWindowEdit::injectKey (int key)
 			break;
 		case KEY_RIGHT:
 			x = getCurX ();
-			if (x < getWidth () - 3)
+			if (x < width - 1)
 				wmove (getWriteWindow (), getCurY (), x + 1);
 			break;
 		default:
@@ -78,8 +83,8 @@ keyRet NWindowEdit::injectKey (int key)
 				// alfanum key, and it does not passed..
 				else
 				{
-					beep ();
-					flash ();
+					// beep ();
+					// flash ();
 				}
 				return RKEY_HANDLED;
 			}
@@ -90,35 +95,32 @@ keyRet NWindowEdit::injectKey (int key)
 
 void NWindowEdit::winrefresh ()
 {
-	int w, h;
 	NWindow::winrefresh ();
-	getbegyx (window, y, x);
-	getmaxyx (window, h, w);
-	// window coordinates
-	int mwidth = x + w;
-	int mheight = y + h;
+
+	int x0 = getX () + ex;
+	int y0 = getY () + ey;
+
+	width = getWidth () - ex;
+	height = getHeight () - ey;
+
 	if (haveBox ())
 	{
-		mwidth -= 2;
-		mheight -= 1;
+		// Upper-left coordinate is user-defined, so we have to worry only about lower and right border
+		width -= 1;
+		height -= 1;
 	}
 
-	if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex, MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth)) == ERR)
-	{
-		if (y > 1 || x > 1)
-		{
-			if (y + ey + eh > LINES)
-				y = 1;
-			if (x + ex + ew > COLS)
-				x = 1;
-			winmove (x, y);
-			NWindow::draw ();
-			if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex, MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth)) != ERR)
-				return;
-		}
-		errorMove ("pnoutrefresh comwin", y + ey, x + ex,
-			MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth));
-	}
+	width = MIN (ew, width);
+	height = MIN (ew, height);
+
+	if (x0 + width > COLS)
+		width -= COLS - x0 - width;
+
+	if (y0 + height > LINES)
+		height -= LINES - y0 - height;
+
+	if (pnoutrefresh (getWriteWindow (), 0, 0, y0, x0, y0 + height - 1, x0 + width - 1) == ERR)
+		errorMove ("pnoutrefresh comwin", y0, x0, height, width);
 }
 
 void NWindowEdit::setSize (int w, int h)

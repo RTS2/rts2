@@ -1,4 +1,4 @@
-/* 
+/*
  * Ncurses menus.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -58,7 +58,7 @@ class NAction
 
 	protected:
 		const char *text;
-	
+
 	private:
 		int code;
 };
@@ -102,7 +102,7 @@ class NSubmenu:public NSelWindow
 		{
 			NAction *ret = new NAction (in_text, in_code);
 			addAction (ret);
-			grow (strlen (in_text) + 2, 1);
+			grow (strlen (in_text) + 4, 1);
 			return ret;
 		}
 
@@ -110,7 +110,7 @@ class NSubmenu:public NSelWindow
 		{
 			NActionBool *ret = new NActionBool (in_text, _unactive, in_code);
 			addAction (ret);
-			grow (strlen (in_text) + 4, 1);
+			grow (strlen (in_text) + 5, 1);
 			return ret;
 		}
 

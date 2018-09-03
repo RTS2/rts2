@@ -1,4 +1,4 @@
-/* 
+/*
  * Ncurses message box.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -29,7 +29,7 @@ NMsgBox::NMsgBox (const char *in_query, const char *in_buttons[],int in_butnum, 
 	butnum = in_butnum;
 	exitState = 0;
 
-	but_lo = 2;
+	but_lo = getHeight() - 3;
 }
 
 NMsgBox::~NMsgBox (void)
@@ -65,15 +65,17 @@ keyRet NMsgBox::injectKey (int key)
 
 void NMsgBox::draw ()
 {
+	wbkgd (window, COLOR_PAIR(CLR_SUBMENU));
 	NWindow::draw ();
 	printMessage ();
+	wcolor_set (window, CLR_MENU, NULL);
 	for (int i = 0; i < butnum; i++)
 	{
 		if (i == exitState)
 			wattron (window, A_REVERSE);
 		else
 			wattroff (window, A_REVERSE);
-		mvwprintw (window, but_lo, 2 + i * 30 / 2, buttons[i]);
+		mvwprintw (window, but_lo, 2 + i * 30 / 2, " %s ", buttons[i]);
 	}
 	wattroff (window, A_REVERSE);
 	winrefresh ();
@@ -86,9 +88,7 @@ void NMsgBox::printMessage ()
 
 NMsgBoxWin::NMsgBoxWin (const char *in_query, const char *in_buttons[], int in_butnum):NMsgBox (in_query, in_buttons, in_butnum, COLS / 2 - 25, LINES / 2 - 15, 50, 30)
 {
-	but_lo = 25;
-
-	msgw = newwin (28, 48, LINES / 2 - 14, COLS / 2 - 24);
+	msgw = newwin (getHeight() - 5, getWidth () - 2, getY() + 1, getX () + 1);
 	if (!msgw)
 		errorMove ("newwin msg", COLS / 2 - 24, LINES / 2 - 14, 48, 3);
 }
@@ -106,5 +106,6 @@ void NMsgBoxWin::winrefresh ()
 
 void NMsgBoxWin::printMessage ()
 {
+	wbkgd (msgw, COLOR_PAIR(CLR_SUBMENU));
 	mvwprintw (msgw, 0, 1, "%s", query);
 }

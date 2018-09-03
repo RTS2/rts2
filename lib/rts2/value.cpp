@@ -1,4 +1,4 @@
-/* 
+/*
  * Various value classes.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -339,8 +339,12 @@ const char * ValueTime::getDisplayValue ()
 	std::ostringstream _os;
 	_os << Timestamp (getValueDouble ())
 		<< " (" << TimeDiff (infot.tv_sec + (double) infot.tv_usec / USEC_SEC, getValueDouble (), rts2core::Configuration::instance ()->getShowMilliseconds ()) << ")";
+	std::string _str = _os.str();
 
-	strncpy (buf, _os.str ().c_str (), VALUE_BUF_LEN - 1);
+	// Crude hack to make Timestamp string more readable on screen
+	_str[10] = ' ';
+
+	strncpy (buf, _str.c_str (), VALUE_BUF_LEN - 1);
 	return buf;
 }
 
