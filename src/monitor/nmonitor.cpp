@@ -541,7 +541,7 @@ int NMonitor::init ()
 		init_pair (CLR_MENU, COLOR_RED, COLOR_CYAN);
 		init_pair (CLR_SCRIPT_CURRENT, COLOR_RED, COLOR_CYAN);
 		init_pair (CLR_SUBMENU, COLOR_BLACK, COLOR_CYAN);
-		init_pair (CLR_INPUT, COLOR_BLACK, COLOR_WHITE);
+		init_pair (CLR_INPUT, -1, -1);
 	}
 
 	// init windows
