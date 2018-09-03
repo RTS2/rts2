@@ -69,7 +69,7 @@ void NDeviceWindow::printState ()
 
 void NDeviceWindow::printValue (const char *name, const char *value, bool writable)
 {
-	wprintw (getWriteWindow (), "%c %-20s %30s\n", ((writable) ? 'W' : ' '), name, value);
+	wprintw (getWriteWindow (), "%c %-20s %.*s\n", ((writable) ? 'W' : ' '), name, getScrollWidth () - 25, value);
 }
 
 void NDeviceWindow::printValue (rts2core::Value * value)
@@ -390,7 +390,12 @@ void NDeviceCentralWindow::printValues ()
 			std::ostringstream _os;
 			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime (), rts2core::Configuration::instance ()->getShowMilliseconds ()) << ")";
 
-			printValue ((std::string("next ") + ((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ())).c_str(), _os.str ().c_str (), false);
+			std::string _str = _os.str();
+
+			// Crude hack to make Timestamp string more readable on screen
+			_str[10] = ' ';
+
+			printValue ((std::string("next ") + ((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ())).c_str(), _str.c_str (), false);
 			maxrow++;
 		}
 	}
