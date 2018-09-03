@@ -605,10 +605,10 @@ bool ValueBoxArray::setCursor ()
 	return false;
 }
 
-ValueBoxPair::ValueBoxPair (NWindow * top, rts2core::ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
+ValueBoxPair::ValueBoxPair (NWindow * top, rts2core::ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 51, 3, 1, 1, 300, 1)
 {
-	edt[0] = new NWindowEditDegrees (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
-	edt[1] = new NWindowEditDegrees (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[0] = new NWindowEditDegrees (top->getX () + _x + 5, top->getY () + _y + 1, 20, 1, 0, 0, 300, 1, false);
+	edt[1] = new NWindowEditDegrees (top->getX () + _x + 30, top->getY () + _y + 1, 20, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueDouble (_val->getRa ());
 	edt[1]->setValueDouble (_val->getDec ());
@@ -668,7 +668,7 @@ void ValueBoxPair::draw ()
 
 	// draws labels..
 	mvwprintw (getWriteWindow (), 0, 0, "%-3s:", p1name);
-	mvwprintw (getWriteWindow (), 0, 15, "%-3s:", p2name);
+	mvwprintw (getWriteWindow (), 0, 25, "%-3s:", p2name);
 
 	winrefresh ();
 	for (int i = 0; i < 2; i++)
