@@ -1,3 +1,17 @@
+dnl check for snmp library
+AC_DEFUN([AC_SNMP],
+[
+AC_ARG_VAR(SNMP_CONFIG, "net-snmp-config location")
+AC_PATH_PROG(SNMP_CONFIG, net-snmp-config, no)
+AM_CONDITIONAL(SNMP, test "x$SNMP_CONFIG" != x)
+
+AS_IF([test "x$SNMP_CONFIG" != "xno"], [
+  AC_DEFINE_UNQUOTED(SNMP, "1", "[snmp library])
+  AC_SUBST(SNMP_LIBS, `$SNMP_CONFIG --libs`)
+  AC_SUBST(SNMP_CFLAGS, `$SNMP_CONFIG --cflags`)
+])
+])
+
 ### Detect PostgreSQL
 
 AC_DEFUN([AC_POSTGRESQL],

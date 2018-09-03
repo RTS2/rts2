@@ -881,6 +881,7 @@ LIBCURL_CHECK_CONFIG()
 debug=""
 AC_SUBST(debug)
 
+AC_SNMP
 
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
 AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
@@ -1129,6 +1130,7 @@ echo "
   libthrift     ${libthrift} ${THRIFT_CFLAGS} ${THRIFT_LIBS}
   hiredis	${hiredis}
   liberfa	${liberfa} ${ERFA_CFLAGS} ${ERFA_LIBS}
+  snmp          ${SNMP_CONFIG}
 
 CCDs:
   alta          ${ALTA}
