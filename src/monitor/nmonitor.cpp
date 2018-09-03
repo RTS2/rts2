@@ -737,7 +737,7 @@ void NMonitor::processKey (int key)
 			if (ret == RKEY_NOT_HANDLED)
 			{
 				// ESC in device window brings you back to device list
-				if (activeWindow == daemonWindow && true)
+				if (activeWindow == daemonWindow && false)
 				{
 					changeActive (deviceList);
 					ret = RKEY_HANDLED;
