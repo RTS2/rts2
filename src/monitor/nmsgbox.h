@@ -1,4 +1,4 @@
-/* 
+/*
  * Ncurses message box.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -33,7 +33,7 @@ namespace rts2ncurses
 class NMsgBox:public NWindow
 {
 	public:
-		NMsgBox (const char *in_query, const char *in_buttons[], int in_butnum, int x = COLS / 2 - 25, int y = LINES / 2 - 15, int w = 50, int h = 5);
+		NMsgBox (const char *in_query, const char *in_buttons[], int in_butnum, int x = COLS / 2 - 25, int y = LINES / 2 - 15, int w = 50, int h = 6);
 		virtual ~ NMsgBox (void);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();

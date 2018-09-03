@@ -1,4 +1,4 @@
-/* 
+/*
  * RTS2 messages window.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -90,12 +90,18 @@ void NMsgWindow::draw ()
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 	mvwvline (getWriteWindow (), 0, 12, ACS_VLINE, (maxrow > getHeight ()? maxrow : getHeight ()));
-	mvwaddch (window, 0, 13, ACS_TTEE);
-	mvwaddch (window, getHeight () - 1, 13, ACS_BTEE);
-
 	mvwvline (getWriteWindow (), 0, 14, ACS_VLINE, (maxrow > getHeight ()? maxrow : getHeight ()));
+
+	if (isActive ())
+		wattron (window, A_REVERSE);
 	mvwaddch (window, 0, 15, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, 15, ACS_BTEE);
+	mvwaddch (window, 0, 13, ACS_TTEE);
+	mvwaddch (window, getHeight () - 1, 13, ACS_BTEE);
+	// Scrollbar
+	if (maxrow > 1)
+		mvwaddch (window, 1 + (getHeight () - 3)*getSelRow () / (maxrow - 1), getWidth()-1, ACS_DIAMOND);
+	wattroff (window, A_REVERSE);
 
 	winrefresh ();
 }
@@ -107,4 +113,7 @@ void NMsgWindow::add (rts2core::Message & msg)
 		messages.pop_front ();
 	}
 	messages.push_back (msg);
+
+	if (selrow == maxrow - 1)
+		selrow = -1;
 }

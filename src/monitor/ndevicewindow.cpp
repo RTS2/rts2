@@ -1,4 +1,4 @@
-/* 
+/*
  * Device window display.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
@@ -50,7 +50,7 @@ void NDeviceWindow::printState ()
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
-#ifdef DEBUG	
+#ifdef DEBUG
 	mvwprintw (window, 0, 2, "%s %s (%x) %x %3.1f", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState (), connection->getProgress (getNow ()));
 #else
 	mvwprintw (window, 0, 2, "%s %s ", connection->getName (), connection->getStateString ().c_str ());
@@ -69,7 +69,7 @@ void NDeviceWindow::printState ()
 
 void NDeviceWindow::printValue (const char *name, const char *value, bool writable)
 {
-	wprintw (getWriteWindow (), "%c %-20s %30s\n", ((writable) ? 'W' : ' '), name, value);
+	wprintw (getWriteWindow (), "%c %-*s %30.*s\n", ((writable) ? 'W' : ' '), valueBegins, name, getScrollWidth () - valueBegins - 5, value);
 }
 
 void NDeviceWindow::printValue (rts2core::Value * value)
@@ -93,7 +93,7 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 	// ultra special handling of SCRIPT value
 	if (value->getValueDisplayType () == RTS2_DT_SCRIPT)
 	{
-		wprintw (getWriteWindow (), "  %-20s ", value->getName ().c_str ());
+		wprintw (getWriteWindow (), "  %-*s ", valueBegins, value->getName ().c_str ());
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		const char *valStart = value->getValue ();
 		if (!valStart)
@@ -143,7 +143,7 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 					double v_rd ();
 					_os << std::fixed << std::setprecision (3) << ((rts2core::ValueRaDec *) value)->getRa () * 3600 << "\" " << ((rts2core::ValueRaDec *) value)->getDec () * 3600 << "\"";
 				}
-				else 
+				else
 				{
 					LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_radec;
@@ -181,11 +181,11 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 					_os << hrz;
 				}
 				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
-				
+
 			}
 			break;
 		case RTS2_VALUE_SELECTION:
-			wprintw (getWriteWindow (), "%c %-20s %5i %24s\n", value->isWritable () ? 'W' : ' ', value->getName ().c_str (), value->getValueInteger (), ((rts2core::ValueSelection *) value)->getSelName ());
+			wprintw (getWriteWindow (), "%c %-*s %5i %24.*s\n", value->isWritable () ? 'W' : ' ', valueBegins, value->getName ().c_str (), value->getValueInteger (), getScrollWidth () - valueBegins - 10, ((rts2core::ValueSelection *) value)->getSelName ());
 			break;
 		default:
 			printValue (value->getName ().c_str (), getDisplayValue (value).c_str (), value->isWritable ());
@@ -206,6 +206,11 @@ void NDeviceWindow::drawValuesList ()
 		if (hide_debug == false || (*iter)->getDebugFlag () == false)
 		{
 			maxrow++;
+
+			// Grow the width of value name field if necessary
+			if (valueBegins < strlen((*iter)->getName ().c_str ()) + 3)
+				valueBegins = strlen((*iter)->getName ().c_str ()) + 3;
+
 			printValue (*iter);
 			displayValues.push_back (*iter);
 		}
@@ -340,8 +345,14 @@ void NDeviceWindow::draw ()
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE,	(maxrow > getHeight () ? maxrow + 1 : getHeight ()));
+	if (isActive ())
+		wattron (window, A_REVERSE);
 	mvwaddch (window, 0, valueBegins + 1, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, valueBegins + 1, ACS_BTEE);
+	// Scrollbar
+	if (maxrow > 1)
+		mvwaddch (window, 1 + (getHeight () - 3)*getSelRow () / (maxrow - 1), getWidth()-1, ACS_DIAMOND);
+	wattroff (window, A_REVERSE);
 
 	printState ();
 	rts2core::Value *val = getSelValue ();
@@ -375,7 +386,7 @@ NDeviceCentralWindow::~NDeviceCentralWindow (void)
 void NDeviceCentralWindow::printValues ()
 {
 	// print statusChanges
-
+	wcolor_set (getWriteWindow (), CLR_TEXT, NULL);
 	rts2core::Value *nextState = getConnection ()->getValue ("next_state");
 	if (nextState && nextState->getValueType () == RTS2_VALUE_SELECTION)
 	{
@@ -384,7 +395,13 @@ void NDeviceCentralWindow::printValues ()
 			std::ostringstream _os;
 			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime (), rts2core::Configuration::instance ()->getShowMilliseconds ()) << ")";
 
-			printValue (((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
+			std::string _str = _os.str();
+
+			// Crude hack to make Timestamp string more readable on screen
+			_str[10] = ' ';
+
+			printValue ((std::string("next ") + ((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ())).c_str(), _str.c_str (), false);
+			maxrow++;
 		}
 	}
 }

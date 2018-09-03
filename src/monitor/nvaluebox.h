@@ -1,4 +1,4 @@
-/* 
+/*
  * Dialog boxes for setting values.
  * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -44,6 +44,7 @@ class ValueBox
 		virtual void draw () = 0;
 		virtual void sendValue (rts2core::Connection * connection) = 0;
 		virtual bool setCursor () = 0;
+		NWindow * getTopWindow () { return topWindow; };
 	protected:
 		rts2core::Value * getValue () { return val; }
 	private:
@@ -263,4 +264,4 @@ class ValueBoxPID:public ValueBox, NWindowEdit
 
 }
 
-#endif // !__RTS2_NVALUEBOX__ 
+#endif // !__RTS2_NVALUEBOX__

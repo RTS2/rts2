@@ -1,4 +1,4 @@
-/* 
+/*
  * Windows for edditing various variables.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -63,7 +63,7 @@ class NWindowEdit:public NWindow
 	protected:
 		/**
 		 * Returns true if key should be wadded to comwin.
-		 * Returns false if the key is not supported (e.g. numeric 
+		 * Returns false if the key is not supported (e.g. numeric
 		 * edit box don't want to get alnum). Default is to return isalnum (key).
 		 */
 		virtual bool passKey (int key);
@@ -72,6 +72,8 @@ class NWindowEdit:public NWindow
 		int ex, ey, ew, eh;
 		// current cursor position
 		int x, y;
+		// actual visible width and height
+		int width, height;
 };
 
 /**
@@ -83,7 +85,7 @@ class NWindowEditIntegers:public NWindowEdit
 {
 	public:
 		NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true, bool _hex = false);
-		
+
 		/**
 		 * Sets edit window value.
 		 */
