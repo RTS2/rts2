@@ -718,6 +718,9 @@ void NMonitor::processKey (int key)
 		case KEY_F (5):
 			queAll ("info");
 			break;
+		case 'l' & 0x1f: // Ctrl+L to repaint the screen
+			clear();
+			break;
 		case KEY_F (8):
 			doupdate ();
 			break;
