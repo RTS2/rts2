@@ -94,32 +94,32 @@ void NSelWindow::winrefresh ()
 	int x, y;
 	int w, h;
 	getmaxyx (scrolpad, h, w);
-	if (selrow >= maxrow || selrow == -1)
+	if (selrow >= maxrow || selrow < 0)
 		selrow = maxrow - 1;
 	if (maxrow > 0)
 	{
-		if (selrow >= 0)
-		{
-			if (isActive ())
-				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, CLR_PRIORITY, NULL); // no O_BLINK
-			else
-				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
-		}
-		else if (selrow == -1)
-		{
-			mvwchgat (scrolpad, maxrow - 1, 0, w, A_REVERSE, 0, NULL);
-		}
+		// Paint the cursor
+		if (isActive ())
+			mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, CLR_PRIORITY, NULL); // no O_BLINK
+		else
+			mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
 	}
+	// Update the padding
+	if (selrow >= maxrow - 1)
+		padoff_y = (maxrow - 1) - getWriteHeight () + 1 + lineOffset;
+	else if (selrow >= padoff_y + getWriteHeight() - lineOffset)
+		padoff_y = selrow - getWriteHeight () + 1 + lineOffset;
+	else if (selrow < padoff_y)
+		padoff_y = selrow;
+
+	// Keep the last row at the bottom
+	if (padoff_y > maxrow - getWriteHeight())
+		padoff_y = maxrow - getWriteHeight();
+
 	NWindow::winrefresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
-	// normalize selrow
-	if (selrow == -1)
-		padoff_y = (maxrow - 1) - getWriteHeight () + 1 + lineOffset;
-	else if ((selrow - padoff_y + lineOffset) >= getWriteHeight ())
-		padoff_y = selrow - getWriteHeight () + 1 + lineOffset;
-	else if ((selrow - padoff_y) < 0)
-		padoff_y = selrow;
+
 	if (haveBox ())
 		pnoutrefresh (scrolpad, padoff_y, padoff_x, y + 1, x + 1, y + h - 2, x + w - 2);
 	else
