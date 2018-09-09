@@ -775,8 +775,8 @@ void NMonitor::processKey (int key)
 			{
 				// Keys used for search in device window should not affect other windows
 				if (key == KEY_F (7) ||
-					key == KEY_CTRL('F') ||
-					key == KEY_CTRL('G'))
+					key == KEY_CTRL ('F') ||
+					key == KEY_CTRL ('G'))
 					break;
 
 				ret = comWindow->injectKey (key);

@@ -107,14 +107,14 @@ void NSelWindow::winrefresh ()
 	// Update the padding
 	if (selrow >= maxrow - 1)
 		padoff_y = (maxrow - 1) - getWriteHeight () + 1 + lineOffset;
-	else if (selrow >= padoff_y + getWriteHeight() - lineOffset)
+	else if (selrow >= padoff_y + getWriteHeight () - lineOffset)
 		padoff_y = selrow - getWriteHeight () + 1 + lineOffset;
 	else if (selrow < padoff_y)
 		padoff_y = selrow;
 
 	// Keep the last row at the bottom
-	if (padoff_y > maxrow - getWriteHeight())
-		padoff_y = maxrow - getWriteHeight();
+	if (padoff_y > maxrow - getWriteHeight ())
+		padoff_y = maxrow - getWriteHeight ();
 
 	NWindow::winrefresh ();
 	getbegyx (window, y, x);

@@ -316,17 +316,17 @@ void NDeviceWindow::createSearchBox ()
 {
 	rts2core::ValueString val("search string");
 
-	val.setValueString(searchString);
+	val.setValueString (searchString);
 
 	searchBox = new ValueBoxString (this, &val, valueBegins + 3, 2);
 	searchBox->setTitle ("Search variable");
 }
 
-std::string uppercase(std::string str)
+std::string uppercase (std::string str)
 {
 	std::string s = str;
 
-	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+	std::transform (s.begin (), s.end (), s.begin (), ::toupper);
 
 	return s;
 }
@@ -348,7 +348,7 @@ void NDeviceWindow::searchSearchBox (bool _continue)
 		if (hide_debug == false || (*iter)->getDebugFlag () == false)
 		{
 			// The logic of outer cycle has to match the one in NDeviceWindow::drawValuesList ()
-			if (pos > selrow && uppercase((*iter)->getName ()).find (uppercase(searchString)) != std::string::npos)
+			if (pos > selrow && uppercase ((*iter)->getName ()).find (uppercase (searchString)) != std::string::npos)
 			{
 				selrow = pos;
 				isFound = true;
@@ -369,7 +369,7 @@ void NDeviceWindow::searchSearchBox (bool _continue)
 		if (hide_debug == false || (*iter)->getDebugFlag () == false)
 		{
 			// The logic of outer cycle has to match the one in NDeviceWindow::drawValuesList ()
-			if (pos < selrow && uppercase((*iter)->getName ()).find (uppercase(searchString)) != std::string::npos)
+			if (pos < selrow && uppercase ((*iter)->getName ()).find (uppercase (searchString)) != std::string::npos)
 			{
 				selrow = pos;
 				isFound = true;
@@ -400,11 +400,11 @@ keyRet NDeviceWindow::injectKey (int key)
 			createValueBox ();
 			return RKEY_HANDLED;
 		case KEY_F (7):
-		case KEY_CTRL('F'): // Ctrl-F to start search
+		case KEY_CTRL ('F'): // Ctrl-F to start search
 			if (!searchBox)
 				createSearchBox ();
 			return RKEY_HANDLED;
-		case KEY_CTRL('G'):
+		case KEY_CTRL ('G'):
 			searchSearchBox (true);
 			return RKEY_HANDLED;
 	}

@@ -110,7 +110,7 @@ void NMsgWindow::draw ()
 void NMsgWindow::add (rts2core::Message & msg)
 {
 	// FIXME: Should we really only consider message types we are currently displaying?
-	while (messages.size () >= getScrollHeight() )
+	while (messages.size () >= getScrollHeight ())
 	{
 		messages.pop_front ();
 	}
