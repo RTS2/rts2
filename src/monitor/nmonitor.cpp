@@ -785,7 +785,7 @@ void NMonitor::processKey (int key)
 			}
 	}
 	// draw device values
-	if (activeWindow == deviceList)
+	if (activeWindow == deviceList && ret == RKEY_HANDLED)
 	{
 		changeListConnection ();
 	}
