@@ -400,11 +400,11 @@ keyRet NDeviceWindow::injectKey (int key)
 			createValueBox ();
 			return RKEY_HANDLED;
 		case KEY_F (7):
-		case 'f' & 0x1f: // Ctrl-F to start search
+		case KEY_CTRL('F'): // Ctrl-F to start search
 			if (!searchBox)
 				createSearchBox ();
 			return RKEY_HANDLED;
-		case 'g' & 0x1f:
+		case KEY_CTRL('G'):
 			searchSearchBox (true);
 			return RKEY_HANDLED;
 	}

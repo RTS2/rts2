@@ -722,7 +722,7 @@ void NMonitor::processKey (int key)
 		case KEY_F (5):
 			queAll ("info");
 			break;
-		case 'l' & 0x1f: // Ctrl+L to repaint the screen
+		case KEY_CTRL('L'): // Ctrl+L to repaint the screen
 			clear();
 			break;
 		case KEY_F (8):
@@ -775,8 +775,8 @@ void NMonitor::processKey (int key)
 			{
 				// Keys used for search in device window should not affect other windows
 				if (key == KEY_F (7) ||
-					key == ('f' & 0x1f) ||
-					key == ('g' & 0x1f))
+					key == KEY_CTRL('F') ||
+					key == KEY_CTRL('G'))
 					break;
 
 				ret = comWindow->injectKey (key);
