@@ -1,4 +1,4 @@
-/* 
+/*
  * Windowing class build on ncurses
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -75,7 +75,7 @@ class NWindow:public Layout
 
 		void winmove (int x, int y);
 		virtual void resize (int x, int y, int w, int h);
-		
+
 		void setWidth (int w) { resize (getX (), getY(), w, getHeight ()); }
 		void grow (int max_w, int h_dif);
 
@@ -96,6 +96,8 @@ class NWindow:public Layout
 		 * Return true if the window claims cursor, otherwise return false.
 		 */
 		virtual bool setCursor ();
+
+		virtual void setTitle (std::string _title) { title = _title; }
 
 		void setNormal () { wattrset (getWriteWindow (), A_NORMAL); }
 
@@ -130,6 +132,7 @@ class NWindow:public Layout
 	private:
 		bool _haveBox;
 		bool active;
+		std::string title;
 };
 
 }

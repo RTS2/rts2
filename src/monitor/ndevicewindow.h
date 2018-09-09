@@ -1,4 +1,4 @@
-/* 
+/*
  * Device window display.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -36,7 +36,7 @@ class NDeviceWindow:public NSelWindow
 		virtual void draw ();
 		virtual void winrefresh ();
 		virtual bool setCursor ();
-		virtual bool hasEditBox () { return valueBox != NULL; }
+		virtual bool hasEditBox () { return valueBox != NULL || searchBox != NULL; }
 
 	protected:
 		double now;
@@ -76,10 +76,15 @@ class NDeviceWindow:public NSelWindow
 		void endValueBox ();
 		void createValueBox ();
 		ValueBox *valueBox;
+		void endSearchBox ();
+		void createSearchBox ();
+		void searchSearchBox (bool _continue = false);
+		ValueBox *searchBox;
+		std::string searchString;
 		/** Index from which start value box */
 		int valueBegins;
 		bool hide_debug;
-		
+
 		// draw only those values
 		std::vector <rts2core::Value *> displayValues;
 };

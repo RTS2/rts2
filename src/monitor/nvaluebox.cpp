@@ -110,6 +110,16 @@ void ValueBoxString::draw ()
 	winrefresh ();
 }
 
+std::string ValueBoxString::getValueString ()
+{
+	int cx = getCurX ();
+	char buf[cx + 1];
+	mvwinnstr (getWriteWindow (), 0, 0, buf, cx);
+	buf[cx] = '\0';
+
+	return std::string (buf);
+}
+
 void ValueBoxString::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())

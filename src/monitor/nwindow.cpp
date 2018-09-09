@@ -1,4 +1,4 @@
-/* 
+/*
  * Windowing class build on ncurses
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -66,6 +66,9 @@ void NWindow::draw ()
 		else
 			box (window, 0, 0);
 	}
+
+	if (!title.empty ())
+		mvwprintw (window, 0, 2, "%s", title.c_str ());
 }
 
 int NWindow::getX ()

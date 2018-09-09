@@ -214,11 +214,15 @@ void NMonitor::showHelp ()
 "F2         .. switch to OFF (will not observe)\n"
 "F3         .. switch to STANDBY (might observe if weather is good)\n"
 "F4         .. switch to ON (will observe if weather is good)\n"
+"F5         .. Refresh information from all devices\n"
 "F9         .. menu\n"
 "F10,ctrl+c .. exit\n"
 "arrow keys .. move between items\n"
 "tab        .. move between windows\n"
 "enter,F6   .. edit value\n"
+"Ctrl+F,F7  .. search for a variable\n"
+"Ctrl+G     .. continue previous search\n"
+"Ctrl+L     .. clear and redraw the screen\n"
 "==================================================================\n"
 "For arrays, mean, size, minimum, maximum, median and standard deviation are displayed.");
 }
@@ -769,6 +773,12 @@ void NMonitor::processKey (int key)
 			ret = activeWindow->injectKey (key);
 			if (ret == RKEY_NOT_HANDLED)
 			{
+				// Keys used for search in device window should not affect other windows
+				if (key == KEY_F (7) ||
+					key == ('f' & 0x1f) ||
+					key == ('g' & 0x1f))
+					break;
+
 				ret = comWindow->injectKey (key);
 				if (key == KEY_ENTER || key == K_ENTER)
 					sendCommand ();
