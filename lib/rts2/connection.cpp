@@ -273,7 +273,7 @@ std::string Connection::getStateString (bool verbose)
 				if (getValue("filter"))
 					_os << " " << getValueSelection ("filter");
 
-				if (!std::isnan (progress))
+				if (!std::isnan (progress) && !(real_state & CAM_HAS_IMAGE))
 					_os << " " << std::fixed << std::setw (3) << std::setprecision (0) << progress << "%";
 			}
 
