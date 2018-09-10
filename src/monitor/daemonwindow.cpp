@@ -112,9 +112,9 @@ void NSelWindow::winrefresh ()
 	else if (selrow < padoff_y)
 		padoff_y = selrow;
 
-	// Keep the last row at the bottom
+	// Keep the last row at the bottom, if possible
 	if (padoff_y > maxrow - getWriteHeight ())
-		padoff_y = maxrow - getWriteHeight ();
+		padoff_y = fmax(0, maxrow - getWriteHeight ());
 
 	NWindow::winrefresh ();
 	getbegyx (window, y, x);
