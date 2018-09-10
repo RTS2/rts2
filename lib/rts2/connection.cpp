@@ -222,7 +222,7 @@ std::string Connection::getStateString (bool verbose)
 			_os << CentralState (getState ()).getString ();
 			break;
 		case DEVICE_TYPE_MOUNT:
-			if (verbose && getValueType ("TEL", RTS2_VALUE_RADEC))
+			if (verbose && getValue ("TEL"))
 			{
 				rts2core::ValueRaDec *value = dynamic_cast<rts2core::ValueRaDec *> (getValueType ("TEL", RTS2_VALUE_RADEC));
 				LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
