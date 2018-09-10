@@ -214,7 +214,7 @@ void NMonitor::showHelp ()
 "F2         .. switch to OFF (will not observe)\n"
 "F3         .. switch to STANDBY (might observe if weather is good)\n"
 "F4         .. switch to ON (will observe if weather is good)\n"
-"F5         .. Refresh information from all devices\n"
+"Ctrl+R,F5  .. Refresh information from all devices\n"
 "F9         .. menu\n"
 "F10,ctrl+c .. exit\n"
 "arrow keys .. move between items\n"
@@ -720,6 +720,7 @@ void NMonitor::processKey (int key)
 			messageBox ("Are you sure to switch to on?", SWITCH_ON);
 			break;
 		case KEY_F (5):
+		case KEY_CTRL ('R'):
 			queAll ("info");
 			break;
 		case KEY_CTRL('L'): // Ctrl+L to repaint the screen
