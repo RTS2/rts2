@@ -190,8 +190,8 @@ void NCentraldWindow::printState (rts2core::Connection * conn)
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
 	else
 		wcolor_set (getWriteWindow (), CLR_OK, NULL);
-	wprintw (getWriteWindow (), "%s %s (%x)\n", conn->getName (),
-		conn->getStateString ().c_str (), conn->getState ());
+	wprintw (getWriteWindow (), "%-5s %s (%x)\n", conn->getName (),
+		conn->getStateString (true).c_str (), conn->getState ());
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 
