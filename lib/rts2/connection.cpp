@@ -275,6 +275,10 @@ std::string Connection::getStateString (bool verbose)
 
 				if (!std::isnan (progress) && progress < 100.0)
 					_os << " " << std::fixed << std::setw (3) << std::setprecision (0) << progress << "%";
+
+				if (getValue ("CCD_TEMP"))
+					_os << " | " << std::fixed << std::setw (5) << std::setprecision (1) << getValueDouble ("CCD_TEMP");
+
 			}
 
 			if (real_state & CAM_HAS_IMAGE)
