@@ -78,6 +78,8 @@
 #define MENU_SORT_RTS2      22
 #define MENU_SHOW_DEBUG     23
 
+#define KEY_CTRL(x) ((x) & 0x1F)
+
 enum messageAction { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON, NONE };
 
 using namespace rts2ncurses;

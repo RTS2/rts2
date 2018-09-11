@@ -35,6 +35,7 @@ NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection, bool _hide_d
 	connection = in_connection;
 	connection->resetInfoTime ();
 	valueBox = NULL;
+	searchBox = NULL;
 	valueBegins = 20;
 	hide_debug = _hide_debug;
 
@@ -305,6 +306,81 @@ void NDeviceWindow::createValueBox ()
 	}
 }
 
+void NDeviceWindow::endSearchBox ()
+{
+	delete searchBox;
+	searchBox = NULL;
+}
+
+void NDeviceWindow::createSearchBox ()
+{
+	rts2core::ValueString val("search string");
+
+	val.setValueString (searchString);
+
+	searchBox = new ValueBoxString (this, &val, valueBegins + 3, 2);
+	searchBox->setTitle ("Search variable");
+}
+
+std::string uppercase (std::string str)
+{
+	std::string s = str;
+
+	std::transform (s.begin (), s.end (), s.begin (), ::toupper);
+
+	return s;
+}
+
+void NDeviceWindow::searchSearchBox (bool _continue)
+{
+	std::string str;
+
+	if (!_continue)
+		searchString = searchBox->getValueString ();
+
+	if (searchString.empty ())
+		return;
+
+	bool isFound = false;
+	int pos = 0;
+	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
+	{
+		if (hide_debug == false || (*iter)->getDebugFlag () == false)
+		{
+			// The logic of outer cycle has to match the one in NDeviceWindow::drawValuesList ()
+			if (pos > selrow && uppercase ((*iter)->getName ()).find (uppercase (searchString)) != std::string::npos)
+			{
+				selrow = pos;
+				isFound = true;
+				break;
+			}
+
+			pos ++;
+		}
+	}
+
+	if (isFound)
+		return;
+
+	// Wrapping the search if nothing is found
+	pos = 0;
+	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
+	{
+		if (hide_debug == false || (*iter)->getDebugFlag () == false)
+		{
+			// The logic of outer cycle has to match the one in NDeviceWindow::drawValuesList ()
+			if (pos < selrow && uppercase ((*iter)->getName ()).find (uppercase (searchString)) != std::string::npos)
+			{
+				selrow = pos;
+				isFound = true;
+				break;
+			}
+
+			pos ++;
+		}
+	}
+}
+
 keyRet NDeviceWindow::injectKey (int key)
 {
 	keyRet
@@ -314,15 +390,37 @@ keyRet NDeviceWindow::injectKey (int key)
 		case KEY_ENTER:
 		case K_ENTER:
 			// don't create new box if one already exists
-			if (valueBox)
+			if (valueBox || searchBox)
 				break;
 		case KEY_F (6):
+			if (searchBox)
+				endSearchBox ();
 			if (valueBox)
 				endValueBox ();
 			createValueBox ();
 			return RKEY_HANDLED;
+		case KEY_F (7):
+		case KEY_CTRL ('F'): // Ctrl-F to start search
+			if (!searchBox)
+				createSearchBox ();
+			return RKEY_HANDLED;
+		case KEY_CTRL ('G'):
+			searchSearchBox (true);
+			return RKEY_HANDLED;
 	}
-	if (valueBox)
+	if (searchBox)
+	{
+		ret = searchBox->injectKey (key);
+		if (ret == RKEY_ENTER || ret == RKEY_ESC)
+		{
+			if (ret == RKEY_ENTER)
+				searchSearchBox ();
+			endSearchBox ();
+			return RKEY_HANDLED;
+		}
+		return ret;
+	}
+	else if (valueBox)
 	{
 		ret = valueBox->injectKey (key);
 		if (ret == RKEY_ENTER || ret == RKEY_ESC)
@@ -364,12 +462,16 @@ void NDeviceWindow::draw ()
 void NDeviceWindow::winrefresh ()
 {
 	NSelWindow::winrefresh ();
+	if (searchBox)
+		searchBox->draw ();
 	if (valueBox)
 		valueBox->draw ();
 }
 
 bool NDeviceWindow::setCursor ()
 {
+	if (searchBox)
+		return searchBox->setCursor ();
 	if (valueBox)
 		return valueBox->setCursor ();
 	return NSelWindow::setCursor ();

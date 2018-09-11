@@ -46,8 +46,9 @@ void NMsgWindow::draw ()
 		rts2core::Message msg = *iter;
 		if (!msg.passMask (msgMask))
 			continue;
-		if (maxrow < padoff_y)
+		if (maxrow < padoff_y && false)
 		{
+			// FIXME: disabled for now, as it leads to blinking due to padoff_y being often modified below in winrefresh()
 			maxrow++;
 			continue;
 		}
@@ -80,9 +81,9 @@ void NMsgWindow::draw ()
 		time_t t = msg.getMessageTimeSec ();
 		localtime_r (&t, &tmesg);
 
-		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %c %s %s",
-			tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
-			mt, msg.getMessageOName (), msg.getMessageString ().c_str ());
+		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %c %s %.*s",
+				   tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
+				   mt, msg.getMessageOName (), getScrollWidth () - 16 - strlen(msg.getMessageOName ()), msg.getMessageString ().c_str ());
 
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		maxrow++;
@@ -108,7 +109,8 @@ void NMsgWindow::draw ()
 
 void NMsgWindow::add (rts2core::Message & msg)
 {
-	for (int tr = 0; tr < ((int) messages.size () - getScrollHeight ()); tr++)
+	// FIXME: Should we really only consider message types we are currently displaying?
+	while (messages.size () >= getScrollHeight ())
 	{
 		messages.pop_front ();
 	}
