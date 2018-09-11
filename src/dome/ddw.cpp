@@ -75,13 +75,15 @@ class DDW:public Cupola
 		int executeCmd (const char *cmd, cmdType newCmd);
 		long inProgress (bool opening);
 		cmdType cmdInProgress;
-		double azTelescopeOffset;
 
 		rts2core::ValueInteger *z;
 		rts2core::ValueInteger *shutter;
 		rts2core::ValueInteger *dticks;
 
-		void setAzimuthTicks(int adaz) { setCurrentAz(359*(double)(adaz)/(double)(dticks->getValueInteger()), true); }
+		void setAzimuthTicks(int adaz) { setCurrentAz(getTargetAzFromDomeAz(359*(double)(adaz)/(double)(dticks->getValueInteger())), true); }
+
+		long AzDomeOffsetCoeff[2][3];
+		
 };
 
 }
@@ -101,6 +103,16 @@ DDW::DDW (int argc, char **argv):Cupola (argc, argv)
 	shutter->setValueInteger(0);
 
 	createValue(dticks, "dticks", "number of azimuth ticks", false);
+
+	// Azimuth Dome offset coefficients derived for Lowell TiMo
+	// using offset(az) = [1]*sin(az+[2])+[3]
+	AzDomeOffsetCoeff[1][1] = 4.2772;
+	AzDomeOffsetCoeff[1][2] = -21.510;
+	AzDomeOffsetCoeff[1][3] = 11.053;	
+	AzDomeOffsetCoeff[2][1] = 8.247;
+	AzDomeOffsetCoeff[2][2] = -4.908;
+	AzDomeOffsetCoeff[2][3] = 20.234;
+	
 }
 
 DDW::~DDW ()
@@ -559,8 +571,6 @@ long DDW::getAzDomeOffset(double az)
  	float *coeffarray = getOffsetCoeff();
 
 	return coeffarray[0]*sin(az/180*M_PI+coeffarray[1])+coeffarray[2];
-
-
 }
 
 long DDW::getDomeAzFromTargetAz(double targetAz)

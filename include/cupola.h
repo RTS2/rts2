@@ -81,10 +81,11 @@ class Cupola:public Dome
 
 		void setTargetAz (double in_az) { tarAltAz->setAz (in_az); }
 		double getTargetAz () { return tarAltAz->getAz (); }
-
+		double getTargetAlt () { return tarAltAz->getAlt (); }
+		
 		void setCurrentAz (double in_az, bool send=false);
 		double getCurrentAz () { return currentAz->getValueDouble (); }
-
+		
 		double getTargetDistance () { return targetDistance->getValueDouble (); }
 
 		double getTargetRa () { return tarRaDec->getRa (); }
