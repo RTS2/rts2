@@ -1,4 +1,4 @@
-/* 
+/*
  * Connection class.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -29,7 +29,10 @@
 #include "valuerectangle.h"
 #include "valuearray.h"
 
+#include "libnova_cpp.h"
+
 #include <iostream>
+#include <iomanip>
 
 #include <errno.h>
 #include <syslog.h>
@@ -206,17 +209,25 @@ std::string Connection::getCameraChipState (int chipN)
 	return _os.str ();
 }
 
-std::string Connection::getStateString ()
+std::string Connection::getStateString (bool verbose)
 {
 	std::ostringstream _os;
 	int real_state = getRealState ();
 	int chipN;
+	double progress = getProgress (getNow ());
+
 	switch (getOtherType ())
 	{
 		case DEVICE_TYPE_SERVERD:
 			_os << CentralState (getState ()).getString ();
 			break;
 		case DEVICE_TYPE_MOUNT:
+			if (verbose && getValue ("TEL"))
+			{
+				rts2core::ValueRaDec *value = dynamic_cast<rts2core::ValueRaDec *> (getValueType ("TEL", RTS2_VALUE_RADEC));
+				LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
+				_os << " | " << v_radec << " | ";
+			}
 			switch (real_state & TEL_MASK_MOVING)
 			{
 				case TEL_OBSERVING:
@@ -254,6 +265,18 @@ std::string Connection::getStateString ()
 			chipN = getValueInteger ("chips");
 			for (int i = 0; i < chipN; i++)
 				_os << std::hex << getCameraChipState (i);
+
+			if (verbose)
+			{
+				_os << " | " << getValueDouble ("exposure") << " s";
+
+				if (getValue("filter"))
+					_os << " " << getValueSelection ("filter");
+
+				if (!std::isnan (progress) && progress < 100.0)
+					_os << " " << std::fixed << std::setw (3) << std::setprecision (0) << progress << "%";
+			}
+
 			if (real_state & CAM_HAS_IMAGE)
 				_os << " | IMAGE_READY";
 			switch (real_state & CAM_MASK_SHUTTER)
@@ -356,6 +379,10 @@ std::string Connection::getStateString ()
 			_os << "grbd " << real_state;
 			break;
 		case DEVICE_TYPE_FOCUS:
+			if (verbose && getValue ("FOC_POS"))
+			{
+				_os << " | " << getValueInteger ("FOC_POS") << " | ";
+			}
 			if (real_state & FOC_FOCUSING)
 				_os << "CHANGING";
 			else
@@ -375,6 +402,10 @@ std::string Connection::getStateString ()
 			}
 			break;
 		case DEVICE_TYPE_FW:
+			if (verbose && getValue ("filter"))
+			{
+				_os << " | " << getValueSelection ("filter") << " | ";
+			}
 			if (real_state & FILTERD_MOVE)
 				_os << "MOVING";
 			else
@@ -384,6 +415,10 @@ std::string Connection::getStateString ()
 			_os << "augershooter " << real_state;
 			break;
 		case DEVICE_TYPE_EXECUTOR:
+			if (verbose && getValue ("current") && getValueInteger ("current") >= 0)
+			{
+				_os << " | " << getValueInteger ("current") << " " << getValueInteger ("obsid") << " | ";
+			}
 			switch (real_state & EXEC_STATE_MASK)
 			{
 				case EXEC_IDLE:
@@ -432,6 +467,10 @@ std::string Connection::getStateString ()
 			}
 			break;
 		case DEVICE_TYPE_IMGPROC:
+			if (verbose)
+			{
+				_os << " | " << getValueInteger ("queue_size") << " : "<< getValueInteger ("good_astrom") << " " << getValueInteger ("no_astrom") << " | ";
+			}
 			if (real_state & IMGPROC_RUN)
 				_os << "PROCESS RUNNING";
 			else
@@ -511,7 +550,7 @@ std::string Connection::getStateString ()
 		_os << " | BLOCK TELESCOPE MOVEMENT";
 	else if (getFullBopState () & BOP_TEL_MOVE)
 		_os << " # BLOCK TELESCOPE MOVEMENT";
-	
+
 	if (getState () & BOP_WILL_EXPOSE)
 	  	_os << " | WILL EXPOSE";
 	else if (getFullBopState () & BOP_WILL_EXPOSE)
@@ -1310,6 +1349,7 @@ int Connection::command ()
 	// as it can fails (V without value), not with else
 	if (isCommand (PROTO_VALUE))
 		return -1;
+	// FIXME: should we send anything back there at all?
 	std::ostringstream ss;
 	ss << "unknow command " << getCommand ();
 	logStream (MESSAGE_DEBUG) << "Connection::command unknow command: getCommand " << getCommand () << " state: " << conn_state << " type: " << getType () << " name: " << getName () << sendLog;
@@ -1324,7 +1364,7 @@ int Connection::statusProgress ()
 
 	if (paramNextLongLong (&value) || paramNextDouble (&statusStart) || paramNextDouble (&statusExpectedEnd) || !(paramEnd() || (paramNextString (&msg) == 0 && paramEnd ())))
 		return -2;
-	//std::cerr << "Connection::statusProgress " << value << " " << statusStart << " " << statusExpectedEnd << std::endl;	
+	//std::cerr << "Connection::statusProgress " << value << " " << statusStart << " " << statusExpectedEnd << std::endl;
 	setState (value, msg);
 	master->progress (this, statusStart, statusExpectedEnd);
 	return -1;
@@ -1336,7 +1376,7 @@ int Connection::status ()
 	char *msg = NULL;
 	if (paramNextLongLong (&value) || !(paramEnd () || (paramNextString (&msg) == 0 && paramEnd ())))
 		return -2;
-	//std::cerr << "Connection::status " << value << std::endl;	
+	//std::cerr << "Connection::status " << value << std::endl;
 	setState (value, msg);
 	return -1;
 }
@@ -1347,7 +1387,7 @@ int Connection::bopStatus ()
 	long long int masterBopState;
 	if (paramNextLongLong (&masterStatus) || paramNextLongLong (&masterBopState) || !paramEnd ())
 		return -2;
-	//std::cerr << "Connection::bopStatus " << masterStatus << " " << masterBopState << std::endl;	
+	//std::cerr << "Connection::bopStatus " << masterStatus << " " << masterBopState << std::endl;
 	setBopState (masterBopState);
 	setState (masterStatus, NULL);
 	return -1;
@@ -1655,7 +1695,7 @@ void Connection::endSharedData (int data_conn, bool complete)
 		_os << PROTO_SHARED_KILLED " ";
 		writeChannels[data_conn]->endChannels ();
 	}
-		
+
 	_os << data_conn;
 	delete writeChannels[data_conn];
 	writeChannels.erase (data_conn);

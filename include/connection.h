@@ -1,4 +1,4 @@
-/* 
+/*
  * Connection class.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -137,7 +137,7 @@ class Connection:public Object
 		 * @param printDebug  True if all port communication should be written to log.
 		 */
 		void setDebug (bool printDebug = true) { debugComm = printDebug; }
-		
+
 		/**
 		 * Log all trafix as hex.
 		 *
@@ -163,7 +163,7 @@ class Connection:public Object
 		void setCommandInProgress (bool in_progress) { commandInProgress = in_progress; }
 
 		rts2_status_t getState () { return serverState->getValue (); }
-		
+
 		/**
 		 * Get weather state of the connection.
 		 *
@@ -200,7 +200,7 @@ class Connection:public Object
 		 */
 		rts2_status_t getRealState () { return getState () & DEVICE_STATUS_MASK; }
 		std::string getCameraChipState (int chipN);
-		std::string getStateString ();
+		std::string getStateString (bool verbose = false);
 		virtual int init () { return -1; }
 		void postMaster (Event * event);
 		virtual int idle ();
@@ -258,7 +258,7 @@ class Connection:public Object
 
 		/**
 		 * Image data will be transfered in shared memory, attachable by key.
-		 * Those functions are called by client. The receiving side can check in 
+		 * Those functions are called by client. The receiving side can check in
 		 * idle loop with sharedDataUpdate call, and get informed about shared
 		 * data start/end with newDataConn and fullDataReceived calls.
 		 */
@@ -310,7 +310,7 @@ class Connection:public Object
 		virtual int receive (Block *block);
 
 		/**
-		 * Called when select call indicates that socket 
+		 * Called when select call indicates that socket
 		 * can accept new data for writing.
 		 *
 		 * @param write  Write FD_SET, connection must test if socket is among this set.
@@ -523,7 +523,7 @@ class Connection:public Object
 		 * @param value_name   name of the searched value
 		 * @param value_type   required type of the value
 		 *
-		 * @throw Error 
+		 * @throw Error
 		 */
 		Value *getValueType (const char *value_name, int value_type);
 

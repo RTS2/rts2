@@ -44,7 +44,9 @@ class ValueBox
 		virtual void draw () = 0;
 		virtual void sendValue (rts2core::Connection * connection) = 0;
 		virtual bool setCursor () = 0;
+		virtual void setTitle (std::string _title) {};
 		NWindow * getTopWindow () { return topWindow; };
+		virtual std::string getValueString () { return ""; }
 	protected:
 		rts2core::Value * getValue () { return val; }
 	private:
@@ -65,6 +67,7 @@ class ValueBoxBool:public ValueBox, NSelWindow
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 };
 
 /**
@@ -80,6 +83,8 @@ class ValueBoxString:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
+		std::string getValueString ();
 };
 
 /**
@@ -95,6 +100,7 @@ class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 };
 
 /**
@@ -110,6 +116,7 @@ class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 };
 
 /**
@@ -126,6 +133,7 @@ class ValueBoxFloat:public ValueBox, NWindowEditDigits
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 };
 
 /**
@@ -142,6 +150,7 @@ class ValueBoxDouble:public ValueBox, NWindowEditDigits
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 };
 
 /**
@@ -155,6 +164,7 @@ class AbstractBoxSelection:public ValueBox, public NSelWindow
 		AbstractBoxSelection (NWindow * top, rts2core::Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 	protected:
 		void drawRow (const char *_text);
 };
@@ -170,6 +180,7 @@ class ValueBoxSelection:public AbstractBoxSelection
 		ValueBoxSelection (NWindow * top, rts2core::ValueSelection * _val, int _x, int _y);
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 };
 
 /**
@@ -199,6 +210,7 @@ class ValueBoxRectangle:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 	private:
 		NWindowEditIntegers * edt[4];
 		size_t edtSelected;
@@ -218,6 +230,7 @@ class ValueBoxArray:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 	private:
 		std::vector <NWindowEdit *> edt;
 		size_t edtSelected;
@@ -237,6 +250,7 @@ class ValueBoxPair:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 	private:
 		NWindowEditDegrees * edt[2];
 		int edtSelected;
@@ -257,6 +271,7 @@ class ValueBoxPID:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
+		virtual void setTitle (std::string _title) { NWindow::setTitle(_title);};
 	private:
 		NWindowEditIntegers * edt[3];
 		int edtSelected;
