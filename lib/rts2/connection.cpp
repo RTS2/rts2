@@ -421,7 +421,8 @@ std::string Connection::getStateString (bool verbose)
 		case DEVICE_TYPE_EXECUTOR:
 			if (verbose && getValue ("current") && getValueInteger ("current") >= 0)
 			{
-				_os << " | " << getValueInteger ("current") << " " << getValueInteger ("obsid") << " | ";
+				_os << " | " << getValueInteger ("current") << " " << getValueChar ("current_name")
+					<< " " << getValueInteger ("obsid") << " | ";
 			}
 			switch (real_state & EXEC_STATE_MASK)
 			{
