@@ -1,4 +1,4 @@
-/* 
+/*
  * RTS2 communication window
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -44,6 +44,12 @@ keyRet NComWin::injectKey (int key)
 			getyx (comwin, y, x);
 			mvwdelch (comwin, y, x - 1);
 			break;
+		case KEY_CTRL ('P'):
+			showHistory (1);
+			break;
+		case KEY_CTRL ('N'):
+			showHistory (-1);
+			break;
 		case KEY_ENTER:
 		case K_ENTER:
 			return RKEY_ENTER;
@@ -51,6 +57,20 @@ keyRet NComWin::injectKey (int key)
 			waddch (comwin, key);
 	}
 	return NWindow::injectKey (key);
+}
+
+void NComWin::showHistory (int dir)
+{
+	if (dir > 0 && historyPos < history.size ())
+		historyPos ++;
+
+	if (dir < 0 && historyPos > 0)
+		historyPos --;
+
+	werase (comwin);
+
+	if (historyPos > 0)
+		mvwprintw (comwin, 0, 0, history.at (historyPos - 1).c_str ());
 }
 
 void NComWin::draw ()

@@ -53,6 +53,9 @@ void NMonitor::sendCommand ()
 	rts2core::Connection *conn = NULL;
 	comWindow->getWinString (command, curX);
 	command[curX] = '\0';
+
+	comWindow->addHistory (command);
+
 	// try to find ., which show DEVICE.command notation..
 	while (*cmd_top && !isspace (*cmd_top))
 	{
