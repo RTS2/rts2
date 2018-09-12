@@ -24,6 +24,12 @@
 #include <PvSystem.h>
 #include <PvInterface.h>
 #include <PvDevice.h>
+#include <PvDeviceGEV.h>
+#include <PvBuffer.h>
+#include <PvStream.h>
+#include <PvStreamGEV.h>
+
+#include <list>
 
 namespace rts2camd
 {
@@ -57,6 +63,11 @@ class PI:public Camera
 
 	private:
 
+		std::list<PvBuffer *> buffers;
+		PvDeviceInfo *devInfo;
+		PvDevice *pvDevice;
+		const char *connId;
+
 		int listCameras ();
 
 		PvDevice* connect (const PvString &aConnectionID);
@@ -69,30 +80,60 @@ using namespace rts2camd;
 
 PI::PI (int argc, char **argv):Camera (argc, argv)
 {
+	pvDevice = NULL;
+	connId = NULL;
+	devInfo = NULL;
+
 	addOption ('l', NULL, 0, "list available cameras");
+	addOption ('c', NULL, 1, "camera connection ID");
 }
 
 PI::~PI ()
 {
+	PvDevice::Free(pvDevice);
 }
 
 int PI::processOption (int opt)
 {
-	if (opt == 'l')
+	switch (opt)
 	{
-		return listCameras();
+		case 'l':
+			return listCameras();
+		case 'c':
+			connId = optarg;
+			break;
+		default:
+			return Camera::processOption (opt);
 	}
-	return Camera::processOption (opt);
+	return 0;
 }
 
 int PI::initHardware ()
 {
+	if (connId == NULL)
+		return -1;
+	pvDevice = connect(PvString(connId));
+	if (pvDevice == NULL)
+	{
+		logStream(MESSAGE_ERROR) << "cannot connect to device with ID " << connId << sendLog;
+		return -1;
+	}
+
+	PvGenParameterArray* p = pvDevice->GetParameters();
+	PvGenEnum* aqMode = dynamic_cast<PvGenEnum*>(p->Get("AcquisitionMode"));
+
+	if (!aqMode->SetValue("SingleFrame").IsOK())
+	{
+		logStream(MESSAGE_ERROR) << "cannot set acqusition mode" << sendLog;
+		return -1;
+	}
+
 	return 0;
 }
 
 int PI::initChips ()
 {
-	return 0;
+	return Camera::initChips();
 }
 
 int PI::info ()
@@ -102,6 +143,24 @@ int PI::info ()
 
 int PI::startExposure ()
 {
+	PvResult res;
+	PvStream *pStream = PvStream::CreateAndOpen(connId, &res);
+	if (pStream == NULL || !res.IsOK())
+	{
+		logStream(MESSAGE_ERROR) << "cannot open stream to the camera" << sendLog;
+		return -1;
+	}
+
+	const PvDeviceInfoGEV *infoGen = dynamic_cast<const PvDeviceInfoGEV *>(devInfo);
+	if (infoGen != NULL)
+	{
+		PvStreamGEV *streamGEV = static_cast<PvStreamGEV *>(pStream);
+		PvDeviceGEV *deviceGEV = static_cast<PvDeviceGEV *>(pvDevice);
+
+		deviceGEV->NegotiatePacketSize();
+		deviceGEV->SetStreamDestination(streamGEV->GetLocalIPAddress(), streamGEV->GetLocalPort());
+	}
+
 	return 0;
 }
 
@@ -169,6 +228,7 @@ int PI::listCameras ()
 			const PvDeviceInfo *lDeviceInfo = lInterface->GetDeviceInfo( y );
 
 			std::cerr << "  Device " << y << std::endl;
+			std::cerr << "  Connetion ID " << lDeviceInfo->GetConnectionID().GetAscii() << std::endl;
 			std::cerr << "	Display ID: " << lDeviceInfo->GetDisplayID().GetAscii() << std::endl;
 			
 			const PvDeviceInfoGEV* lDeviceInfoGEV = dynamic_cast<const PvDeviceInfoGEV*>( lDeviceInfo );
@@ -202,9 +262,13 @@ int PI::listCameras ()
 				lLastDeviceInfo = lDeviceInfo;
 			}
 
+			//if (connId != NULL && !strcmp(lLastDeviceInfo->GetConnectionID().GetAscii(), connId))
+				//devInfo = lLastDeviceInfo;
+
 			listParameters(lLastDeviceInfo->GetConnectionID());
 		}
 	}
+
 	return 0;
 }
 
@@ -265,8 +329,19 @@ int PI::listParameters (const PvString &aConnectionID)
 			case PvGenTypeEnum:
 			{
 				PvString val;
-				static_cast<PvGenEnum *>(p)->GetValue(val);
-				std::cerr << "Enum: " << val.GetAscii();
+				PvGenEnum *en = static_cast<PvGenEnum *>(p);
+				en->GetValue(val);
+				std::cerr << "Enum: " << val.GetAscii() << " ";
+				int64_t ec;
+				en->GetEntriesCount(ec);
+				for (int i = 0; i < ec; i++)
+				{
+					const PvGenEnumEntry *entry;
+					en->GetEntryByIndex(i, &entry);
+					PvString ename;
+					entry->GetName(ename);
+					std::cerr << ":" << ename.GetAscii();
+				}
 				break;
 			}
 

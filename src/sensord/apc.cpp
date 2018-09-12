@@ -27,17 +27,14 @@ class APC:public Sensor
 		virtual ~APC ();
 	
 	protected:
-		virtual int processOption (int opt) override;
+		virtual int processOption (int opt);
 
-		virtual int initHardware() override;
-
-		virtual int info() override;
+		virtual int info();
 
 	private:
 		const char *host;
 
 		rts2core::ValueBool *plug1;
-		netsnmp_session session;
 };
 
 }
@@ -70,19 +67,8 @@ int APC::processOption (int opt)
 	return 0;
 }
 
-int APC::initHardware ()
-{
-	/*
- 	* Initialize the SNMP library
-	*/
-	init_snmp("snmpdemoapp");
-
-	return 0;
-}
-
 int APC::info ()
 {
-	netsnmp_variable_list *vars;
 	return Sensor::info();
 }
 
@@ -95,8 +81,14 @@ int main(int argc, char ** argv)
     oid anOID[MAX_OID_LEN];
     size_t anOID_len;
 
+    netsnmp_variable_list *vars;
     int status;
     int count=1;
+
+    /*
+     * Initialize the SNMP library
+     */
+    init_snmp("snmpdemoapp");
 
     /*
      * Initialize a "session" that defines who we're going to talk to
@@ -240,4 +232,4 @@ int main(int argc, char ** argv)
 
     SOCK_CLEANUP;
     return (0);
-}
+} /* main() */
