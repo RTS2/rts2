@@ -1,4 +1,4 @@
-/* 
+/*
  * Device basic class.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -544,6 +544,7 @@ int Device::commandAuthorized (Connection * conn)
 	{
 		conn->setConnState (CONN_DELETE);
 		deleteConnection (conn);
+		endRunLoop();
 		return -1;
 	}
 	else if (conn->isCommand ("script_ends"))
@@ -755,7 +756,7 @@ void Device::setMulti ()
 	multidevPart = true;
 	setNotDaemonize ();
 	setNoLock ();
-} 
+}
 
 void Device::initAutoSave ()
 {
