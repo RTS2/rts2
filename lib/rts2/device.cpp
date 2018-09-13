@@ -544,7 +544,7 @@ int Device::commandAuthorized (Connection * conn)
 	{
 		conn->setConnState (CONN_DELETE);
 		deleteConnection (conn);
-		endRunLoop();
+		endRunLoop ();
 		return -1;
 	}
 	else if (conn->isCommand ("script_ends"))
