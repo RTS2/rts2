@@ -53,8 +53,24 @@ keyRet NComWin::injectKey (int key)
 		case KEY_ENTER:
 		case K_ENTER:
 			return RKEY_ENTER;
+
+		case KEY_CTRL ('W'):
+			// Delete word backward
+			getyx (comwin, y, x);
+
+			while (x > 0  && isblank (mvwinch (comwin, y, x-1) & A_CHARTEXT))
+				x --;
+
+			while (x > 0  && !isblank (mvwinch (comwin, y, x-1) & A_CHARTEXT))
+				x --;
+
+			wmove (comwin, y, x);
+			wclrtoeol (comwin);
+			break;
+
 		default:
-			waddch (comwin, key);
+			if (isprint (key))
+				waddch (comwin, key);
 	}
 	return NWindow::injectKey (key);
 }
