@@ -226,6 +226,7 @@ void NMonitor::showHelp ()
 "Ctrl+F,F7  .. search for a variable\n"
 "Ctrl+G     .. continue previous search\n"
 "Ctrl+L     .. clear and redraw the screen\n"
+"Ctrl+P/N   .. navigate history of commands\n"
 "==================================================================\n"
 "For arrays, mean, size, minimum, maximum, median and standard deviation are displayed.");
 }
