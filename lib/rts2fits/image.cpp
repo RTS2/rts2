@@ -1,4 +1,4 @@
-/* 
+/*
  * Class which represents image.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -73,7 +73,7 @@ void Image::initData ()
 	verbose = true;
 
 	templateDeviceName = NULL;
-	
+
 	setFileName (NULL);
 	setFitsFile (NULL);
 	targetId = -1;
@@ -137,7 +137,7 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	templateDeviceName = NULL;
 
 	exposureLength = in_image->exposureLength;
-	
+
 	channels = in_image->channels;
 	dataType = in_image->dataType;
 	in_image->channels.clear ();
@@ -399,7 +399,10 @@ int Image::createImage (bool _overwrite)
 	// add history
 	writeHistory ("Created with RTS2 version " RTS2_VERSION " build on " __DATE__ " " __TIME__ ".");
 
-	logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
+	if (isMemImage ())
+		logStream (MESSAGE_DEBUG) << "creating in-memory image" << sendLog;
+	else
+		logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
 
 	flags = IMAGE_SAVE;
 	return 0;
@@ -916,7 +919,7 @@ void Image::writeWCS (double mods[NUM_WCS_VALUES])
 				v = v / mods[i + 2] + mods[i];
 			else
 				v += mods[i];
-				
+
 			setValue (multiWCS (wcs_names[i], wcs_multi_rotang) , v, wcs_desc[i]);
 		}
 	}
@@ -1167,7 +1170,7 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (i
 {
 	if (buf == NULL)
 		buf = new bt[s];
-	
+
 	bt *k = buf;
 
 	if (invert_y)
@@ -1305,7 +1308,7 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer
 {
 	if (buf == NULL)
 		buf = new bt[3 * s];
-	
+
 	double n;
 	bt nR, nG, nB;
 
@@ -1548,7 +1551,7 @@ Magick::Image *Image::getMagickImage (const char *label, float quantiles, int ch
 				getChannelGrayscaleImage (dataType, chan, buf, quantiles, 0);
 			else
 				getChannelPseudocolourImage (dataType, chan, buf, quantiles, 0, colourVariant);
-				
+
 		  	// single channel
 			tw = getChannelWidth (chan);
 			th = getChannelHeight (chan);
@@ -1637,7 +1640,7 @@ Magick::Image *Image::getMagickImage (const char *label, float quantiles, int ch
 
 				if ((*iter)->getHeight () > lw)
 				  	lw = (*iter)->getHeight ();
-				loff -= (*iter)->getWidth ();	
+				loff -= (*iter)->getWidth ();
 			}
 
 		}
@@ -1683,7 +1686,7 @@ void Image::writeLabel (Magick::Image *mimage, int x, int y, unsigned int fs, co
 void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
 {
 	std::string new_filename = expandPath (expand_str);
-	
+
 	int ret = mkpath (new_filename.c_str (), 0777);
 	if (ret)
 	{
@@ -2093,7 +2096,7 @@ template <typename bt, typename dt> const bt * scaleData (dt * data, size_t nump
 			break;
 		case SCALING_POW:
 			doscaling(d*=d)
-			break; 
+			break;
 		case SCALING_SQRT:
 			doscaling(d=sqrt (d))
 			break;
@@ -2451,7 +2454,7 @@ void Image::prepareArrayData (const std::string sname, rts2core::Connection *con
 	}
 	// otherwise, prepare data structure to be written
 	std::map <int, TableData *>::iterator ai = arrayGroups.find (val->getWriteGroup ());
-	
+
 	if (ai == arrayGroups.end ())
 	{
 		rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
