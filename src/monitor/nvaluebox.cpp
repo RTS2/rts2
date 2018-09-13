@@ -112,7 +112,7 @@ void ValueBoxString::draw ()
 
 std::string ValueBoxString::getValueString ()
 {
-	int cx = getCurX ();
+	int cx = getLength ();
 	char buf[cx + 1];
 	mvwinnstr (getWriteWindow (), 0, 0, buf, cx);
 	buf[cx] = '\0';
@@ -124,7 +124,7 @@ void ValueBoxString::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	int cx = getCurX ();
+	int cx = getLength ();
 	char buf[cx + 1];
 	mvwinnstr (getWriteWindow (), 0, 0, buf, cx);
 	buf[cx] = '\0';
@@ -190,9 +190,9 @@ void ValueBoxLongInteger::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	char buf[200];
+	char buf[getLength () + 1];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 	long tval = strtoll (buf, &endptr, 10);
 	if (*endptr != '\0' && *endptr != ' ')
 	{
@@ -230,9 +230,9 @@ void ValueBoxFloat::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	char buf[200];
+	char buf[getLength () + 1];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 #ifdef RTS2_HAVE_STRTOF
 	float tval = strtof (buf, &endptr);
 #else
@@ -274,9 +274,9 @@ void ValueBoxDouble::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	char buf[200];
+	char buf[getLength () + 1];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 	double tval = strtod (buf, &endptr);
 	if (*endptr != '\0' && *endptr != ' ')
 	{

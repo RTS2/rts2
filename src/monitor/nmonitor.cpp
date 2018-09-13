@@ -53,6 +53,9 @@ void NMonitor::sendCommand ()
 	rts2core::Connection *conn = NULL;
 	comWindow->getWinString (command, curX);
 	command[curX] = '\0';
+
+	comWindow->addHistory (command);
+
 	// try to find ., which show DEVICE.command notation..
 	while (*cmd_top && !isspace (*cmd_top))
 	{
@@ -223,6 +226,7 @@ void NMonitor::showHelp ()
 "Ctrl+F,F7  .. search for a variable\n"
 "Ctrl+G     .. continue previous search\n"
 "Ctrl+L     .. clear and redraw the screen\n"
+"Ctrl+P/N   .. navigate history of commands\n"
 "==================================================================\n"
 "For arrays, mean, size, minimum, maximum, median and standard deviation are displayed.");
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * RTS2 communication window
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -30,6 +30,8 @@ class NComWin:public NWindow
 	private:
 		WINDOW * comwin;
 		WINDOW *statuspad;
+		std::vector <std::string> history;
+		int historyPos;
 	public:
 		NComWin ();
 		virtual ~ NComWin (void);
@@ -58,6 +60,9 @@ class NComWin:public NWindow
 		}
 
 		void commandReturn (rts2core::Command * cmd, int cmd_status);
+
+		void addHistory (std::string cmd) { history.insert (history.begin (), cmd); historyPos = 0; }
+		void showHistory (int dir);
 };
 
 }

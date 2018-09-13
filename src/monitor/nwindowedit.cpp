@@ -23,6 +23,7 @@
 #include <ctype.h>
 
 #define MIN(x,y) ((x < y) ? x : y)
+#define MAX(x,y) ((x > y) ? x : y)
 
 NWindowEdit::NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindow (_x, _y, w, h, border)
 {
@@ -48,14 +49,33 @@ bool NWindowEdit::passKey (int key)
 	return isprint (key);
 }
 
+int NWindowEdit::getLength ()
+{
+	// TODO: cache the value until next insert/delete command?
+	int x0, y0;
+
+	// Current cursor position
+	getyx (getWriteWindow (), x0, y0);
+
+	int length = MAX (0, getWriteWidth ());
+
+	while (length > 0 && isblank (mvwinch (getWriteWindow (), getCurY (), length - 1) & A_CHARTEXT))
+		length --;
+
+	// Restore cursor position
+	wmove (getWriteWindow (), x0, y0);
+
+	return length;
+}
+
 keyRet NWindowEdit::injectKey (int key)
 {
 	switch (key)
 	{
 		case KEY_BACKSPACE:
 		case 127:
-			getyx (comwin, y, x);
-			mvwdelch (comwin, y, x - 1);
+			getyx (getWriteWindow (), y, x);
+			mvwdelch (getWriteWindow (), y, x - 1);
 			return RKEY_HANDLED;
 		case KEY_EXIT:
 		case K_ESC:
@@ -70,15 +90,65 @@ keyRet NWindowEdit::injectKey (int key)
 			break;
 		case KEY_RIGHT:
 			x = getCurX ();
-			if (x < width - 1)
+			if (x < MIN (getLength (), getWriteWidth () - 1))
 				wmove (getWriteWindow (), getCurY (), x + 1);
+			break;
+		case KEY_HOME:
+		case KEY_CTRL ('A'):
+			wmove (getWriteWindow (), getCurY (), 0);
+			break;
+		case KEY_END:
+		case KEY_CTRL ('E'):
+			wmove (getWriteWindow (), getCurY (), MIN (getWriteWidth () - 1, getLength ()));
+			break;
+		case KEY_CTRL ('W'):
+			// Delete word backward
+			getyx (getWriteWindow (), y, x);
+
+			while (x > 0  && isblank (mvwinch (getWriteWindow (), y, x - 1) & A_CHARTEXT))
+			{
+				mvwdelch (getWriteWindow (), y, x - 1);
+				x --;
+			}
+
+			while (x > 0  && !iswblank (mvwinch (getWriteWindow (), y, x - 1) & A_CHARTEXT))
+			{
+				mvwdelch (getWriteWindow (), y, x - 1);
+				x --;
+			}
+			break;
+		case KEY_CTRL ('K'):
+			// Delete rest of like
+			wclrtoeol (getWriteWindow ());
+			break;
+		case KEY_CTRL ('P'):
+		case KEY_CTRL ('N'):
+			// Do not propagate these to command window
 			break;
 		default:
 			if (isprint (key))
 			{
-				if (passKey (key))
+				if (passKey (key) && getCurX () < getWriteWidth ())
 				{
-					waddch (getWriteWindow (), key);
+					// TODO: make it configurable / togglable ?
+					if (true)
+					{
+						// Insert mode behaviour
+						char buf[getWriteWidth () + 1];
+						getyx (getWriteWindow (), y, x);
+						mvwinnstr (getWriteWindow (), y, x, buf, getWriteWidth () - x);
+						mvwaddnstr (getWriteWindow (), y, x + 1, buf, getWriteWidth () - x - 1);
+						mvwaddch (getWriteWindow (), y, x, key);
+					}
+					else
+					{
+						// Overwrite mode, old default behaviour
+						waddch (getWriteWindow (), key);
+					}
+
+					if (getCurX () == getWriteWidth ())
+						// Keep the cursor inside the window
+						wmove (getWriteWindow (), getCurY (), getCurX () - 1);
 				}
 				// alfanum key, and it does not passed..
 				else
@@ -154,9 +224,9 @@ bool NWindowEditIntegers::passKey (int key)
 
 int NWindowEditIntegers::getValueInteger ()
 {
-	char buf[200];
+	char buf[getLength () + 1];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 	int tval = strtol (buf, &endptr, hex ? 0 : 10);
 	if (*endptr != '\0' && *endptr != ' ')
 	{
@@ -184,9 +254,9 @@ bool NWindowEditDigits::passKey (int key)
 
 double NWindowEditDigits::getValueDouble ()
 {
-	char buf[200];
+	char buf[getLength () + 1];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 	double tval = strtod (buf, &endptr);
 	if (*endptr != '\0' && *endptr != ' ')
 	{
@@ -225,9 +295,9 @@ bool NWindowEditDegrees::passKey (int key)
 
 double NWindowEditDegrees::getValueDouble ()
 {
-	char buf[200];
+	char buf[getLength () + 1];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 	char *p = buf;
 	double tval = 0;
 	while (*p != '\0')
@@ -279,8 +349,8 @@ void NWindowEditBool::setValueBool (bool _val)
 
 bool NWindowEditBool::getValueBool ()
 {
-	char buf[200];
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	char buf[getLength ()];
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
 	if (dt & RTS2_DT_ONOFF)
 		return strncasecmp (buf, "on", 2) ? false : true;
 	else

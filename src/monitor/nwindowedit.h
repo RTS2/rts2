@@ -60,6 +60,8 @@ class NWindowEdit:public NWindow
 		virtual bool setCursor ();
 
 		virtual WINDOW *getWriteWindow () { return comwin; }
+
+		int getLength ();
 	protected:
 		/**
 		 * Returns true if key should be wadded to comwin.
