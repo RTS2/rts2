@@ -1,4 +1,4 @@
-/* 
+/*
  * Display RTS2 (and FITS images) in separate window.
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -48,7 +48,7 @@ int cmpuint16_t (const void *a, const void *b)
 #undef B
 }
 
-XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client)
+XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client, float _quantiles, int _colourVariant)
 {
 	connection = _connection;
 	client = _client;
@@ -77,6 +77,9 @@ XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *
 	low = high = min = max = 0;
 	median = average = 0;
 	binningsX = binningsY = 0;
+
+	colourVariant = _colourVariant;
+	quantiles = _quantiles;
 }
 
 XFitsImage::~XFitsImage ()
@@ -402,8 +405,10 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	// get cuts
 	double sigma;
 	median = classical_median (iP, image->getDataType (), iW * iH, &sigma);
-	low = (int) (median - 3 * sigma);
-	high = (int) (median + 5 * sigma);
+	// low = (int) (median - 3 * sigma);
+	// high = (int) (median + 5 * sigma);
+
+	image->getChannelQuantiles (chan, (int) INT_MIN, (int) INT_MAX, quantiles, &low, &high);
 
 	// clear progress indicator
 	std::cout << std::setw (COLS) << " " << '\r';
@@ -547,7 +552,7 @@ double XFitsImage::classical_median (void *q, int16_t dataType, int n, double *s
 			else
 		 	 	M = (F[n / 2] + F[n / 2 + 1]) / 2;
 			min = F[0];
-			max = F[n - 1];	
+			max = F[n - 1];
 #undef F
 			break;
 		default:
@@ -604,9 +609,106 @@ void XFitsImage::buildWindow ()
 	// allocate colormap..
 	for (int i = 0; i < 256; i++)
 	{
-		rgb[i].red = (unsigned short) (65536 * (1.0 * i / 256));
-		rgb[i].green = (unsigned short) (65536 * (1.0 * i / 256));
-		rgb[i].blue = (unsigned short) (65536 * (1.0 * i / 256));
+		unsigned short n, nR, nG, nB;
+		int pix = i;
+		int low = 0;
+		int high = 255;
+
+		// The code directly copied from image.cpp
+		// TODO: refactor it into separate function somewhere in rts2image
+		switch (colourVariant)
+		{
+			case PSEUDOCOLOUR_VARIANT_GREY:
+				n = 255.0 * double (pix - low) / double (high - low);
+				nR = n;
+				nG = nR;
+				nB = nR;
+				break;
+			case PSEUDOCOLOUR_VARIANT_GREY_INV:
+				n = 255.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = n;
+				nG = nR;
+				nB = nR;
+				break;
+			case PSEUDOCOLOUR_VARIANT_BLUE:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = n / 2.0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_BLUE_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = n / 2.0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_RED:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = (n < 256.0) ? n : 255;
+				nG = n / 2.0;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_RED_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = (n < 256.0) ? n : 255;
+				nG = n / 2.0;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_GREEN:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = n / 2.0;
+				nG = (n < 256.0) ? n : 255;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_GREEN_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = n / 2.0;
+				nG = (n < 256.0) ? n : 255;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_VIOLET:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = n / 2.0;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_VIOLET_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = n / 2.0;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MAGENTA:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = (n < 256.0) ? n : 255;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = n / 2.0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MAGENTA_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = (n < 256.0) ? n : 255;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = n / 2.0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MALACHIT:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = (n < 256.0) ? n : 255;
+				nB = n / 2.0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MALACHIT_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = (n < 256.0) ? n : 255;
+				nB = n / 2.0;
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "Unknown colourVariant" << colourVariant << sendLog;
+		}
+
+		rgb[i].red = 256 * nR;
+		rgb[i].green = 256 * nG;
+		rgb[i].blue = 256 * nB;
 		rgb[i].flags = DoRed | DoGreen | DoBlue;
 
 		ret = XAllocColor (display, colormap, rgb + i);

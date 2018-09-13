@@ -1,4 +1,4 @@
-/* 
+/*
  * Class which represents image.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -139,7 +139,7 @@ class Image:public FitsFile
 		/**
 		 * Create image for a given target.
 		 *
-		 * 
+		 *
 		 *
 		 */
 		Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart, const char *expand_path = NULL, bool overwrite = false);
@@ -199,7 +199,7 @@ class Image:public FitsFile
 		 * Create softlink of the image.
 		 *
 		 * @param link_name  Pathe where link will be created.
-		 * 
+		 *
 		 * @return 0 on success, otherwise returns system error code.
 		 */
 		int symlinkImage (const char *link_name);
@@ -207,8 +207,8 @@ class Image:public FitsFile
 		/**
 		 * Create softlink of the image. The location is specified as expansion string.
 		 *
-		 * @param link_ex   Path where image link will be created. Any 
-		 * 
+		 * @param link_ex   Path where image link will be created. Any
+		 *
 		 * @return 0 on success, otherwise returns system errror code.
 		 */
 		int symlinkImageExpand (std::string link_ex);
@@ -217,7 +217,7 @@ class Image:public FitsFile
 		 * Create hardlink of the image.
 		 *
 		 * @param link_name  Pathe where link will be created.
-		 * 
+		 *
 		 * @return 0 on success, otherwise returns system error code.
 		 */
 		int linkImage (const char *link_name);
@@ -225,8 +225,8 @@ class Image:public FitsFile
 		/**
 		 * Create hardlink of the image. The location is specified as expansion string.
 		 *
-		 * @param link_ex   Path where image link will be created. Any 
-		 * 
+		 * @param link_ex   Path where image link will be created. Any
+		 *
 		 * @return 0 on success, otherwise returns system errror code.
 		 */
 		int linkImageExpand (std::string link_ex);
@@ -279,7 +279,7 @@ class Image:public FitsFile
 		/**
 		 * Build channel histogram.
 		 *
-		 * @param chan      channel number 
+		 * @param chan      channel number
 		 * @param histogram array for calculated histogram
 		 * @param nbins     number of histogram bins
 		 */
@@ -302,8 +302,9 @@ class Image:public FitsFile
 
 		void getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset);
 
-
 		template <typename bt, typename dt> void getChannelPseudocolourByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y, int colourVariant = PSEUDOCOLOUR_VARIANT_BLUE);
+
+		template <typename dt> void getChannelQuantiles (int chan, dt minval, dt mval, float quantiles, dt * low_ptr, dt * high_ptr);
 
 		/**
 		 * Returns image pseudocolour buffer. Black have value equal to black parameter, white is 0.
@@ -542,7 +543,7 @@ class Image:public FitsFile
 		int getError (double &eRa, double &eDec, double &eRad);
 
 		/**
-		 * Increase WCS value 
+		 * Increase WCS value
 		 */
 		void addWcs (double delta, int i)
 		{
@@ -608,9 +609,9 @@ class Image:public FitsFile
 		/**
 		 * Retrieves from FITS headers best raw mount coordinates.
 		 *
-		 * Those are taken from U_TELRA and U_TELDEC keywords, or computed from 
-		 * TELRA, TELDEC and MNT_FLIP values, which will not give real HW position 
-		 * (we cannot distinguish between 360deg multiples), still it should be 
+		 * Those are taken from U_TELRA and U_TELDEC keywords, or computed from
+		 * TELRA, TELDEC and MNT_FLIP values, which will not give real HW position
+		 * (we cannot distinguish between 360deg multiples), still it should be
 		 * acceptable for most cases.
 		 * Needed for TP model computations.
 		 */
@@ -737,7 +738,7 @@ class Image:public FitsFile
 
 		// if write RTS2 extended values
 		bool writeRTS2Values;
-	
+
 		int targetId;
 		int targetIdSel;
 		char targetType;
@@ -751,7 +752,7 @@ class Image:public FitsFile
 		float exposureLength;
 
 		std::string oldImageName;
-		
+
 		int createImage (char *in_filename, bool _overwrite = false);
 		int createImage (std::string in_filename, bool _overwrite = false);
 

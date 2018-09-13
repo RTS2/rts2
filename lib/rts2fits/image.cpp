@@ -1216,6 +1216,7 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (i
 }
 
 
+
 template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y)
 {
 	long hist[65536];
@@ -1442,8 +1443,7 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer
 	}
 }
 
-
-template <typename bt, typename dt> void Image::getChannelPseudocolourBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y, int colourVariant)
+template <typename dt> void Image::getChannelQuantiles (int chan, dt minval, dt mval, float quantiles, dt * low_ptr, dt * high_ptr)
 {
 	long hist[65536];
 	getChannelHistogram (chan, hist, 65536);
@@ -1489,9 +1489,27 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourBuffer (in
 		}
 	}
 
-	getChannelPseudocolourByteBuffer (chan, buf, black, low, high, s, offset, invert_y, colourVariant);
+	if (low_ptr)
+		*low_ptr = low;
+
+	if (high_ptr)
+		*high_ptr = high;
 }
 
+// Instantiate it for ints for use outside librts2image
+template void Image::getChannelQuantiles (int , int , int , float, int * , int * );
+
+template <typename bt, typename dt> void Image::getChannelPseudocolourBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y, int colourVariant)
+{
+	dt low = minval;
+	dt high = minval;
+
+	long s = getChannelNPixels (chan);
+
+	getChannelQuantiles (chan, low, high, quantiles, &low, &high);
+
+	getChannelPseudocolourByteBuffer (chan, buf, black, low, high, s, offset, invert_y, colourVariant);
+}
 
 void Image::getChannelPseudocolourImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset, int colourVariant)
 {

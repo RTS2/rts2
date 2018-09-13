@@ -1,4 +1,4 @@
-/* 
+/*
  * Display RTS2 (and FITS images) in separate window.
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -43,7 +43,7 @@ class Marker
 class XFitsImage
 {
 	public:
-		XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client);
+		XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client, float _quantiles = 0.005, int _colourVariant = PSEUDOCOLOUR_VARIANT_BLUE);
 		virtual ~XFitsImage ();
 
 		void setCrossType (int in_crossType);
@@ -61,6 +61,8 @@ class XFitsImage
 		void drawImage (rts2image::Image * image, int channel, Display * _display, Visual *_visual, int _depth, double zoom, int _crossType, bool GoNine);
 
 		int getChannelNumber () { return channelnum; }
+
+		void setColourVariant (int _i) { colourVariant = _i; }
 
 	private:
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
@@ -135,6 +137,12 @@ class XFitsImage
 
 		// image channel
 		int channelnum;
+
+		// colormap
+		int colourVariant;
+
+		// Quantiles
+		float quantiles;
 };
 
 #endif // __RTS2_XFITSIMAGE__
