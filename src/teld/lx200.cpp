@@ -117,6 +117,22 @@ int LX200::commandAuthorized (rts2core::Connection *conn)
 		else
 			return serConn->writePort (":TQ#", 4);
 	}
+	else if (conn->isCommand ("shutdown"))
+	{
+		if (hasAstroPhysicsExtensions)
+		{
+			char rbuf[100];
+			if (serConn->writeRead (":shutdown#", 10, rbuf, 1) || rbuf[0] == '0')
+				return DEVDEM_E_HW;
+			else
+			{
+				logStream (MESSAGE_INFO) << "shutting down mount, safe to turn off power in a minute" << sendLog;
+				return DEVDEM_OK;
+			}
+		}
+		else
+			return DEVDEM_E_COMMAND;
+	}
 
 	return TelLX200::commandAuthorized (conn);
 }
