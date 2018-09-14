@@ -1,4 +1,4 @@
-/* 
+/*
  * Basic camera daemon
  * Copyright (C) 2001-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -594,7 +594,7 @@ Camera::~Camera ()
 
 	delete[] dataBuffers;
 	delete[] dataWritten;
-	
+
 	delete[] modeCount;
 }
 
@@ -631,7 +631,7 @@ rts2core::DevClient *Camera::createOtherType (rts2core::Connection * conn, int o
 	return rts2core::ScriptDevice::createOtherType (conn, other_device_type);
 }
 
-void Camera::checkQueChanges (int fakeState)
+void Camera::checkQueChanges (rts2_status_t fakeState)
 {
 	// don't check values changes if there are qued exposures and exposure is still running
 	if (quedExpNumber->getValueInteger () > 0 && (fakeState & (CAM_EXPOSING | CAM_READING)))
@@ -1078,7 +1078,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 
 	if (currentImageTransfer == SHARED)
 		sharedData->dataWritten (chan, dataSize);
-	
+
 	dataWritten[chan] += dataSize;
 
 	if (exposureConn && currentImageTransfer == TCPIP)
