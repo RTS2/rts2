@@ -782,7 +782,15 @@ void NMonitor::processKey (int key)
 				if (key == KEY_F (7) ||
 					key == KEY_CTRL ('F') ||
 					key == KEY_CTRL ('G'))
+				{
+					if (daemonWindow) {
+						changeActive (daemonWindow);
+						activeWindow = daemonWindow;
+
+						ret = daemonWindow->injectKey (key);
+					}
 					break;
+				}
 
 				ret = comWindow->injectKey (key);
 				if (key == KEY_ENTER || key == K_ENTER)
