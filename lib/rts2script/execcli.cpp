@@ -112,10 +112,10 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 		nextCommand ();
 }
 
-void DevClientCameraExec::startTarget ()
+void DevClientCameraExec::startTarget (bool callScriptEnds)
 {
 	cmdConns.clear ();
-	DevScript::startTarget ();
+	DevScript::startTarget (callScriptEnds);
 }
 
 int DevClientCameraExec::getNextCommand ()
