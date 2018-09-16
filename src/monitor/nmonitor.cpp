@@ -51,6 +51,8 @@ void NMonitor::sendCommand ()
 	char command[curX + 1];
 	char *cmd_top = command;
 	rts2core::Connection *conn = NULL;
+	bool sendAll = false;
+
 	comWindow->getWinString (command, curX);
 	command[curX] = '\0';
 
@@ -62,14 +64,26 @@ void NMonitor::sendCommand ()
 		if (*cmd_top == '.')
 		{
 			*cmd_top = '\0';
-			conn = getConnection (command);
+			if (!strcmp (command, "*") || !strcmp (command, "all"))
+				sendAll = true;
+			else
+				conn = getConnection (command);
+
 			*cmd_top = '.';
 			cmd_top++;
+
+			if (!conn && !sendAll)
+			{
+				// Wrong device name? Do not send it anywhere, just echo
+				comWindow->winclear ();
+				comWindow->printCommand (command);
+				return;
+			}
 			break;
 		}
 		cmd_top++;
 	}
-	if (conn == NULL)
+	if (conn == NULL && !sendAll)
 	{
 		conn = connectionAt (deviceList->getSelRow ());
 		cmd_top = command;
@@ -79,6 +93,8 @@ void NMonitor::sendCommand ()
 		oldCommand = new rts2core::Command (this, cmd_top);
 		if (conn)
 			conn->queCommand (oldCommand);
+		else if (sendAll)
+			queAll (oldCommand);
 		comWindow->winclear ();
 		comWindow->printCommand (command);
 		wmove (comWindow->getWriteWindow (), 0, 0);
@@ -782,7 +798,15 @@ void NMonitor::processKey (int key)
 				if (key == KEY_F (7) ||
 					key == KEY_CTRL ('F') ||
 					key == KEY_CTRL ('G'))
+				{
+					if (daemonWindow) {
+						changeActive (daemonWindow);
+						activeWindow = daemonWindow;
+
+						ret = daemonWindow->injectKey (key);
+					}
 					break;
+				}
 
 				ret = comWindow->injectKey (key);
 				if (key == KEY_ENTER || key == K_ENTER)
