@@ -42,7 +42,7 @@ class SimbadTargetDb: public ConstTarget, public rts2core::SimbadTarget
 
 		virtual void load ();
 
-		virtual void printExtra (Rts2InfoValStream & _os);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 };
 
 }

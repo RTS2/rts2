@@ -1,4 +1,4 @@
-/* 
+/*
  * Command classes.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -96,12 +96,12 @@
 
 /**
  * Move to MPEC one line element position. @ingroup RTS2Command
- */ 
+ */
 #define COMMAND_TELD_MOVE_MPEC  "move_mpec"
 
 /**
  * Move to TLE two line elements. @ingroup RTS2Command
- */ 
+ */
 #define COMMAND_TELD_MOVE_TLE   "move_tle"
 
 /**
@@ -119,7 +119,7 @@
  *  - peek 1:20 -85:21
  *  - peek 1:20:00 -85:21
  *  - peek 20 -85.35
- */ 
+ */
 #define COMMAND_TELD_PEEK       "peek"
 
 /**
@@ -907,7 +907,7 @@ class CommandStatusInfo:public Command
 	public:
 		CommandStatusInfo (Block * master, Connection * _control_conn);
 		virtual int commandReturnOK (Connection * conn);
-		virtual int commandReturnFailed (Connection * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 
 		const char * getCentralName()
 		{

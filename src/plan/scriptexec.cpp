@@ -1,4 +1,4 @@
-/* 
+/*
  * Simple script executor.
  * Copyright (C) 2007,2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -69,10 +69,10 @@ class ClientCameraScript:public rts2script::DevClientCameraExec
 
 		virtual void postEvent (rts2core::Event *event);
 		virtual imageProceRes processImage (Image * image);
-	
+
 	protected:
-		virtual void startTarget (bool b = false);
-	
+		virtual void startTarget (bool callScriptEnds = true);
+
 	private:
 		int totalExp;
 		int currentExp;
@@ -80,9 +80,9 @@ class ClientCameraScript:public rts2script::DevClientCameraExec
 		std::string obsstatus ();
 };
 
-void ClientCameraScript::startTarget (bool b)
+void ClientCameraScript::startTarget (bool callScriptEnds)
 {
-	rts2script::DevScript::startTarget (b);
+	rts2script::DevScript::startTarget (callScriptEnds);
 	rts2script::ScriptPtr sc = getScript ();
 	if (sc.get () != NULL)
 		totalExp = sc->getExpectedImages ();

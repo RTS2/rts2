@@ -1,4 +1,4 @@
-/* 
+/*
  * Check if object is above horizon.
  * Copyright (C) 2003-2015 Petr Kubanek <petr@kubanek.net>
  *
@@ -38,7 +38,7 @@ class HorizonEntry
 		}
 };
 
-typedef std::vector < struct HorizonEntry > horizon_t;
+typedef std::vector < class HorizonEntry > horizon_t;
 
 /**
  * Class for checking, whenewer observation target is correct or no.

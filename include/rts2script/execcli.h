@@ -132,7 +132,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		int imgCount;
 
-		virtual void startTarget ();
+		virtual void startTarget (bool callScriptEnds = true);
 
 		virtual int getNextCommand ();
 
