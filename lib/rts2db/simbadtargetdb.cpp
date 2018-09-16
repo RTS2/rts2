@@ -40,9 +40,9 @@ void SimbadTargetDb::load ()
 	setPosition (pos.ra, pos.dec);
 }
 
-void SimbadTargetDb::printExtra (Rts2InfoValStream & _ivs)
+void SimbadTargetDb::printExtra (Rts2InfoValStream & _ivs, double JD)
 {
-	ConstTarget::printExtra (_ivs, ln_get_julian_from_sys ());
+	ConstTarget::printExtra (_ivs, JD);
 
 	if (_ivs.getStream ())
 	{

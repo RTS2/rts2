@@ -1,4 +1,4 @@
-/* 
+/*
  * Command classes.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -702,7 +702,7 @@ int CommandStatusInfo::commandReturnOK (Connection * conn)
 	return Command::commandReturnOK (conn);
 }
 
-int CommandStatusInfo::commandReturnFailed (Connection * conn)
+int CommandStatusInfo::commandReturnFailed (int status, Connection * conn)
 {
 	if (control_conn)
 		control_conn->updateStatusWait (conn);

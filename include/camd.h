@@ -1,4 +1,4 @@
-/* 
+/*
  * Basic camera daemon.
  * Copyright (C) 2001-2012 Petr Kubanek <petr@kubanek.net>
  *
@@ -142,7 +142,7 @@ class FilterVal
  *
  * @subsection stopexpo
  *
- * Stop current exposure. If camera hardware allows it, the image is preserved on 
+ * Stop current exposure. If camera hardware allows it, the image is preserved on
  * the chip, so it can be readout later.
  *
  * @subsection box
@@ -256,7 +256,7 @@ class Camera:public rts2core::ScriptDevice
 				setCoolTemp (nightCoolTemp->getValueFloat ());
 			}
 		}
-		
+
 		/**
 		 * Called when night ends. Can be used to switch off cooling. etc..
 		 */
@@ -331,14 +331,14 @@ class Camera:public rts2core::ScriptDevice
 		 * Camera::switchCooling to make sure that the value is
 		 * updated.
 		 */
-		virtual int switchCooling (bool newval) 
-		{ 
+		virtual int switchCooling (bool newval)
+		{
 			if (coolingOnOff)
 			{
 				coolingOnOff->setValueBool (newval);
 				sendValueAll (coolingOnOff);
 			}
-			return 0; 
+			return 0;
 		}
 
 		rts2core::ValueSelection * camFilterVal;
@@ -421,7 +421,7 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
-		 * Set data type to given value. Value is index to dataType selection, created in 
+		 * Set data type to given value. Value is index to dataType selection, created in
 		 * initDataTypes method.
 		 *
 		 * @param ntype new data type index
@@ -611,7 +611,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueString *serialNumber;
 		rts2core::ValueString *ccdChipType;
 
-		virtual void checkQueChanges (int fakeState);
+		virtual void checkQueChanges (rts2_status_t fakeState);
 
 		void checkQueuedExposures ();
 
@@ -762,7 +762,7 @@ class Camera:public rts2core::ScriptDevice
 		 * Called after isExposing returned 0.
 		 *
 		 * @param ret  return value of last isExposure call
-		 * 
+		 *
 		 * @return -1 on error, 0 on success.
 		 */
 		virtual int endExposure (int ret);
@@ -822,7 +822,7 @@ class Camera:public rts2core::ScriptDevice
 		 * CCDs with multiple data channels.
 		 */
 		void createDataChannels ()
-		{ 
+		{
 			createValue (dataChannels, "DATA_CHANNELS", "total number of data channels", true);
 			createValue (channels, "CHAN", "channels on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE | RTS2_FITS_HEADERS, CAM_WORKING);
 		}
@@ -945,7 +945,7 @@ class Camera:public rts2core::ScriptDevice
 
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
-		void setFilterWorking (bool working) { getCondValue (camFilterVal)->setStateCondition (working ? CAM_WORKING : CAM_EXPOSING); } 
+		void setFilterWorking (bool working) { getCondValue (camFilterVal)->setStateCondition (working ? CAM_WORKING : CAM_EXPOSING); }
 
 		/**
 		 * Mark start time of physical chip readout.
@@ -1159,7 +1159,7 @@ class Camera:public rts2core::ScriptDevice
 			double center_max = centerCutLevel->getValueDouble ();
 			double center_avg = 0;
 			int center_npix = 0;
-			
+
 			x -= getUsedX ();
 			y -= getUsedY ();
 
@@ -1316,7 +1316,7 @@ class Camera:public rts2core::ScriptDevice
 
 		std::map <std::string, double> filterOffsets;
 
-		// mode of rounding binned 
+		// mode of rounding binned
 		//-1 - ceil
 		//0 round
 		//1 floor
@@ -1326,7 +1326,7 @@ class Camera:public rts2core::ScriptDevice
 			switch (binningRounding)
 			{
 				case CEIL:
-					return (int) (ceil (n)); 
+					return (int) (ceil (n));
 				case FLOOR:
 					return (int) (floor (n));
 				case ROUND:
