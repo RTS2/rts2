@@ -1,4 +1,4 @@
-/* 
+/*
  * Take an image, display it in X window (XImage).
  * Copyright (C) 2004-2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -79,6 +79,9 @@ class XFocusClient:public FocusClient
 		double zoom;
 		bool GoNine;
 
+		float quantiles;
+		int colourVariant;
+
 	private:
 		char * displayName;
 
@@ -102,9 +105,15 @@ class XFocusClientCamera:public FocusCameraClient
 		XFocusClientCamera (rts2core::Connection * in_connection, double in_change_val, XFocusClient * in_master);
 		virtual ~XFocusClientCamera ();
 
+		int getCrossType () { return crossType; }
 		void setCrossType (int in_crossType);
 
 		virtual void postEvent (rts2core::Event * event);
+
+		float quantiles;
+		int colourVariant;
+
+		XFocusClient * getMaster () { return master; }
 
 	protected:
 		virtual void cameraImageReady (rts2image::Image * image);

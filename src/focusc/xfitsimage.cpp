@@ -1,4 +1,4 @@
-/* 
+/*
  * Display RTS2 (and FITS images) in separate window.
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -18,6 +18,7 @@
  */
 
 #include "xfitsimage.h"
+#include "xfocusc.h"
 #include "command.h"
 
 #include <rts2-config.h>
@@ -48,7 +49,7 @@ int cmpuint16_t (const void *a, const void *b)
 #undef B
 }
 
-XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client)
+XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client, float _quantiles, int _colourVariant)
 {
 	connection = _connection;
 	client = _client;
@@ -77,6 +78,13 @@ XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *
 	low = high = min = max = 0;
 	median = average = 0;
 	binningsX = binningsY = 0;
+	lastX = lastY = 0;
+
+	colourVariant = _colourVariant;
+	quantiles = _quantiles;
+
+	focPos = 0;
+	expTime = 0;
 }
 
 XFitsImage::~XFitsImage ()
@@ -92,8 +100,10 @@ void XFitsImage::XeventLoop ()
 	XEvent event;
 	KeySym ks;
 //	struct ln_equ_posn change;
+	XFocusClientCamera *cam = (XFocusClientCamera *) client;
+	XFocusClient *master = cam->getMaster ();
 
-	if (XCheckWindowEvent (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask, &event))
+	while (XCheckWindowEvent (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask, &event))
 	{
 		switch (event.type)
 		{
@@ -114,9 +124,28 @@ void XFitsImage::XeventLoop ()
 					case XK_3:
 						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "binning", '=', 2));
 						break;
-	/*				case XK_9:
-						connection->GoNine = !master->GoNine;
-						break; */
+
+					case XK_4:
+						quantiles = 0.05;
+						break;
+					case XK_5:
+						quantiles = 0.01;
+						break;
+					case XK_6:
+						quantiles = 0.001;
+						break;
+					case XK_7:
+						quantiles = 0.0001;
+						break;
+
+					case XK_8:
+					case XK_m:
+						setColourVariant ((colourVariant + 1) % 14);
+						break;
+
+					case XK_9:
+						master->GoNine = !master->GoNine;
+						break;
 					case XK_e:
 						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '+', 1));
 						break;
@@ -138,13 +167,27 @@ void XFitsImage::XeventLoop ()
 					case XK_Delete:
 						markers.clear ();
 						break;
-/*					case XK_f:
-						connection->queCommand (new rts2core::Command (connection, "box 0 -1 -1 -1 -1"));
+					case XK_bracketleft:
+						// Check the modifiers to distinguish [ from {
+						if (!(event.xkey.state & ShiftMask))
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '-', 100));
+						else // Shift pressed
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '-', 10));
+						break;
+					case XK_bracketright:
+						// Check the modifiers to distinguish ] from }
+						if (!(event.xkey.state & ShiftMask))
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '+', 100));
+						else // Shift pressed
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '+', 10));
+						break;
+					case XK_f:
+						connection->queCommand (new rts2core::Command (client->getMaster (), "box -1 -1 -1 -1"));
 						break;
 					case XK_c:
-						connection->queCommand (new rts2core::Command (client, "center 0"));
+						connection->queCommand (new rts2core::Command (client->getMaster (), "center"));
 						break;
-					case XK_p:
+/*					case XK_p:
 						connection->postEvent (new rts2core::Event (EVENT_INTEGRATE_START));
 						break;
 					case XK_o:
@@ -183,7 +226,11 @@ void XFitsImage::XeventLoop ()
 						break;
 					case XK_Escape:
 						master->endRunLoop ();
+						break; */
+					case XK_x:
+						cam->setCrossType ((cam->getCrossType () + 1) % 6);
 						break;
+					case XK_equal:
 					case XK_plus:
 					case XK_KP_Add:
 						master->zoom = master->zoom * 2.0;
@@ -191,7 +238,10 @@ void XFitsImage::XeventLoop ()
 					case XK_minus:
 					case XK_KP_Subtract:
 						master->zoom = master->zoom / 2.0;
-						break; */
+						break;
+					case XK_0:
+						master->zoom = 1;
+						break;
 					default:
 						break;
 				}
@@ -402,8 +452,7 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	// get cuts
 	double sigma;
 	median = classical_median (iP, image->getDataType (), iW * iH, &sigma);
-	low = (int) (median - 3 * sigma);
-	high = (int) (median + 5 * sigma);
+	image->getChannelQuantiles (chan, (int) INT_MIN, (int) INT_MAX, quantiles, &low, &high);
 
 	// clear progress indicator
 	std::cout << std::setw (COLS) << " " << '\r';
@@ -490,6 +539,9 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	image->getValue ("BINX", binningsX);
 	image->getValue ("BINY", binningsY);
 
+	image->getValue ("FOC_POS", focPos);
+	image->getValue ("EXPOSURE", expTime);
+
 	exposureStart.tv_sec = image->getExposureSec ();
 	exposureStart.tv_usec = image->getExposureUsec ();
 
@@ -547,7 +599,7 @@ double XFitsImage::classical_median (void *q, int16_t dataType, int n, double *s
 			else
 		 	 	M = (F[n / 2] + F[n / 2 + 1]) / 2;
 			min = F[0];
-			max = F[n - 1];	
+			max = F[n - 1];
 #undef F
 			break;
 		default:
@@ -592,21 +644,120 @@ double XFitsImage::classical_median (void *q, int16_t dataType, int n, double *s
 	return M;
 }
 
-void XFitsImage::buildWindow ()
+void XFitsImage::setColourVariant (int _i)
 {
-	XTextProperty window_title;
-	char *cameraName;
-
 	Status ret;
 
-	colormap = DefaultColormap (display, DefaultScreen (display));
+	colourVariant = _i;
 
 	// allocate colormap..
 	for (int i = 0; i < 256; i++)
 	{
-		rgb[i].red = (unsigned short) (65536 * (1.0 * i / 256));
-		rgb[i].green = (unsigned short) (65536 * (1.0 * i / 256));
-		rgb[i].blue = (unsigned short) (65536 * (1.0 * i / 256));
+		unsigned short n, nR, nG, nB;
+		int pix = i;
+		int low = 0;
+		int high = 255;
+
+		// The code directly copied from image.cpp
+		// TODO: refactor it into separate function somewhere in rts2image
+		switch (colourVariant)
+		{
+			case PSEUDOCOLOUR_VARIANT_GREY:
+				n = 255.0 * double (pix - low) / double (high - low);
+				nR = n;
+				nG = nR;
+				nB = nR;
+				break;
+			case PSEUDOCOLOUR_VARIANT_GREY_INV:
+				n = 255.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = n;
+				nG = nR;
+				nB = nR;
+				break;
+			case PSEUDOCOLOUR_VARIANT_BLUE:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = n / 2.0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_BLUE_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = n / 2.0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_RED:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = (n < 256.0) ? n : 255;
+				nG = n / 2.0;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_RED_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = (n < 256.0) ? n : 255;
+				nG = n / 2.0;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_GREEN:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = n / 2.0;
+				nG = (n < 256.0) ? n : 255;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_GREEN_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = n / 2.0;
+				nG = (n < 256.0) ? n : 255;
+				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_VIOLET:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = n / 2.0;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_VIOLET_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = n / 2.0;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = (n < 256.0) ? n : 255;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MAGENTA:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = (n < 256.0) ? n : 255;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = n / 2.0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MAGENTA_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = (n < 256.0) ? n : 255;
+				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nB = n / 2.0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MALACHIT:
+				n = 511.0 * double (pix - low) / double (high - low);
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = (n < 256.0) ? n : 255;
+				nB = n / 2.0;
+				break;
+			case PSEUDOCOLOUR_VARIANT_MALACHIT_INV:
+				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
+				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
+				nG = (n < 256.0) ? n : 255;
+				nB = n / 2.0;
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "Unknown colourVariant" << colourVariant << sendLog;
+
+				n = 255.0 * double (pix - low) / double (high - low);
+				nR = n;
+				nG = nR;
+				nB = nR;
+		}
+
+		rgb[i].red = 256 * nR;
+		rgb[i].green = 256 * nG;
+		rgb[i].blue = 256 * nB;
 		rgb[i].flags = DoRed | DoGreen | DoBlue;
 
 		ret = XAllocColor (display, colormap, rgb + i);
@@ -630,6 +781,16 @@ void XFitsImage::buildWindow ()
 	ret = XAllocColor (display, colormap, &rgb[257]);
 	if (!ret)
 		throw rts2core::Error ("cannot allocate greencolor");
+}
+
+void XFitsImage::buildWindow ()
+{
+	XTextProperty window_title;
+	char *cameraName;
+
+	colormap = DefaultColormap (display, DefaultScreen (display));
+
+	setColourVariant (colourVariant);
 
 	window = XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100, 100, 0, depth, InputOutput, visual, 0, &xswa);
 	pixmap = XCreatePixmap (display, window, windowWidth, windowHeight, depth);
@@ -637,6 +798,7 @@ void XFitsImage::buildWindow ()
 	gc = XCreateGC (display, pixmap, 0, &gvc);
 	XSelectInput (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask);
 	XMapRaised (display, window);
+	XFlush (display);
 
 	cameraName = new char[strlen (connection->getName ()) + 1];
 	strcpy (cameraName, connection->getName ());
@@ -829,7 +991,7 @@ void XFitsImage::printInfo ()
 	if (lastImage)
 	{
 	  	std::ostringstream _os2;
-		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY << "] binn: " << binningsX << ":" << binningsY;  //<< " exposureTime: " << getConnection ()->getValue ("exposure")->getValueDouble ();
+		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY << "] bin: " << binningsX << "x" << binningsY << " foc: " << focPos << " exp: " << expTime;
 		XDrawImageString (display, pixmap, gc, pixmapWidth / 2 - 150, pixmapHeight - 20, _os2.str ().c_str (), _os2.str ().length ());
 	}
 }
