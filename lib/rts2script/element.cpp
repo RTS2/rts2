@@ -136,7 +136,7 @@ int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::
 			return NEXT_COMMAND_KEEP;
 		}
 		callProgress = SHUTTER;
-		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
+		if (camera->getConnection ()->getValue ("SHUTTER") != NULL)
 		{
 			*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "SHUTTER", '=', 0);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
@@ -204,7 +204,7 @@ int ElementImage::nextCommand (rts2core::DevClientCamera * camera, rts2core::Com
 		}
 		callProgress = SHUTTER;
 
-		if (targetShutter >= 0 && camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != targetShutter)
+		if (targetShutter >= 0 && camera->getConnection ()->getValue ("SHUTTER") != NULL)
 		{
 			*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "SHUTTER", '=', targetShutter);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
@@ -212,7 +212,7 @@ int ElementImage::nextCommand (rts2core::DevClientCamera * camera, rts2core::Com
 		}
 	}
 	// change values of the exposure
-	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
+	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") != NULL)
 	{
 		callProgress = EXPOSURE;
 		*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "exposure", '=', expTime);
