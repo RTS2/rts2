@@ -1,4 +1,4 @@
-/* 
+/*
  * Image preview and download classes.
  * Copyright (C) 2009-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -183,8 +183,8 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
 
 	if (c < 0)
 		_os << " selected";
-	
-	_os << ">All</option>";	
+
+	_os << ">All</option>";
 
 	for (int i = 0; i < CHANNELS; i++)
 	{
@@ -194,7 +194,7 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
 		_os << ">" << (i + 1) << "</option>";
 	}
 
-	_os << "</select> \n" 
+	_os << "</select> \n"
 #endif
 	"Color map <select name='cv'>";
 
@@ -246,7 +246,7 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 
 	cacheMaxAge (CACHE_MAX_STATIC);
 
-	mimage->write (&blob, "jpeg");
+	mimage->write (&blob, "JPEG");
 	response_length = blob.length();
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
@@ -262,7 +262,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	// const char *t = params->getString ("t", "p");
 
 	const char *label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
-	
+
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
@@ -296,7 +296,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 		cacheMaxAge (CACHE_MAX_STATIC);
 
-		mimage->write (&blob, "jpeg");
+		mimage->write (&blob, "JPEG");
 		response_length = blob.length();
 		response = new char[response_length];
 		memcpy (response, blob.data(), response_length);
@@ -322,7 +322,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	_os << "<p>";
 
 	preview.form (_os, pageno, prevsize, pagesiz, chan, label, quantiles, colourVariant);
-	
+
 	_os << "</p><p>";
 
 	struct dirent **namelist;
@@ -396,7 +396,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	}
 
 	free (namelist);
-			
+
 	// print pages..
 	_os << "</p><p>Page ";
 	for (i = 1; i <= in / pagesiz; i++)
@@ -404,7 +404,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
-	
+
 	printFooter (_os);
 
 	response_type = "text/html";
@@ -426,7 +426,7 @@ void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	struct stat st;
 	if (fstat (f, &st) == -1)
 		throw XmlRpc::XmlRpcException ("Cannot get file properties");
-	
+
 	response_length = st.st_size;
 	response = new char[response_length];
 	ssize_t ret;

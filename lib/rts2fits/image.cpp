@@ -1736,7 +1736,7 @@ void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles
 	try
 	{
 		image = getMagickImage (label, quantiles, chan, colourVariant);
-		image->write (&blob, "jpeg");
+		image->write (&blob, "JPEG");
 		delete image;
 	}
 	catch (Magick::Exception &ex)

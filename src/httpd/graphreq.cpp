@@ -1,4 +1,4 @@
-/* 
+/*
  * Classes to plot graph interface.
  * Copyright (C) 2009-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -136,7 +136,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 #endif /* RTS2_HAVE_PGSQL */
 
 	Magick::Blob blob;
-	altaz.write (&blob, "jpeg");
+	altaz.write (&blob, "JPEG");
 
 	response_type = "image/jpeg";
 
@@ -171,10 +171,10 @@ void AltAzTarget::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		if (hrz.alt > -2)
 			altaz.plotCross (&hrz, (*iter).second->getTargetName ());
 	}
-	
+
 	// write image to blob as JPEG
 	Magick::Blob blob;
-	altaz.write (&blob, "jpeg");
+	altaz.write (&blob, "JPEG");
 
 	// set MIME response type
 	response_type = "image/jpeg";
@@ -309,7 +309,7 @@ void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpP
 		default:
 			pt = rts2json::PLOTTYPE_AUTO;
 	}
-	
+
 	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
 
 	from = params->getDate ("from", from);
@@ -332,7 +332,7 @@ void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpP
 	vp.getPlot (from, to, &mimage, pt, params->getInteger ("lw", 3), params->getInteger ("sh", 3), params->getBoolean ("pn", true), params->getBoolean ("ps", true), params->getBoolean ("l", true));
 
 	Magick::Blob blob;
-	mimage.write (&blob, "jpeg");
+	mimage.write (&blob, "JPEG");
 
 	response_length = blob.length();
 	response = new char[response_length];
