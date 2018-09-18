@@ -257,7 +257,5 @@ int main (int argc, char **argv)
 {
 	XFocusClient masterFocus = XFocusClient (argc, argv);
 
-	logStream (MESSAGE_DEBUG) << "creating image " << NULL << sendLog;
-
 	return masterFocus.run ();
 }

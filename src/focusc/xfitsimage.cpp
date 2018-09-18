@@ -452,9 +452,6 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	// get cuts
 	double sigma;
 	median = classical_median (iP, image->getDataType (), iW * iH, &sigma);
-	// low = (int) (median - 3 * sigma);
-	// high = (int) (median + 5 * sigma);
-
 	image->getChannelQuantiles (chan, (int) INT_MIN, (int) INT_MAX, quantiles, &low, &high);
 
 	// clear progress indicator
@@ -801,7 +798,7 @@ void XFitsImage::buildWindow ()
 	gc = XCreateGC (display, pixmap, 0, &gvc);
 	XSelectInput (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask);
 	XMapRaised (display, window);
-	XFlush(display);
+	XFlush (display);
 
 	cameraName = new char[strlen (connection->getName ()) + 1];
 	strcpy (cameraName, connection->getName ());
