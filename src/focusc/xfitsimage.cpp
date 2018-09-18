@@ -18,6 +18,7 @@
  */
 
 #include "xfitsimage.h"
+#include "xfocusc.h"
 #include "command.h"
 
 #include <rts2-config.h>
@@ -77,9 +78,13 @@ XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *
 	low = high = min = max = 0;
 	median = average = 0;
 	binningsX = binningsY = 0;
+	lastX = lastY = 0;
 
 	colourVariant = _colourVariant;
 	quantiles = _quantiles;
+
+	focPos = 0;
+	expTime = 0;
 }
 
 XFitsImage::~XFitsImage ()
@@ -95,8 +100,10 @@ void XFitsImage::XeventLoop ()
 	XEvent event;
 	KeySym ks;
 //	struct ln_equ_posn change;
+	XFocusClientCamera *cam = (XFocusClientCamera *) client;
+	XFocusClient *master = cam->getMaster ();
 
-	if (XCheckWindowEvent (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask, &event))
+	while (XCheckWindowEvent (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask, &event))
 	{
 		switch (event.type)
 		{
@@ -117,9 +124,9 @@ void XFitsImage::XeventLoop ()
 					case XK_3:
 						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "binning", '=', 2));
 						break;
-	/*				case XK_9:
-						connection->GoNine = !master->GoNine;
-						break; */
+					case XK_9:
+						master->GoNine = !master->GoNine;
+						break;
 					case XK_e:
 						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '+', 1));
 						break;
@@ -141,13 +148,27 @@ void XFitsImage::XeventLoop ()
 					case XK_Delete:
 						markers.clear ();
 						break;
-/*					case XK_f:
-						connection->queCommand (new rts2core::Command (connection, "box 0 -1 -1 -1 -1"));
+					case XK_bracketleft:
+						// Check the modifiers to distinguish [ from {
+						if (!(event.xkey.state & ShiftMask))
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '-', 100));
+						else // Shift pressed
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '-', 10));
+						break;
+					case XK_bracketright:
+						// Check the modifiers to distinguish ] from }
+						if (!(event.xkey.state & ShiftMask))
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '+', 100));
+						else // Shift pressed
+							connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "focpos", '+', 10));
+						break;
+					case XK_f:
+						connection->queCommand (new rts2core::Command (client->getMaster (), "box -1 -1 -1 -1"));
 						break;
 					case XK_c:
-						connection->queCommand (new rts2core::Command (client, "center 0"));
+						connection->queCommand (new rts2core::Command (client->getMaster (), "center"));
 						break;
-					case XK_p:
+/*					case XK_p:
 						connection->postEvent (new rts2core::Event (EVENT_INTEGRATE_START));
 						break;
 					case XK_o:
@@ -186,7 +207,11 @@ void XFitsImage::XeventLoop ()
 						break;
 					case XK_Escape:
 						master->endRunLoop ();
+						break; */
+					case XK_x:
+						cam->setCrossType ((cam->getCrossType () + 1) % 6);
 						break;
+					case XK_equal:
 					case XK_plus:
 					case XK_KP_Add:
 						master->zoom = master->zoom * 2.0;
@@ -194,7 +219,7 @@ void XFitsImage::XeventLoop ()
 					case XK_minus:
 					case XK_KP_Subtract:
 						master->zoom = master->zoom / 2.0;
-						break; */
+						break;
 					default:
 						break;
 				}
@@ -495,6 +520,9 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	image->getValue ("BINX", binningsX);
 	image->getValue ("BINY", binningsY);
 
+	image->getValue ("FOC_POS", focPos);
+	image->getValue ("EXPOSURE", expTime);
+
 	exposureStart.tv_sec = image->getExposureSec ();
 	exposureStart.tv_usec = image->getExposureUsec ();
 
@@ -739,6 +767,7 @@ void XFitsImage::buildWindow ()
 	gc = XCreateGC (display, pixmap, 0, &gvc);
 	XSelectInput (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask);
 	XMapRaised (display, window);
+	XFlush(display);
 
 	cameraName = new char[strlen (connection->getName ()) + 1];
 	strcpy (cameraName, connection->getName ());
@@ -931,7 +960,7 @@ void XFitsImage::printInfo ()
 	if (lastImage)
 	{
 	  	std::ostringstream _os2;
-		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY << "] binn: " << binningsX << ":" << binningsY;  //<< " exposureTime: " << getConnection ()->getValue ("exposure")->getValueDouble ();
+		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY << "] bin: " << binningsX << "x" << binningsY << " foc: " << focPos << " exp: " << expTime;
 		XDrawImageString (display, pixmap, gc, pixmapWidth / 2 - 150, pixmapHeight - 20, _os2.str ().c_str (), _os2.str ().length ());
 	}
 }

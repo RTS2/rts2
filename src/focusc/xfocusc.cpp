@@ -140,17 +140,22 @@ void XFocusClient::usage ()
 void XFocusClient::help ()
 {
 	Client::help ();
-	std::cout << "Keys:" << std::endl
+	std::cout
+		<< "Keys:" << std::endl
 		<< "\t1,2,3 .. binning 1x1, 2x2, 3x3" << std::endl
 		<< "\t9     .. split screen to squares containg corners of the image and its center" << std::endl
-		<< "\tq,a   .. increase/decrease exposure 0.01 sec" << std::endl
-		<< "\tw,s   .. increase/decrease exposure 0.1 sec" << std::endl
-		<< "\te,d   .. increase/decrease exposure 1 sec" << std::endl
+		<< "\tq,a   .. increase/decrease exposure by 0.01 sec" << std::endl
+		<< "\tw,s   .. increase/decrease exposure by 0.1 sec" << std::endl
+		<< "\te,d   .. increase/decrease exposure by 1 sec" << std::endl
+
 		<< "\tf     .. full frame exposure" << std::endl
 		<< "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
-		<< "\ty     .. save FITS file" << std::endl
-		<< "\tu     .. don't save fits file" << std::endl
-		<< "\thjkl, arrows .. move (change mount position)" << std::endl
+		// << "\ty     .. save FITS file" << std::endl
+		// << "\tu     .. don't save fits file" << std::endl
+		// << "\thjkl, arrows .. move (change mount position)" << std::endl
+		<< "\tx     ..  change cross type" << std::endl
+		<< "\t[,]   ..  decrease/increase focus by 100" << std::endl
+		<< "\t{,}   ..  decrease/increase focus by 100" << std::endl
 		<< "\t+-    .. change zoom" << std::endl;
 }
 
@@ -167,7 +172,7 @@ int XFocusClient::processOption (int in_opt)
 		case OPT_STARS:
 			starsType = 1;
 			break;
-		case 'X':
+		case 'x':
 			crossType = atoi (optarg);
 			break;
 		case 'Z':

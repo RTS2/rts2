@@ -143,6 +143,12 @@ class XFitsImage
 
 		// Quantiles
 		float quantiles;
+
+		// Focus position
+		int focPos;
+
+		// Exposure time
+		double expTime;
 };
 
 #endif // __RTS2_XFITSIMAGE__

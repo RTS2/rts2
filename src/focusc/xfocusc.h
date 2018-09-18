@@ -105,12 +105,15 @@ class XFocusClientCamera:public FocusCameraClient
 		XFocusClientCamera (rts2core::Connection * in_connection, double in_change_val, XFocusClient * in_master);
 		virtual ~XFocusClientCamera ();
 
+		int getCrossType () { return crossType; }
 		void setCrossType (int in_crossType);
 
 		virtual void postEvent (rts2core::Event * event);
 
 		float quantiles;
 		int colourVariant;
+
+		XFocusClient * getMaster () { return master; }
 
 	protected:
 		virtual void cameraImageReady (rts2image::Image * image);
