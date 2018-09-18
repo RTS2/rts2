@@ -1,4 +1,4 @@
-/* 
+/*
  * Dummy camera for testing purposes.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -29,6 +29,7 @@
 #define OPT_INFOSLEEP    OPT_LOCAL + 6
 #define OPT_READSLEEP    OPT_LOCAL + 7
 #define OPT_FRAMETRANS   OPT_LOCAL + 8
+#define OPT_GENTYPE      OPT_LOCAL + 9
 
 namespace rts2camd
 {
@@ -70,7 +71,8 @@ class Dummy:public Camera
 			genType->addSelVal ("flats dusk");
 			genType->addSelVal ("flats dawn");
 			genType->addSelVal ("astar");
-			genType->setValueInteger (5);
+			genType->addSelVal ("field");
+			genType->setValueInteger (6);
 
 			createValue (fitsTransfer, "fits_transfer", "write FITS file directly in camera", false, RTS2_VALUE_WRITABLE);
 			fitsTransfer->setValueBool (false);
@@ -88,7 +90,7 @@ class Dummy:public Camera
 			astarY->setValueDouble (5);
 
 			createValue (aamp, "astar_amp", "[adu] artificial star amplitude", false, RTS2_VALUE_WRITABLE);
-			aamp->setValueInteger (20000);
+			aamp->setValueInteger (200000);
 
 			createValue (noiseBias, "noise_bias", "[ADU] noise base level", false, RTS2_VALUE_WRITABLE);
 			noiseBias->setValueDouble (400);
@@ -116,6 +118,7 @@ class Dummy:public Camera
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
 			addOption (OPT_CHANNELS, "channels", 1, "number of data channels");
 			addOption (OPT_REMOVE_TEMP, "no-temp", 0, "do not show temperature related fields");
+			addOption (OPT_GENTYPE, "gentype", 1, "data generation algorithm");
 		}
 
 		virtual ~Dummy (void)
@@ -152,6 +155,9 @@ class Dummy:public Camera
 					break;
 				case OPT_REMOVE_TEMP:
 					showTemp = false;
+					break;
+				case OPT_GENTYPE:
+					genType->setValueInteger (atoi (optarg));
 					break;
 				default:
 					return Camera::processOption (in_opt);
@@ -195,7 +201,7 @@ class Dummy:public Camera
 			ccdRealType->setValueCharArr ("Dummy");
 			serialNumber->setValueCharArr ("1");
 
-			srand (time (NULL));
+			srandom (time (NULL));
 
 			return initChips ();
 		}
@@ -534,6 +540,15 @@ void Dummy::generateImage (size_t pixelsize, int chan)
 	astar_Xp->clear ();
 	astar_Yp->clear ();
 
+	if (genType->getValueInteger () == 6)
+	{
+		// Sensible number of stars for a stellar field
+		astar_num->setValueInteger (getUsedWidthBinned () * getUsedHeightBinned () / 300 / astarX->getValueDouble () / astarY->getValueDouble ());
+
+		// Fix random seed so the field is the same every run
+		srandom (0);
+	}
+
 	for (int i = 0; i < astar_num->getValueInteger (); i++)
 	{
 		astar_Xp->addValue (random_num () * getUsedWidthBinned ());
@@ -542,6 +557,12 @@ void Dummy::generateImage (size_t pixelsize, int chan)
 
 	sendValueAll (astar_Xp);
 	sendValueAll (astar_Yp);
+
+	if (genType->getValueInteger () == 6)
+	{
+		// Make it again random
+		srandom (0 + time (NULL) + getExposureNumber ());
+	}
 
 	switch (getDataType ())
 	{
@@ -577,13 +598,29 @@ void Dummy::generateImage (size_t pixelsize, int chan)
 
 template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 {
-	double sx = astarX->getValueDouble ();
+	double sx = astarX->getValueDouble () / binningHorizontal ();
 	int xmax = ceil (sx * 10);
 	sx *= sx;
 
-	double sy = astarY->getValueDouble ();
+	double sy = astarY->getValueDouble () / binningVertical ();
 	int ymax = ceil (sy * 10);
 	sy *= sy;
+
+	int focPos = getFocPos ();
+	double beta = 1.5; // Moffat profile beta
+
+	if (focPos != -1 && genType->getValueInteger () == 6)
+	{
+		// Simulate de-focusing for stellar field.
+		// Optimal focus is at -1, to match absence of focuser
+		sx *= (1.0 + fabs (focPos + 1) / 100);
+		sy *= (1.0 + fabs (focPos + 1) / 100);
+
+		xmax *= fmin (3.0, (1.0 + fabs (focPos + 1) / 100));
+		ymax *= fmin (3.0, (1.0 + fabs (focPos + 1) / 100));
+
+		beta = fmax (1.02, 1.5 - 0.03 * fabs (focPos + 1) / 100);
+	}
 
 	for (size_t i = 0; i < pixelSize; i++, data++)
 	{
@@ -595,6 +632,7 @@ template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 		{
 			case 0:  // random
 			case 5:  // artificial star
+			case 6:  // artificial stellar field
 				*data = noiseBias->getValueDouble () + n * random_num () - n / 2;
 				break;
 			case 1:  // linear
@@ -621,6 +659,11 @@ template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 				*data -= n / 2;
 				break;
 		}
+
+		if (getExpType () != 0)
+			// Shutter is closed
+			continue;
+
 		// genarate artificial star - using cos
 		if (genType->getValueInteger () == 5)
 		{
@@ -637,7 +680,30 @@ template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 					aax *= aax;
 					aay *= aay;
 
-					*data += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
+					*data += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy))) / 2 / M_PI / sqrt (sx*sy);
+				}
+			}
+		}
+		// genarate artificial stellar field using Moffat profile
+		if (genType->getValueInteger () == 6)
+		{
+			int x = i % getUsedWidthBinned ();
+			int y = i / getUsedWidthBinned ();
+
+			for (int j = 0; j < astar_num->getValueInteger (); j++)
+			{
+				double aax = x - (*astar_Xp)[j];
+				double aay = y - (*astar_Yp)[j];
+
+				double flux = pow (1.0 + j, -1.0); // Distribution of relative fluxes
+
+				if (hypot (aax, aay) < xmax)
+				{
+					aax *= aax;
+					aay *= aay;
+
+					*data += flux * aamp->getValueDouble () *
+								 (beta - 1) / M_PI / sqrt (sx) * pow (1 + (aax + aay) / sx, -beta);
 				}
 			}
 		}

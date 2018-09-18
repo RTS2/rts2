@@ -1,4 +1,4 @@
-/* 
+/*
  * Take an image, display it in X window (XImage).
  * Copyright (C) 2004-2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -43,6 +43,8 @@
 #define OPT_STARS        OPT_LOCAL + 21
 #define OPT_SAVE         OPT_LOCAL + 22
 #define OPT_CHANGE       OPT_LOCAL + 23
+#define OPT_QUANTILES    OPT_LOCAL + 24
+#define OPT_COLORMAP     OPT_LOCAL + 25
 
 using namespace rts2core;
 
@@ -51,6 +53,9 @@ XFocusClientCamera::XFocusClientCamera (Connection * in_connection, double in_ch
 	master = in_master;
 
 	change_val = in_change_val;
+
+	quantiles = 0.05;
+	colourVariant = PSEUDOCOLOUR_VARIANT_GREY;
 }
 
 XFocusClientCamera::~XFocusClientCamera ()
@@ -79,7 +84,7 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 		std::map <int, XFitsImage>::iterator iter = ximages.find (channum);
 		if (iter == ximages.end ())
 		{
-			ximages.insert (std::pair <int, XFitsImage> (channum, XFitsImage (getConnection (), this)));
+			ximages.insert (std::pair <int, XFitsImage> (channum, XFitsImage (getConnection (), this, quantiles, colourVariant)));
 			iter = ximages.find (channum);
 		}
 		iter->second.drawImage (image, ch, master->getDisplay (), master->getVisual (), master->getDepth (), master->zoom, crossType, master->GoNine);
@@ -95,12 +100,15 @@ XFocusClient::XFocusClient (int in_argc, char **in_argv):FocusClient (in_argc, i
 {
 	displayName = NULL;
 
-	crossType = 0;
+	crossType = 5;
 	starsType = 0;
 
 	changeVal = 15;
 	zoom = 1.0;
 	GoNine = false;
+
+	quantiles = 0.01;
+	colourVariant = PSEUDOCOLOUR_VARIANT_BLUE;
 
 	addOption (OPT_DISPLAY, "display", 1, "name of X display");
 	addOption (OPT_STARS, "stars", 0, "draw stars over image (default to don't)");
@@ -109,6 +117,9 @@ XFocusClient::XFocusClient (int in_argc, char **in_argv):FocusClient (in_argc, i
 	addOption (OPT_CHANGE, "change_val", 1, "change value (in arcseconds; default to 15 arcsec");
 	addOption ('Z', NULL, 1, "Zoom (float number 0-xx)");
 	addOption ('9', NULL, 0, "Nine sectors from different places of the CCD");
+
+	addOption (OPT_QUANTILES, "quantiles", 1, "Display scaling quantiles");
+	addOption (OPT_COLORMAP, "color", 1, "Image colormap");
 }
 
 XFocusClient::~XFocusClient ()
@@ -129,18 +140,24 @@ void XFocusClient::usage ()
 void XFocusClient::help ()
 {
 	Client::help ();
-	std::cout << "Keys:" << std::endl
-		<< "\t1,2,3 .. binning 1x1, 2x2, 3x3" << std::endl
-		<< "\t9     .. split screen to squares containg corners of the image and its center" << std::endl
-		<< "\tq,a   .. increase/decrease exposure 0.01 sec" << std::endl
-		<< "\tw,s   .. increase/decrease exposure 0.1 sec" << std::endl
-		<< "\te,d   .. increase/decrease exposure 1 sec" << std::endl
-		<< "\tf     .. full frame exposure" << std::endl
-		<< "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
-		<< "\ty     .. save FITS file" << std::endl
-		<< "\tu     .. don't save fits file" << std::endl
-		<< "\thjkl, arrows .. move (change mount position)" << std::endl
-		<< "\t+-    .. change zoom" << std::endl;
+	std::cout
+		<< "Keys:" << std::endl
+		<< "\t1,2,3   .. binning 1x1, 2x2, 3x3" << std::endl
+		<< "\t4,5,6,7 .. set intensity cutoff quantiles to 0.05, 0.01, 0.001, 0.0001" << std::endl
+		<< "\t8,m     .. change display colormap" << std::endl
+		<< "\t9       .. split screen to squares containg corners of the image and its center" << std::endl
+		<< "\tq,a     .. increase/decrease exposure by 0.01 sec" << std::endl
+		<< "\tw,s     .. increase/decrease exposure by 0.1 sec" << std::endl
+		<< "\te,d     .. increase/decrease exposure by 1 sec" << std::endl
+		<< "\tf       .. full frame exposure" << std::endl
+		<< "\tc       .. center (1/2x1/2 chip size) exposure" << std::endl
+		// << "\ty     .. save FITS file" << std::endl
+		// << "\tu     .. don't save fits file" << std::endl
+		// << "\thjkl, arrows .. move (change mount position)" << std::endl
+		<< "\tx       .. change cross type" << std::endl
+		<< "\t[,]     .. decrease/increase focus by 100" << std::endl
+		<< "\t{,}     .. decrease/increase focus by 10" << std::endl
+		<< "\t+,-,0   .. change zoom" << std::endl;
 }
 
 int XFocusClient::processOption (int in_opt)
@@ -156,7 +173,7 @@ int XFocusClient::processOption (int in_opt)
 		case OPT_STARS:
 			starsType = 1;
 			break;
-		case 'X':
+		case 'x':
 			crossType = atoi (optarg);
 			break;
 		case 'Z':
@@ -171,6 +188,12 @@ int XFocusClient::processOption (int in_opt)
 			break;
 		case OPT_CHANGE:
 			changeVal = atof (optarg);
+			break;
+		case OPT_QUANTILES:
+			quantiles = atof (optarg);
+			break;
+		case OPT_COLORMAP:
+			colourVariant = atoi (optarg);
 			break;
 		default:
 			return FocusClient::processOption (in_opt);
@@ -210,6 +233,8 @@ FocusCameraClient * XFocusClient::createFocCamera (Connection * conn)
 	XFocusClientCamera *cam;
 	cam = new XFocusClientCamera (conn, changeVal, this);
 	cam->setCrossType (crossType);
+	cam->quantiles = quantiles;
+	cam->colourVariant = colourVariant;
 	return cam;
 }
 
@@ -231,5 +256,6 @@ void XFocusClient::pollSuccess ()
 int main (int argc, char **argv)
 {
 	XFocusClient masterFocus = XFocusClient (argc, argv);
+
 	return masterFocus.run ();
 }
