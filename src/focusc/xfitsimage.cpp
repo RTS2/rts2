@@ -124,6 +124,25 @@ void XFitsImage::XeventLoop ()
 					case XK_3:
 						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "binning", '=', 2));
 						break;
+
+					case XK_4:
+						quantiles = 0.05;
+						break;
+					case XK_5:
+						quantiles = 0.01;
+						break;
+					case XK_6:
+						quantiles = 0.001;
+						break;
+					case XK_7:
+						quantiles = 0.0001;
+						break;
+
+					case XK_8:
+					case XK_m:
+						setColourVariant ((colourVariant + 1) % 14);
+						break;
+
 					case XK_9:
 						master->GoNine = !master->GoNine;
 						break;
@@ -219,6 +238,9 @@ void XFitsImage::XeventLoop ()
 					case XK_minus:
 					case XK_KP_Subtract:
 						master->zoom = master->zoom / 2.0;
+						break;
+					case XK_0:
+						master->zoom = 1;
 						break;
 					default:
 						break;
@@ -625,14 +647,11 @@ double XFitsImage::classical_median (void *q, int16_t dataType, int n, double *s
 	return M;
 }
 
-void XFitsImage::buildWindow ()
+void XFitsImage::setColourVariant (int _i)
 {
-	XTextProperty window_title;
-	char *cameraName;
-
 	Status ret;
 
-	colormap = DefaultColormap (display, DefaultScreen (display));
+	colourVariant = _i;
 
 	// allocate colormap..
 	for (int i = 0; i < 256; i++)
@@ -732,6 +751,11 @@ void XFitsImage::buildWindow ()
 				break;
 			default:
 				logStream (MESSAGE_ERROR) << "Unknown colourVariant" << colourVariant << sendLog;
+
+				n = 255.0 * double (pix - low) / double (high - low);
+				nR = n;
+				nG = nR;
+				nB = nR;
 		}
 
 		rgb[i].red = 256 * nR;
@@ -760,6 +784,16 @@ void XFitsImage::buildWindow ()
 	ret = XAllocColor (display, colormap, &rgb[257]);
 	if (!ret)
 		throw rts2core::Error ("cannot allocate greencolor");
+}
+
+void XFitsImage::buildWindow ()
+{
+	XTextProperty window_title;
+	char *cameraName;
+
+	colormap = DefaultColormap (display, DefaultScreen (display));
+
+	setColourVariant (colourVariant);
 
 	window = XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100, 100, 0, depth, InputOutput, visual, 0, &xswa);
 	pixmap = XCreatePixmap (display, window, windowWidth, windowHeight, depth);

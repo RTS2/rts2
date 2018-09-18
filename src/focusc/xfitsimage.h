@@ -62,7 +62,7 @@ class XFitsImage
 
 		int getChannelNumber () { return channelnum; }
 
-		void setColourVariant (int _i) { colourVariant = _i; }
+		void setColourVariant (int _i);
 
 	private:
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);

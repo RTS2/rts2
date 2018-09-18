@@ -100,15 +100,15 @@ XFocusClient::XFocusClient (int in_argc, char **in_argv):FocusClient (in_argc, i
 {
 	displayName = NULL;
 
-	crossType = 0;
+	crossType = 5;
 	starsType = 0;
 
 	changeVal = 15;
 	zoom = 1.0;
 	GoNine = false;
 
-	quantiles = 0.05;
-	colourVariant = PSEUDOCOLOUR_VARIANT_GREY;
+	quantiles = 0.01;
+	colourVariant = PSEUDOCOLOUR_VARIANT_BLUE;
 
 	addOption (OPT_DISPLAY, "display", 1, "name of X display");
 	addOption (OPT_STARS, "stars", 0, "draw stars over image (default to don't)");
@@ -142,21 +142,22 @@ void XFocusClient::help ()
 	Client::help ();
 	std::cout
 		<< "Keys:" << std::endl
-		<< "\t1,2,3 .. binning 1x1, 2x2, 3x3" << std::endl
-		<< "\t9     .. split screen to squares containg corners of the image and its center" << std::endl
-		<< "\tq,a   .. increase/decrease exposure by 0.01 sec" << std::endl
-		<< "\tw,s   .. increase/decrease exposure by 0.1 sec" << std::endl
-		<< "\te,d   .. increase/decrease exposure by 1 sec" << std::endl
-
-		<< "\tf     .. full frame exposure" << std::endl
-		<< "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
+		<< "\t1,2,3   .. binning 1x1, 2x2, 3x3" << std::endl
+		<< "\t4,5,6,7 .. set intensity cutoff quantiles to 0.05, 0.01, 0.001, 0.0001" << std::endl
+		<< "\t8,m     .. change display colormap" << std::endl
+		<< "\t9       .. split screen to squares containg corners of the image and its center" << std::endl
+		<< "\tq,a     .. increase/decrease exposure by 0.01 sec" << std::endl
+		<< "\tw,s     .. increase/decrease exposure by 0.1 sec" << std::endl
+		<< "\te,d     .. increase/decrease exposure by 1 sec" << std::endl
+		<< "\tf       .. full frame exposure" << std::endl
+		<< "\tc       .. center (1/2x1/2 chip size) exposure" << std::endl
 		// << "\ty     .. save FITS file" << std::endl
 		// << "\tu     .. don't save fits file" << std::endl
 		// << "\thjkl, arrows .. move (change mount position)" << std::endl
-		<< "\tx     ..  change cross type" << std::endl
-		<< "\t[,]   ..  decrease/increase focus by 100" << std::endl
-		<< "\t{,}   ..  decrease/increase focus by 100" << std::endl
-		<< "\t+-    .. change zoom" << std::endl;
+		<< "\tx       .. change cross type" << std::endl
+		<< "\t[,]     .. decrease/increase focus by 100" << std::endl
+		<< "\t{,}     .. decrease/increase focus by 10" << std::endl
+		<< "\t+,-,0   .. change zoom" << std::endl;
 }
 
 int XFocusClient::processOption (int in_opt)
