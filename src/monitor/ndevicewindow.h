@@ -85,6 +85,8 @@ class NDeviceWindow:public NSelWindow
 		int valueBegins;
 		bool hide_debug;
 
+		int filterMode;
+
 		// draw only those values
 		std::vector <rts2core::Value *> displayValues;
 };
