@@ -34,6 +34,10 @@ class LX200:public TelLX200
 		virtual int initValues ();
 		virtual int info ();
 
+		virtual int idle ();
+
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
@@ -44,6 +48,8 @@ class LX200:public TelLX200
 		virtual int startPark ();
 		virtual int isParking ();
 		virtual int endPark ();
+
+		virtual int unPark ();
 
 		virtual int startDir (char *dir);
 		virtual int stopDir (char *dir);
@@ -87,6 +93,50 @@ LX200::~LX200 (void)
 {
 }
 
+int LX200::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("dir"))
+	{
+		char *dir;
+
+		if (conn->paramNextString (&dir) || !conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
+
+		startDir(dir);
+		return 0;
+	}
+	else if (conn->isCommand ("unpark"))
+	{
+		unPark ();
+		return 0;
+	}
+	else if (conn->isCommand ("track"))
+	{
+		if (hasAstroPhysicsExtensions)
+			return serConn->writePort (":RT2#", 5);
+		else
+			return serConn->writePort (":TQ#", 4);
+	}
+	else if (conn->isCommand ("shutdown"))
+	{
+		if (hasAstroPhysicsExtensions)
+		{
+			char rbuf[100];
+			if (serConn->writeRead (":shutdown#", 10, rbuf, 1) || rbuf[0] == '0')
+				return DEVDEM_E_HW;
+			else
+			{
+				logStream (MESSAGE_INFO) << "shutting down mount, safe to turn off power in a minute" << sendLog;
+				return DEVDEM_OK;
+			}
+		}
+		else
+			return DEVDEM_E_COMMAND;
+	}
+
+	return TelLX200::commandAuthorized (conn);
+}
+
 int LX200::initHardware ()
 {
 	int ret = TelLX200::initHardware ();
@@ -110,7 +160,7 @@ int LX200::initHardware ()
 		// we are in short mode, set the long on
 		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
-		
+
 		if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
 			return -1;
 		if (rbuf[7] == '\0' || rbuf[7] == '#')
@@ -132,7 +182,16 @@ int LX200::initHardware ()
 	productName->setValueCharArr (rbuf);
 
 	if (strncmp (productName->getValue (), "10micron", 8) == 0)
+	{
 		hasAstroPhysicsExtensions = true;
+
+		// Guess initial state of the mount
+		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
+			return -1;
+
+		if (rbuf[0] == '5')
+			maskState (TEL_MASK_MOVING, TEL_PARKED, "telescope was parked at initializiation");
+	}
 
 	serConn->setVTime (ovtime);
 
@@ -167,8 +226,26 @@ int LX200::info ()
 {
 	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
 		return -1;
-	
-	//char rbuff[100];	
+
+	if (hasAstroPhysicsExtensions)
+	{
+		char rbuf[100];
+
+		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') >= 0)
+		{
+			// Guess tracking state
+			if (rbuf[0] == '0')
+				maskState (TEL_MASK_TRACK, TEL_TRACKING);
+			else
+				maskState (TEL_MASK_TRACK, TEL_NOTRACK);
+
+			if (rbuf[0] != '5' && (getState () & TEL_PARKED))
+				// Unset parking state if Gstat says it is not parked
+				maskState (TEL_MASK_MOVING, TEL_MOVING);
+		}
+	}
+
+	//char rbuff[100];
 	//int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
 	//int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
 	//cout << "ret " << ret << endl;
@@ -178,7 +255,7 @@ int LX200::info ()
 	//	rbuff[ret] = '\0';
 	//else
 	//	rbuff[0] = '\0';
-	
+
         //mntflip->setValueCharArr (rbuff);
 
 	//telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
@@ -310,14 +387,29 @@ int LX200::startResync ()
 
 int LX200::isMoving ()
 {
-	char buf[2];
-	serConn->writeRead (":D#", 3, buf, 2, '#');
-	switch (*buf)
+	if (hasAstroPhysicsExtensions)
 	{
-		case '#':
+		// 10micron reports tracking and moving state in Gstat
+		// FIXME: seems to report end of moving too early?..
+		char rbuf[100];
+		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
+			return -1;
+		else if (rbuf[0] == '0')
 			return -2;
-		default:
+		else
 			return USEC_SEC;
+	}
+	else
+	{
+		char buf[2];
+		serConn->writeRead (":D#", 3, buf, 2, '#');
+		switch (*buf)
+		{
+			case '#':
+				return -2;
+			default:
+				return USEC_SEC;
+		}
 	}
 }
 
@@ -325,6 +417,17 @@ int LX200::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
+
+	if (hasAstroPhysicsExtensions)
+	{
+		// 10micron: Halt all current movements, included tracking
+		int ret = serConn->writePort (":STOP#", 6);
+		if (ret < 0)
+			return -1;
+
+		return 0;
+	}
+
 	for (i = 0; i < 4; i++)
 	{
 		if (tel_stop_slew_move (dirs[i]) < 0)
@@ -389,39 +492,74 @@ int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_d
  */
 int LX200::startPark ()
 {
-  //int ret = serConn->writePort (":KA#", 4);
-  int ret = serConn->writePort (":hP#", 4);
-  if (ret < 0)
-    return -1;
-  sleep (1);
-  return 0;
+	//int ret = serConn->writePort (":KA#", 4);
+	int ret = serConn->writePort (":hP#", 4);
+	if (ret < 0)
+		return -1;
+	sleep (1);
+
+	return 0;
 }
 
 int LX200::isParking ()
 {
-	char buf[2];
-	//serConn->writeRead (":D#", 3, buf, 2, '#');
-	//serConn->writeRead (":h?#", 3, buf, 2, '#');
-	serConn->writeRead (":h?#", 4, buf, 1);
-
-	switch (*buf)
+	if (hasAstroPhysicsExtensions)
 	{
-	case '1':
-	  return -2;
-        case '0':
-	  return -1;
-	default:
-	  return USEC_SEC;
+		// 10micron reports parking state in Gstat
+		char rbuf[100];
+		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
+			return -1;
+		else if (rbuf[0] == '5')
+			return -2;
+		else
+			return USEC_SEC;
+	}
+	else
+	{
+		char buf[2];
+		//serConn->writeRead (":D#", 3, buf, 2, '#');
+		//serConn->writeRead (":h?#", 3, buf, 2, '#');
+		serConn->writeRead (":h?#", 4, buf, 1);
+
+		switch (*buf)
+		{
+			case '1':
+				return -2;
+			case '0':
+				return -1;
+			default:
+				return USEC_SEC;
+		}
 	}
 }
 
 int LX200::endPark ()
 {
-	int ret = serConn->writePort (":AL#", 4);
-	if (ret < 0)
-		return -1;
-	sleep (1);
+	if (hasAstroPhysicsExtensions)
+	{
+		// 10micron does not need to do anything after parking
+	}
+	else
+	{
+		int ret = serConn->writePort (":AL#", 4);
+
+		if (ret < 0)
+			return -1;
+		sleep (1);
+	}
 	return 0;
+}
+
+int LX200::unPark ()
+{
+	if (hasAstroPhysicsExtensions)
+	{
+		serConn->writePort (":PO#", 4);
+
+		return 0;
+	}
+	else
+		return -1;
 }
 
 int LX200::startDir (char *dir)
@@ -432,6 +570,10 @@ int LX200::startDir (char *dir)
 		case DIR_WEST:
 		case DIR_NORTH:
 		case DIR_SOUTH:
+			if (hasAstroPhysicsExtensions)
+				// We have to un-park the mount if it is parked
+				serConn->writePort (":PO#", 4);
+
 			tel_set_rate (RATE_FIND);
 			return tel_start_slew_move (*dir);
 	}
@@ -449,6 +591,13 @@ int LX200::stopDir (char *dir)
 			return tel_stop_slew_move (*dir);
 	}
 	return -2;
+}
+
+int LX200::idle ()
+{
+	info ();
+
+	return Telescope::idle ();
 }
 
 int main (int argc, char **argv)
