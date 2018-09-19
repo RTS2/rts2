@@ -90,13 +90,23 @@ void NMonitor::sendCommand ()
 	}
 	if (*cmd_top)
 	{
-		oldCommand = new rts2core::Command (this, cmd_top);
+		char *value = strstr (cmd_top, "=");
+
+		comWindow->winclear ();
+		comWindow->printCommand (command);
+
+		if (value) {
+			*value = '\0';
+			oldCommand = new rts2core::CommandChangeValue (this, cmd_top, '=', std::string(value + 1));
+		} else
+			oldCommand = new rts2core::Command (this, cmd_top);
+
 		if (conn)
 			conn->queCommand (oldCommand);
 		else if (sendAll)
+			// TODO: should we also broadcast it to all centralds?
 			queAll (oldCommand);
-		comWindow->winclear ();
-		comWindow->printCommand (command);
+
 		wmove (comWindow->getWriteWindow (), 0, 0);
 	}
 }
@@ -743,6 +753,7 @@ void NMonitor::processKey (int key)
 		case KEY_F (5):
 		case KEY_CTRL ('R'):
 			queAll ("info");
+		  	queAllCentralds ("info");
 			break;
 		case KEY_CTRL('L'): // Ctrl+L to repaint the screen
 			clear();
