@@ -117,6 +117,19 @@ class sortConnName
 		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
 };
 
+class sortConnType
+{
+	public:
+		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const
+		{
+			// Sort by device type, then by name
+			if (con1->getOtherType () != con2->getOtherType ())
+				return (con1->getOtherType () - con2->getOtherType ()) < 0;
+			else
+				return strcmp (con1->getName (), con2->getName ()) < 0;
+		}
+};
+
 void NMonitor::refreshConnections ()
 {
 	orderedConn.clear ();
@@ -128,6 +141,9 @@ void NMonitor::refreshConnections ()
 			break;
 		case ORDER_ALPHA:
 			std::sort (orderedConn.begin (), orderedConn.end (), sortConnName());
+			break;
+		case ORDER_TYPE:
+			std::sort (orderedConn.begin (), orderedConn.end (), sortConnType());
 			break;
 	}
 	daemonWindow = NULL;
@@ -343,6 +359,7 @@ void NMonitor::menuPerform (int code)
 			break;
 		case MENU_SORT_ALPHA:
 		case MENU_SORT_RTS2:
+		case MENU_SORT_TYPE:
 			if (getActiveWindow () != deviceList)
 				changeActive (deviceList);
 
@@ -353,6 +370,9 @@ void NMonitor::menuPerform (int code)
 					break;
 				case MENU_SORT_RTS2:
 					connOrder = ORDER_RTS2;
+					break;
+				case MENU_SORT_TYPE:
+					connOrder = ORDER_TYPE;
 					break;
 			}
 			refreshConnections ();
@@ -430,7 +450,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	old_lines = 0;
 	old_cols = 0;
 
-	connOrder = ORDER_ALPHA;
+	connOrder = ORDER_TYPE;
 	hideDebugValues = true;
 	hideDebugMenu = NULL;
 
@@ -537,6 +557,7 @@ int NMonitor::init ()
 	menu = new NMenu ();
 	NSubmenu *sub = new NSubmenu ("System");
 	sub->createAction ("Exit", MENU_EXIT);
+	sub->createAction ("Type sort", MENU_SORT_TYPE);
 	sub->createAction ("Alpha sort", MENU_SORT_ALPHA);
 	sub->createAction ("RTS2 sort", MENU_SORT_RTS2);
 	hideDebugMenu = sub->createActionBool ("Debug", "Debug", MENU_SHOW_DEBUG);
