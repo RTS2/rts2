@@ -270,6 +270,9 @@ std::string Connection::getStateString (bool verbose)
 			{
 				_os << " | " << getValueDouble ("exposure") << " s";
 
+				if (getValue ("SHUTTER"))
+					_os << " " << getValueSelection ("SHUTTER");
+
 				if (getValue("filter"))
 					_os << " " << getValueSelection ("filter");
 

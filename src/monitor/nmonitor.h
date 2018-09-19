@@ -76,7 +76,8 @@
 
 #define MENU_SORT_ALPHA     21
 #define MENU_SORT_RTS2      22
-#define MENU_SHOW_DEBUG     23
+#define MENU_SORT_TYPE      23
+#define MENU_SHOW_DEBUG     24
 
 #define KEY_CTRL(x) ((x) & 0x1F)
 
@@ -174,7 +175,7 @@ class NMonitor:public rts2core::Client
 
 		rts2core::SimbadTarget *tarArg;
 
-		enum { ORDER_RTS2, ORDER_ALPHA } connOrder;
+		enum { ORDER_RTS2, ORDER_ALPHA, ORDER_TYPE } connOrder;
 		bool hideDebugValues;
 		NActionBool *hideDebugMenu;
 

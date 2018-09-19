@@ -50,7 +50,7 @@ keyRet NSelWindow::injectKey (int key)
 			selrow = maxrow - 1;
 			break;
 		case KEY_NPAGE:
-			changeSelRow (getHeight ());
+			changeSelRow (fmin (maxrow - selrow - 1, getHeight () - (haveBox () ? 2 : 0)));
 			break;
 		case KEY_DOWN:
 			changeSelRow (+1);
@@ -59,7 +59,7 @@ keyRet NSelWindow::injectKey (int key)
 			changeSelRow (-1);
 			break;
 		case KEY_PPAGE:
-			changeSelRow (-getHeight ());
+			changeSelRow (-fmin (selrow, getHeight () - (haveBox () ? 2 : 0)));
 			break;
 		case KEY_LEFT:
 			if (padoff_x > 0)

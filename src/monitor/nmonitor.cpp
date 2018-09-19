@@ -90,13 +90,23 @@ void NMonitor::sendCommand ()
 	}
 	if (*cmd_top)
 	{
-		oldCommand = new rts2core::Command (this, cmd_top);
+		char *value = strstr (cmd_top, "=");
+
+		comWindow->winclear ();
+		comWindow->printCommand (command);
+
+		if (value) {
+			*value = '\0';
+			oldCommand = new rts2core::CommandChangeValue (this, cmd_top, '=', std::string(value + 1));
+		} else
+			oldCommand = new rts2core::Command (this, cmd_top);
+
 		if (conn)
 			conn->queCommand (oldCommand);
 		else if (sendAll)
+			// TODO: should we also broadcast it to all centralds?
 			queAll (oldCommand);
-		comWindow->winclear ();
-		comWindow->printCommand (command);
+
 		wmove (comWindow->getWriteWindow (), 0, 0);
 	}
 }
@@ -105,6 +115,19 @@ class sortConnName
 {
 	public:
 		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
+};
+
+class sortConnType
+{
+	public:
+		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const
+		{
+			// Sort by device type, then by name
+			if (con1->getOtherType () != con2->getOtherType ())
+				return (con1->getOtherType () - con2->getOtherType ()) < 0;
+			else
+				return strcmp (con1->getName (), con2->getName ()) < 0;
+		}
 };
 
 void NMonitor::refreshConnections ()
@@ -118,6 +141,9 @@ void NMonitor::refreshConnections ()
 			break;
 		case ORDER_ALPHA:
 			std::sort (orderedConn.begin (), orderedConn.end (), sortConnName());
+			break;
+		case ORDER_TYPE:
+			std::sort (orderedConn.begin (), orderedConn.end (), sortConnType());
 			break;
 	}
 	daemonWindow = NULL;
@@ -227,13 +253,14 @@ void NMonitor::showHelp ()
 	messageBox (
 "WARNING:\n"
 "If you would like to keep dome closed, please switch state to OFF.\n"
-"==================================================================\n"
+"===================================================================\n"
 "Keys:\n"
 "F1         .. this help\n"
 "F2         .. switch to OFF (will not observe)\n"
 "F3         .. switch to STANDBY (might observe if weather is good)\n"
 "F4         .. switch to ON (will observe if weather is good)\n"
 "Ctrl+R,F5  .. Refresh information from all devices\n"
+"F8         .. Toggle listing all values / FITS header / writable\n"
 "F9         .. menu\n"
 "F10,ctrl+c .. exit\n"
 "arrow keys .. move between items\n"
@@ -243,7 +270,7 @@ void NMonitor::showHelp ()
 "Ctrl+G     .. continue previous search\n"
 "Ctrl+L     .. clear and redraw the screen\n"
 "Ctrl+P/N   .. navigate history of commands\n"
-"==================================================================\n"
+"===================================================================\n"
 "For arrays, mean, size, minimum, maximum, median and standard deviation are displayed.");
 }
 
@@ -332,6 +359,7 @@ void NMonitor::menuPerform (int code)
 			break;
 		case MENU_SORT_ALPHA:
 		case MENU_SORT_RTS2:
+		case MENU_SORT_TYPE:
 			if (getActiveWindow () != deviceList)
 				changeActive (deviceList);
 
@@ -342,6 +370,9 @@ void NMonitor::menuPerform (int code)
 					break;
 				case MENU_SORT_RTS2:
 					connOrder = ORDER_RTS2;
+					break;
+				case MENU_SORT_TYPE:
+					connOrder = ORDER_TYPE;
 					break;
 			}
 			refreshConnections ();
@@ -419,7 +450,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	old_lines = 0;
 	old_cols = 0;
 
-	connOrder = ORDER_ALPHA;
+	connOrder = ORDER_TYPE;
 	hideDebugValues = true;
 	hideDebugMenu = NULL;
 
@@ -526,6 +557,7 @@ int NMonitor::init ()
 	menu = new NMenu ();
 	NSubmenu *sub = new NSubmenu ("System");
 	sub->createAction ("Exit", MENU_EXIT);
+	sub->createAction ("Type sort", MENU_SORT_TYPE);
 	sub->createAction ("Alpha sort", MENU_SORT_ALPHA);
 	sub->createAction ("RTS2 sort", MENU_SORT_RTS2);
 	hideDebugMenu = sub->createActionBool ("Debug", "Debug", MENU_SHOW_DEBUG);
@@ -742,12 +774,10 @@ void NMonitor::processKey (int key)
 		case KEY_F (5):
 		case KEY_CTRL ('R'):
 			queAll ("info");
+		  	queAllCentralds ("info");
 			break;
 		case KEY_CTRL('L'): // Ctrl+L to repaint the screen
 			clear();
-			break;
-		case KEY_F (8):
-			doupdate ();
 			break;
 		case KEY_F (9):
 			windowStack.push_back (menu);
@@ -794,8 +824,9 @@ void NMonitor::processKey (int key)
 			ret = activeWindow->injectKey (key);
 			if (ret == RKEY_NOT_HANDLED)
 			{
-				// Keys used for search in device window should not affect other windows
+				// Keys used for search and filtering in device window should not affect other windows
 				if (key == KEY_F (7) ||
+					key == KEY_F (8) ||
 					key == KEY_CTRL ('F') ||
 					key == KEY_CTRL ('G'))
 				{
