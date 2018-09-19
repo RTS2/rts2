@@ -227,13 +227,14 @@ void NMonitor::showHelp ()
 	messageBox (
 "WARNING:\n"
 "If you would like to keep dome closed, please switch state to OFF.\n"
-"==================================================================\n"
+"===================================================================\n"
 "Keys:\n"
 "F1         .. this help\n"
 "F2         .. switch to OFF (will not observe)\n"
 "F3         .. switch to STANDBY (might observe if weather is good)\n"
 "F4         .. switch to ON (will observe if weather is good)\n"
 "Ctrl+R,F5  .. Refresh information from all devices\n"
+"F8         .. Toggle listing all values / FITS header / writable\n"
 "F9         .. menu\n"
 "F10,ctrl+c .. exit\n"
 "arrow keys .. move between items\n"
@@ -243,7 +244,7 @@ void NMonitor::showHelp ()
 "Ctrl+G     .. continue previous search\n"
 "Ctrl+L     .. clear and redraw the screen\n"
 "Ctrl+P/N   .. navigate history of commands\n"
-"==================================================================\n"
+"===================================================================\n"
 "For arrays, mean, size, minimum, maximum, median and standard deviation are displayed.");
 }
 
@@ -746,9 +747,6 @@ void NMonitor::processKey (int key)
 		case KEY_CTRL('L'): // Ctrl+L to repaint the screen
 			clear();
 			break;
-		case KEY_F (8):
-			doupdate ();
-			break;
 		case KEY_F (9):
 			windowStack.push_back (menu);
 			menu->enter ();
@@ -794,8 +792,9 @@ void NMonitor::processKey (int key)
 			ret = activeWindow->injectKey (key);
 			if (ret == RKEY_NOT_HANDLED)
 			{
-				// Keys used for search in device window should not affect other windows
+				// Keys used for search and filtering in device window should not affect other windows
 				if (key == KEY_F (7) ||
+					key == KEY_F (8) ||
 					key == KEY_CTRL ('F') ||
 					key == KEY_CTRL ('G'))
 				{

@@ -38,6 +38,7 @@ NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection, bool _hide_d
 	searchBox = NULL;
 	valueBegins = 20;
 	hide_debug = _hide_debug;
+	filterMode = 0;
 
 	draw ();
 }
@@ -206,6 +207,11 @@ void NDeviceWindow::drawValuesList ()
 	{
 		if (hide_debug == false || (*iter)->getDebugFlag () == false)
 		{
+			// Filter values as requested. 0 is all, 1 is FITS header values, 2 is writable only
+			if ((filterMode == 1 && (*iter)->getWriteToFits () == false) ||
+				(filterMode == 2 && (*iter)->isWritable () == false))
+				continue;
+
 			maxrow++;
 
 			// Grow the width of value name field if necessary
@@ -342,43 +348,27 @@ void NDeviceWindow::searchSearchBox (bool _continue)
 		return;
 
 	bool isFound = false;
-	int pos = 0;
-	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
-	{
-		if (hide_debug == false || (*iter)->getDebugFlag () == false)
-		{
-			// The logic of outer cycle has to match the one in NDeviceWindow::drawValuesList ()
-			if (pos > selrow && uppercase ((*iter)->getName ()).find (uppercase (searchString)) != std::string::npos)
-			{
-				selrow = pos;
-				isFound = true;
-				break;
-			}
+	int pos;
 
-			pos ++;
+	for (pos = 0; pos < (int) displayValues.size (); pos ++)
+		if (pos > selrow && uppercase (displayValues[pos]->getName ()).find (uppercase (searchString)) != std::string::npos)
+		{
+			selrow = pos;
+			isFound = true;
+			break;
 		}
-	}
 
 	if (isFound)
 		return;
 
 	// Wrapping the search if nothing is found
-	pos = 0;
-	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
-	{
-		if (hide_debug == false || (*iter)->getDebugFlag () == false)
+	for (pos = 0; pos < (int) displayValues.size (); pos ++)
+		if (pos < selrow && uppercase (displayValues[pos]->getName ()).find (uppercase (searchString)) != std::string::npos)
 		{
-			// The logic of outer cycle has to match the one in NDeviceWindow::drawValuesList ()
-			if (pos < selrow && uppercase ((*iter)->getName ()).find (uppercase (searchString)) != std::string::npos)
-			{
-				selrow = pos;
-				isFound = true;
-				break;
-			}
-
-			pos ++;
+			selrow = pos;
+			isFound = true;
+			break;
 		}
-	}
 }
 
 keyRet NDeviceWindow::injectKey (int key)
@@ -401,11 +391,19 @@ keyRet NDeviceWindow::injectKey (int key)
 			return RKEY_HANDLED;
 		case KEY_F (7):
 		case KEY_CTRL ('F'): // Ctrl-F to start search
-			if (!searchBox)
-				createSearchBox ();
-			return RKEY_HANDLED;
+			if (valueBox || searchBox)
+				break;
+			createSearchBox ();
+		return RKEY_HANDLED;
 		case KEY_CTRL ('G'):
+			if (valueBox || searchBox)
+				break;
 			searchSearchBox (true);
+			return RKEY_HANDLED;
+		case KEY_F (8):
+			if (valueBox || searchBox)
+				break;
+			filterMode = (filterMode + 1) % 3;
 			return RKEY_HANDLED;
 	}
 	if (searchBox)
@@ -450,6 +448,13 @@ void NDeviceWindow::draw ()
 	// Scrollbar
 	if (maxrow > 1)
 		mvwaddch (window, 1 + (getHeight () - 3)*getSelRow () / (maxrow - 1), getWidth()-1, ACS_DIAMOND);
+
+	// Value list filtering
+	if (filterMode == 1)
+		mvwprintw (window, getHeight () - 1, getWidth () - 8, "[FITS]");
+	else if (filterMode == 2)
+		mvwprintw (window, getHeight () - 1, getWidth () - 12, "[writable]");
+
 	wattroff (window, A_REVERSE);
 
 	printState ();
