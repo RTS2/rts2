@@ -45,7 +45,7 @@ void Night::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, X
 	int year = -1;
 	int month = -1;
 	int day = -1;
-	
+
 	enum {NONE, IMAGES, API, ALT, ALTAZ} action = NONE;
 
 	switch (vals.size ())
@@ -211,7 +211,7 @@ void Night::printAlt (int year, int month, int day, XmlRpc::HttpParams *params, 
 	ap.getPlot (from, end, &is, &mimage);
 
 	Magick::Blob blob;
-	mimage.write (&blob, "jpeg");
+	mimage.write (&blob, "JPEG");
 
 	response_length = blob.length();
 	response = new char[response_length];
@@ -252,7 +252,7 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 	}
 
 	Magick::Blob blob;
-	altaz.write (&blob, "jpeg");
+	altaz.write (&blob, "JPEG");
 
 	response_length = blob.length();
 	response = new char[response_length];
@@ -371,7 +371,7 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	_os << "</p><p><div id='observations'>Loading..</div>";
 
 	_os << "</p>";
-	
+
 	printFooter (_os);
 
 	response_length = _os.str ().length ();

@@ -1,4 +1,4 @@
-/* 
+/*
  * Classes for answers to HTTP requests.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -45,7 +45,7 @@ void Auger::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, X
 		case 4:
 			// assumes that all previous are OK, get just target
 			printTarget (atoi (vals[3].c_str ()), response_type, response, response_length);
-			break;			
+			break;
 		case 3:
 			day = atoi (vals[2].c_str ());
 		case 2:
@@ -97,7 +97,7 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 	}
 
 	Magick::Blob blob;
-	aa.write (&blob, "jpeg");
+	aa.write (&blob, "JPEG");
 
 	response_type = "image/jpeg";
 
@@ -169,7 +169,7 @@ void Auger::printTable (int year, int month, int day, char* &response, size_t &r
 	}
 
 	_os << "</table>";
-	
+
 	printFooter (_os);
 
 	response_length = _os.str ().length ();

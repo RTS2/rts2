@@ -82,7 +82,7 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 				throw rts2core::Error ("Target id < 0");
 
 			tar = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
-		}	
+		}
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");
 
@@ -237,7 +237,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 	"<input type='submit' value='Plot target altitude' name='plot'/> (please select at least one target to plot something interesting)\n"
 	"</form>\n";
 #endif // RTS2_HAVE_LIBJPEG
-	
+
 	printFooter (_os);
 
 	response_type = "text/html";
@@ -255,10 +255,10 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 
 		AltPlot ap (params->getInteger ("w", 800), params->getInteger ("h", 600));
 		Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
-	
+
 		double from = params->getDouble ("from", 0);
 		double to = params->getDouble ("to", 0);
-	
+
 		if (from < 0 && to == 0)
 		{
 			// just fr specified - from
@@ -283,13 +283,13 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 
 		rts2db::TargetSet ts = rts2db::TargetSet ();
 		ts.load (ti);
-	
+
 		Magick::Image mimage (size, "white");
 		ap.getPlot (from, to, &ts, &mimage);
-	
+
 		Magick::Blob blob;
-		mimage.write (&blob, "jpeg");
-	
+		mimage.write (&blob, "JPEG");
+
 		response_length = blob.length();
 		response = new char[response_length];
 		memcpy (response, blob.data(), response_length);
@@ -361,7 +361,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 			_os << -1;
 		else
 			_os << tar->getBonus ();
-		
+
 		_os << "," << tar->getTargetEnabled ()
 			<< ",\"" << tar->getViolatedConstraints (JD)
 			<< "\",\"" << tar->getSatisfiedConstraints (JD)
@@ -406,10 +406,10 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 		tar->getAltAz (&hp, JD);
 		os << std::fixed << "{\"name\":\"" << tar->getTargetName ()
 			<< "\",\"id\":" << tar->getTargetID ()
-			<< ",\"ra\":" << tp.ra << ",\"dec\":" << tp.dec 
+			<< ",\"ra\":" << tp.ra << ",\"dec\":" << tp.dec
 			<< ",\"alt\":" << hp.alt << ",\"az\":" << hp.az
 			<< ",\"airmass\":" << tar->getAirmass (JD) << ",\"satisfied\":";
-		
+
 		tar->getSatisfiedConstraints (JD).printJSON (os);
 
 		os << ",\"violated\":";
@@ -423,7 +423,7 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 
 		returnJSON (os, response_type, response, response_length);
 		return;
-	}	
+	}
 	e = params->getString ("e", NULL);
 	if (e != NULL)
 	{
@@ -527,7 +527,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		{
 			if (iter != os.begin ())
 				_os << ",";
-			_os << "[" << iter->getObsId () << "," 
+			_os << "[" << iter->getObsId () << ","
 				<< iter->getObsRa () << ","
 				<< iter->getObsDec () << ",\""
 				<< iter->getObsSlew () << "\",\""
@@ -567,7 +567,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			tar->getPosition (&equ, JDstart);
 			struct ln_hrz_posn hrz;
 			tar->getAltAz (&hrz, JDstart);
-			_os << "[" << iter->getPlanId () << ",\"" 
+			_os << "[" << iter->getPlanId () << ",\""
 				<< iter->getPlanStart () << "\",\""
 				<< iter->getPlanEnd () << "\","
 				<< equ.ra << "," << equ.dec << ","
@@ -713,7 +713,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 
 	// javascript to send requests..
 	double JD = ln_get_julian_from_sys ();
-	
+
 	_os << "<div id='info' class='b_left'><table><tr><td>Name</td><td>" << tar->getTargetName () << "</td></tr>"
 		"<tr><td>RA DEC</td><td>" << LibnovaRaDec (&tradec) << "</td></tr>"
 		"<tr><td>ALT AZ</td><td><span id='altaz'/></td></tr>"
@@ -735,17 +735,17 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 
 	if (hasPermission (PERMISSIONS_TARGET_NEXT))
 		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_next();'>next target</button><div id='next' style='display:none'>nothing</div></td></tr>";
-	
+
 	if (hasPermission (PERMISSIONS_TARGET_NOW))
 		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_now();'>now (immediate) target</button><div id='now' style='display:none'>nothing</div></td></tr>";
-	
+
 	if (hasPermission (PERMISSIONS_TARGET_ENABLE))
 		_os << "<tr><td>Enabled</td><td><input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='" << (tar->getTargetEnabled () ? "yes" : "no") << "'/></td></tr>";
 	else
 	  	_os << "<tr><td>Enabled</td><td>" << (tar->getTargetEnabled () ? "yes" : "no") << "</td></tr>";
 
 	_os << "</table></div>";
-	
+
 	if (hasPermission (PERMISSIONS_TARGET_SCRIPTEDIT))
 	{
 		_os << "<div id='scripteditor'i class='b_right'>";
@@ -775,7 +775,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 			_os << "<option value='" << n << "'>" << n << "</option>";
 			camiter++;
 		}
-	
+
 		_os << "</select></div>"
 			"<div><button type='button' onclick='updateScript();'>Update</button></div>"
 			"<div id='scriptlog'></div>"
@@ -820,7 +820,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	
+
 	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
 
 	printTargetHeader (tar->getTargetID (), "details", _os);
@@ -832,7 +832,7 @@ void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, 
 	tar->sendInfo (ivos, JD, 0);
 
 	_os << "</pre>";
-	
+
 	printFooter (_os);
 
 	response_type = "text/html";
@@ -844,7 +844,7 @@ void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, 
 void Targets::printTargetStat (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	
+
 	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
 
 	printTargetHeader (tar->getTargetID (), "stat", _os);
@@ -894,13 +894,13 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
 
 	printTargetHeader (tar->getTargetID (), "images", _os);
-	
+
 	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
-		
+
 	_os << "<p>";
 
 	preview.form (_os, pageno, prevsize, pagesiz, chan, label, quantiles, colourVariant);
-	
+
 	_os << "</p><p>";
 
 	rts2db::ImageSetTarget is = rts2db::ImageSetTarget (tar->getTargetID ());
@@ -929,13 +929,13 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 
 	_os << "</p><p>Page ";
 	int i;
-	
+
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
-	
+
 	printFooter (_os);
 
 	response_type = "text/html";
@@ -1023,7 +1023,7 @@ void Targets::plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const
 	ap.getPlot (from, to, tar, &mimage);
 
 	Magick::Blob blob;
-	mimage.write (&blob, "jpeg");
+	mimage.write (&blob, "JPEG");
 
 	response_length = blob.length();
 	response = new char[response_length];

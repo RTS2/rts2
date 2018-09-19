@@ -1218,49 +1218,12 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (i
 
 template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y)
 {
-	long hist[65536];
-	getChannelHistogram (chan, hist, 65536);
-
-	long psum = 0;
 	dt low = minval;
 	dt high = minval;
 
-	uint32_t i;
-
 	long s = getChannelNPixels (chan);
 
-	// find quantiles
-	for (i = 0; (dt) i < mval; i++)
-	{
-		psum += hist[i];
-		if (psum > s * quantiles)
-		{
-			low = i;
-			break;
-		}
-	}
-
-	if (low == minval)
-	{
-		low = minval;
-		high = mval;
-	}
-	else
-	{
-		for (; (dt) i < mval; i++)
-		{
-			psum += hist[i];
-			if (psum > s * (1 - quantiles))
-			{
-				high = i;
-				break;
-			}
-		}
-		if (high == minval)
-		{
-			high = mval;
-		}
-	}
+	getChannelQuantiles (chan, minval, mval, quantiles, &low, &high);
 
 	getChannelGrayscaleByteBuffer (chan, buf, black, low, high, s, offset, invert_y);
 }
@@ -1505,7 +1468,7 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourBuffer (in
 
 	long s = getChannelNPixels (chan);
 
-	getChannelQuantiles (chan, low, high, quantiles, &low, &high);
+	getChannelQuantiles (chan, minval, mval, quantiles, &low, &high);
 
 	getChannelPseudocolourByteBuffer (chan, buf, black, low, high, s, offset, invert_y, colourVariant);
 }
@@ -1735,7 +1698,7 @@ void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles
 	try
 	{
 		image = getMagickImage (label, quantiles, chan, colourVariant);
-		image->write (&blob, "jpeg");
+		image->write (&blob, "JPEG");
 		delete image;
 	}
 	catch (Magick::Exception &ex)
