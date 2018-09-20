@@ -1,4 +1,4 @@
-/* 
+/*
  * Dummy telescope for tests.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -105,7 +105,7 @@ class Dummy:public Telescope
 
 		virtual void runTracking ();
 
-		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues);
+		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
 
 	private:
 
@@ -262,7 +262,7 @@ void Dummy::runTracking ()
 	Telescope::runTracking ();
 }
 
-int Dummy::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
+int Dummy::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	ac = pos->ra * 10000;
 	dc = pos->dec * 10000;
