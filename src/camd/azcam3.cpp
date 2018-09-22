@@ -372,7 +372,7 @@ int AzCam3::callShiftExposure (  )
 
 	logStream (MESSAGE_INFO) << "Shift Exposure called. " << sendLog;
 	char buf[200];
-	snprintf (buf, 200, "focus.set_pars %f %ld %ld %ld \r\n", 
+	snprintf (buf, 200, "focuser_set_pars %f %ld %ld %ld \r\n", 
 		parShiftExposureTime->getValueFloat(), 
 		parShiftNexposures->getValueLong(), 
 		parShiftFocusSteps->getValueLong(), 
@@ -383,7 +383,7 @@ int AzCam3::callShiftExposure (  )
 	{
 		
 		logStream (MESSAGE_INFO) << "Sending focus.run right ... now " << sendLog;
-		commandConn->sendData ("focus.run\r\n");
+		commandConn->sendData ("rts2.focus.run\r\n");
 		return 0;
 	}
 	catch (rts2core::ConnError err)
@@ -513,24 +513,23 @@ long AzCam3::isExposing ()
 {
 
 
-	logStream (MESSAGE_ERROR) << "isExposing called"<<sendLog;
+	//logStream (MESSAGE_ERROR) << "isExposing called"<<sendLog;
 	try
 	{
-		if ( !parShiftFocus->getValueBool())
+		if ( parShiftFocus->getValueBool())
 		{
-			logStream (MESSAGE_ERROR) << "isExposing called parshift"<<sendLog;
 			exposureRemaining->setValueFloat (getDouble ("timeleft\r\n"));
 			sendValueAll (exposureRemaining);
 			if (exposureRemaining->getValueFloat () > 0)
 				return exposureRemaining->getValueFloat () * USEC_SEC;
-		// else exposureRemaining is 0..or negative in case of AzCam bug..
-		long camExp = Camera::isExposing ();
+
+			// else exposureRemaining is 0..or negative in case of AzCam bug..
+			long camExp = Camera::isExposing ();
 			if (camExp > USEC_SEC)
 				return camExp;
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "isExposing called normal"<<sendLog;
 			if( dataConn->imgWasRecvd() )
 			{
 				
@@ -539,7 +538,7 @@ long AzCam3::isExposing ()
 			else
 			{
 
-				logStream (MESSAGE_ERROR) << "datasize " << dataConn->getDataSize() << " recvs: "<< dataConn->getRecvs()<<sendLog;
+				//logStream (MESSAGE_ERROR) << "datasize " << dataConn->getDataSize() << " recvs: "<< dataConn->getRecvs()<<sendLog;
 				//check again in a second
 				return USEC_SEC;
 			}
@@ -568,17 +567,17 @@ int AzCam3::doReadout ()
 			{
 				if (!(getState () & CAM_SHIFT))
 				{
-					if (!parShiftFocus->getValueBool())
+					if (!parShiftFocus->getValueBool()) // normal exposure
 					{
 						pixelsRemaining->setValueLong (getLong ("pixels_remaining\r\n"));
 
 
 						sendValueAll (pixelsRemaining);
 						
-						logStream (MESSAGE_ERROR) << "pixels remaining:"<< pixelsRemaining->getValueLong() <<sendLog;
+						//logStream (MESSAGE_ERROR) << "pixels remaining:"<< pixelsRemaining->getValueLong() <<sendLog;
 					}
 					else
-					{
+					{//Shift detector charge for focus expsoure.
 						removeConnection (dataConn);
 						dataConn = NULL;
 				                fitsDataTransfer ("/tmp/m.fits");
