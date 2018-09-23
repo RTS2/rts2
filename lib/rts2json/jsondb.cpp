@@ -195,13 +195,13 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 
 			rts2db::interval_arr_t intervals;
 			cptr->getViolatedIntervals (tar, from, to, step, intervals);
-			for (rts2db::interval_arr_t::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+			for (auto iter : intervals)
 			{
 				if (first_it)
 					first_it = false;
 				else
 					os << ",";
-				os << "[" << iter->first << "," << iter->second << "]";
+				os << "[" << iter.first << "," << iter.second << "]";
 			}
 		}
 		os << "]";
@@ -220,11 +220,11 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		to += step - (to % step);
 		tar->getSatisfiedIntervals (from, to, length, step, si);
 		os << "\"id\":" << tar->getTargetID () << ",\"satisfied\":[";
-		for (rts2db::interval_arr_t::iterator sat = si.begin (); sat != si.end (); sat++)
+		for (auto sat : si)
 		{
-			if (sat != si.begin ())
+			if (sat != *(si.begin ()))
 				os << ",";
-			os << "[" << sat->first << "," << sat->second << "]";
+			os << "[" << sat.first << "," << sat.second << "]";
 		}
 		os << "]";
 	}
@@ -242,14 +242,14 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 
 		os << "\"id\":" << tar->getTargetID () << ",\"altitudes\":{";
 
-		for (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> >::iterator iter = ac.begin (); iter != ac.end (); iter++)
+		for (auto iter = ac.begin(); iter != ac.end(); ++iter)
 		{
 			if (iter != ac.begin ())
 				os << ",\"";
 			else
 				os << "\"";
 			os << iter->first << "\":[";
-			for (std::vector <rts2db::ConstraintDoubleInterval>::iterator di = iter->second.begin (); di != iter->second.end (); di++)
+			for (auto di = iter->second.begin (); di != iter->second.end (); ++di)
 			{
 				if (di != iter->second.begin ())
 					os << ",[";
@@ -277,7 +277,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 
 		os << "\"id\":" << tar->getTargetID () << ",\"constraints\":{";
 
-		for (std::map <std::string, rts2db::ConstraintPtr>::iterator iter = cons.begin (); iter != cons.end (); iter++)
+		for (auto iter = cons.begin (); iter != cons.end (); ++iter)
 		{
 			if (iter != cons.begin ())
 				os << ",\"";
@@ -291,7 +291,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			else
 				iter->second->getViolatedIntervals (tar, from, to, steps, intervals);
 
-			for (rts2db::interval_arr_t::iterator it = intervals.begin (); it != intervals.end (); it++)
+			for (auto it = intervals.begin (); it != intervals.end (); ++it)
 			{
 				if (it != intervals.begin ())
 					os << ",[";
@@ -324,7 +324,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		ts_n.load ();
 		if (ts_n.size () > 0)
 		{
-			for (rts2db::TargetSetByName::iterator iter = ts_n.begin (); iter != ts_n.end (); iter++)
+			for (auto iter = ts_n.begin (); iter != ts_n.end (); ++iter)
 			{
 				iter->second->getPosition (&pos);
 				if (first)
@@ -579,7 +579,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":9}],"
 			"\"d\":[" << std::fixed;
 
-		for (rts2db::PlanSet::iterator iter = ps.begin (); iter != ps.end (); iter++)
+		for (auto iter = ps.begin (); iter != ps.end (); ++iter)
 		{
 			if (iter != ps.begin ())
 				os << ",";
@@ -612,7 +612,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			"{\"n\":\"Label text\",\"t\":\"s\",\"c\":2}],"
 			"\"d\":[";
 
-		for (rts2db::LabelList::iterator iter = ll.begin (); iter != ll.end (); iter++)
+		for (auto iter = ll.begin (); iter != ll.end (); ++iter)
 		{
 			if (iter != ll.begin ())
 				os << ",";
@@ -845,25 +845,25 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		{
 			double md = -1;
 			std::ostringstream cs;
-			for (rts2db::CamList::iterator cam = getServer ()->getCameras ()->begin (); cam != getServer ()->getCameras ()->end (); cam++)
+			for (auto cam : (*(getServer()->getCameras())))
 			{
 				try
 				{
 					std::string script_buf;
 					rts2script::Script script;
-					tar->getScript (cam->c_str(), script_buf);
-					if (cam != getServer ()->getCameras ()->begin ())
-						cs << ",";
-					script.setTarget (cam->c_str (), tar);
+					tar->getScript (cam.c_str(), script_buf);
+					script.setTarget (cam.c_str (), tar);
 					double d = script.getExpectedDuration ();
 					int e = script.getExpectedImages ();
-					cs << "{\"" << *cam << "\":[\"" << script_buf << "\"," << d << "," << e << "]}";
+					if (cam != *(getServer ()->getCameras ()->begin ()))
+						cs << ",";
+					cs << "{\"" << cam << "\":[\"" << script_buf << "\"," << d << "," << e << "]}";
 					if (d > md)
 						md = d;  
 				}
 				catch (rts2core::Error &er)
 				{
-					logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
+					logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << cam << ": " << er << sendLog;
 				}
 			}
 			os << "," << md << ",[" << cs.str () << "],";
