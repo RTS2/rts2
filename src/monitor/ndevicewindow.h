@@ -82,7 +82,7 @@ class NDeviceWindow:public NSelWindow
 		ValueBox *searchBox;
 		std::string searchString;
 		/** Index from which start value box */
-		int valueBegins;
+		size_t valueBegins;
 		bool hide_debug;
 
 		int filterMode;
