@@ -12,4 +12,4 @@ noinst_HEADERS = rts2.h imghdr.h status.h bbstatus.h imgdisplay.h connection.h l
 		telmodel.h gpointmodel.h simbadtarget.h \
 		tpointmodel.h tpointmodelterm.h expander.h expression.h counted_ptr.h infoval.h userlogins.h userpermissions.h \
 		door_vermes.h vermes.h slitazimuth.h OakHidBase.h OakFeatureReports.h tsqueue.h dirsupport.h altaz.h constsitech.h
-		sgp4.h catd.h dut1.h pid.h Axisd.hpp
+		sgp4.h catd.h dut1.h pid.h Axisd.hpp json.hpp

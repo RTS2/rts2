@@ -32,15 +32,6 @@ AS_IF([test "x$CHECK_LIBS" != x], [
   libcheck="yes"
 ])
 
-libjsoncpp="no"
-
-PKG_CHECK_MODULES([JSONCPP],[jsoncpp >= 0.9.6],,AC_MSG_RESULT(not found))
-AM_CONDITIONAL(LIBJSONCPP, test "x$JSONCPP_LIBS" != x)
-AS_IF([test "x$JSONCPP_LIBS" != x], [
-  AC_DEFINE_UNQUOTED(LIBJSONCPP, "1", [use libjsoncpp])
-  libjsoncpp="yes"
-])
-
 liberfa="no"
 
 PKG_CHECK_MODULES([ERFA],[erfa >= 0.1.0],,AC_MSG_RESULT(not found))
@@ -871,6 +862,8 @@ AC_SUBST(LDADD)
 AC_SUBST(LDFLAGS)
 
 AC_SUBST(DATE)
+
+LIBCURL_CHECK_CONFIG()
 
 debug=""
 AC_SUBST(debug)
