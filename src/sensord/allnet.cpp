@@ -20,7 +20,7 @@
 #include "sensord.h"
 #include "xmlrpc++/XmlRpc.h"
 
-#include <json/json.h>
+#include <json.hpp>
 
 namespace rts2sensord
 {
@@ -115,49 +115,47 @@ int AllNet::info ()
 	if (getDebug ())
 		logStream (MESSAGE_DEBUG) << "received:" << reply << sendLog;
 
-// [{"id":"1","name":"Internal","unit":"\u00b0C","type":"1","value":"14.26","error":0},{"id":"104","name":"Port 1","unit":"\u00b0C","type":"1","value":"11.56","error":0}]
-
-	Json::Value root;
-	Json::Reader reader;
-
-	bool parsed = reader.parse (reply, root);
-	if (!parsed)
-	{
-		free (reply);
-		return -1;
-	}
 
 	int readed = 0;
 
-	for (int i = 0; i < (int) root.size(); i++)
+	try
 	{
-		Json::Value item = root[i];
-		Json::Value name = item["name"];
-		Json::Value val = item["value"];
-		if (item["error"].asInt () != 0)
-			continue;
 
-		if (name.asString () == "Internal")
+// example reply
+// [{"id":"1","name":"Internal","unit":"\u00b0C","type":"1","value":"14.26","error":0},{"id":"104","name":"Port 1","unit":"\u00b0C","type":"1","value":"11.56","error":0}]
+		auto root = nlohmann::json::parse(reply);
+
+		for (int i = 0; i < (int) root.size(); i++)
 		{
-			ambient->setValueFloat (atof (val.asCString ()));
-			readed |= 0x01;
-		}
-		else if (name.asString () == "Port 1")
-		{
-			mirror->setValueFloat (atof (val.asCString ()));
-			readed |= 0x02;
-		}
-		else if (name.asString () == "Mirror Min")
-		{
-			mirrorMin->setValueFloat (atof (val.asCString ()));
-		}
-		else if (name.asString () == "Mirror Max")
-		{
-			mirrorMax->setValueFloat (atof (val.asCString ()));
+			std::string name = root[i]["name"];
+			float val = root[i]["value"];
+
+			if (name == "Internal")
+			{
+				ambient->setValueFloat (val);
+				readed |= 0x01;
+			}
+			else if (name  == "Port 1")
+			{
+				mirror->setValueFloat (val);
+				readed |= 0x02;
+			}
+			else if (name == "Mirror Min")
+			{
+				mirrorMin->setValueFloat (val);
+			}
+			else if (name == "Mirror Max")
+			{
+				mirrorMax->setValueFloat (val);
+			}
 		}
 	}
+	catch (nlohmann::json::exception &ex)
+	{
+		logStream (MESSAGE_ERROR) << "cannot parse " << reply << sendLog;
+		return -1;
+	}
 
-	free (reply);
 	if (readed != 0x03)
 		return -1;
 
