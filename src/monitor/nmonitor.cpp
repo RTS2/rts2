@@ -882,7 +882,9 @@ void NMonitor::commandReturn (rts2core::Command * cmd, int cmd_status)
 
 int main (int argc, char **argv)
 {
-	setlocale(LC_ALL, "");
+	// FIXME: setlocale here breaks numeric formatting and parsing, but is necessary
+	// for displaying UTF-8 characters in ncurses
+	// setlocale(LC_ALL, "");
 	NMonitor monitor = NMonitor (argc, argv);
 	return monitor.run ();
 }
