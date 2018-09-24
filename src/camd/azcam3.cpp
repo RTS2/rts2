@@ -296,7 +296,7 @@ int AzCam3::callCommand (const char *cmd)
 	// AzCam now uses rts2. syntax for our commands
 	// 8/28/2018
 	char rts2cmd[50];
-	sprintf(rts2cmd, "rts2.%s", cmd );
+	snprintf(rts2cmd, 50, "rts2.%s", cmd );
 	int ret = commandConn->writeRead (rts2cmd, strlen(rts2cmd), rbuf, 200, '\r', 20, false);
 	if (ret >= 0)
 	{
@@ -381,9 +381,7 @@ int AzCam3::callShiftExposure (  )
 
 	try
 	{
-		
-		logStream (MESSAGE_INFO) << "Sending focus.run right ... now " << sendLog;
-		commandConn->sendData ("rts2.focus.run\r\n");
+		commandConn->sendData ("focus.run\r\n");
 		return 0;
 	}
 	catch (rts2core::ConnError err)
@@ -483,8 +481,6 @@ int AzCam3::startExposure()
 	if (ret)
 		return ret;
 
-	const char *imgType[3] = {"object", "dark", "zero"};
-
 	if( parShiftFocus->getValueBool() )
 	{
 		callShiftExposure( );
@@ -492,7 +488,7 @@ int AzCam3::startExposure()
 	}
 	else
 	{
-		ret = callCommand ( "expose", getExposure(), imgType[getExpType ()], objectName->getValue() );
+		ret = callCommand ( "expose", getExposure(), imageType->getSelName() , objectName->getValue() );
 	}
 
 	if ( ret )
@@ -506,6 +502,7 @@ int AzCam3::stopExposure ()
 {
 	callCommand ("abort\r\n");
 	callCommand ("controller.readout_abort\r\n");
+
 	return Camera::stopExposure ();
 }
 
@@ -516,7 +513,7 @@ long AzCam3::isExposing ()
 	//logStream (MESSAGE_ERROR) << "isExposing called"<<sendLog;
 	try
 	{
-		if ( parShiftFocus->getValueBool())
+		if ( false ) //parShiftFocus->getValueBool())
 		{
 			exposureRemaining->setValueFloat (getDouble ("timeleft\r\n"));
 			sendValueAll (exposureRemaining);
@@ -637,11 +634,8 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
 	if (ret)
 		return ret;
-
 	
-	//ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue());
-	//ret = callCommand("focus.run\r\n");
-	commandConn->sendData("focus.run\r\n");
+	commandConn->sendData("rts2.focuser_run\r\n");
 
 	if (ret)
 		return ret;

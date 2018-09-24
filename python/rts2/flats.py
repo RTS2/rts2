@@ -46,7 +46,7 @@ except:
     from email.MIMEText import MIMEText
 
 from datetime import datetime
-
+#from rts2solib import to_dataserver
 
 class FlatAttempt:
 
@@ -314,9 +314,14 @@ class FlatScript (scriptcomm.Rts2Comm):
         self.setValue('exposure', self.exptime)
         self.setValue('SHUTTER', 'LIGHT')
         img = self.exposure(self.beforeReadout)
+	self.log("I", "IMG name is {}".format(img))
+	#to_dataserver(img)
         # Calculate average of image (can be just the central
         # 100x100pix if you want to speed up)
+        time.sleep(1)
+        self.sendCommand("info")
         avrg = self.getValueFloat('average')
+	self.log("I", "avrg = {}".format(avrg))
         ratio = (avrg - self.biasLevel) / self.optimalFlat
         ret = None
         expMulti = 1
@@ -360,8 +365,7 @@ class FlatScript (scriptcomm.Rts2Comm):
             # fit inside range
             ret = 2
         else:
-            self.unusableImage(
-                img)  # otherwise it is not useful and we get rid of it
+            self.unusableImage(img)  # otherwise it is not useful and we get rid of it
             if (ratio > 1.0):
                 ret = 1
             else:

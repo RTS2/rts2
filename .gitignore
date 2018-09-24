@@ -110,3 +110,4 @@ src/teld/rts2-*
 checks/*.log
 stamp-h1
 test-driver
+**/.*pyc
