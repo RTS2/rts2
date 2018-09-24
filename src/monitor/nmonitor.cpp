@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <locale.h>
 #include <list>
 
 #include <iostream>
@@ -340,7 +339,7 @@ void NMonitor::menuPerform (int code)
 			break;
 		case MENU_ABOUT:
 			messageBox ("   rts2-mon " RTS2_PACKAGE_VERSION "\n"
-"  (C) Petr Kubánek <petr@kubanek.net>");
+"  (C) Petr Kubanek <petr@kubanek.net>");
 			break;
 		case MENU_MANUAL:
 			showHelp ();
@@ -882,7 +881,6 @@ void NMonitor::commandReturn (rts2core::Command * cmd, int cmd_status)
 
 int main (int argc, char **argv)
 {
-	setlocale(LC_ALL, "");
 	NMonitor monitor = NMonitor (argc, argv);
 	return monitor.run ();
 }
