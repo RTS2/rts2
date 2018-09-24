@@ -266,7 +266,7 @@ class Connection:public Object
 
 		void endSharedData (int data_conn, bool complete);
 
-		int fitsDataTransfer (const char *fn);
+		int fitsDataTransfer (const char *fn, int filter_num);
 
 		virtual int sendMessage (Message & msg);
 		int sendValue (std::string val_name, int value);

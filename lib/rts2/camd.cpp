@@ -1086,6 +1086,14 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 	return 0;
 }
 
+int Camera::fitsDataTransfer (const char *fn)
+{
+	if (exposureConn)
+		return exposureConn->fitsDataTransfer (fn, getLastFilterNum());
+	logStream (MESSAGE_WARNING) << "fits data without exposure connection, no data will be received" << sendLog;
+	return 0;
+}
+
 void Camera::addBinning2D (int bin_v, int bin_h)
 {
 	Binning2D *bin = new Binning2D (bin_v, bin_h);

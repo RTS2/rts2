@@ -912,7 +912,8 @@ void Connection::processLine ()
 	else if (isCommand (COMMAND_DATA_IN_FITS))
 	{
 		char *fn;
-		if (paramNextString (&fn) || !paramEnd ())
+		int filter_num;
+		if (paramNextString (&fn) || paramNextInteger (&filter_num) || !paramEnd ())
 		{
 			connectionError (-2);
 			ret = -2;
@@ -920,7 +921,7 @@ void Connection::processLine ()
 		else
 		{
 			if (otherDevice)
-				otherDevice->fitsData (fn);
+				otherDevice->fitsData (fn, filter_num);
 			ret = 0;
 		}
 	}
@@ -1661,11 +1662,11 @@ void Connection::endSharedData (int data_conn, bool complete)
 	sendMsg (_os);
 }
 
-int Connection::fitsDataTransfer (const char *fn)
+int Connection::fitsDataTransfer (const char *fn, int filter_num)
 {
 	std::ostringstream _os;
 	chmod (fn, 0666);
-	_os << COMMAND_DATA_IN_FITS " " << fn;
+	_os << COMMAND_DATA_IN_FITS " " << fn << " " << filter_num;
 	sendMsg (_os);
 	return 0;
 }
