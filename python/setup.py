@@ -7,7 +7,7 @@ setup(
     license='LGPL v2',
     description='RTS2 Python package, to interact with RTS2 system',
     install_requirer='astropy',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
     url='https://github.com/RTS2/rts2',
     author='RTS2 team',
     author_email='rts2@rts2.org'
