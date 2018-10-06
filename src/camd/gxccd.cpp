@@ -1,4 +1,4 @@
-/* 
+/*
  * MI CCD driver, compiled with official GXCCD drivers.
  * Copyright (C) 2016 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -175,10 +175,6 @@ int GXCCD::processOption (int opt)
 
 int GXCCD::initHardware ()
 {
-	int ret = rts2core::Device::doDaemonize ();
-	if (ret)
-		exit (ret);
-
 	camera = gxccd_initialize_usb (id->getValueInteger ());
 	if (camera == NULL)
 	{
@@ -267,7 +263,7 @@ int GXCCD::initValues ()
 	ret = gxccd_get_integer_parameter (camera, GIP_PIXEL_D, &ph);
 	if (ret)
 		return -1;
-	
+
 	initCameraChip (w, h, pw, ph);
 
 	return Camera::initValues ();
@@ -527,7 +523,7 @@ int GXCCD::commandAuthorized (rts2core::Connection * conn)
 	}
 	return Camera::commandAuthorized (conn);
 }
-	
+
 int main (int argc, char **argv)
 {
 	GXCCD device (argc, argv);

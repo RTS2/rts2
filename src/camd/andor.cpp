@@ -82,10 +82,10 @@ using namespace std;
 // #define TEMP_SAFETY // turns out not to be supported ... :(
 
 
-// There is a bug in Andor Linux SDK 2.102.30045, one of the readout modes on 
-// iXon Ultra 888 is wrongly reported as not-available (by function 
-// IsPreAmpGainAvailable() ). 
-// This is dirty fix to avoid this misbehaviour and include this mode in 
+// There is a bug in Andor Linux SDK 2.102.30045, one of the readout modes on
+// iXon Ultra 888 is wrongly reported as not-available (by function
+// IsPreAmpGainAvailable() ).
+// This is dirty fix to avoid this misbehaviour and include this mode in
 // selection.
 //#define SDK_2_102_U888_FIX
 
@@ -567,7 +567,7 @@ int Andor::scriptEnds ()
 	return Camera::scriptEnds ();
 }
 
-// *** recalculate CCD timing, this function should be called after any change of parameters involved 
+// *** recalculate CCD timing, this function should be called after any change of parameters involved
 int Andor::setTiming ()
 {
 	int ret = DRV_SUCCESS;
@@ -636,7 +636,7 @@ int Andor::setTiming ()
 	// This replaces exposure in computation of time that will be spent waiting for data.
 	Camera::readoutTime->setValueDouble (acct - expt);
 
-	// calculate time to perorm a given acquisition 
+	// calculate time to perorm a given acquisition
 	// I would like to see "all exp+all readouts", but right now it is everything - one reaout
 	switch (acqMode->getValueInteger ())
 	{
@@ -1545,10 +1545,6 @@ int Andor::initAndorADCModes ()
 int Andor::initHardware ()
 {
 	int ret;
-
-	ret = rts2core::Device::doDaemonize ();
-	if (ret)
-		exit (ret);
 
 	ret = Initialize (andorRoot);
 	checkRet ("initHardware()", "Initialize()");

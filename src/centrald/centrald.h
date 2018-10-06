@@ -241,6 +241,8 @@ class Centrald:public Daemon
 
 		virtual void signaledHUP ();
 
+		virtual void initLockFile () { setLockFile (std::string (getLockPrefix ()) + "centrald_" + std::to_string (getPort ())); }
+
 	private:
 		// called to change state, check if last_night_on should be set
 		void maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);

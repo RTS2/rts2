@@ -1,4 +1,4 @@
-/* 
+/*
  * Obs. Vermes cupola driver.
  * Copyright (C) 2010 Markus Wildi <markus.wildi@one-arcsec.org>
  * based on Petr Kubanek's dummy_cup.cpp
@@ -19,10 +19,10 @@
  */
 
 #include "cupola.h"
-#include "configuration.h" 
+#include "configuration.h"
 
-// Obs. Vermes specific 
-#include <vermes.h> 
+// Obs. Vermes specific
+#include <vermes.h>
 #include <slitazimuth.h>
 #include <vermes/move_to_target_az.h>
 #include <vermes/barcodereader.h>
@@ -32,14 +32,14 @@ extern int is_synced ; // ==SYNCED if target_az reached
 extern int motorState ;
 extern int barcodereader_state ;
 extern double barcodereader_az ;
-extern double barcodereader_dome_azimut_offset ; 
+extern double barcodereader_dome_azimut_offset ;
 extern double target_az ;
 extern double manual_target_az ;
 extern struct ln_lnlat_posn obs_location ;
 extern struct ln_equ_posn   tel_equ ;
 extern double curMaxSetPoint ;
 extern double curMinSetPoint ;
-extern int movementState ; 
+extern int movementState ;
 extern double current_percentage ;
 extern double readSetPoint ;
 
@@ -71,7 +71,7 @@ namespace rts2dome
     virtual int moveEnd () ;
     virtual long isMoving () ;
     virtual int moveStop () ;
-    // there is no dome door to open 
+    // there is no dome door to open
     virtual int startOpen (){return 0;}
     virtual long isOpened (){return -2;}
     virtual int endOpen (){return 0;}
@@ -79,7 +79,7 @@ namespace rts2dome
     virtual long isClosed (){return -2;}
     virtual int endClose (){return 0;}
     virtual int stop (){return 0;};
-    
+
   public:
     Vermes (int argc, char **argv) ;
     virtual int initValues () ;
@@ -90,8 +90,8 @@ namespace rts2dome
     // park copula
     virtual int standby ();
     virtual int off ();
-    // done in thread void *move_to_target_azimuth, bypassing rts2  
-    virtual bool needSlitChange () { return true;}; 
+    // done in thread void *move_to_target_azimuth, bypassing rts2
+    virtual bool needSlitChange () { return true;};
   };
 }
 int Vermes::moveEnd ()
@@ -105,7 +105,7 @@ int Vermes::moveEnd ()
 int Vermes::moveStop ()
 {
   logStream (MESSAGE_INFO) << "Vermes::moveStop stopping cupola: "<< sendLog ;
-  movementState= SYNCHRONIZATION_DISABLED ; 
+  movementState= SYNCHRONIZATION_DISABLED ;
 
   struct timespec rep_slv ;
   struct timespec rep_rsl ;
@@ -163,13 +163,13 @@ int Vermes::moveStart ()
     logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_equ.ra  << " Dec " << tel_equ.dec << sendLog ;
   }
 
-  movementState= SYNCHRONIZATION_ENABLED ; 
+  movementState= SYNCHRONIZATION_ENABLED ;
   logStream (MESSAGE_DEBUG) << "Vermes::moveStart synchronization of the telescope enabled"<< sendLog ;
   return Cupola::moveStart ();
 }
 void Vermes::parkCupola ()
 {
-  movementState= SYNCHRONIZATION_DISABLED ; 
+  movementState= SYNCHRONIZATION_DISABLED ;
   logStream (MESSAGE_DEBUG) << "Vermes::parkCupola synchronization disabled"<< sendLog ;
 }
 int Vermes::standby ()
@@ -188,7 +188,7 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
   int ret ;
   static int lastMovementState ;
   if (changed_value == ssd650v_setpoint) {
- 
+
     if( ssd650v_setpoint->getValueDouble() != 0.) {
       manual_target_az= UNDEFINED;
       lastMovementState= movementState ;
@@ -202,8 +202,8 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
     } else {
       movementState= lastMovementState ;
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged restored synchronization mode" << sendLog ;
-    } 
-    
+    }
+
     float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
     float getpoint ;
     if(std::isnan( getpoint= set_setpoint( setpoint)))  {
@@ -213,13 +213,13 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
 	if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
 	  logStream (MESSAGE_WARNING) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
 	  ssd650v_state->setValueString("motor undefined") ;
-	} 
+	}
       } else {
 	if(( ret=motor_on()) != SSD650V_MS_RUNNING ) {
 	  ssd650v_state->setValueString("motor undefined") ;
 	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor on :" << setpoint << sendLog ;
-	} 
-      } 
+	}
+      }
     }
     return ; // ask Petr what to do in general if something fails within ::valueChanged
   } else   if (changed_value == synchronizeTelescope) {
@@ -256,7 +256,7 @@ int Vermes::idle ()
 }
 int Vermes::info ()
 {
-  barcode_reader_state->setValueInteger( barcodereader_state) ; 
+  barcode_reader_state->setValueInteger( barcodereader_state) ;
   setCurrentAz(barcodereader_az);
   setTargetAz(target_az) ;
   target_azimut_cupola->setValueDouble( target_az) ;
@@ -299,12 +299,6 @@ int Vermes::initValues ()
     logStream (MESSAGE_ERROR) << "Vermes::initValues could not read configuration"<< sendLog ;
     return -1;
   }
-  // make sure it forks before creating threads
-  ret = doDaemonize ();
-  if (ret) {
-    logStream (MESSAGE_ERROR) << "Vermes::initValues could not daemonize"<< sendLog ;
-    return ret;
-  }
 
   struct ln_lnlat_posn   *obs_loc_tmp= Cupola::getObserver() ;
   obs_location.lat= obs_loc_tmp->lat;
@@ -325,7 +319,7 @@ int Vermes::initValues ()
   if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
     logStream (MESSAGE_WARNING) << "Vermes::initValues motor_off != SSD650V_MS_STOPPED" << sendLog ;
     ssd650v_state->setValueString("motor undefined") ;
-  } 
+  }
 
   // set initial tel_eq to HA=0
   double JD= ln_get_julian_from_sys ();
@@ -341,7 +335,7 @@ int Vermes::initValues ()
 
   return Cupola::initValues ();
 }
-Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
+Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv)
 {
   // since this driver is Obs. Vermes specific no options are really required
   createValue (target_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
@@ -361,7 +355,7 @@ Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv)
   curMinSetPoint= ssd650v_min_setpoint->getValueDouble();
   curMaxSetPoint= ssd650v_max_setpoint->getValueDouble();
 
-  barcode_reader_state->setValueInteger( -1) ; 
+  barcode_reader_state->setValueInteger( -1) ;
 }
 int main (int argc, char **argv)
 {
