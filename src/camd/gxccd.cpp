@@ -200,7 +200,7 @@ int GXCCD::initHardware ()
 		while (true)
 		{
 			char moden[200];
-			ret = gxccd_enumerate_read_modes (camera, rdm, moden, sizeof (moden));
+			int ret = gxccd_enumerate_read_modes (camera, rdm, moden, sizeof (moden));
 			if (ret)
 				break;
 			mode->addSelVal (moden);

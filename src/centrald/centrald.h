@@ -241,7 +241,11 @@ class Centrald:public Daemon
 
 		virtual void signaledHUP ();
 
-		virtual void initLockFile () { setLockFile (std::string (getLockPrefix ()) + "centrald_" + std::to_string (getPort ())); }
+		virtual void initLockFile () {
+			std::ostringstream _os;
+			_os << getLockPrefix () << "centrald_" << getPort ();
+			setLockFile (_os.str ());
+		}
 
 	private:
 		// called to change state, check if last_night_on should be set
