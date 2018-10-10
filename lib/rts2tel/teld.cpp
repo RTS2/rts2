@@ -1,4 +1,4 @@
-/* 
+/*
  * Telescope control daemon.
  * Copyright (C) 2003-2017 Petr Kubanek <petr@kubanek.net>
  *
@@ -76,7 +76,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	unstableDist = 0;
 
 	useParkFlipping = false;
-	
+
 	decUpperLimit = NULL;
 	dut1fn = NULL;
 
@@ -227,6 +227,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (total_offsets, "total_offsets", "[deg] OFFS - corr", false, RTS2_DT_DEG_DIST_180);
 
 	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction", false, RTS2_VALUE_WRITABLE, 0);
+	createValue (wCorrObsId, "wcorr_obs", "Observation id waiting for correction", false, RTS2_VALUE_WRITABLE, 0);
 
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
@@ -333,6 +334,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true, RTS2_VALUE_WRITABLE);
 	corrImgId->setValueInteger (0);
+	createValue (corrObsId, "CORR_OBS", "ID of last observation used for correction", true, RTS2_VALUE_WRITABLE);
+	corrObsId->setValueInteger (0);
 
 	createValue (failedMoveNum, "move_failed", "number of failed movements", false);
 	failedMoveNum->setValueInteger (0);
@@ -836,7 +839,7 @@ double Telescope::getTargetDistance ()
 	if (modelTarAltAz != NULL)
 	{
 		struct ln_hrz_posn hrz_tar, hrz_tel;
-		modelTarAltAz->getAltAz (&hrz_tar);	
+		modelTarAltAz->getAltAz (&hrz_tar);
 		getTelAltAz (&hrz_tel);
 
 		tar.ra = hrz_tar.az;
@@ -1172,7 +1175,9 @@ void Telescope::incMoveNum ()
 	ignoreCorrection->setValueDouble (defIgnoreCorrection->getValueDouble ());
 
 	corrImgId->setValueInteger (0);
+	corrObsId->setValueInteger (0);
 	wCorrImgId->setValueInteger (0);
+	wCorrObsId->setValueInteger (0);
 
 	trackingNum = 0;
 	changeIdleMovingTracking ();
@@ -1238,7 +1243,7 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 	if (ln_get_angular_separation (&pos2, pos) > correctionLimit->getValueDouble ())
 	{
 		logStream (MESSAGE_WARNING) << "correction " << LibnovaDegDist (corrRaDec->getRa ()) << " " << LibnovaDegDist (corrRaDec->getDec ()) << " is above limit, ignoring it" << sendLog;
-		return -1; 
+		return -1;
 	}
 	pos->ra = pos2.ra;
 	pos->dec = pos2.dec;
@@ -1775,7 +1780,7 @@ void Telescope::logTracking ()
 		<< aberated->getRa () << " " << aberated->getDec () << " "
 		// 9
 		<< refraction->getValueDouble () << " "
-		// 10                             11 
+		// 10                             11
 		<< modelRaDec->getRa () << " " << modelRaDec->getDec () << " ";
 #endif
 	if (tarTelRaDec != NULL)
@@ -2039,13 +2044,12 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 			telescopeAboveHorizon ();
 		}
 	}
-	
+
 	return rts2core::Device::info ();
 }
 
 int Telescope::scriptEnds ()
 {
-	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
 	if (tracking)
 		tracking->setValueInteger (1);
@@ -2090,7 +2094,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double utc1, double u
 	// apply all posible corrections
 	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, utc1 + utc2, writeValues);
-	
+
 	// always apply proper motion - if set
 	struct ln_equ_posn pm;
 	pm.ra = pmRaDec->getRa ();
@@ -2103,7 +2107,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double utc1, double u
 		applyAberation (pos, utc1 + utc2, writeValues);
 	if (calRefraction->getValueBool () == true)
 		applyRefraction (pos, utc1 + utc2, writeValues);
-	
+
 	if (hrz != NULL)
 	{
 		getHrzFromEqu (pos, utc1 + utc2, hrz);
@@ -2214,7 +2218,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		return -1;
 	}
 
-	// MPEC objects changes coordinates regularly, so we will not bother incrementing 
+	// MPEC objects changes coordinates regularly, so we will not bother incrementing
 	if (mpec->getValueString ().length () > 0)
 	{
 		if (mpec->wasChanged ())
@@ -2237,6 +2241,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	{
 		corrRaDec->incValueRaDec (wcorrRaDec->getRa (), wcorrRaDec->getDec ());
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
+		corrObsId->setValueInteger (wCorrObsId->getValueInteger ());
 	}
 
 	if (woffsRaDec->wasChanged ())
@@ -2273,10 +2278,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
 
-	// now we have target position, which can be feeded to telescope
-	tarRaDec->setValueRaDec (pos.ra, pos.dec);
 	// calculate target after corrections from astrometry
 	applyCorrRaDec (&pos, false, false);
+	// now we have target position, which can be feeded to telescope
+	tarRaDec->setValueRaDec (pos.ra, pos.dec);
 
 	modelRaDec->setValueRaDec (0, 0);
 
@@ -2360,7 +2365,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		LibnovaDegDist c_dec (corrRaDec->getDec ());
 
 		const char *cortype = "offseting and correcting";
-	
+
 		switch (correction)
 		{
 			case 1:
@@ -2743,21 +2748,33 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		int cor_mark;
 		int corr_img;
+		int corr_obs;
 		int img_id;
+		int obs_id;
 		double total_cor_ra;
 		double total_cor_dec;
 		double pos_err;
 		if (conn->paramNextInteger (&cor_mark)
 			|| conn->paramNextInteger (&corr_img)
+			|| conn->paramNextInteger (&corr_obs)
 			|| conn->paramNextInteger (&img_id)
+			|| conn->paramNextInteger (&obs_id)
 			|| conn->paramNextDouble (&total_cor_ra)
 			|| conn->paramNextDouble (&total_cor_dec)
 			|| conn->paramNextDouble (&pos_err)
 			|| !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
+
+		logStream (MESSAGE_DEBUG) << "correct " << cor_mark << "=" << moveNum->getValueInteger () << "   "
+								 << corr_img << ":" << corr_obs  << "=" << corrImgId->getValueInteger () << ":" << corrObsId->getValueInteger () << "   "
+								 << img_id << ":" << obs_id << ">" << wCorrImgId->getValueInteger () << ":" << wCorrObsId->getValueInteger () << "   "
+								 << "cor_ra " << total_cor_ra << " cor_dec " << total_cor_dec << " err " << pos_err << sendLog;
+
 		if (applyCorrectionsFixed (total_cor_ra, total_cor_dec) == 0)
 			return DEVDEM_OK;
-		if (cor_mark == moveNum->getValueInteger () && corr_img == corrImgId->getValueInteger () && img_id > wCorrImgId->getValueInteger ())
+		if (cor_mark == moveNum->getValueInteger () &&
+			corr_img == corrImgId->getValueInteger () && corr_obs == corrObsId->getValueInteger () &&
+			(obs_id > wCorrObsId->getValueInteger () || img_id > wCorrImgId->getValueInteger ()))
 		{
 			if (pos_err < ignoreCorrection->getValueDouble ())
 			{
@@ -2772,6 +2789,8 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 			wCorrImgId->setValueInteger (img_id);
 			sendValueAll (wCorrImgId);
+			wCorrObsId->setValueInteger (obs_id);
+			sendValueAll (wCorrObsId);
 
 			if (pos_err < smallCorrection->getValueDouble ()) {
 
@@ -2788,7 +2807,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return 0;
 		}
 		std::ostringstream _os;
-		_os << "ignoring correction - cor_mark " << cor_mark << " moveNum " << moveNum->getValueInteger () << " corr_img " << corr_img << " corrImgId " << corrImgId->getValueInteger () << " img_id " << img_id << " wCorrImgId " << wCorrImgId->getValueInteger ();
+		_os << "ignoring correction - cor_mark " << cor_mark << " moveNum " << moveNum->getValueInteger () << " corr_img " << corr_img << ":" << corr_obs << " corrImgId " << corrImgId->getValueInteger () << ":" << corrObsId->getValueInteger () << " img_id " << img_id << ":" << obs_id << " wCorrImgId " << wCorrImgId->getValueInteger () << ":" << wCorrObsId->getValueInteger ();
 		conn->sendCommandEnd (DEVDEM_E_IGNORE, _os.str ().c_str ());
 		return -1;
 	}

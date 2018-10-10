@@ -165,7 +165,7 @@ int ConnImgProcess::newProcess ()
 void ConnImgProcess::connectionError (int last_data_size)
 {
 	const char *telescopeName;
-	int corr_mark, corr_img;
+	int corr_mark, corr_img, corr_obs;
 
 	if (last_data_size < 0 && errno == EAGAIN)
 	{
@@ -228,6 +228,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 					{
 						image->getValue ("MOVE_NUM", corr_mark);
 						image->getValue ("CORR_IMG", corr_img);
+						image->getValue ("CORR_OBS", corr_obs);
 						if (telescopeName)
 						{
 							rts2core::Connection *telConn;
@@ -247,7 +248,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 
 								double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-								telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, image->getImgId (), ra_err, dec_err, posErr));
+								telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, corr_obs, image->getImgId (), image->getObsId (), ra_err, dec_err, posErr));
 							}
 						}
 					}

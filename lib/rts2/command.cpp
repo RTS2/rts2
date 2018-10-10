@@ -443,11 +443,11 @@ int CommandChange::commandReturnFailed (int status, Connection * conn)
 	return Command::commandReturnFailed (status, conn);
 }
 
-CommandCorrect::CommandCorrect (Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err):Command (_master)
+CommandCorrect::CommandCorrect (Block * _master, int corr_mark, int corr_img, int corr_obs, int img_id, int obs_id, double ra_corr, double dec_corr, double pos_err):Command (_master)
 {
  	std::ostringstream _os;
-	_os << "correct " << corr_mark << " " << corr_img
-		<< " " << img_id << " " << std::fixed << ra_corr
+	_os << "correct " << corr_mark << " " << corr_img << " " << corr_obs
+		<< " " << img_id << " " << obs_id << " " << std::fixed << ra_corr
 		<< " " << dec_corr << " " << pos_err;
 	setCommand (_os);
 }
