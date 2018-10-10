@@ -1,4 +1,4 @@
-/* 
+/*
  * Telescope control daemon.
  * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -79,7 +79,7 @@ namespace rts2teld
  * Please see startResync() documentation for functions available to
  * retrieve various coordinates. startResync is the routine which is called
  * each time coordinates written as target should be matched to physical
- * telescope coordinates. Using various methods in the class, driver can 
+ * telescope coordinates. Using various methods in the class, driver can
  * get various coordinates which will be put to telescope.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -203,7 +203,7 @@ class Telescope:public rts2core::Device
 		}
 
 		void setModel (rts2telmodel::TelModel *_model) { model = _model; calModel->setValueBool (model != NULL); }
-		
+
 	protected:
 		/**
 		 * Creates values for guiding movements.
@@ -239,7 +239,7 @@ class Telescope:public rts2core::Device
 		 * @param dec DEC correction
 		 */
 		virtual int applyCorrectionsFixed (double ra, double dec) { return -1; }
-	
+
 		/**
 		 * Returns telescope target RA.
 		 */
@@ -259,7 +259,7 @@ class Telescope:public rts2core::Device
 			equ->dec = getTelTargetDec ();
 			normalizeRaDec (equ->ra, equ->dec);
 		}
-		  
+
 		/**
 		 * Set telescope RA.
 		 *
@@ -277,7 +277,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope RA and DEC.
 		 */
-		void setTelRaDec (double new_ra, double new_dec) 
+		void setTelRaDec (double new_ra, double new_dec)
 		{
 			setTelRa (new_ra);
 			setTelDec (new_dec);
@@ -311,7 +311,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope untouched (i.e. physical) RA and DEC.
 		 */
-		void setTelUnRaDec (double new_ra, double new_dec) 
+		void setTelUnRaDec (double new_ra, double new_dec)
 		{
 			telUnRaDec->setRa (new_ra);
 			telUnRaDec->setDec (new_dec);
@@ -354,7 +354,7 @@ class Telescope:public rts2core::Device
 		 * every time mount homing commands is issued.
 		 *
 		 * ParkNum is used in the modelling to find observations
-		 * taken in interval with same park numbers, e.g. with sensors 
+		 * taken in interval with same park numbers, e.g. with sensors
 		 * homed at same location.
 		 */
 		void setParkTimeNow () { mountParkTime->setNow (); }
@@ -367,7 +367,7 @@ class Telescope:public rts2core::Device
 
 		/**
 		 * Apply model for RA/DEC position pos, for specified flip and JD.
-		 * All resulting coordinates also includes corrRaDec corection. 
+		 * All resulting coordinates also includes corrRaDec corection.
 		 * If writeValue is set to true, changes tel_target (telTargetRA) variable, including model computation and corrRaDec.
 		 * Also sets MO_RTS2 (modelRaDec) variable, mirroring (only) computed model difference.
 		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
@@ -499,7 +499,7 @@ class Telescope:public rts2core::Device
 			_ori->ra = oriRaDec->getRa ();
 			_ori->dec = oriRaDec->getDec ();
 		}
-	
+
 		void setOrigin (double ra, double dec)
 		{
 			oriRaDec->setValueRaDec (ra, dec);
@@ -595,7 +595,7 @@ class Telescope:public rts2core::Device
 		 *
 		 * If tracking is set to object, future position is calculated from
 		 * current RA DEC position. Otherwise, future position is calculated
-		 * from target position, where target position can change in time (for 
+		 * from target position, where target position can change in time (for
 		 * MPEC and LTE targets).
 		 *
 		 * @param JD	         Julian date for which position will be calculated
@@ -729,7 +729,7 @@ class Telescope:public rts2core::Device
 		 * Return distance in degrees to target position.
 		 * You are responsible to call info() before this call to
 		 * update telescope coordinates.
-		 * 
+		 *
 		 * @return Sky distance in degrees to target, 0 - 180. -1 on error.
 		 */
 		double getTargetDistance ();
@@ -834,7 +834,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Stop telescope movement. It is called in two cases. Either when new
 		 * target is entered and telescope should stop movement to current target,
-		 * or when some failure of telescope is detected and telescope should stop 
+		 * or when some failure of telescope is detected and telescope should stop
 		 * current movement in order to prevent futher damage to the hardware.
 		 *
 		 * @return 0 on success, -1 on failure
@@ -847,7 +847,7 @@ class Telescope:public rts2core::Device
 		 */
 		virtual void telescopeAboveHorizon () {}
 
-		/** 
+		/**
 		 * Called when telescope is suddently pointed below horizon. Returns < 0 on error, 0 on sucess, 1 when abort was not called (temproary allowed violation of bellow horizon..)
 		 */
 		virtual int abortMoveTracking ();
@@ -1004,7 +1004,7 @@ class Telescope:public rts2core::Device
 		 * Telescope parking position.
 		 */
 		rts2core::ValueAltAz *parkPos;
-		
+
 		/**
 		 * Desired flip when parking.
 		 */
@@ -1118,7 +1118,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Limit for corrections.
 		 */
-		rts2core::ValueDouble *correctionLimit; 
+		rts2core::ValueDouble *correctionLimit;
 
 		/**
 		 * If move is above this limit, correction is rejected.
@@ -1332,10 +1332,12 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueInteger *moveNum;
 		rts2core::ValueInteger *corrImgId;
+		rts2core::ValueInteger *corrObsId;
 		rts2core::ValueInteger *failedMoveNum;
 		rts2core::ValueTime *lastFailedMove;
 
 		rts2core::ValueInteger *wCorrImgId;
+		rts2core::ValueInteger *wCorrObsId;
 
 		/**
 		 * Tracking / idle refresh interval
