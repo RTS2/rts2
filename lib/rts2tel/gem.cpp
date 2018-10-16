@@ -303,7 +303,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 	return 0;
 }
 
-int GEM::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
+int GEM::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, __attribute__ ((unused)) struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
 {
 	int used_flipping = forceShortes ? 0 : (useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ());
         bool use_flipped;

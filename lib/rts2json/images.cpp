@@ -105,7 +105,7 @@ typedef struct
 	const image_t *image;
 } path_images;
 
-void ImageReq::execute (XmlRpc::XmlRpcSource *source, struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void ImageReq::execute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, __attribute__ ((unused)) struct sockaddr_in *saddr, std::string path, __attribute__ ((unused)) XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	// paths and images
 	path_images images[] = {

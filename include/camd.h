@@ -415,7 +415,7 @@ class Camera:public rts2core::ScriptDevice
 			sendValueAll (scriptExposureNum);
 		}
 
-		const int getDataType ()
+		int getDataType ()
 		{
 			return ((DataType *) dataType->getData ())->type;
 		}
@@ -518,7 +518,7 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return Size of pixel in bytes.
 		 */
-		const int usedPixelByteSize ()
+		int usedPixelByteSize ()
 		{
 			if (getDataType () == RTS2_DATA_ULONG)
 				return 4;
@@ -528,7 +528,7 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Returns maximal possible byte size.
 		 */
-		const int maxPixelByteSize ();
+		int maxPixelByteSize ();
 
 		/**
 		 * Returns chip size in pixels. This method must be overloaded
@@ -680,75 +680,75 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return Chip width in pixels.
 		 */
-		const int getWidth () { return chipSize->getWidthInt (); }
+		int getWidth () { return chipSize->getWidthInt (); }
 
 		/**
 		 * Get used area width (in pixels).
 		 *
 		 * @return Used area width in pixels.
 		 */
-		const int getUsedWidth () { return chipUsedReadout->getWidthInt (); }
+		int getUsedWidth () { return chipUsedReadout->getWidthInt (); }
 
 		/**
 		 * Get width of used area divided by binning factor.
 		 *
 		 * @return getUsedWidth() / binningHorizontal()
 		 */
-		const int getUsedWidthBinned () { return getBinningRounding (getUsedWidth () / binningHorizontal ()); }
+		int getUsedWidthBinned () { return getBinningRounding (getUsedWidth () / binningHorizontal ()); }
 
 		/**
 		 * Returns size of single row in bytes.
 		 *
 		 * @return getUsedWidthBinned() * usedPixelByteSize()
 		 */
-		const int getUsedRowBytes () { return getUsedWidthBinned () * usedPixelByteSize (); }
+		int getUsedRowBytes () { return getUsedWidthBinned () * usedPixelByteSize (); }
 
 		/**
 		 * Get chip width (in pixels).
 		 *
 		 * @return Chip width in pixels.
 		 */
-		const int getHeight () { return chipSize->getHeightInt (); }
+		int getHeight () { return chipSize->getHeightInt (); }
 
 		/**
 		 * Get X offset of used aread (in pixels)
 		 *
 		 */
-		const int getUsedY () { return chipUsedReadout->getYInt (); }
+		int getUsedY () { return chipUsedReadout->getYInt (); }
 
 		/**
 		 * Get X offset of used aread (in pixels)
 		 *
 		 */
-		const int getUsedX () { return chipUsedReadout->getXInt (); }
+		int getUsedX () { return chipUsedReadout->getXInt (); }
 
 		/**
 		 * Get width of used area (in pixels).
 		 *
 		 * @return Used area width in pixels.
 		 */
-		const int getUsedHeight () { return chipUsedReadout->getHeightInt (); }
+		int getUsedHeight () { return chipUsedReadout->getHeightInt (); }
 
 		/**
 		 * Get height of used area divided by binning factor.
 		 *
 		 * @return getUsedHeight() / binningVertical()
 		 */
-		const int getUsedHeightBinned () { return getBinningRounding (getUsedHeight () / binningVertical ()); }
+		int getUsedHeightBinned () { return getBinningRounding (getUsedHeight () / binningVertical ()); }
 
 		/**
 		 * Get X of top corner in chip coordinates.
 		 *
 		 * @return Chip top X corner chip coordinate.
 		 */
-		const int chipTopX () { return chipUsedReadout->getXInt (); }
+		int chipTopX () { return chipUsedReadout->getXInt (); }
 
 		/**
 		 * Get Y of top corner in chip coordinates.
 		 *
 		 * @return Chip top Y corner chip coordinate.
 		 */
-		const int chipTopY () { return chipUsedReadout->getYInt (); }
+		int chipTopY () { return chipUsedReadout->getYInt (); }
 
 		virtual int setBinning (int in_vert, int in_hori);
 
@@ -1118,9 +1118,11 @@ class Camera:public rts2core::ScriptDevice
 			double tMax = max->getValueDouble ();
 			int pixNum = 0;
 			t *tData = data;
-			if (modeCountSize < (((long long unsigned int) 1) << (sizeof (t) * 8)))
+			// histogram size should be not much than 65536 bytes
+			delete[] modeCount; // delete it anyway
+			modeCountSize = 0;
+			if(sizeof(t) < 3)
 			{
-				delete[] modeCount;
 				modeCountSize = ((long long unsigned int) 1) << (sizeof (t) * 8);
 				modeCount = new uint32_t[modeCountSize];
 				memset (modeCount, 0, modeCountSize * sizeof (uint32_t));
@@ -1133,7 +1135,7 @@ class Camera:public rts2core::ScriptDevice
 					tMin = tD;
 				if (tD > tMax)
 				  	tMax = tD;
-				modeCount[(long) tD]++;
+				if(modeCountSize) modeCount[(long) tD]++;
 				tData++;
 				pixNum++;
 			}
@@ -1146,7 +1148,7 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		// update center box
-		template <typename t> int updateCenter (t *data, size_t dataSize)
+		template <typename t> int updateCenter (t *data, __attribute__ ((unused)) size_t dataSize)
 		{
 			// check if box is inside window
 			int x = centerBox->getXInt ();

@@ -558,7 +558,7 @@ class LibnovaDate
 	protected:
 		struct ln_date date;
 		// don't intialize value
-		LibnovaDate (bool sysinit) {}
+		LibnovaDate (__attribute__ ((unused)) bool sysinit) {}
 };
 
 /**

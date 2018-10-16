@@ -215,7 +215,7 @@ int move_manual( float setpoint)
   }
   return -1 ;
 }
-void *move_door( void *value)
+void *move_door(__attribute__ ((unused)) void *value)
 {
   int    ret ;
   struct timespec slv ;

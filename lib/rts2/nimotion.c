@@ -198,7 +198,7 @@ void flex_read_error_msg_rtn (int16_t *command, int16_t *resource, int32_t *erro
 	
 	len -= 4;
 
-	while (len > 0 && mem[4] & NIMC_DATA_IN_RDB);
+	while (len > 0 && mem[4] & NIMC_DATA_IN_RDB)
 	{
 		sleep (1);
 		readData ();

@@ -41,7 +41,7 @@ int BAIT::idle ()
 	return 0;
 }
 
-int BAIT::receive (Block *block)
+int BAIT::receive (__attribute__ ((unused)) Block *block)
 {
 	return -1;
 }

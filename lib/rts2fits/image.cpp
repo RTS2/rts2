@@ -1268,7 +1268,7 @@ void Image::getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &
 
 
 
-template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y, int colourVariant)
+template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer (int chan, bt * &buf, __attribute__ ((unused)) bt black, dt low, dt high, long s, size_t offset, bool invert_y, int colourVariant)
 {
 	if (buf == NULL)
 		buf = new bt[3 * s];
@@ -2277,6 +2277,7 @@ void Image::writeConnBaseValue (const std::string sname, rts2core::Value * val, 
 						setValue (name, os.str ().c_str (), desc);
 						break;
 					}
+					__attribute__ ((fallthrough));
 				default:
 					setValue (name, val->getValueDouble (), desc);
 					break;

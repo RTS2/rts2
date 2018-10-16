@@ -182,6 +182,7 @@ int PrintTarget::processOption (int in_opt)
 			break;
 		case OPT_AIRMASS:
 			airmd = atof (optarg);
+			__attribute__ ((fallthrough));
 		case 'c':
 			printCalTargets = true;
 			break;

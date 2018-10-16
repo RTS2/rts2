@@ -34,7 +34,7 @@ Directory::Directory (const char* prefix, HTTPServer *_http_server, const char *
 	responseTypes["css"] = "text/css";
 }
 
-void Directory::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Directory::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 

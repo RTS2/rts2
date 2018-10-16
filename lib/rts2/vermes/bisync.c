@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h> // realloc, free
 #ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -476,7 +477,7 @@ bisync_enquiry(int sd, byte group_id, byte unit_id, char * cmd,
  *****************************************************************************/
 int
 bisync_setparam(int sd, byte group_id, byte unit_id, char * cmd, char * data,
-                enum SETPARAM_STYLE style)
+                __attribute__ ((unused)) enum SETPARAM_STYLE style)
 {
   int i = 0;
   int r;

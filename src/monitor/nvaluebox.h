@@ -44,7 +44,7 @@ class ValueBox
 		virtual void draw () = 0;
 		virtual void sendValue (rts2core::Connection * connection) = 0;
 		virtual bool setCursor () = 0;
-		virtual void setTitle (std::string _title) {};
+		virtual void setTitle (__attribute__ ((unused)) std::string _title) {};
 		NWindow * getTopWindow () { return topWindow; };
 		virtual std::string getValueString () { return ""; }
 	protected:

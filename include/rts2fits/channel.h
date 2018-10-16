@@ -77,18 +77,18 @@ class Channel
 		double getAverage () { return average; }
 		double getStDev () { return stdev; }
 
-		const int16_t getDataType () { return dataType; }
+		int16_t getDataType () { return dataType; }
 
 		/**
 		 * Return number of axes in channel.
 		 */
-		const int getNaxis () { return naxis; }
+		int getNaxis () { return naxis; }
 
-		const long getSize (int nax) { return sizes[nax]; }
+		long getSize (int nax) { return sizes[nax]; }
 
-		const long getWidth () { return naxis > 0 ? sizes[0] : 0; }
-		const long getHeight () { return naxis > 1 ? sizes[1] : 0; }
-		const long getNPixels () { return getWidth () * getHeight (); }
+		long getWidth () { return naxis > 0 ? sizes[0] : 0; }
+		long getHeight () { return naxis > 1 ? sizes[1] : 0; }
+		long getNPixels () { return getWidth () * getHeight (); }
 
 		const char *getData () { return (char *) data; }
 

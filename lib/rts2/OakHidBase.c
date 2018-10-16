@@ -421,7 +421,7 @@ EOakStatus readInterruptReport(int deviceHandle, int* outReadValues)
    if (rd < (int) sizeof(ev[0]))
       return eOakStatusReadError;
 
-   size_t kCount = rd / sizeof(ev[0]);
+   rd /= sizeof(ev[0]);
 //   printf("storage size: %ld; size read: %ld\n", sizeof outReadValues, kCount);
 //   if (kCount > sizeof outReadValues) 
 //      return eOakStatusReadError;
@@ -429,7 +429,7 @@ EOakStatus readInterruptReport(int deviceHandle, int* outReadValues)
    //wildi 2010-01-23, xrealloc(outReadValues, sizeof(int) * kCount);
 
    int i;
-   for (i = 0; i < kCount; i++)
+   for (i = 0; i < rd; i++)
      outReadValues[i] = ev[i].value;
 
    return eOakStatusOK;

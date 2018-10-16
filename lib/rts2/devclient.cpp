@@ -58,20 +58,20 @@ void DevClient::postEvent (Event * event)
 	Object::postEvent (event);
 }
 
-void DevClient::newDataConn (int data_conn)
+void DevClient::newDataConn (__attribute__ ((unused)) int data_conn)
 {
 }
 
-void DevClient::dataReceived (DataAbstractRead *data)
+void DevClient::dataReceived (__attribute__ ((unused)) DataAbstractRead *data)
 {
 }
 
-void DevClient::fullDataReceived (int data_conn, DataChannels *data)
+void DevClient::fullDataReceived (int data_conn, __attribute__ ((unused)) DataChannels *data)
 {
 	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << " " << data_conn << sendLog;
 }
 
-void DevClient::stateChanged (ServerState * state)
+void DevClient::stateChanged (__attribute__ ((unused)) ServerState * state)
 {
 	if (connection->getErrorState () == DEVICE_ERROR_HW)
 		incFailedCount ();
@@ -136,15 +136,15 @@ DevClientCamera::DevClientCamera (Connection * _connection):DevClient (_connecti
 	lastExpectImage = false;
 }
 
-void DevClientCamera::exposureStarted (bool expectImage)
+void DevClientCamera::exposureStarted (__attribute__ ((unused)) bool expectImage)
 {
 }
 
-void DevClientCamera::exposureEnd (bool expectImage)
+void DevClientCamera::exposureEnd (__attribute__ ((unused)) bool expectImage)
 {
 }
 
-void DevClientCamera::exposureFailed (int status)
+void DevClientCamera::exposureFailed (__attribute__ ((unused)) int status)
 {
 }
 
@@ -292,10 +292,10 @@ void DevClientCupola::syncEnded ()
 {
 }
 
-void DevClientCupola::syncFailed (int status)
+void DevClientCupola::syncFailed (__attribute__ ((unused)) int status)
 {
 }
-void DevClientCupola::notMoveFailed (int status)
+void DevClientCupola::notMoveFailed (__attribute__ ((unused)) int status)
 {
 }
 
@@ -351,7 +351,7 @@ void DevClientMirror::mirrorMoving ()
 {
 }
 
-void DevClientMirror::moveFailed (int status)
+void DevClientMirror::moveFailed (__attribute__ ((unused)) int status)
 {
 }
 
@@ -410,7 +410,7 @@ void DevClientPhot::filterMoveEnd ()
 {
 }
 
-void DevClientPhot::filterMoveFailed (int status)
+void DevClientPhot::filterMoveFailed (__attribute__ ((unused)) int status)
 {
 }
 
@@ -424,12 +424,12 @@ void DevClientPhot::integrationEnd ()
 	integrating = false;
 }
 
-void DevClientPhot::integrationFailed (int status)
+void DevClientPhot::integrationFailed (__attribute__ ((unused)) int status)
 {
 	integrating = false;
 }
 
-void DevClientPhot::addCount (int count, float exp, bool is_ov)
+void DevClientPhot::addCount (int count, float exp, __attribute__ ((unused)) bool is_ov)
 {
 	lastCount = count;
 	lastExp = exp;
@@ -474,7 +474,7 @@ void DevClientFilter::filterMoveEnd ()
 {
 }
 
-void DevClientFilter::filterMoveFailed (int status)
+void DevClientFilter::filterMoveFailed (__attribute__ ((unused)) int status)
 {
 }
 
@@ -527,7 +527,7 @@ void DevClientFocus::focusingEnd ()
 {
 }
 
-void DevClientFocus::focusingFailed (int status)
+void DevClientFocus::focusingFailed (__attribute__ ((unused)) int status)
 {
 	focusingEnd ();
 }

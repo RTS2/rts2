@@ -50,31 +50,32 @@ typedef PIXTYPE (*converter)(void *ptr);
 typedef void (*array_converter)(void *ptr, int n, PIXTYPE *target);
 typedef void (*array_writer)(float *ptr, int n, void *target);
 
+// error: declaration of 'errtext' shadows a previous local
 #define	QCALLOC(ptr, typ, nel, status)				     	\
-  {if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ))))		\
+  do{if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ))))		\
       {									\
-	char errtext[160];						\
-	sprintf(errtext, #ptr " (" #nel "=%lu elements) "		\
+	char errtxt[160];						\
+	sprintf(errtxt, #ptr " (" #nel "=%lu elements) "		\
 		"at line %d in module " __FILE__ " !",			\
 		(size_t)(nel)*sizeof(typ), __LINE__);			\
-	put_errdetail(errtext);						\
+	put_errdetail(errtxt);						\
 	status = MEMORY_ALLOC_ERROR;					\
 	goto exit;							\
       };								\
-  }
+  }while(0);
 
 #define	QMALLOC(ptr, typ, nel, status)					\
-  {if (!(ptr = (typ *)malloc((size_t)(nel)*sizeof(typ))))		\
+  do{if (!(ptr = (typ *)malloc((size_t)(nel)*sizeof(typ))))		\
       {									\
-	char errtext[160];						\
-	sprintf(errtext, #ptr " (" #nel "=%lu elements) "		\
+	char errtxt[160];						\
+	sprintf(errtxt, #ptr " (" #nel "=%lu elements) "		\
 		"at line %d in module " __FILE__ " !",			\
 		(size_t)(nel)*sizeof(typ), __LINE__);			\
-	put_errdetail(errtext);						\
+	put_errdetail(errtxt);						\
 	status = MEMORY_ALLOC_ERROR;					\
 	goto exit;							\
       };								\
-  }
+  }while(0);
 
 float fqmedian(float *ra, int n);
 void put_errdetail(char *errtext);

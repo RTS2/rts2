@@ -85,7 +85,7 @@ int AltAz::infoUTCLST (const double utc1, const double utc2, double LST)
 	return ret;
 }
 
-int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc)
+int AltAz::calculateMove (__attribute__ ((unused)) double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc)
 {
 	struct ln_hrz_posn hrz, u_hrz;
 	// check if both start and end are above horizon
@@ -98,7 +98,7 @@ int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_a
 	return 0;
 }
 
-int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
+int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, __attribute__ ((unused)) bool forceShortest)
 {
 	struct ln_equ_posn tar_pos;
 	tar_pos.ra = pos->ra;
@@ -131,7 +131,7 @@ int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 	return 0;
 }
 
-int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin, int az_zero)
+int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, __attribute__ ((unused)) int used_flipping, __attribute__ ((unused)) bool &use_flipped, __attribute__ ((unused)) bool writeValue, __attribute__ ((unused)) double haMargin, int az_zero)
 {
 	applyAltAzOffsets (hrz);
 
@@ -224,7 +224,7 @@ void AltAz::meanParallacticAngle (double ha, double dec, double &pa, double &par
 	parallacticAngle (ha, dec, sin_lat, cos_lat, tan_lat, pa, parate);
 }
 
-void AltAz::effectiveParallacticAngle (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double &pa, double &parate, double up_change)
+void AltAz::effectiveParallacticAngle (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz, double &pa, __attribute__ ((unused)) double &parate, double up_change)
 {
 	struct ln_equ_posn pos_up;
 	struct ln_hrz_posn hrz_up;
@@ -243,7 +243,7 @@ void AltAz::effectiveParallacticAngle (const double utc1, const double utc2, str
 	pa = ln_get_rel_posn_angle (&t1, &t2);
 }
 
-int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
+int AltAz::checkTrajectory (__attribute__ ((unused)) double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
 {
 	// nothing to check
 	if (hardHorizon == NULL)

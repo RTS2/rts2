@@ -160,7 +160,7 @@ void signalHUP (int sig)
 		masterApp->sigHUP (sig);
 }
 
-void killSignal (int sig)
+void killSignal (__attribute__ ((unused)) int sig)
 {
 	signal (SIGHUP, exit);
 	signal (SIGINT, exit);
@@ -291,7 +291,7 @@ This is free software, and you are welcome to redistribute it under certain cond
 	return 0;
 }
 
-int App::processArgs (const char *arg)
+int App::processArgs (__attribute__ ((unused)) const char *arg)
 {
 	return -1;
 }
@@ -492,7 +492,7 @@ LogStream App::logStream (messageType_t in_messageType)
 	return ls;
 }
 
-void App::sigHUP (int sig)
+void App::sigHUP (__attribute__ ((unused)) int sig)
 {
 	endRunLoop ();
 }

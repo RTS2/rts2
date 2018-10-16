@@ -567,7 +567,7 @@ void ValueBoxArray::draw ()
 
 	// draw border..
 	NWindowEdit::draw ();
-	werase (getWriteWindow ()) ;
+	werase (getWriteWindow ());
 
 	if (edt.size () > (size_t) edtSelected)
 		edt[edtSelected]->setReverse ();

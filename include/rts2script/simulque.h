@@ -38,11 +38,11 @@ class SimulQueueTargets:public TargetQueue
 
 	protected:
 		virtual int getQueueType () { return queueType; }
-		virtual const bool getSkipBelowHorizon () { return skipBelowHorizon; }
-		virtual const bool getTestConstraints () { return testConstraints; }
-		virtual const bool getRemoveAfterExecution () { return removeAfterExecution; };
-		virtual const bool getBlockUntilVisible () { return blockUntilVisible; }
-		virtual const bool getCheckTargetLength () { return checkTargetLength; }
+		virtual bool getSkipBelowHorizon () { return skipBelowHorizon; }
+		virtual bool getTestConstraints () { return testConstraints; }
+		virtual bool getRemoveAfterExecution () { return removeAfterExecution; };
+		virtual bool getBlockUntilVisible () { return blockUntilVisible; }
+		virtual bool getCheckTargetLength () { return checkTargetLength; }
 
 		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const removed_t reason);
 	private:

@@ -631,6 +631,7 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 		{
 			case 'h':
 				step = 15;
+				__attribute__ ((fallthrough));
 			case ' ':
 			case ':':
 			case 'o':

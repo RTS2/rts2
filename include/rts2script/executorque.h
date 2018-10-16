@@ -171,15 +171,15 @@ class TargetQueue:public std::list <QueuedTarget>
 		double obs_altitude;
 
 		virtual int getQueueType () = 0;
-		virtual const bool getSkipBelowHorizon () = 0;
-		virtual const bool getTestConstraints () = 0;
-		virtual const bool getRemoveAfterExecution () = 0;
+		virtual bool getSkipBelowHorizon () = 0;
+		virtual bool getTestConstraints () = 0;
+		virtual bool getRemoveAfterExecution () = 0;
 
 		/**
 		 * If true, queue will not be reordered and will wait until
 		 * target becomes visible.
 		 */
-		virtual const bool getBlockUntilVisible () = 0;
+		virtual bool getBlockUntilVisible () = 0;
 
 		/**
 		 * Sort targets by west-east priority on west, by altitude on
@@ -352,11 +352,11 @@ class ExecutorQueue:public TargetQueue
 
 	protected:
 		virtual int getQueueType () { return queueType->getValueInteger (); }
-		virtual const bool getSkipBelowHorizon () { return skipBelowHorizon->getValueBool (); }
-		virtual const bool getTestConstraints () { return testConstraints->getValueBool (); }
-		virtual const bool getRemoveAfterExecution () { return removeAfterExecution->getValueBool (); }
-		virtual const bool getBlockUntilVisible () { return blockUntilVisible->getValueBool (); }
-		virtual const bool getCheckTargetLength () { return checkTargetLength->getValueBool (); }
+		virtual bool getSkipBelowHorizon () { return skipBelowHorizon->getValueBool (); }
+		virtual bool getTestConstraints () { return testConstraints->getValueBool (); }
+		virtual bool getRemoveAfterExecution () { return removeAfterExecution->getValueBool (); }
+		virtual bool getBlockUntilVisible () { return blockUntilVisible->getValueBool (); }
+		virtual bool getCheckTargetLength () { return checkTargetLength->getValueBool (); }
 
 	private:
 		rts2core::IntegerArray *nextIds;

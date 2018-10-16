@@ -92,7 +92,7 @@ int mkpath (const char *path, mode_t mode)
 }
 
 // remove file or directory
-int rmfiledir (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+int rmfiledir (const char *fpath, __attribute__ ((unused)) const struct stat *sb, int typeflag, __attribute__ ((unused)) struct FTW *ftwbuf)
 {
 	switch (typeflag)
 	{
@@ -284,6 +284,7 @@ std::vector <int> parseRange (const char *range_str, int array_size, const char 
 			{
 				case ARRAY_LEFT:
 					state = FROM;
+					__attribute__ ((fallthrough));
 				case FROM:
 					from = from * 10 + (*endp) - '0';
 					break;

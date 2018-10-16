@@ -35,12 +35,12 @@ SqlColumn::~SqlColumn (void)
 	delete name;
 }
 
-void SqlColumn::processValue (void *val, int sqlType, int isNull)
+void SqlColumn::processValue (__attribute__ ((unused)) void *val, __attribute__ ((unused)) int sqlType, __attribute__ ((unused)) int isNull)
 {
 	return;
 }
 
-void SqlColumn::printStatistics (std::ostream &os)
+void SqlColumn::printStatistics (__attribute__ ((unused)) std::ostream &os)
 {
 }
 
@@ -60,7 +60,7 @@ SqlColumnObsState::SqlColumnObsState (const char *in_sql, const char *in_name, i
 	ok = 0;
 }
 
-void SqlColumnObsState::processValue (void *val, int sqlType, int isNull)
+void SqlColumnObsState::processValue (void *val, int sqlType, __attribute__ ((unused)) int isNull)
 {
 	int trueVal;
 	if (sqlType != SQL3_INTEGER)

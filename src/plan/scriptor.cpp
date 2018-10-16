@@ -203,7 +203,7 @@ int Scriptor::findScript (std::string in_deviceName, std::string & buf)
 	return 0;
 }
 
-void Scriptor::getPosition (struct ln_equ_posn *posn, double JD)
+void Scriptor::getPosition (struct ln_equ_posn *posn, __attribute__ ((unused)) double JD)
 {
 	posn->ra = 20;
 	posn->dec = 20;

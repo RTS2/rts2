@@ -352,7 +352,7 @@ int rts2setINDI ( char *device, const char *data_type, const char *property, con
 }
 
 
-int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp)
+int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, __attribute__ ((unused)) FILE *svrrfp)
 {
     static LilXML *setlillp;			 /* XML parser context */
 
@@ -434,7 +434,7 @@ void rts2closeINDIServer()
 
 /* issue getProperties on one property and one device */
 static void
-getprops(FILE *svrwfp, FILE *svrrfp)
+getprops(FILE *svrwfp, __attribute__ ((unused)) FILE *svrrfp)
 {
 	char *onedev = NULL;
 	int i;
@@ -529,7 +529,7 @@ finished ()
 
 /* read one char from svrrfp */
 static int
-readServerChar (FILE *svrwfp, FILE *svrrfp)
+readServerChar (__attribute__ ((unused)) FILE *svrwfp, FILE *svrrfp)
 {
 	int c = fgetc (svrrfp);
 
@@ -689,7 +689,7 @@ findEle (XMLEle *root, const char *dev, const char *nam, char *defone, SearchDef
 	int i;
 
 	/* check for attr keyword */
-	for (i = 0; i < NKWA; i++)
+	for (i = 0; i < (int)NKWA; i++)
 	{
 		if (strcmp (iele, kwattr[i].keyword) == 0)
 		{
@@ -770,7 +770,7 @@ findEle (XMLEle *root, const char *dev, const char *nam, char *defone, SearchDef
 /* send server command to svrwfp that enables blobs for the given dev nam
  */
 static void
-enableBLOBs(const char *dev, const char *nam, FILE *svrwfp, FILE *svrrfp)
+enableBLOBs(const char *dev, const char *nam, FILE *svrwfp, __attribute__ ((unused)) FILE *svrrfp)
 {
 	if (verbose)
 		fprintf (stderr, "sending enableBLOB %s.%s\n", dev, nam);
@@ -940,7 +940,7 @@ SearchDef *malloc_getINDIproperty()
 }
 
 
-int fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele)
+int fill_getINDIproperty( char *dev, __attribute__ ((unused)) const char *type, const char *prop, const char *ele)
 {
 	srchs[nsrchs].d = strcpy (malloc(strlen(dev)+1), dev);
 	srchs[nsrchs].p = strcpy (malloc(strlen(prop)+1), prop);
@@ -961,7 +961,7 @@ int fill_getINDIproperty( char *dev, const char *type, const char *prop, const c
 }
 
 
-void free_setINDIproperty( SetPars *csets, int ncsets)
+void free_setINDIproperty( SetPars *csets, __attribute__ ((unused)) int ncsets)
 {
 	int i ;
 
@@ -1005,7 +1005,7 @@ int fill_setINDIproperty( char *dev, const char *type, const char *prop, const c
 	dsets[*dnsets].d = strcpy (malloc(strlen(dev)+1), dev);
 	dsets[*dnsets].p = strcpy (malloc(strlen(prop)+1), prop);
 
-	for (t = 0; t < NDEFS; t++)
+	for (t = 0; t < (int)NDEFS; t++)
 		if (strcmp (type, set_defs[t].defType) == 0)
 			break;
 	if (t == NDEFS)

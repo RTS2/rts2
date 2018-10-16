@@ -38,7 +38,7 @@ Rts2Prop::Rts2Prop ()
 
 }
 
-Rts2Prop::Rts2Prop (int in_prop_id)
+Rts2Prop::Rts2Prop (__attribute__ ((unused)) int in_prop_id)
 {
 
 }

@@ -46,7 +46,7 @@ NWindow::~NWindow (void)
 	delwin (window);
 }
 
-keyRet NWindow::injectKey (int key)
+keyRet NWindow::injectKey (__attribute__ ((unused)) int key)
 {
 	return RKEY_NOT_HANDLED;
 }

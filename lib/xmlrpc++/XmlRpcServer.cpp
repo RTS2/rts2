@@ -179,7 +179,7 @@ void XmlRpcServer::checkFd (short (*getFDEvents) (int))
 
 // Handle input on the server socket by accepting the connection
 // and reading the rpc request.
-unsigned XmlRpcServer::handleEvent(unsigned mask)
+unsigned XmlRpcServer::handleEvent(__attribute__ ((unused)) unsigned mask)
 {
 	acceptConnection();
 								 // Continue to monitor this fd
@@ -255,7 +255,7 @@ class ListMethods : public XmlRpcServerMethod
 	public:
 		ListMethods(XmlRpcServer* s) : XmlRpcServerMethod(LIST_METHODS, s) {}
 
-		void execute(struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
+		void execute(__attribute__ ((unused)) struct sockaddr_in *saddr, __attribute__ ((unused)) XmlRpcValue& params, XmlRpcValue& result)
 		{
 			_server->listMethods(result);
 		}
@@ -269,7 +269,7 @@ class MethodHelp : public XmlRpcServerMethod
 	public:
 		MethodHelp(XmlRpcServer* s) : XmlRpcServerMethod(METHOD_HELP, s) {}
 
-		void execute(struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
+		void execute(__attribute__ ((unused)) struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params[0].getType() != XmlRpcValue::TypeString)
 				throw XmlRpcException(METHOD_HELP + ": Invalid argument type");

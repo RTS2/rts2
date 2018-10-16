@@ -439,7 +439,7 @@ long MiniccdIl::isChipExposing (int chip_id)
 		if (chip_id == 0)
 			gettimeofday (&slave1ReadoutStart, NULL);
 
-		while (rlen < (chipByteSize () / 2))
+		while (rlen < (int)(chipByteSize () / 2))
 		{
 			std::cout << "chip " << chip_id << " rlen " << rlen << std::endl;
 			ret = read (fd_chip[chip_id], row[chip_id] + rlen, (chipByteSize () / 2) - rlen);
@@ -484,6 +484,7 @@ long MiniccdIl::isExposing ()
 				return -2;
 			}
 			slaveState = SLAVE2_EXPOSING;
+			__attribute__ ((fallthrough));
 		case SLAVE2_EXPOSING:
 			ret = isChipExposing (0);
 			if (ret != -2)
@@ -493,6 +494,7 @@ long MiniccdIl::isExposing ()
 			timersub (&now, &slave1ReadoutStart, &slave1ReadoutStart);
 			firstReadoutTime = slave1ReadoutStart.tv_sec * USEC_SEC + slave1ReadoutStart.tv_usec;
 			slaveState = SLAVE1_READOUT;
+			__attribute__ ((fallthrough));
 		case SLAVE1_READOUT:
 			ret = isChipExposing (1);
 			if (ret)
@@ -516,6 +518,7 @@ int MiniccdIl::doReadout ()
 		case SLAVE2_READOUT:
 			doBinning ((uint16_t *) (row[0]), (uint16_t *) (row[1]));
 			slaveState = SENDING;
+			__attribute__ ((fallthrough));
 		case SENDING:
 			ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 			if (ret < 0)

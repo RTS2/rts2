@@ -36,7 +36,7 @@
 using namespace XmlRpc;
 using namespace rts2json;
 
-void Night::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Night::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "text/html";
 
@@ -64,21 +64,25 @@ void Night::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, X
 #endif // RTS2_HAVE_LIBJPEG
 			else
 				throw rts2core::Error ("Invalid path for all observations");
+			break;
 		case 3:
 			if (vals[2] == "api")
 				action = API;
 			else
 				day = atoi (vals[2].c_str ());
+			__attribute__ ((fallthrough));
 		case 2:
 			if (vals[1] == "api")
 				action = API;
 			else
 				month = atoi (vals[1].c_str ());
+			__attribute__ ((fallthrough));
 		case 1:
 			if (vals[0] == "api")
 				action = API;
 			else
 				year = atoi (vals[0].c_str ());
+			__attribute__ ((fallthrough));
 		case 0:
 			switch (action)
 			{

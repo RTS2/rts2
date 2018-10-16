@@ -215,12 +215,12 @@ class Centrald:public Daemon
 		 * NULL. They can be used in future to link two centrald to enable
 		 * cooperative observation.
 		 */
-		virtual rts2core::Connection *createClientConnection (char *in_deviceName)
+		virtual rts2core::Connection *createClientConnection (__attribute__ ((unused)) char *in_deviceName)
 		{
 			return NULL;
 		}
 
-		virtual rts2core::Connection *createClientConnection (NetworkAddress * in_addr)
+		virtual rts2core::Connection *createClientConnection (__attribute__ ((unused)) NetworkAddress * in_addr)
 		{
 			return NULL;
 		}

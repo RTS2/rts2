@@ -56,7 +56,7 @@ class AppDbImage:public rts2db::AppDb
 	protected:
 		std::list < const char *>imageNames;
 		bool readOnly;
-		virtual int processImage (rts2image::ImageDb * image)
+		virtual int processImage (__attribute__ ((unused)) rts2image::ImageDb * image)
 		{
 			return 0;
 		}

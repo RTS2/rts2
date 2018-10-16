@@ -127,7 +127,7 @@ Connection * Client::createClientConnection (NetworkAddress * in_addr)
 	return conn;
 }
 
-int Client::willConnect (NetworkAddress * in_addr)
+int Client::willConnect (__attribute__ ((unused)) NetworkAddress * in_addr)
 {
 	return 1;
 }
@@ -230,9 +230,10 @@ ConnCentraldClient::ConnCentraldClient (Block * in_master, const char *in_login,
 int ConnCentraldClient::init ()
 {
 	int ret;
-	struct addrinfo hints = {0};
+	struct addrinfo hints;
 	struct addrinfo *master_addr;
 
+	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_flags = 0;
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -304,7 +305,7 @@ CommandLogin::CommandLogin (Block * in_master, const char *in_login, const char 
 	state = LOGIN_SEND;
 }
 
-int CommandLogin::commandReturnOK (Connection * conn)
+int CommandLogin::commandReturnOK (__attribute__ ((unused)) Connection * conn)
 {
 	std::ostringstream _os;
 	switch (state)

@@ -173,7 +173,7 @@ FitsFile::~FitsFile (void)
 	delete[] fileName;
 }
 
-void FitsFile::openFile (const char *_fileName, bool readOnly, bool _verbose)
+void FitsFile::openFile (const char *_fileName, bool readOnly, __attribute__ ((unused)) bool _verbose)
 {
 	closeFile ();
 
@@ -632,7 +632,7 @@ void FitsFile::getValue (const char *name, char *value, int valLen, const char* 
 	}
 }
 
-void FitsFile::getValue (const char *name, char **value, int valLen, bool required, char *comment)
+void FitsFile::getValue (const char *name, char **value, __attribute__ ((unused)) int valLen, bool required, char *comment)
 {
 	if (!getFitsFile ())
 		openFile (NULL, false, true);
@@ -864,8 +864,8 @@ void FitsFile::moveHDU (int hdu, int *hdutype)
 		logStream (MESSAGE_ERROR) << "cannot move HDU to " << hdu << ": " << getFitsErrors () << sendLog;
 	}
 }
-
-int FitsFile::fitsStatusValue (const char *valname, const char *operation)
+// fixme: this function should work at least with "SetValue" and "GetValue"!
+int FitsFile::fitsStatusValue (__attribute__ ((unused)) const char *valname, __attribute__ ((unused)) const char *operation)
 {
 	int ret = 0;
 	if (fits_status)

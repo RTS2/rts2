@@ -555,11 +555,11 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		getMaster ()->postEvent (new rts2core::Event (EVENT_ALL_IMAGES_WRITTEN));
 }
 
-void DevClientCameraImage::beforeProcess (Image * image)
+void DevClientCameraImage::beforeProcess (__attribute__ ((unused)) Image * image)
 {
 }
 
-imageProceRes DevClientCameraImage::processImage (Image * image)
+imageProceRes DevClientCameraImage::processImage (__attribute__ ((unused)) Image * image)
 {
 	return IMAGE_DO_BASIC_PROCESSING;
 }

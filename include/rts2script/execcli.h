@@ -86,7 +86,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		/**
 		 * Called to report script progress.
 		 */
-		virtual void scriptProgress (double start, double end) {};
+		virtual void scriptProgress (__attribute__ ((unused)) double start, __attribute__ ((unused)) double end) {};
 
 		/**
 		 * Set new temoprary expand path.

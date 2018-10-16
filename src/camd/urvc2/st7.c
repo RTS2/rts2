@@ -239,7 +239,7 @@ DigitizeRAWImagingLine (int len, unsigned short *dest)
 }
 
 PAR_ERROR
-ClearArray_st7 (int height, int times, int left)
+ClearArray_st7 (int height, int times, __attribute__ ((unused)) int left)
 	// short height, width, times, left;
 {
   PAR_ERROR res = CE_NO_ERROR;

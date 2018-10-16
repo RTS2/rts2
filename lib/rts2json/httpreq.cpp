@@ -120,7 +120,7 @@ bool GetRequestAuthorized::canWriteDevice (const std::string &deviceName)
 	return userPermissions->canWriteDevice (deviceName);
 }
 
-bool GetRequestAuthorized::canWriteVariable (const std::string &deviceName, const std::string &variableName)
+bool GetRequestAuthorized::canWriteVariable (const std::string &deviceName, __attribute__ ((unused)) const std::string &variableName)
 {
 	if (canWriteDevice (deviceName))
 		return true;
@@ -143,7 +143,7 @@ void JSONRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	}
 }
 
-void JSONRequest::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void JSONRequest::authorizePage (__attribute__ ((unused)) int &http_code, __attribute__ ((unused)) const char* &response_type, __attribute__ ((unused)) char* &response, __attribute__ ((unused)) size_t &response_length)
 {
 	throw JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
 }

@@ -150,7 +150,7 @@ class AppImage:public rts2image::AppImageCore
 
 using namespace rts2image;
 
-void AppImage::printOffset (double x, double y, Image * image)
+void AppImage::printOffset (__attribute__ ((unused)) double x, __attribute__ ((unused)) double y, __attribute__ ((unused)) Image * image)
 {
 	std::cout << "not implemented" << std::endl;
 }

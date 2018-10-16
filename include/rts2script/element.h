@@ -108,12 +108,12 @@ class Element:public Object
 		/**
 		 * Called when error is reported in script.
 		 */
-		virtual void errorReported (int current_state, int old_state) {}
+		virtual void errorReported (__attribute__ ((unused)) int current_state, __attribute__ ((unused)) int old_state) {}
 
 		/**
 		 * Called after end of exposure.
 		 */
-		virtual void exposureEnd (bool expectImage) {}
+		virtual void exposureEnd (__attribute__ ((unused)) bool expectImage) {}
 
 		/**
 		 * Called when exposure/readout failed.
@@ -133,13 +133,13 @@ class Element:public Object
 		/**
 		 * Return true if element know about the image.
 		 */
-		virtual bool knowImage (rts2image::Image * image) { return false; }
+		virtual bool knowImage (__attribute__ ((unused)) rts2image::Image * image) { return false; }
 
 		/**
 		 * Returns 1 if we are waiting for that signal.
 		 * Signal is > 0
 		 */
-		virtual int waitForSignal (int in_sig) { return 0; }
+		virtual int waitForSignal (__attribute__ ((unused)) int in_sig) { return 0; }
 
 		/**
 		 * That method will be called when we currently run that
@@ -173,9 +173,9 @@ class Element:public Object
 		virtual int idle ();
 
 		virtual void prettyPrint (std::ostream &os) { os << "unknow element"; }
-		virtual void printXml (std::ostream &os) {}
+		virtual void printXml (__attribute__ ((unused)) std::ostream &os) {}
 		virtual void printScript (std::ostream &os) = 0;
-		virtual void printJson (std::ostream &os) {};
+		virtual void printJson (__attribute__ ((unused)) std::ostream &os) {};
 
 		/**
 		 * Check tahat element parameters are correct.
@@ -187,7 +187,7 @@ class Element:public Object
 		/**
 		 * Return expected element duration in seconds.
 		 */
-		virtual double getExpectedDuration (int runnum) { return 0; }
+		virtual double getExpectedDuration (__attribute__ ((unused)) int runnum) { return 0; }
 
 		/**
 		 * Return expected element duration of light time (shutter opened, taking science data).
@@ -220,7 +220,7 @@ class ElementNone:public Element
 	public:
 		ElementNone (Script * _script):Element (_script) {}
 
-		virtual void printScript (std::ostream &os) {};
+		virtual void printScript (__attribute__ ((unused)) std::ostream &os) {};
 };
 
 /**

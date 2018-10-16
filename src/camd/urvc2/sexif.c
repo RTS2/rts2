@@ -97,7 +97,7 @@ get_result (int *npoint, double **xpoint, double **ypoint, double **flujo,
   while (!feof (ff))
     {
       // get the line
-      fgets (buf, BUFLEN, ff);
+      if(!fgets (buf, BUFLEN, ff)) continue;
       if (buf[0] == '#')
 	continue;
 
@@ -152,9 +152,9 @@ run_sex (char *fitsfile)
 
   write_sex_cfg ();
   sprintf (command, "sex -c _sex.cfg %s", fitsfile);
-  system (command);
+  if(system (command)) return -1.0;
 
-  get_result (&N, &xx, &yy, &F, &Q);
+  if(get_result (&N, &xx, &yy, &F, &Q) < 1) return -1.;
 
   do
     {

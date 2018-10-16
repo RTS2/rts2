@@ -305,7 +305,7 @@ unsigned XmlRpcClient::handleEvent(unsigned eventType)
 		? XmlRpcDispatch::WritableEvent : XmlRpcDispatch::ReadableEvent;
 }
 
-unsigned XmlRpcClient::handleChunkEvent(unsigned eventType)
+unsigned XmlRpcClient::handleChunkEvent(__attribute__ ((unused)) unsigned eventType)
 {
 	if (_connectionState == WRITE_REQUEST)
 		if ( ! writeRequest()) return 0;

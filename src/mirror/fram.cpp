@@ -251,7 +251,7 @@ int Fram::mirror_set ()
 	return -1;
 }
 
-int Fram::movePosition (int pos)
+int Fram::movePosition (__attribute__ ((unused)) int pos)
 {
 	steps = STEPS_OPEN_CLOSE;
 	return 0;

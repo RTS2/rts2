@@ -243,7 +243,12 @@ int isinf(double x);
 #endif
 
 #ifndef RTS2_HAVE_ISBLANK
-#define isblank(x)   (isspace(x) || x == '\t')
+/** #define isblank(x)   (isspace(x) || x == '\t') - isspace() tests for '\t' too!!!
+ *  also there would be problems if you do like in src/ncomwin.cpp:61 - isblank (mvwinch (comwin, y, x-1) & A_CHARTEXT)
+ *  if so, it would be better: true inline bool isblank(x){return (isspace(x) || x == '\t');}
+ *  or at worst case: #define isblank(x)   (isspace(x) || (x) == '\t')
+ */
+#define isblank(x)   (isspace(x))
 #endif
 
 #ifndef RTS2_HAVE_STRCASESTR

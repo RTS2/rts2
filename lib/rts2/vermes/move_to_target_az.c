@@ -88,11 +88,11 @@ void getSexComponents(double value, int *d, int *m, int *s)
   if (value < 0)
     *d *= -1;
 }
-void *move_to_target_azimuth( void *value)
+void *move_to_target_azimuth(__attribute__ ((unused)) void *value)
 {
   double lastRa=-9999., lastDec=-9999. ;
   bool target_coordinate_changed= false ;
-  bool first=true;
+  //bool first=true; - unused
   while( 1==1) {
 
     current_percentage= get_current_percentage() ;

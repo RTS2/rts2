@@ -439,7 +439,7 @@ motor_faststop_switch_state()
   char* msg;
   char cmd_word[6];
   int mot_stat;
-  int res;
+  __attribute__ ((unused)) int res;
   
   mot_stat = qry_mot_cmd();
   if (mot_stat < 0) {
@@ -482,7 +482,7 @@ motor_coast_switch_state()
   char* msg;
   char cmd_word[6];
   int mot_stat;
-  int res;
+  __attribute__ ((unused)) int res;
 
   mot_stat = qry_mot_cmd();
   if (mot_stat < 0) {
@@ -625,7 +625,7 @@ difftimeval(struct timeval *t1, struct timeval *t0)
  * query_all_ssd650_status()
  *****************************************************************************/
 void
-query_all_ssd650_status(void * user_p)
+query_all_ssd650_status(__attribute__ ((unused)) void * user_p)
 {
   int old_debug = debug;
   struct timeval time_enq;
@@ -924,7 +924,7 @@ SSD_tag2mnemonic(int tag, char *mnemonic)
  *   the data from the reply as a BOOLEAN (0=false, 1=true) or -1 on error.
  *****************************************************************************/
 int
-SSD_chkresp_bool(int sd, char *response_frame)
+SSD_chkresp_bool(__attribute__ ((unused)) int sd, char *response_frame)
 {
   BOOLEAN b = FALSE;
 
@@ -940,7 +940,7 @@ SSD_chkresp_bool(int sd, char *response_frame)
  *   the data from the reply as a BOOLEAN (0=false, 1=true) or -1 on error.
  *****************************************************************************/
 int
-SSD_chkresp_tagnbr(int sd, char *response_frame)
+SSD_chkresp_tagnbr(__attribute__ ((unused)) int sd, char *response_frame)
 {
   int i = 0;
 
@@ -956,7 +956,7 @@ SSD_chkresp_tagnbr(int sd, char *response_frame)
  *   the data from the reply as a float or NaN on error.
  *****************************************************************************/
 float
-SSD_chkresp_real(int sd, char *response_frame)
+SSD_chkresp_real(__attribute__ ((unused)) int sd, char *response_frame)
 {
   float st_real;
 
@@ -1014,7 +1014,7 @@ SSD_qry_real(int sd, int tag)
  *   the data from the reply as an positive integer or -1 on error.
  *****************************************************************************/
 int
-SSD_chkresp_integer(int sd, char *response_frame)
+SSD_chkresp_integer(__attribute__ ((unused)) int sd, char *response_frame)
 {
   unsigned int st_int;
 
@@ -1070,7 +1070,7 @@ SSD_qry_integer(int sd, int tag)
  *   the data from the reply as a positive integer or -1 on error.
  *****************************************************************************/
 int
-SSD_chkresp_hexword(int sd, char *response_frame)
+SSD_chkresp_hexword(__attribute__ ((unused)) int sd, char *response_frame)
 {
   unsigned int st_word;
 
@@ -1433,7 +1433,7 @@ SSD_query(int sd, tagdata_t *param)
  * SSD_run_cmd_sequence(...)
  *****************************************************************************/
 int
-SSD_run_cmd_sequence(int sd, tagdata_t * cmd_seq, int cmd_list_sz)
+SSD_run_cmd_sequence(__attribute__ ((unused)) int sd, __attribute__ ((unused)) tagdata_t * cmd_seq, int cmd_list_sz)
 {
   int res = 0;
   int i;

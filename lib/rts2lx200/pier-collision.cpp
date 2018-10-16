@@ -288,7 +288,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   }  
   return NO_COLLISION ;
 }
-double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
+double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, __attribute__ ((unused)) double xd, double Rdec, double Rtel, double tp)
 {
   double val= NAN;
   val = zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
@@ -299,7 +299,7 @@ double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double 
   return val ;
 }
 
-double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
+double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, __attribute__ ((unused)) double xd, double Rdec, double Rtel, double tp)
 {
   double val= NAN;
   val=   zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
@@ -310,7 +310,7 @@ double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double 
 }
 
 
-double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
+double LDCutPierLineP1(double HA, double dec, double phi, __attribute__ ((unused)) double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   double val= NAN;
 
@@ -346,7 +346,7 @@ double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, 
   //  fprintf( stderr, "____LDCutPierLineP1: WEST %+010.5f\n", val) ;
   return val ;
 }
-double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
+double LDCutPierLineM1(double HA, double dec, double phi, __attribute__ ((unused)) double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   double val= NAN;
     
@@ -383,7 +383,7 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
   //  fprintf( stderr, "xxxxLDCutPierLineM1: WEST %+010.5f\n", val) ;
   return val ;
 }
-double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
+double LDCutPierLineP3(double HA, double dec, double phi, __attribute__ ((unused)) double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   double val= NAN;
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
@@ -418,7 +418,7 @@ double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, 
   //  fprintf( stderr, "-x-xLDCutPierLineP3: WEST %+010.5f\n", val ) ;
   return val ;
 }
-double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
+double LDCutPierLineM3(double HA, double dec, double phi, __attribute__ ((unused)) double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   double val= NAN;
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 

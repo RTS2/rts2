@@ -252,9 +252,9 @@ class DataSharedRead: public DataAbstractRead, public DataAbstractShared
 
 		int attach (int _shm_id);
 
-		virtual int readDataSize (Connection *conn) { return 0; }
-		virtual ssize_t addData (char *_data, ssize_t _data_size) { return -1; }
-		virtual int getData (int sock) { return -1; }
+		virtual int readDataSize (__attribute__ ((unused)) Connection *conn) { return 0; }
+		virtual ssize_t addData (__attribute__ ((unused)) char *_data, __attribute__ ((unused)) ssize_t _data_size) { return -1; }
+		virtual int getData (__attribute__ ((unused)) int sock) { return -1; }
 		virtual char *getDataBuff () { return ((char *) data) + activeSegment->offset; }
 		virtual char *getDataTop () { return ((char *) data) + activeSegment->offset + activeSegment->bytesSoFar; }
 		virtual size_t getRestSize () { return activeSegment->size - activeSegment->bytesSoFar; }

@@ -13,7 +13,7 @@ class Dummy:public Mirror
 			addPosition ("B");
 			addPosition ("C");
 		}
-		virtual int movePosition (int pos)
+		virtual int movePosition (__attribute__ ((unused)) int pos)
 		{
 			return 0;
 		}

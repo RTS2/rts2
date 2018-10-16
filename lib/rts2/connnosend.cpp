@@ -37,7 +37,7 @@ ConnNoSend::~ConnNoSend (void)
 {
 }
 
-int ConnNoSend::sendMsg (const char *msg)
+int ConnNoSend::sendMsg (__attribute__ ((unused)) const char *msg)
 {
 	return 0;
 }

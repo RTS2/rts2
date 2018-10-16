@@ -113,7 +113,7 @@ DigitizeLine_trk (int left, int len, int horzBefore, int bin,
 }
 
 PAR_ERROR
-ClearArray_trk (int height, int times, int left)
+ClearArray_trk (int height, int times, __attribute__ ((unused)) int left)
 	// short height, times, left;
 {
   PAR_ERROR res = CE_NO_ERROR;

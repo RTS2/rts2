@@ -94,7 +94,7 @@ int ValueRectangle::setValueCharArr (const char *in_value)
 	return 0;
 }
 
-int ValueRectangle::setValueInteger (int in_value)
+int ValueRectangle::setValueInteger (__attribute__ ((unused)) int in_value)
 {
 	return -1;
 }

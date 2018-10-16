@@ -1798,7 +1798,7 @@ const char *jqueryUICss =
 ".ui-dialog .ui-state-error { padding: .3em; }\n"
 ".validateTips { border: 1px solid transparent; padding: 0.3em; }\n";
 
-void LibCSS::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void LibCSS::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
 	

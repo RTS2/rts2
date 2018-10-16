@@ -83,7 +83,7 @@ namespace rts2dome
   public:
     Vermes (int argc, char **argv) ;
     virtual int initValues () ;
-    virtual double getSlitWidth (double alt) { return 1;}; //not used
+    virtual double getSlitWidth (__attribute__ ((unused)) double alt) { return 1;}; //not used
     virtual int info () ;
     virtual int idle ();
     virtual void valueChanged (rts2core::Value * changed_value) ;

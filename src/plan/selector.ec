@@ -103,6 +103,7 @@ int Selector::selectNext (int masterState, double length)
 				}
 			}
 			// don't break, select darks
+			__attribute__ ((fallthrough));
 		case SERVERD_DAWN | SERVERD_STANDBY:
 		case SERVERD_DUSK | SERVERD_STANDBY:
 			// otherwise select darks/flats/whatever

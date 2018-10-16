@@ -41,7 +41,7 @@ class Rts2Prop
 		Target *getTarget ();
 		PlanSet *getPlanSet ();
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2Prop prop) { return _os; }
+		friend std::ostream & operator << (std::ostream & _os, __attribute__ ((unused)) Rts2Prop prop) { return _os; }
 
 	private:
 		int prop_id;

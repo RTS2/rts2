@@ -74,6 +74,7 @@ double parseDMS (const char *hptr, double *mul)
 					break;
 				case 'h':
 					*mul = 15.0;
+					break;
 				case 'm':
 				case '\'':
 					*mul = 1 / 60.0;
@@ -137,6 +138,7 @@ int parseRaDec (const char *radec, double &ra, double &dec)
 		{
 			case NOT_GET:
 				state = RA;
+				__attribute__ ((fallthrough));
 			case RA:
 				ra += (val / step);
 				if (step > 1)

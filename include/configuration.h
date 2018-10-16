@@ -173,7 +173,7 @@ class Configuration:public IniParser
 		 *
 		 * @return Observatory longitude.
 		 */
-		const double getObservatoryLongitude ()	{ return getObserver ()->lng; }
+		double getObservatoryLongitude ()	{ return getObserver ()->lng; }
 
 		/**
 		 * Returns observatory UT offset. The offset is used for
@@ -181,12 +181,12 @@ class Configuration:public IniParser
 		 * current time is after 12 + UT offset, then the night is current local day. If
 		 * current time is before 12 + UT offset, then the night is preceeding local day.
 		 */
-		const float getUTOffset () { return utOffset; }
+		float getUTOffset () { return utOffset; }
 
 		/**
 		 * Return observatory altitude.
 		 */
-		const double getObservatoryAltitude () { return observatoryAltitude; }
+		double getObservatoryAltitude () { return observatoryAltitude; }
 
 		ObjectCheck *getObjectChecker ();
 
@@ -197,7 +197,7 @@ class Configuration:public IniParser
 		 *
 		 * @callergraph
 		 */
-		const float getSwiftMinHorizon () { return swift_min_horizon; }
+		float getSwiftMinHorizon () { return swift_min_horizon; }
 
 		/**
 		 * Returns Swift soft horizon. Swift target, which was selected (because it
@@ -206,7 +206,7 @@ class Configuration:public IniParser
 		 *
 		 * @callergraph
 		 */
-		const float getSwiftSoftHorizon () { return swift_soft_horizon; }
+		float getSwiftSoftHorizon () { return swift_soft_horizon; }
 
 		/**
 		 * If burst which is shown as know transient source and invalid
@@ -215,12 +215,12 @@ class Configuration:public IniParser
 		 * @return True if know sources and invalid GRBs should be
 		 * followed.
 		 */
-		const bool grbdFollowTransients () { return grbd_follow_transients; }
+		bool grbdFollowTransients () { return grbd_follow_transients; }
 
 		/**
 		 * Duration for which GRB observation will be followed.
 		 */
-		const int grbdValidity () { return grbd_validity; }
+		int grbdValidity () { return grbd_validity; }
 
 		/**
 		 * Get names of devices which are necessary for system

@@ -970,7 +970,7 @@ int Centrald::weatherUpdate (rts2core::Connection *conn)
 	return 0;
 }
 
-void Centrald::stopChanged (const char * device, const char * msg)
+void Centrald::stopChanged (__attribute__ ((unused)) const char * device, __attribute__ ((unused)) const char * msg)
 {
 	// state of the required devices
 	std::vector <std::string> failedArr;
@@ -1024,7 +1024,7 @@ void Centrald::bopMaskChanged ()
 	sendStatusMessage (getState ());
 }
 
-void Centrald::openCloseChanged (const char *device, const char *msg)
+void Centrald::openCloseChanged (__attribute__ ((unused)) const char *device, __attribute__ ((unused)) const char *msg)
 {
 	switch (openClose->getValueInteger ())
 	{

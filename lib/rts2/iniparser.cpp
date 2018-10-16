@@ -106,7 +106,7 @@ void IniSection::createBlockedBy (std::string val)
 	}
 }
 
-const bool IniSection::containedInBlockedBy (const char *querying_device)
+bool IniSection::containedInBlockedBy (const char *querying_device)
 {
 	if (blockedBy == NULL)
 		return true;
@@ -553,7 +553,7 @@ bool IniParser::getBoolean (const char *section, const char *valueName, bool def
 	return def;
 }
 
-const bool IniParser::blockDevice (const char *device_name, const char *querying_device)
+bool IniParser::blockDevice (const char *device_name, const char *querying_device)
 {
 	IniSection *sect = getSection (device_name, false);
 	if (!sect)

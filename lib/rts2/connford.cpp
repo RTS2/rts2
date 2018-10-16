@@ -212,7 +212,7 @@ FordConn::isOn (int c_port)
 	return !(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
 }
 
-FordConn::FordConn (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime):ConnSerial (_devName, _master, _baudSpeed, _cSize, _parity)
+FordConn::FordConn (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, __attribute__ ((unused)) int _vTime):ConnSerial (_devName, _master, _baudSpeed, _cSize, _parity)
 {
 
 }

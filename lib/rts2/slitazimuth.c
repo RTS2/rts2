@@ -165,8 +165,8 @@ double TK_dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_l
   // This call is for a quick check
   double star_az ;
   double star_ZD ;
-  int ret;
-  ret=LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
+  //int ret=
+  LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
   //fprintf( stderr, "LDRAtoStarAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", star_az, star_ZD, obs.rdome) ;
   return target_az ;
 }
@@ -234,7 +234,7 @@ int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location,
     LDHAtoDomeAZ( obs_location.lat, HA, tmp_equ.dec, obs, Az, ZD) ;
     return 0 ;
 }
-int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct tk_geometry obs, double *Az, double *ZD) 
+int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, __attribute__ ((unused)) struct tk_geometry obs, double *Az, double *ZD) 
 {
     double HA ;
 

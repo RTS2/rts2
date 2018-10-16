@@ -82,8 +82,8 @@ class Plan
 
 		void setBBScheduleId (int bb_obs, int bb_id) { bb_observatory_id = bb_obs; bb_schedule_id = bb_id; }
 
-		const int getBBObservatoryId () { return bb_observatory_id; }
-		const int getBBScheduleId () { return bb_schedule_id; }
+		int getBBObservatoryId () { return bb_observatory_id; }
+		int getBBScheduleId () { return bb_schedule_id; }
 
 
 		friend std::ostream & operator << (std::ostream & _os, Plan & plan) { plan.print (_os); return _os; }

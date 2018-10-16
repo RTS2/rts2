@@ -547,7 +547,7 @@ readerCodesToPosition(int rdr1_pos, int rdr2_pos)
  * entered into a ringbuffer which is a member of the PORT_STAT structure
  * representing the barcode reader.
  *****************************************************************************/
-void * bcr_receive_thread(void* args)
+void * bcr_receive_thread(__attribute__ ((unused)) void* args)
 {
   fd_set rfds;
   int ready_fd;
@@ -670,7 +670,7 @@ get_pos_detect_state(POS_DETECT_STATE * pos_state)
  * TODO:
  *   only call callback when position or validity changed.
  *****************************************************************************/
-void * bcr_sending_thread(void* args)
+void * bcr_sending_thread(__attribute__ ((unused)) void* args)
 {
   int rx1_stat = 0;
   int rx2_stat = 0;

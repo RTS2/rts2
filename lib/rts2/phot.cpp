@@ -88,7 +88,7 @@ int Photometer::setExposure (float _exp)
 	return 0;
 }
 
-int Photometer::startFilterMove (int new_filter)
+int Photometer::startFilterMove (__attribute__ ((unused)) int new_filter)
 {
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
 	return 0;
@@ -141,7 +141,7 @@ int Photometer::stopIntegrate ()
 	return 0;
 }
 
-int Photometer::homeFilter (rts2core::Connection * conn)
+int Photometer::homeFilter (__attribute__ ((unused)) rts2core::Connection * conn)
 {
 	int ret;
 	ret = homeFilter ();
@@ -171,7 +171,7 @@ int Photometer::moveFilter (int new_filter)
 	return 0;
 }
 
-int Photometer::enableFilter (rts2core::Connection * conn)
+int Photometer::enableFilter (__attribute__ ((unused)) rts2core::Connection * conn)
 {
 	int ret;
 	ret = enableMove ();

@@ -147,7 +147,7 @@ std::string Expander::getNightString ()
 	return _os.str ();
 }
 
-std::string Expander::expandVariable (char var, size_t beg, bool &replaceNonAlpha)
+std::string Expander::expandVariable (char var, size_t beg, __attribute__ ((unused)) bool &replaceNonAlpha)
 {
 	std::string ret = "";
 	std::ostringstream os;

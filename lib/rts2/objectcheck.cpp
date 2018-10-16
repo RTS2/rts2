@@ -195,7 +195,7 @@ double ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1, ho
 		((*iter2).hrz.az - az1);
 }
 
-double ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
+double ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, __attribute__ ((unused)) int hardness)
 {
 	if (horizon.size () == 0)
 		return 0;

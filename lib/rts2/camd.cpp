@@ -201,7 +201,7 @@ int Camera::stopExposure ()
 	return 0;
 }
 
-int Camera::processData (char *data, size_t size)
+int Camera::processData (__attribute__ ((unused)) char *data, size_t size)
 {
 	return size;
 }
@@ -769,7 +769,7 @@ int Camera::info ()
 	return rts2core::ScriptDevice::info ();
 }
 
-void fillPairs (rts2core::DoubleArray *a1, rts2core::DoubleArray *a2, const char *opt)
+void fillPairs (rts2core::DoubleArray *a1, rts2core::DoubleArray *a2, __attribute__ ((unused)) const char *opt)
 {
 	std::vector <std::string> chans = SplitStr (optarg, ",");
 	for (std::vector <std::string>::iterator iter = chans.begin (); iter != chans.end (); iter++)
@@ -1136,7 +1136,7 @@ void Camera::initDataTypes ()
 }
 
 
-const int Camera::maxPixelByteSize ()
+int Camera::maxPixelByteSize ()
 {
 	int ms = 0;
 	for (std::vector < rts2core::SelVal >::iterator iter = dataType->selBegin (); iter != dataType->selEnd (); iter++)
@@ -1860,7 +1860,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	return -1;
 }
 
-int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
+int Camera::shiftStoreStart (rts2core::Connection *conn, __attribute__ ((unused)) float exptime)
 {
 	shiftstoreLines->clear ();
 	sendValueAll (shiftstoreLines);
@@ -1868,7 +1868,7 @@ int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	return 0;
 }
 
-int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, __attribute__ ((unused)) float exptime)
 {
 	shiftstoreLines->addValue (shift);
 	sendValueAll (shiftstoreLines);
@@ -1876,7 +1876,7 @@ int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 	return 0;
 }
 
-int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, __attribute__ ((unused)) float exptime)
 {
 	shiftstoreLines->addValue (shift);
 	sendValueAll (shiftstoreLines);
@@ -2063,7 +2063,7 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		}
 		else if (strcmp (kind, "end") == 0)
 		{
-			if (conn->paramNextInteger (&shift) << conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
 				return -2;
 			return shiftStoreEnd (conn, shift, exptime);
 		}

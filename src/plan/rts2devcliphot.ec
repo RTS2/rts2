@@ -179,7 +179,7 @@ void DevClientPhotExec::filterMoveEnd ()
 		nextCommand ();
 }
 
-void DevClientPhotExec::filterMoveFailed (int status)
+void DevClientPhotExec::filterMoveFailed (__attribute__ ((unused)) int status)
 {
 	deleteScript ();
 }

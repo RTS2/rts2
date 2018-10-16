@@ -719,14 +719,14 @@ int SI8821::setfile_readout (const char *file, bool bReadFormat, int iMode)
 	}
 
 	bool bSectionFound = false;
-	char sectionName[17];
+	char sectionName[24]; // [Readout & Format] == 19 bytes, [Readout Mode %d] == 16+!
 	if( bReadFormat )
 	{
-        	sprintf( sectionName, "[Readout & Format]" );
+        	snprintf( sectionName, 24, "[Readout & Format]" );
 	}
 	else
 	{
-        	sprintf( sectionName, "[Readout Mode %d]", iMode );
+        	snprintf( sectionName, 24, "[Readout Mode %d]", iMode );
 	}
 
 	

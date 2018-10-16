@@ -100,7 +100,7 @@ int Command::commandReturn (int status, Connection * conn)
 	}
 }
 
-int Command::commandReturnOK (Connection * conn)
+int Command::commandReturnOK (__attribute__ ((unused)) Connection * conn)
 {
 	if (originator)
 		originator->postEvent (new Event (EVENT_COMMAND_OK, (void *) this));
@@ -114,7 +114,7 @@ int Command::commandReturnQued (Connection * conn)
 	return commandReturnOK (conn);
 }
 
-int Command::commandReturnFailed (int status, Connection * conn)
+int Command::commandReturnFailed (__attribute__ ((unused)) int status, __attribute__ ((unused)) Connection * conn)
 {
 	if (originator)
 		originator->postEvent (new Event (EVENT_COMMAND_FAILED, (void *) this));
@@ -380,14 +380,14 @@ CommandMoveUnmodelled::CommandMoveUnmodelled (Block * _master, DevClientTelescop
 	setCommand (_os);
 }
 
-CommandMoveMpec::CommandMoveMpec (Block * _master, DevClientTelescope * _tel, double ra, double dec, std::string mpec_oneline):CommandMove (_master, _tel)
+CommandMoveMpec::CommandMoveMpec (Block * _master, DevClientTelescope * _tel, __attribute__ ((unused)) double ra, __attribute__ ((unused)) double dec, std::string mpec_oneline):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << COMMAND_TELD_MOVE_MPEC " \"" << mpec_oneline << "\"";
 	setCommand (_os);
 }
 
-CommandMoveTle::CommandMoveTle (Block * _master, DevClientTelescope * _tel, double ra, double dec, std::string tle1, std::string tle2):CommandMove (_master, _tel)
+CommandMoveTle::CommandMoveTle (Block * _master, DevClientTelescope * _tel, __attribute__ ((unused)) double ra, __attribute__ ((unused)) double dec, std::string tle1, std::string tle2):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << COMMAND_TELD_MOVE_TLE " \"" << tle1 << "\" \"" << tle2 << "\"";
@@ -702,7 +702,7 @@ int CommandStatusInfo::commandReturnOK (Connection * conn)
 	return Command::commandReturnOK (conn);
 }
 
-int CommandStatusInfo::commandReturnFailed (int status, Connection * conn)
+int CommandStatusInfo::commandReturnFailed (__attribute__ ((unused)) int status, Connection * conn)
 {
 	if (control_conn)
 		control_conn->updateStatusWait (conn);

@@ -42,7 +42,7 @@ Targets::Targets (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc
 	displaySeconds = false;
 }
 
-void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -134,19 +134,21 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 					break;
 				}
 #endif /* RTS2_HAVE_LIBJPEG */
+				__attribute__ ((fallthrough));
 			case 3:
 				if (vals[1] == "api")
 				{
 					callTargetAPI (tar, vals[2], params, response_type, response, response_length);
 					break;
 				}
+				__attribute__ ((fallthrough));
 			default:
 				throw rts2core::Error ("Invalid path!");
 		}
 	}
 }
 
-void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::listTargets (__attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	printHeader (_os, "List of targets", NULL, "/css/datatables.css");
@@ -246,7 +248,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::processForm (__attribute__ ((unused)) XmlRpc::HttpParams *params, __attribute__ ((unused)) const char* &response_type, __attribute__ ((unused)) char* &response, __attribute__ ((unused)) size_t &response_length)
 {
 #ifdef RTS2_HAVE_LIBJPEG
 	if (!strcmp (params->getString ("plot", "xxx"), "Plot target altitude"))
@@ -503,7 +505,7 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 }
 
 
-void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	if (req == "obs")

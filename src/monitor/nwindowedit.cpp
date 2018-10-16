@@ -334,7 +334,7 @@ NWindowEditBool::NWindowEditBool (int _type, int _x, int _y, int w, int h, int _
 	dt = _type;
 }
 
-bool NWindowEditBool::passKey (int key)
+bool NWindowEditBool::passKey (__attribute__ ((unused)) int key)
 {
 	return false;
 }

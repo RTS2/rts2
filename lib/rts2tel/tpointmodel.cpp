@@ -66,7 +66,7 @@ int TPointModel::applyVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int TPointModel::reverse (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
+int TPointModel::reverse (struct ln_equ_posn *pos, __attribute__ ((unused)) struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn pos2;
 
@@ -83,7 +83,7 @@ int TPointModel::reverse (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
 	return 0;
 }
 
-int TPointModel::reverseVerbose (struct ln_equ_posn *pos, struct ln_hrz_posn *hrz)
+int TPointModel::reverseVerbose (struct ln_equ_posn *pos, __attribute__ ((unused)) struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn pos2;
 
@@ -248,7 +248,7 @@ std::istream & TPointModel::load (std::istream & is)
 	return is;
 }
 
-std::ostream & TPointModel::print (std::ostream & os, char frmt)
+std::ostream & TPointModel::print (std::ostream & os, __attribute__ ((unused)) char frmt)
 {
 	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{

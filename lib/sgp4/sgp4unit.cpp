@@ -212,7 +212,7 @@ static void dpper
        double si3,    double sl2,    double sl3,     double sl4,    double t,
        double xgh2,   double xgh3,   double xgh4,    double xh2,    double xh3,
        double xi2,    double xi3,    double xl2,     double xl3,    double xl4,
-       double zmol,   double zmos,   double inclo,
+       double zmol,   double zmos,   __attribute__ ((unused)) double inclo,
        char init,
        double& ep,    double& inclp, double& nodep,  double& argpp, double& mp,
        char opsmode
@@ -1178,7 +1178,7 @@ static void dspace
 
 static void initl
      (
-       int satn,      gravconsttype whichconst,
+       __attribute__ ((unused)) int satn,      gravconsttype whichconst,
        double ecco,   double epoch,  double inclo,   double& no,
        char& method,
        double& ainv,  double& ao,    double& con41,  double& con42, double& cosio,

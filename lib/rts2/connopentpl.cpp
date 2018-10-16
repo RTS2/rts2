@@ -175,12 +175,12 @@ int OpenTpl::idle ()
 	return 0;
 }
 
-int OpenTpl::receive (Block *block)
+int OpenTpl::receive (__attribute__ ((unused)) Block *block)
 {
 	return -1;
 }
 
-int OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
+int OpenTpl::set (const char *_name, double value, __attribute__ ((unused)) int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << std::setprecision(10) << value;
@@ -188,35 +188,35 @@ int OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
 	return 0;
 }
 
-int OpenTpl::get (const char *_name, double &value, int *tpl_status)
+int OpenTpl::get (const char *_name, double &value, __attribute__ ((unused)) int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atof (valReply);
 	return 0;
 }
 
-int OpenTpl::set (const char *_name, int value, int *tpl_status, bool wait)
+int OpenTpl::set (const char *_name, int value, __attribute__ ((unused)) int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
 	return sendCommand ("SET", _os.str().c_str(), wait);
 }
 
-int OpenTpl::get (const char *_name, int &value, int *tpl_status)
+int OpenTpl::get (const char *_name, int &value, __attribute__ ((unused)) int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atoi (valReply);
 	return 0;
 }
 
-int OpenTpl::set (const char *_name, std::string value, int *tpl_status)
+int OpenTpl::set (const char *_name, std::string value, __attribute__ ((unused)) int *tpl_status)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
 	return sendCommand ("SET", _os.str().c_str());
 }
 
-int OpenTpl::get (const char *_name, std::string &value, int *tpl_status)
+int OpenTpl::get (const char *_name, std::string &value, __attribute__ ((unused)) int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = valReply;

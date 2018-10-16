@@ -254,7 +254,7 @@ bool DarkTarget::getScript (const char *deviceName, std::string &buf)
 	return false;
 }
 
-void DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void DarkTarget::getPosition (struct ln_equ_posn *pos, __attribute__ ((unused)) double JD)
 {
 	*pos = currPos;
 }
@@ -1109,7 +1109,7 @@ void TargetSwiftFOV::load ()
 	setTargetName (name.str().c_str());
 }
 
-void TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, __attribute__ ((unused)) double JD)
 {
 	*pos = swiftFovCenter;
 }
@@ -1364,7 +1364,7 @@ void TargetIntegralFOV::load ()
 	setTargetName (name.str().c_str());
 }
 
-void TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, __attribute__ ((unused)) double JD)
 {
 	*pos = integralFovCenter;
 }
@@ -1541,7 +1541,7 @@ TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs, d
 {
 }
 
-int TargetTerestial::considerForObserving (double JD)
+int TargetTerestial::considerForObserving (__attribute__ ((unused)) double JD)
 {
 	// we can obsere it any time..
 	return selectedAsGood ();

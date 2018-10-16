@@ -166,7 +166,7 @@ class IniSection:public std::list <IniValue >
 		 *
 		 * @callergraph
 		 */
-		const bool containedInBlockedBy (const char *querying_device);
+		bool containedInBlockedBy (const char *querying_device);
 
 	private:
 		std::string sectName;
@@ -310,7 +310,7 @@ class IniParser: public std::vector < IniSection * >
 		 *
 		 * @callergraph
 		 */
-		const bool blockDevice (const char *device_name, const char *querying_device);
+		bool blockDevice (const char *device_name, const char *querying_device);
 
 	protected:
 		virtual int getSpecialValues () { return 0; }

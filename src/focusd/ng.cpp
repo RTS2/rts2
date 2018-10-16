@@ -155,7 +155,7 @@ int NG::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return Focusd::setValue (old_value, new_value);
 }
 
-int NG::writePosition( int num )
+int NG::writePosition(__attribute__ ((unused)) int num )
 {
 
 	logStream( MESSAGE_INFO ) << "write position called" << sendLog;
@@ -187,6 +187,7 @@ int NG::isFocusing ()
 		case TCSNG_MOVE_CALLED:
 			if( _isMoving )
 				moveState->setValueInteger(TCSNG_MOVING);
+			__attribute__ ((fallthrough));
 		case TCSNG_MOVING:
 			if( !_isMoving )
 			{

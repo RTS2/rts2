@@ -289,7 +289,7 @@ MaxDomeII::~MaxDomeII ()
 	delete sconn;
 }
 
-double MaxDomeII::getSlitWidth (double alt)
+double MaxDomeII::getSlitWidth (__attribute__ ((unused)) double alt)
 {
   return 1;
 }

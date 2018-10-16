@@ -43,7 +43,7 @@ inline std::ostream & operator << (std::ostream & os, TPointModelTerm * term)
 }
 
 // status OK
-void TermME::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermME::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	// simple method
 	double dh;
@@ -57,7 +57,7 @@ void TermME::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 }
 
 // status OK
-void TermMA::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermMA::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	double d, h;
 
@@ -69,13 +69,13 @@ void TermMA::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 }
 
 // status: OK
-void TermIH::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermIH::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->ra = pos->ra + getValueDouble ();
 }
 
 // status: OK
-void TermID::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermID::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	// Add a zero point to the declination
 	pos->dec = pos->dec + getValueDouble ();
@@ -83,31 +83,31 @@ void TermID::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 }
 
 // status: OK
-void TermCH::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermCH::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->ra += getValueDouble () / cos (ln_deg_to_rad (pos->dec));
 }
 
 // status: OK
-void TermNP::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermNP::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * tan (ln_deg_to_rad (pos->dec));
 }
 
 // status: OK
-void TermFO::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermFO::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * cos (ln_deg_to_rad (pos->ra));
 }
 
 // status: ok
-void TermPHH::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermPHH::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * ln_deg_to_rad (pos->ra);
 }
 
 // status: ok
-void TermPDD::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermPDD::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * ln_deg_to_rad (pos->dec);
 }
@@ -134,22 +134,22 @@ void TermTX::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 	pos->dec += getValueDouble () * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) / ((sin (d) * sin (f) + cos (d) * cos (h) * cos (f)) * cos (d));
 }
 
-void TermHCEC::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermHCEC::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * cos (ln_deg_to_rad (pos->ra));
 }
 
-void TermHCES::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermHCES::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * sin (ln_deg_to_rad (pos->ra));
 }
 
-void TermDCEC::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermDCEC::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * cos (ln_deg_to_rad (pos->dec));
 }
 
-void TermDCES::apply (struct ln_equ_posn *pos, double tel_latitude_r)
+void TermDCES::apply (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * sin (ln_deg_to_rad (pos->dec));
 }
@@ -227,7 +227,7 @@ const char * TermHarmonics::getFunc (const char *in_func, int i)
 	return end;
 }
 
-double TermHarmonics::getValue (struct ln_equ_posn *pos, double tel_latitude_r, int i)
+double TermHarmonics::getValue (struct ln_equ_posn *pos, __attribute__ ((unused)) double tel_latitude_r, int i)
 {
 	double val = mul[i];
 	//  struct ln_hrz_posn hrz;

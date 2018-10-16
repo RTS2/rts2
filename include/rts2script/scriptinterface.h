@@ -132,7 +132,7 @@ class ScriptInterface
 		 * @param ln_equ_posn  Position of next target.
 		 * @param JD           Julian data for which the position should be calculated.
 		 */
-		virtual void getPosition (struct ln_equ_posn *pos, double JD) { pos->ra = pos->dec = NAN; }
+		virtual void getPosition (struct ln_equ_posn *pos, __attribute__ ((unused))double JD) { pos->ra = pos->dec = NAN; }
 };
 
 }

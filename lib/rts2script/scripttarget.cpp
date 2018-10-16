@@ -46,27 +46,27 @@ void ScriptTarget::getPosition (struct ln_equ_posn *pos, double JD)
 	master->getPosition (pos, JD);
 }
 
-int ScriptTarget::setNextObservable (time_t * time_ch)
+int ScriptTarget::setNextObservable (__attribute__ ((unused)) time_t * time_ch)
 {
 	return 0;
 }
 
-void ScriptTarget::setTargetBonus (float new_bonus, time_t * new_time)
+void ScriptTarget::setTargetBonus (__attribute__ ((unused)) float new_bonus, __attribute__ ((unused)) time_t * new_time)
 {
 
 }
 
-int ScriptTarget::save (bool overwrite)
-{
-	return 0;
-}
-
-int ScriptTarget::saveWithID (bool overwrite, int tar_id)
+int ScriptTarget::save (__attribute__ ((unused)) bool overwrite)
 {
 	return 0;
 }
 
-moveType ScriptTarget::startSlew (struct ln_equ_posn * position, std::string &p1, std::string &p2, bool update_position, int plan_id)
+int ScriptTarget::saveWithID (__attribute__ ((unused)) bool overwrite, __attribute__ ((unused)) int tar_id)
+{
+	return 0;
+}
+
+moveType ScriptTarget::startSlew (struct ln_equ_posn * position, __attribute__ ((unused)) std::string &p1, __attribute__ ((unused)) std::string &p2, __attribute__ ((unused)) bool update_position, __attribute__ ((unused)) int plan_id)
 {
 	position->ra = position->dec = 0;
 	return OBS_MOVE_FAILED;
@@ -77,6 +77,6 @@ int ScriptTarget::startObservation ()
 	return -1;
 }
 
-void ScriptTarget::writeToImage (rts2image::Image * image, double JD)
+void ScriptTarget::writeToImage (__attribute__ ((unused)) rts2image::Image * image, __attribute__ ((unused)) double JD)
 {
 }

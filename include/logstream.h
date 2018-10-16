@@ -71,7 +71,7 @@ class LogStream
 			return func (*this);
 		}
 
-		template < typename _charT > LogStream & operator << (_charT value)
+		template < typename _charT> LogStream & operator << (_charT value)
 		{
 			ls << value;
 			return *this;

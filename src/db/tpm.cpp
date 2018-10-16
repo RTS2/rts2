@@ -23,8 +23,9 @@
 #include <math.h>
 #include <time.h>
 #include <libnova/libnova.h>
-#include <wcstools/wcs.h>
-#include <wcstools/fitsfile.h>
+// FIXME: wcstools library put its files into `wcs` or `wcstools` directory depending on a system
+#include <wcs/wcs.h>
+#include <wcs/fitsfile.h>
 
 #include <ostream>
 #include <iostream>

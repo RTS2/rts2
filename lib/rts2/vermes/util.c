@@ -268,8 +268,8 @@ char*
 sprintfv(char* str, char* format, va_list ap)
 {
   va_list cp_ap;
-  size_t new_len;
-  size_t s_len = str == NULL ? 0 : strlen(str) + 1;
+  ssize_t new_len;
+  size_t s_len = (str == NULL) ? 0 : strlen(str) + 1;
     
 #ifdef __va_copy
   __va_copy(cp_ap, ap);
@@ -281,12 +281,12 @@ sprintfv(char* str, char* format, va_list ap)
   if (debug > 4) {
     fprintf(stderr, "str: %p, cur len: %ld, new len: %ld.\n", str, (long int)s_len, (long int)new_len);
   }
-  if (new_len < 0) {
+  if (new_len < 0) { // should be ssize_t
     sys_debug_log(0, "sprintfv(): could not determine formatted length.");
     return NULL;
   }
 
-  if (new_len >= s_len) {
+  if (new_len >= (ssize_t)s_len) {
     /* Reallocate buffer now that we know how much space is needed. */
     new_len++;
     str = realloc(str, new_len);

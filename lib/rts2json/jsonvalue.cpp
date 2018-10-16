@@ -164,7 +164,7 @@ void rts2json::jsonValue (rts2core::Value *value, bool extended, std::ostringstr
 		os << "," << value->isError () << "," << value->isWarning () << ",\"" << value->getDescription () << "\"]";
 }
 
-void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from, bool extended)
+void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, __attribute__ ((unused)) XmlRpc::HttpParams *params, double from, bool extended)
 {
 	os << "\"d\":{" << std::fixed;
 	double mfrom = NAN;

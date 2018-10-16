@@ -558,7 +558,9 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	switch (daemonize)
 	{
 		case IS_DAEMONIZED:
+		__attribute__ ((fallthrough));
 		case DO_DAEMONIZE:
+		__attribute__ ((fallthrough));
 		case CENTRALD_OK:
 			// if at least one centrald is running..
 			if (someCentraldRunning ())
@@ -583,6 +585,7 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 			syslog (prio, "%s", in_messageString);
 			if (daemonize == IS_DAEMONIZED)
 				break;
+		__attribute__ ((fallthrough));
 		case DONT_DAEMONIZE:
 			// print to stdout
 			rts2core::Block::sendMessage (in_messageType, in_messageString);
@@ -590,7 +593,7 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	}
 }
 
-void Daemon::centraldConnRunning (Connection *conn)
+void Daemon::centraldConnRunning (__attribute__ ((unused)) Connection *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
@@ -598,7 +601,7 @@ void Daemon::centraldConnRunning (Connection *conn)
 	}
 }
 
-void Daemon::centraldConnBroken (Connection *conn)
+void Daemon::centraldConnBroken (__attribute__ ((unused)) Connection *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
@@ -763,6 +766,7 @@ Value * Daemon::duplicateValue (Value * old_value, bool withVal)
 			}
 			if (dup_val)
 				break;
+			__attribute__ ((fallthrough));
 		case RTS2_VALUE_TIMESERIE:
 			dup_val = new ValueDoubleTimeserie (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
 			break;
@@ -1223,7 +1227,9 @@ void Daemon::setState (rts2_status_t new_state, const char *description, Connect
 	stateChanged (new_state, state, description, commandedConn);
 }
 
-void Daemon::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn)
+void Daemon::stateChanged (rts2_status_t new_state, __attribute__ ((unused)) rts2_status_t old_state,
+						__attribute__ ((unused)) const char *description,
+						__attribute__ ((unused))  Connection *commandedConn)
 {
 	state = new_state;
 }
@@ -1258,7 +1264,7 @@ void Daemon::signaledHUP ()
 	loadModefile ();
 }
 
-void Daemon::sigHUP (int sig)
+void Daemon::sigHUP (__attribute__ ((unused)) int sig)
 {
 	doHupIdleLoop = true;
 }

@@ -53,12 +53,12 @@ void Element::getDevice (char new_device[DEVICE_NAME_SIZE])
 		script->getDefaultDevice (new_device);
 }
 
-int Element::processImage (Image * image)
+int Element::processImage (__attribute__ ((unused)) Image * image)
 {
 	return -1;
 }
 
-int Element::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Element::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, __attribute__ ((unused)) rts2core::Command ** new_command, __attribute__ ((unused)) char new_device[DEVICE_NAME_SIZE])
 {
 	return NEXT_COMMAND_NEXT;
 }
@@ -173,7 +173,7 @@ int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::
 	return 0;
 }
 
-double ElementSequence::getExpectedDuration (int runnum)
+double ElementSequence::getExpectedDuration (__attribute__ ((unused)) int runnum)
 {
 	return repeats * (expTime + script->getFullReadoutTime ());
 }
@@ -225,7 +225,7 @@ int ElementImage::nextCommand (rts2core::DevClientCamera * camera, rts2core::Com
 	return 0;
 }
 
-double ElementImage::getExpectedDuration (int runnum)
+double ElementImage::getExpectedDuration (__attribute__ ((unused)) int runnum)
 {
 	return expTime + script->getFullReadoutTime ();
 }
@@ -250,7 +250,7 @@ ElementShiftStoreStart::ElementShiftStoreStart (Script * _script, float in_expTi
 	expTime = in_expTime;
 }
 
-int ElementShiftStoreStart::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementShiftStoreStart::nextCommand (__attribute__ ((unused)) rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new rts2core::CommandShiftStart (script->getMaster (), expTime, BOP_EXPOSURE);
 	getDevice (new_device);
@@ -263,7 +263,7 @@ ElementShiftStoreProgress::ElementShiftStoreProgress (Script * _script, int in_s
 	expTime = in_expTime;
 }
 
-int ElementShiftStoreProgress::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementShiftStoreProgress::nextCommand (__attribute__ ((unused)) rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new rts2core::CommandShiftProgress (script->getMaster (), shift, expTime, BOP_EXPOSURE);
 	getDevice (new_device);
@@ -275,7 +275,7 @@ ElementShiftStoreEnd::ElementShiftStoreEnd (Script * _script, int in_shift, floa
 	shift = in_shift;
 }
 
-int ElementShiftStoreEnd::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementShiftStoreEnd::nextCommand (__attribute__ ((unused)) rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new rts2core::CommandShiftEnd (script->getMaster (), shift, expTime, BOP_EXPOSURE);
 	getDevice (new_device);
@@ -317,7 +317,7 @@ ElementChange::ElementChange (Script * _script, char new_device[DEVICE_NAME_SIZE
 	setChangeRaDec (in_ra, in_dec);
 }
 
-int ElementChange::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementChange::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new rts2core::CommandChange (script->getMaster (), ra, dec);
 	strcpy (new_device, deviceName);
@@ -328,7 +328,7 @@ ElementWait::ElementWait (Script * _script):Element (_script)
 {
 }
 
-int ElementWait::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWait::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, __attribute__ ((unused)) rts2core::Command ** new_command, __attribute__ ((unused)) char new_device[DEVICE_NAME_SIZE])
 {
 	return NEXT_COMMAND_CHECK_WAIT;
 }
@@ -338,7 +338,7 @@ ElementWaitAcquire::ElementWaitAcquire (Script * _script, int in_tar_id):Element
 	tar_id = in_tar_id;
 }
 
-int ElementWaitAcquire::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWaitAcquire::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, __attribute__ ((unused)) rts2core::Command ** new_command, __attribute__ ((unused)) char new_device[DEVICE_NAME_SIZE])
 {
 	AcquireQuery ac = AcquireQuery (tar_id);
 	// detect is somebody plans to run A command..
@@ -394,7 +394,7 @@ void ElementSendSignal::postEvent (rts2core::Event * event)
 	Element::postEvent (event);
 }
 
-int ElementSendSignal::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementSendSignal::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, __attribute__ ((unused)) rts2core::Command ** new_command, __attribute__ ((unused)) char new_device[DEVICE_NAME_SIZE])
 {
 	// when some else script will wait reach point when it has to wait for
 	// this signal, it will not wait as it will ask before enetring wait
@@ -409,7 +409,7 @@ ElementWaitSignal::ElementWaitSignal (Script * _script, int in_sig):Element (_sc
 	sig = in_sig;
 }
 
-int ElementWaitSignal::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWaitSignal::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, __attribute__ ((unused)) rts2core::Command ** new_command, __attribute__ ((unused)) char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 
@@ -551,7 +551,7 @@ int ElementComment::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 	return 0;
 }
 
-int ElementCommand::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementCommand::defnextCommand (__attribute__ ((unused)) rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	std::ostringstream os;
 	os << cmd;

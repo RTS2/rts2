@@ -70,7 +70,7 @@ class DevClient:public Object
 		 *
 		 * @param fn full path to the file holding exposure data
 		 */
-		virtual void fitsData (const char *fn) {}
+		virtual void fitsData (__attribute__ ((unused)) const char *fn) {}
 
 		virtual void stateChanged (ServerState * state);
 
@@ -86,7 +86,7 @@ class DevClient:public Object
 
 		void queCommand (Command * cmd, int notBop) { connection->queCommand (cmd, notBop); }
 
-		void commandReturn (Command * cmd, int status)
+		void commandReturn (__attribute__ ((unused)) Command * cmd, int status)
 		{
 			if (status)
 				incFailedCount ();
@@ -109,9 +109,9 @@ class DevClient:public Object
 
 		virtual void idle ();
 
-		virtual void valueChanged (Value * value) {}
+		virtual void valueChanged (__attribute__ ((unused)) Value * value) {}
 
-		virtual void deleteConnection (Connection *conn) {};
+		virtual void deleteConnection (__attribute__ ((unused)) Connection *conn) {};
 
 	protected:
 		Connection * connection;
@@ -158,9 +158,9 @@ class DevClientCamera:public DevClient
 		virtual void stateChanged (ServerState * state);
 
 		virtual void filterOK () {}
-		virtual void filterFailed (int status) {}
+		virtual void filterFailed (__attribute__ ((unused)) int status) {}
 		virtual void focuserOK () {}
-		virtual void focuserFailed (int status) {}
+		virtual void focuserFailed (__attribute__ ((unused)) int status) {}
 
 		bool isIdle ();
 		bool isExposing ();
@@ -190,7 +190,7 @@ class DevClientTelescope:public DevClient
 		DevClientTelescope (Connection * in_connection);
 		virtual ~ DevClientTelescope (void);
 		/*! gets calledn when move finished without success */
-		virtual void moveFailed (int status)
+		virtual void moveFailed (__attribute__ ((unused)) int status)
 		{
 			moveWasCorrecting = false;
 		}

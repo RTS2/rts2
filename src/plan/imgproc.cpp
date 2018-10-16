@@ -381,6 +381,7 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 			sendValueAll (nightBadImages);
 			sendValueAll (nightDarks);
 			sendValueAll (nightFlats);
+			__attribute__ ((fallthrough)); // ?
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
 			if (!(new_state & SERVERD_ONOFF_MASK))
@@ -394,6 +395,7 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 				reprocessingPossible = 0;
 				break;
 			}
+			__attribute__ ((fallthrough));
 		default:
 			if (strlen (image_glob->getValue ()))
 			{
@@ -677,7 +679,7 @@ int ImageProc::checkNotProcessed ()
 	globPos = 0;
 
 	// start files queue and fill all free worker slots
-	for (int i = 0; i < imageGlob.gl_pathc && getFreeSlot() >= 0; i++)
+	for (int i = 0; i < (int)imageGlob.gl_pathc && getFreeSlot() >= 0; i++)
 		queNextFromGlob();
 
 	return 0;

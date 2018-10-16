@@ -541,6 +541,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 				break;
 			}
 			// don't break, as sidereal tracking will be used
+			__attribute__ ((fallthrough));
 		default:
 			// get from ORI, if constant..
 			getOrigin (out_tar);
@@ -615,7 +616,7 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	return 0;
 }
 
-int Telescope::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Telescope::sky2counts (__attribute__ ((unused)) const double utc1, __attribute__ ((unused)) const double utc2, __attribute__ ((unused)) struct ln_equ_posn *pos, __attribute__ ((unused)) struct ln_hrz_posn *hrz_out, __attribute__ ((unused)) int32_t &ac, __attribute__ ((unused)) int32_t &dc, __attribute__ ((unused)) bool writeValues, __attribute__ ((unused)) double haMargin, __attribute__ ((unused)) bool forceShortest)
 {
 	return -1;
 }
@@ -2556,12 +2557,12 @@ void Telescope::signaledHUP ()
 	rts2core::Device::signaledHUP ();
 }
 
-void Telescope::startOffseting (rts2core::Value *changed_value)
+void Telescope::startOffseting (__attribute__ ((unused)) rts2core::Value *changed_value)
 {
 	startResyncMove (NULL, 0);
 }
 
-int Telescope::peek (double ra, double dec)
+int Telescope::peek (__attribute__ ((unused)) double ra, __attribute__ ((unused)) double dec)
 {
 	return 0;
 }

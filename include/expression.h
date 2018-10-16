@@ -37,7 +37,7 @@ class Expression
 		virtual double evaluate () = 0;
 
 		virtual Expression* add (op_t _op);
-		virtual Expression* add (Expression *_exp) { throw rts2core::Error ("missing operand"); }
+		virtual Expression* add (__attribute__ ((unused)) Expression *_exp) { throw rts2core::Error ("missing operand"); }
 
 		/**
 		 * Throw error if expression is not complete.

@@ -421,12 +421,12 @@ class CommandSendKey:public Command
 		CommandSendKey (Block * _master, int _centrald_id, int _centrald_num, int _key);
 		virtual int send ();
 
-		virtual int commandReturnOK (Connection * conn)
+		virtual int commandReturnOK (__attribute__ ((unused)) Connection * conn)
 		{
 			connection->setConnState (CONN_AUTH_OK);
 			return -1;
 		}
-		virtual int commandReturnFailed (int status, Connection * conn)
+		virtual int commandReturnFailed (__attribute__ ((unused)) int status, __attribute__ ((unused)) Connection * conn)
 		{
 			connection->setConnState (CONN_AUTH_FAILED);
 			return -1;
@@ -442,7 +442,7 @@ class CommandAuthorize:public Command
 {
 	public:
 		CommandAuthorize (Block * _master, int centralId, int key);
-		virtual int commandReturnFailed (int status, Connection * conn)
+		virtual int commandReturnFailed (__attribute__ ((unused)) int status, Connection * conn)
 		{
 			logStream (MESSAGE_ERROR) << "authentification failed for connection " << conn->getName ()
 				<< " centrald num " << conn->getCentraldNum ()

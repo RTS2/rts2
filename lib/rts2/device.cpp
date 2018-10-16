@@ -279,7 +279,7 @@ void DevConnectionMaster::connConnected ()
 	queSend (new CommandRegister (getMaster (), getCentraldNum (), device_name, device_type, device_host, device_port));
 }
 
-void DevConnectionMaster::connectionError (int last_data_size)
+void DevConnectionMaster::connectionError (__attribute__ ((unused)) int last_data_size)
 {
 	if (sock > 0)
 	{
@@ -882,7 +882,7 @@ rts2core::Value * Device::getValue (const char *_device_name, const char *value_
 	return Daemon::getValue (_device_name, value_name);
 }
 
-int Device::maskQueValueBopState (rts2_status_t new_state, int valueQueCondition)
+int Device::maskQueValueBopState (rts2_status_t new_state, __attribute__ ((unused)) int valueQueCondition)
 {
 	return new_state;
 }

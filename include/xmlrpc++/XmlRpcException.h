@@ -65,7 +65,7 @@ namespace XmlRpc
 
 			//! Return the error message.
 			const std::string& getMessage() const { return _message; }
-			const int getCode () const { return _code; }
+			int getCode () const { return _code; }
 		private:
 			std::string _message;
 			int _code;

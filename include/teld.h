@@ -238,7 +238,7 @@ class Telescope:public rts2core::Device
 		 * @param ra  RA correction
 		 * @param dec DEC correction
 		 */
-		virtual int applyCorrectionsFixed (double ra, double dec) { return -1; }
+		virtual int applyCorrectionsFixed (__attribute__ ((unused)) double ra, __attribute__ ((unused)) double dec) { return -1; }
 	
 		/**
 		 * Returns telescope target RA.
@@ -863,7 +863,7 @@ class Telescope:public rts2core::Device
 		 *
 		 * @return -1 on error, otherwise 0
 		 */
-		virtual int setTo (double set_ra, double set_dec) { return -1; }
+		virtual int setTo (__attribute__ ((unused)) double set_ra, __attribute__ ((unused)) double set_dec) { return -1; }
 
 		/**
 		 * Set telescope to park position.

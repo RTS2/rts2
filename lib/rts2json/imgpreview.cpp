@@ -206,7 +206,7 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
-void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label, float quantiles, int chan, int colourVariant)
+void Previewer::imageHref (std::ostringstream& _os, __attribute__ ((unused)) int i, const char *fpath, int prevsize, const char *label, float quantiles, int chan, int colourVariant)
 {
 	std::string fp (fpath);
 	XmlRpc::urlencode (fp, true);
@@ -415,7 +415,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 #endif /* RTS2_HAVE_LIBJPEG */
 
-void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void FitsImageRequest::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/fits";
 	int f = open (path.c_str (), O_RDONLY);
@@ -439,7 +439,7 @@ void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	close (f);
 }
 
-void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void DownloadRequest::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, __attribute__ ((unused)) std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 
 #ifndef RTS2_HAVE_LIBARCHIVE
@@ -510,7 +510,7 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 	buf = NULL;
 }
 
-int open_callback (struct archive *a, void *client_data)
+int open_callback (__attribute__ ((unused)) struct archive *a, void *client_data)
 {
 	DownloadRequest *dr = (DownloadRequest *) client_data;
 
@@ -522,7 +522,7 @@ int open_callback (struct archive *a, void *client_data)
 	return ARCHIVE_OK;
 }
 
-ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length)
+ssize_t write_callback (__attribute__ ((unused)) struct archive *a, void *client_data, const void *buffer, size_t length)
 {
 	DownloadRequest * dr = (DownloadRequest *) client_data;
 	dr->buf = (char *) realloc (dr->buf, dr->buf_size + length);
@@ -532,7 +532,7 @@ ssize_t write_callback (struct archive *a, void *client_data, const void *buffer
 	return length;
 }
 
-int close_callback (struct archive *a, void *client_data)
+int close_callback (__attribute__ ((unused)) struct archive *a, __attribute__ ((unused)) void *client_data)
 {
 	return ARCHIVE_OK;
 }

@@ -159,7 +159,7 @@ class base64
 		};
 
 		template<class _II, class _OI, class _State, class _Endline>
-			_II put(_II _First, _II _Last, _OI _To, _State& _St, _Endline _Endl)  const
+			_II put(_II _First, _II _Last, _OI _To, __attribute__ ((unused)) _State& _St, __attribute__ ((unused)) _Endline _Endl)  const
 		{
 			three2four _3to4;
 			int line_octets = 0;

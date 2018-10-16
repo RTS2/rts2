@@ -62,17 +62,17 @@ AS_IF([test "x$HIREDIS_LIBS" != x], [
 # check for lang
 AC_LANG_CPLUSPLUS
 
-CFLAGS="-Wall -Wshadow -g"
+CFLAGS="-Wall -Werror -Wextra -Wshadow -g"
 AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g"
+CXXFLAGS="-Wall -Werror -Wextra -Wshadow -g"
 AC_SUBST(CXXFLAGS)
 
-AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
-LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
-**** You don't have math library.
-**** Please install one and make sure, that it is available.
-EOF
-exit 1])
+#AC_CHECK_LIB([m], [cos], LIB_M="-lm";
+#LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
+#**** You don't have math library.
+#**** Please install one and make sure, that it is available.
+#EOF
+#exit 1])
 
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)

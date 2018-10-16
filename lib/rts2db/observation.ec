@@ -317,7 +317,7 @@ void Observation::startObservation ()
 	EXEC SQL COMMIT;
 }
 
-void Observation::endObservation (int _obs_state)
+void Observation::endObservation (__attribute__ ((unused)) int _obs_state)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
@@ -474,7 +474,7 @@ int Observation::getUnprocessedCount ()
 	return db_count;
 }
 
-int Observation::checkUnprocessedImages (rts2core::Block *master)
+int Observation::checkUnprocessedImages (__attribute__ ((unused)) rts2core::Block *master)
 {
 	int ret;
 	load ();

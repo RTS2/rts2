@@ -708,11 +708,11 @@ void Deep_dpper( const tle_t *tle, deep_arg_t *deep_arg)
    if( tle->xincl >= 0.2)
       {
              /* Apply periodics directly */
-      const double sinis = sin(deep_arg->xinc);
-      const double cosis = cos(deep_arg->xinc);
-      const double temp_val = deep_arg->ph / sinis;
+      const double s = sin(deep_arg->xinc);
+      const double c = cos(deep_arg->xinc);
+      const double temp_val = deep_arg->ph / s;
 
-      deep_arg->omgadf -= cosis * temp_val;
+      deep_arg->omgadf -= c * temp_val;
       deep_arg->xnode += temp_val;
       }
    else

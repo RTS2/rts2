@@ -242,7 +242,7 @@ int AzCam3::processOption (int opt)
 	return 0;	
 }
 
-void AzCam3::valueChanged ( rts2core::Value *changed_value )
+void AzCam3::valueChanged ( __attribute__ ((unused)) rts2core::Value *changed_value )
 {
 }
 
@@ -629,7 +629,7 @@ int AzCam3::doReadout ()
 	return -1;
 }
 
-int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
+int AzCam3::shiftStoreStart (__attribute__ ((unused)) rts2core::Connection *conn, __attribute__ ((unused)) float exptime)
 {
 	int ret = setupDataConnection ();
 	if (ret)

@@ -220,7 +220,7 @@ char * ConnGpib::getValueBuffer (const char *buf, char *rb)
 		if (strncasecmp (rb, buf, strlen (buf) - 1) == 0)
 			return rb + strlen (buf);
 		else
-			return "";
+			return (char*)"";
 	}
 	else
 	{

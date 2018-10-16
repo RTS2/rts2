@@ -247,7 +247,7 @@ class Target:public Rts2Target
 		// return target semi-diameter, in degrees
 		double getSDiam () { return getSDiam (ln_get_julian_from_sys ()); }
 
-		virtual double getSDiam (double JD)
+		virtual double getSDiam (__attribute__ ((unused)) double JD)
 		{
 			// 30 arcsec..
 			return 30.0 / 3600.0;
@@ -946,7 +946,7 @@ class DarkTarget:public Target
 		virtual ~ DarkTarget (void);
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
-		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon) { return 1; }
+		virtual int getRST (__attribute__ ((unused)) struct ln_rst_time *rst, __attribute__ ((unused)) double JD, __attribute__ ((unused)) double horizon) { return 1; }
 		virtual moveType startSlew (struct ln_equ_posn * position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1);
 		virtual int isContinues () { return 1; }
 };
@@ -985,7 +985,7 @@ class PosCalibration:public Target
 		}
 		double getCurrAirmass () { return currAirmass; }
 
-		virtual void getPosition (struct ln_equ_posn *in_pos, double JD)
+		virtual void getPosition (struct ln_equ_posn *in_pos, __attribute__ ((unused)) double JD)
 		{
 			in_pos->ra = object.ra;
 			in_pos->dec = object.dec;
@@ -1013,7 +1013,7 @@ class CalibrationTarget:public ConstTarget
 		virtual int endObservation (int in_next_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
-		virtual int changePriority (int pri_change, time_t * time_ch) { return 0; }
+		virtual int changePriority (__attribute__ ((unused)) int pri_change, __attribute__ ((unused)) time_t * time_ch) { return 0; }
 		virtual float getBonus (double JD);
 		virtual int isContinues () { return 2; }
 	private:

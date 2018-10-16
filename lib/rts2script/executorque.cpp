@@ -27,7 +27,7 @@ using namespace rts2plan;
 
 int qid_seq = 0;
 
-QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, double _t_start, double _t_end, int _rep_n, float _rep_separation, int _plan_id, bool _hard, bool _persistent):QueueEntry (0, _queue_id)
+QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, double _t_start, double _t_end, int _rep_n, float _rep_separation, int _plan_id, bool _hard, __attribute__ ((unused)) bool _persistent):QueueEntry (0, _queue_id)
 {
 	target = _target;
 

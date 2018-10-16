@@ -96,13 +96,13 @@ class Rts2InfoValStream
 
 		template < class v > Rts2InfoValStream& operator << (InfoVal <v> _val);
 
-		virtual Rts2InfoValStream& operator << (const char* val)
+		virtual Rts2InfoValStream& operator << (__attribute__ ((unused)) const char* val)
 		{
 			return *this;
 		}
 
 		// for std::endl
-		virtual Rts2InfoValStream& operator<< (std::ostream& (*f)(std::ostream&))
+		virtual Rts2InfoValStream& operator<< (__attribute__ ((unused)) std::ostream& (*f)(std::ostream&))
 		{
 			return *this;
 		}

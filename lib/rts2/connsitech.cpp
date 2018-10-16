@@ -273,7 +273,7 @@ void ConnSitech::setPosition (const char axis, uint32_t target, uint32_t speed)
 	siTechCommand (axis, ccmd);
 }
 
-void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
+void ConnSitech::getControllerStatus (__attribute__ ((unused)) SitechControllerStatus &controller_status)
 {
 }
 
@@ -323,7 +323,7 @@ void ConnSitech::readAxisStatus ()
 
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
 {
-	size_t ret = writePort (cmd, len);
+	int ret = writePort (cmd, len);
 	if (ret < 0)
 		throw Error (std::string ("cannot write ") + cmd + " :" + strerror (errno));
 

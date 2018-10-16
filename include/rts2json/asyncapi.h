@@ -42,14 +42,14 @@ class AsyncAPI:public rts2core::Object
 		
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual void newDataConn (rts2core::Connection *_conn, int data_conn) {}
-		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *data) {}
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data) {}
-		virtual void exposureFailed (rts2core::Connection *_conn, int status) {}
-		virtual void exposureEnd (rts2core::Connection *_conn) {}
+		virtual void newDataConn (__attribute__ ((unused)) rts2core::Connection *_conn, __attribute__ ((unused)) int data_conn) {}
+		virtual void dataReceived (__attribute__ ((unused)) rts2core::Connection *_conn, __attribute__ ((unused)) rts2core::DataAbstractRead *data) {}
+		virtual void fullDataReceived (__attribute__ ((unused)) rts2core::Connection *_conn, __attribute__ ((unused)) rts2core::DataChannels *data) {}
+		virtual void exposureFailed (__attribute__ ((unused)) rts2core::Connection *_conn, __attribute__ ((unused)) int status) {}
+		virtual void exposureEnd (__attribute__ ((unused)) rts2core::Connection *_conn) {}
 
-		virtual void stateChanged (rts2core::Connection *_conn) {};
-		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value) {};
+		virtual void stateChanged (__attribute__ ((unused)) rts2core::Connection *_conn) {};
+		virtual void valueChanged (__attribute__ ((unused)) rts2core::Connection *_conn, __attribute__ ((unused)) rts2core::Value *_value) {};
 
 		/**
 		 * Check if the request is for connection or source..

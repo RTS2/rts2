@@ -112,7 +112,7 @@ void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
 	pos->dec = ln_rad_to_deg (pos->dec);
 }
 
-int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int TLETarget::getRST (__attribute__ ((unused)) struct ln_rst_time *rst, __attribute__ ((unused)) double JD, __attribute__ ((unused)) double horizon)
 {
 	return 0;
 }
@@ -129,7 +129,7 @@ moveType TLETarget::startSlew (struct ln_equ_posn *position, std::string &p1, st
 	return Target::startSlew (position, p1, p2, update_position, plan_id);
 }
 
-void TLETarget::printExtra (Rts2InfoValStream & _os, double JD)
+void TLETarget::printExtra (Rts2InfoValStream & _os, __attribute__ ((unused)) double JD)
 {
 	Target::printExtra (_os, JD);
 
@@ -147,12 +147,12 @@ void TLETarget::writeToImage (rts2image::Image * image, double JD)
 	image->setValue ("TLE2", tle2.c_str (), "TLE 2nd line");
 }
 
-double TLETarget::getEarthDistance (double JD)
+double TLETarget::getEarthDistance (__attribute__ ((unused)) double JD)
 {
 	return 0;
 }
 
-double TLETarget::getSolarDistance (double JD)
+double TLETarget::getSolarDistance (__attribute__ ((unused)) double JD)
 {
 	return 0;
 }

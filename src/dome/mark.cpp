@@ -105,7 +105,7 @@ class Mark:public Cupola
 		virtual int standby ();
 		virtual int off ();
 
-		virtual double getSlitWidth (double alt)
+		virtual double getSlitWidth (__attribute__ ((unused)) double alt)
 		{
 			return 5;
 		}

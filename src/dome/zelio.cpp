@@ -849,6 +849,7 @@ int Zelio::info ()
 				domeTimeout->setValueInteger (-1);
 			else
 				domeTimeout->setValueInteger ((regs[2] & ZI_TIMEOUT_MASK) >> 7);
+			__attribute__ ((fallthrough));
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			if (onPower)
@@ -856,10 +857,12 @@ int Zelio::info ()
 				onPower->setValueBool (regs[7] & ZS_POWER);
 				sendValueAll (onPower);
 			}
+			__attribute__ ((fallthrough));
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_SIMPLE:
 			sendSwInfo (regs + 4);
+			__attribute__ ((fallthrough));
 		case ZELIO_UNKNOW:
 			break;
 	}
@@ -1038,11 +1041,12 @@ void Zelio::createZelioValues ()
 			createValue (blockOpenLeft, "block_open", "open block", false);
 			createValue (blockCloseLeft, "block_close", "close block", false);
 			break;
-	
+
 		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			if (createonPower)
 				createValue (onPower, "on_power", "true if power is connected", false);
+			__attribute__ ((fallthrough));
 		case ZELIO_FRAM:
 		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
@@ -1260,7 +1264,7 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 				sendValueAll (blockOpenRight);
 				sendValueAll (blockCloseRight);
 			}
-
+			__attribute__ ((fallthrough));
 		case ZELIO_SIMPLE:
 			if (swOpenLeft->getValueBool () != !!(regs[0] & ZO_EP_OPEN))
 				logStream (MESSAGE_INFO) << "open " << (zelioModel == ZELIO_SIMPLE ? "" : "left ") << "changed value to " << (regs[0] & ZO_EP_OPEN) << sendLog;

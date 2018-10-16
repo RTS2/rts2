@@ -391,14 +391,14 @@ void ConstraintTime::load (xmlNodePtr cons)
 	}
 }
 
-bool ConstraintTime::satisfy (Target *target, double JD, double *nextJD)
+bool ConstraintTime::satisfy (__attribute__ ((unused)) Target *target, double JD, double *nextJD)
 {
 	if (nextJD)
 		*nextJD = 0;
 	return isBetween (JD);
 }
 
-void ConstraintTime::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+void ConstraintTime::getSatisfiedIntervals (__attribute__ ((unused)) Target *tar, time_t from, time_t to, __attribute__ ((unused)) int step, interval_arr_t &ret)
 {
 	// get list of satisfied intervals
 	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
@@ -526,7 +526,7 @@ void ConstraintLunarDistance::getSatisfiedIntervals (Target *tar, time_t from, t
 	}
 }
 
-bool ConstraintLunarAltitude::satisfy (Target *tar, double JD, double *nextJD)
+bool ConstraintLunarAltitude::satisfy (__attribute__ ((unused)) Target *tar, double JD, double *nextJD)
 {
 	struct ln_equ_posn eq_lun;
 	struct ln_hrz_posn hrz_lun;
@@ -537,7 +537,7 @@ bool ConstraintLunarAltitude::satisfy (Target *tar, double JD, double *nextJD)
 	return isBetween (hrz_lun.alt);
 }
 
-bool ConstraintLunarPhase::satisfy (Target *tar, double JD, double *nextJD)
+bool ConstraintLunarPhase::satisfy (__attribute__ ((unused)) Target *tar, double JD, double *nextJD)
 {
 	if (nextJD)
 		*nextJD = 0;
@@ -558,7 +558,7 @@ bool ConstraintSolarDistance::satisfy (Target *tar, double JD, double *nextJD)
 	return isBetween (sd);
 }
 
-bool ConstraintSunAltitude::satisfy (Target *tar, double JD, double *nextJD)
+bool ConstraintSunAltitude::satisfy (__attribute__ ((unused)) Target *tar, double JD, double *nextJD)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn hrz_sun;
@@ -576,7 +576,7 @@ void ConstraintMaxRepeat::load (xmlNodePtr cons)
 	maxRepeat = atoi ((const char *) cons->children->content);
 }
 
-bool ConstraintMaxRepeat::satisfy (Target *tar, double JD, double *nextJD)
+bool ConstraintMaxRepeat::satisfy (Target *tar, __attribute__ ((unused)) double JD, double *nextJD)
 {
 	if (nextJD)
 		*nextJD = NAN;
@@ -601,7 +601,7 @@ void ConstraintMaxRepeat::printJSON (std::ostream &os)
 	os << "\"" << getName () << "\":" << maxRepeat;
 }
 
-void ConstraintMaxRepeat::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+void ConstraintMaxRepeat::getSatisfiedIntervals (Target *tar, time_t from, time_t to, __attribute__ ((unused)) int step, interval_arr_t &ret)
 {
 	if (maxRepeat <= 0 || tar->getTotalNumberOfObservations () < maxRepeat)
 		ret.push_back ( std::pair <time_t, time_t> (from, to) );
@@ -738,7 +738,7 @@ size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satis
 	return satisfied.size ();
 }
 
-void Constraints::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
+void Constraints::getSatisfiedIntervals (Target *tar, time_t from, time_t to, __attribute__ ((unused)) int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	satisfiedIntervals.clear ();
 	satisfiedIntervals.push_back (std::pair <time_t, time_t> (from, to));

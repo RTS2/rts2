@@ -391,7 +391,7 @@ class Value
 
 		int setValueString (std::string in_value) { return setValueCharArr (in_value.c_str ()); }
 
-		virtual int setValueInteger (int in_value) { return -1; }
+		virtual int setValueInteger (__attribute__ ((unused)) int in_value) { return -1; }
 
 		/**
 		 * Performs operation on value.
@@ -415,7 +415,7 @@ class Value
 		 * Returns part value as string.
 		 * Use to expand subvalues, like RA/DEC for ValueRaDec.
 		 */
-		virtual const char *getDisplaySubValue (const char *subv) { return getDisplayValue (); }
+		virtual const char *getDisplaySubValue (__attribute__ ((unused)) const char *subv) { return getDisplayValue (); }
 
 		int32_t getValueWriteFlags () { return rts2Type & RTS2_VWHEN_MASK; }
 
@@ -434,9 +434,9 @@ class Value
 
 		void setDescription (std::string ndesc) { description = ndesc; }
 
-		const int getValueType () { return rts2Type & RTS2_VALUE_MASK; }
+		int getValueType () { return rts2Type & RTS2_VALUE_MASK; }
 
-		const int getValueExtType () { return rts2Type & RTS2_EXT_TYPE; }
+		int getValueExtType () { return rts2Type & RTS2_EXT_TYPE; }
 
 		bool onlyFitsHeader () { return rts2Type & RTS2_FITS_HEADERS; }
 
@@ -444,7 +444,7 @@ class Value
 		 * Returns true if value should be autosaved.
 		 * Can be overwritten to signal values which shall not be autosaved (unknow,..).
 		 */
-		virtual bool isAutosave () { return rts2Type & RTS2_VALUE_AUTOSAVE; }
+		virtual bool isAutosave () { return (rts2Type & RTS2_VALUE_AUTOSAVE); }
 
 		bool isWritable () { return rts2Type & RTS2_VALUE_WRITABLE; }
 
@@ -454,7 +454,7 @@ class Value
 		 *
 		 * @return Value base type.
 		 */
-		const int getValueBaseType () { return rts2Type & RTS2_BASE_TYPE; }
+		int getValueBaseType () { return rts2Type & RTS2_BASE_TYPE; }
 
 		void setWriteToFits () { rts2Type |= RTS2_VALUE_FITS; }
 

@@ -65,7 +65,7 @@ class TargetAuger:public rts2db::ConstTarget
 		virtual float getBonus (double JD);
 		virtual moveType afterSlewProcessed ();
 		virtual int considerForObserving (double JD);
-		virtual int changePriority (int pri_change, time_t * time_ch)
+		virtual int changePriority (__attribute__ ((unused)) int pri_change, __attribute__ ((unused)) time_t * time_ch)
 		{
 			// do not drop priority
 			return 0;

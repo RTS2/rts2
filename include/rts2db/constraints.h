@@ -149,7 +149,7 @@ class Constraint
 		 * altitude-based constraints - e.g. airmass and zenith
 		 * distance.
 		 */
-		virtual void getAltitudeIntervals (std::vector <ConstraintDoubleInterval> &ac) { throw rts2core::Error ("getAltitudeIntervals is not supported"); }
+		virtual void getAltitudeIntervals (__attribute__ ((unused)) std::vector <ConstraintDoubleInterval> &ac) { throw rts2core::Error ("getAltitudeIntervals is not supported"); }
 
 		void getAltitudeViolatedIntervals (std::vector <ConstraintDoubleInterval> &ac);
 };

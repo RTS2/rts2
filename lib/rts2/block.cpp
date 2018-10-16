@@ -436,19 +436,19 @@ int Block::deleteConnection (Connection * conn)
 	return -1;
 }
 
-void Block::connectionRemoved (Connection * conn)
+void Block::connectionRemoved (__attribute__ ((unused)) Connection * conn)
 {
 }
 
-void Block::deviceReady (Connection * conn)
+void Block::deviceReady (__attribute__ ((unused)) Connection * conn)
 {
 }
 
-void Block::deviceIdle (Connection * conn)
+void Block::deviceIdle (__attribute__ ((unused)) Connection * conn)
 {
 }
 
-void Block::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+void Block::changeMasterState (__attribute__ ((unused)) rts2_status_t old_state, __attribute__ ((unused)) rts2_status_t new_state)
 {
 	connections_t::iterator iter;
 	// send message to all connections that they can possibly continue executing..
@@ -586,7 +586,7 @@ void Block::childReturned (pid_t child_pid)
 		(*iter)->childReturned (child_pid);
 }
 
-int Block::willConnect (NetworkAddress * in_addr)
+int Block::willConnect (__attribute__ ((unused)) NetworkAddress * in_addr)
 {
 	return 0;
 }
@@ -861,7 +861,7 @@ Connection * Block::getConnection (char *deviceName)
 	return conn;
 }
 
-void Block::message (Message & msg)
+void Block::message (__attribute__ ((unused)) Message & msg)
 {
 }
 
@@ -957,7 +957,7 @@ Value * Block::getValueExpression (std::string expression, const char *defaultDe
 	return getValue (defaultDevice, expression.c_str ());
 }
 
-int Block::statusInfo (Connection * conn)
+int Block::statusInfo (__attribute__ ((unused)) Connection * conn)
 {
 	return 0;
 }

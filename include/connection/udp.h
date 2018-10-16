@@ -61,7 +61,7 @@ class ConnUDP:public ConnNoSend
 		 * @param from  address of the source (originator) of data
 		 */
 		virtual int process (size_t len, struct sockaddr_in &from) = 0;
-		virtual void connectionError (int last_data_size)
+		virtual void connectionError (__attribute__ ((unused)) int last_data_size)
 		{
 			// do NOT call Connection::connectionError, UDP connection must run forewer.
 			return;

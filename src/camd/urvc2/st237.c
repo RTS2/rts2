@@ -103,7 +103,7 @@ DigitizeLine_st237 (int left, int len, int horzBefore, int bin,
 }
 
 PAR_ERROR
-ClearArray_st237 (int height, int times, int left)
+ClearArray_st237 (int height, int times, __attribute__ ((unused)) int left)
 {
   return DumpLines_st237 (CCD_TOTAL_WIDTH, height * times, 1);
 }

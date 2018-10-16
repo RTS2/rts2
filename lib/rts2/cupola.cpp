@@ -146,7 +146,7 @@ void Cupola::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 	Dome::changeMasterState (old_state, new_state);
 }
 
-int Cupola::moveTo (rts2core::Connection * conn, double ra, double dec)
+int Cupola::moveTo (__attribute__ ((unused)) rts2core::Connection * conn, double ra, double dec)
 {
 	int ret;
 	tarRaDec->setValueRaDec (ra, dec);

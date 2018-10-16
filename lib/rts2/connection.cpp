@@ -666,7 +666,7 @@ int Connection::acceptConn ()
 	}
 }
 
-void Connection::setState (rts2_status_t in_value, char * msg)
+void Connection::setState (rts2_status_t in_value, __attribute__ ((unused)) char * msg)
 {
 	serverState->setValue (in_value);
 	if (otherDevice)
@@ -704,7 +704,7 @@ int Connection::getOtherType ()
 	return -1;
 }
 
-void Connection::updateStatusWait (Connection * conn)
+void Connection::updateStatusWait (__attribute__ ((unused)) Connection * conn)
 {
 	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_WAIT)
 		sendCommand ();
@@ -1474,6 +1474,7 @@ void Connection::sendCommand ()
 			case CIP_WAIT:
 				// if the bock bit is still set..
 				runningCommand->setStatusCallProgress (CIP_RUN);
+				__attribute__ ((fallthrough));
 			case CIP_RUN:
 				if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
 				{
@@ -1744,7 +1745,7 @@ void Connection::connConnected ()
 {
 }
 
-void Connection::connectionError (int last_data_size)
+void Connection::connectionError (__attribute__ ((unused)) int last_data_size)
 {
 	activeReadData = -1;
 	if (canDelete ())

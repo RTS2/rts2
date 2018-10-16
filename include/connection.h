@@ -447,7 +447,7 @@ class Connection:public Object
 		 *
 		 * @param in_addr New device address.
 		 */
-		virtual void addressUpdated (NetworkAddress * in_addr) {}
+		virtual void addressUpdated (__attribute__ ((unused)) NetworkAddress * in_addr) {}
 
 		virtual void setConnState (conn_state_t new_conn_state);
 
@@ -501,7 +501,7 @@ class Connection:public Object
 
 		Block *getMaster () { return master; }
 
-		virtual void childReturned (pid_t child_pid) {}
+		virtual void childReturned (__attribute__ ((unused)) pid_t child_pid) {}
 
 		/**
 		 * Search for value by value name.

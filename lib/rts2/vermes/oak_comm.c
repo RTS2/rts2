@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -250,7 +251,7 @@ int checkOakCall(EOakStatus status, const char *file, int line, const char* func
  *****************************************************************************/
 // wildi ToDo this thread must go into a separate file
 void *
-oak_digin_thread(void * args)
+oak_digin_thread(__attribute__ ((unused)) void * args)
 {
   int ret ;
   // wildi ToDo int *values = xmalloc(devInfo.numberOfChannels * sizeof(int));

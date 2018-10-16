@@ -45,7 +45,7 @@ void SimulQueueTargets::clearNext ()
 }
 
 
-TargetQueue::iterator SimulQueueTargets::removeEntry (TargetQueue::iterator &iter, const removed_t reason)
+TargetQueue::iterator SimulQueueTargets::removeEntry (TargetQueue::iterator &iter, __attribute__ ((unused)) const removed_t reason)
 {
 	delete iter->target;
 	return erase (iter);

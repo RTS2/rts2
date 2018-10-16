@@ -27,7 +27,7 @@
 
 using namespace rts2json;
 
-void AddTarget::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void AddTarget::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -159,7 +159,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void AddTarget::newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, size_t &response_length)
+void AddTarget::newTarget (__attribute__ ((unused)) const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 

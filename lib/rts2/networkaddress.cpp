@@ -59,7 +59,8 @@ int NetworkAddress::update (int _centrald_num, const char *_name, const char *ne
 int NetworkAddress::getSockaddr (struct addrinfo **info)
 {
 	char s_port[10];
-	struct addrinfo hints = {0};
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_flags = 0;
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;

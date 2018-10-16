@@ -155,7 +155,7 @@ class ngDome:public Cupola
 			return Cupola::initValues ();
 		}
 
-		virtual double getSlitWidth (double alt)
+		virtual double getSlitWidth (__attribute__ ((unused)) double alt)
 		{
 			return 1;
 		}

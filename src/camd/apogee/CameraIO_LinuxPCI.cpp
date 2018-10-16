@@ -109,7 +109,7 @@ CCameraIO::~CCameraIO ()
 // System methods
 
 int
-GetPriorityClass (HANDLE hProcess)
+GetPriorityClass (__attribute__ ((unused)) HANDLE hProcess)
 {
 	int i;
 	i = sched_getscheduler (0);
@@ -118,7 +118,7 @@ GetPriorityClass (HANDLE hProcess)
 
 
 int
-SetPriorityClass (HANDLE hProcess, int hPriority)
+SetPriorityClass (__attribute__ ((unused)) HANDLE hProcess, int hPriority)
 {
 	sched_param p;
 
@@ -135,7 +135,7 @@ SetPriorityClass (HANDLE hProcess, int hPriority)
 
 
 void
-Sleep (int hTime)
+Sleep (__attribute__ ((unused)) int hTime)
 {
 	//timespec t;
 	//t.tv_sec = 0;
@@ -145,7 +145,7 @@ Sleep (int hTime)
 
 
 void
-ATLTRACE (const char *msg)
+ATLTRACE (__attribute__ ((unused)) const char *msg)
 {
 }
 
@@ -550,12 +550,12 @@ CCameraIO::Expose (double Duration, bool Light)
 
 
 bool
-CCameraIO::BufferImage (char *bufferName)
+CCameraIO::BufferImage (__attribute__ ((unused)) char *bufferName)
 {
 	unsigned short *pImageData;
 	bool status;
 	short xSize, ySize;
-
+// WTF???
 	pImageData = NULL;			 //(unsigned short *)CCD_locate_buffer(bufferName, 2 , cols, rows, hbin, vbin );
 	if (pImageData == NULL)
 	{
@@ -849,7 +849,7 @@ CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 
 
 bool
-CCameraIO::BufferDriftScan (char *bufferName, int delay, int rowCount,
+CCameraIO::BufferDriftScan (__attribute__ ((unused)) char *bufferName, int delay, int rowCount,
 int nblock)
 {
 	unsigned short *pImageData, *ptr;

@@ -53,7 +53,7 @@ int Value::checkNotNull ()
 	return 1;
 }
 
-int Value::doOpValue (char op, Value * old_value)
+int Value::doOpValue (char op, __attribute__ ((unused)) Value * old_value)
 {
 	switch (op)
 	{

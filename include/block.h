@@ -373,7 +373,7 @@ class Block: public App
 		 *
 		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK)
 		 */
-		const rts2_status_t getMasterState ()
+		rts2_status_t getMasterState ()
 		{
 			return masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK);
 		}
@@ -383,7 +383,7 @@ class Block: public App
 		 *
 		 * @return Master state.
 		 */
-		const rts2_status_t getMasterStateFull ()
+		rts2_status_t getMasterStateFull ()
 		{
 			return masterState;
 		}
@@ -583,7 +583,7 @@ class Block: public App
 		 *
 		 * @param conn centrald connection
 		 */
-		virtual void centraldConnRunning (Connection *conn)
+		virtual void centraldConnRunning (__attribute__ ((unused)) Connection *conn)
 		{
 		}
 
@@ -594,11 +594,11 @@ class Block: public App
 		 *
 		 * @param conn broken centrald connection
 		 */
-		virtual void centraldConnBroken (Connection *conn)
+		virtual void centraldConnBroken (__attribute__ ((unused)) Connection *conn)
 		{
 		}
 
-		virtual int setValue (Connection * conn)
+		virtual int setValue (__attribute__ ((unused)) Connection * conn)
 		{
 			return -2;
 		}
@@ -630,7 +630,8 @@ class Block: public App
 
 		virtual int statusInfo (Connection * conn);
 
-		virtual int progress (Connection *conn, double start, double end) { return -1; }
+		virtual int progress (__attribute__ ((unused)) Connection *conn, __attribute__ ((unused)) double start,
+								__attribute__ ((unused)) double end) { return -1; }
 
 		/**
 		 * Check if command was not replied.
@@ -679,7 +680,7 @@ class Block: public App
 		/**
 		 * Called when modified file entry is read from inotify file descriptor.
 		 */
-		virtual void fileModified (struct inotify_event *event) {};
+		virtual void fileModified (__attribute__ ((unused)) struct inotify_event *event) {};
 
 		/**
 		 * Add entry to block pole.

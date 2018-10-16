@@ -111,7 +111,7 @@ class Focusd:public rts2core::Device
 		 *
 		 * @return -1 on error, 0 on success
 		 */
-		virtual int writePosition (double new_position)
+		virtual int writePosition (__attribute__ ((unused)) double new_position)
 		{
 			return -1;
 		}

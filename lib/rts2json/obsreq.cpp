@@ -28,7 +28,7 @@
 
 using namespace rts2json;
 
-void Observation::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Observation::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
@@ -51,7 +51,7 @@ void Observation::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	throw rts2core::Error ("Invalid path");
 }
 
-void Observation::printQuery (const char* &response_type, char* &response, size_t &response_length)
+void Observation::printQuery (__attribute__ ((unused)) const char* &response_type, __attribute__ ((unused)) char* &response, __attribute__ ((unused)) size_t &response_length)
 {
 
 }
@@ -124,7 +124,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Observation::obsApi (int obs_id, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	rts2db::Observation obs (obs_id);

@@ -490,7 +490,7 @@ void ConnExecute::connectionError (int last_data_size)
 	masterElement = NULL;
 }
 
-void ConnExecute::errorReported (int current_state, int old_state)
+void ConnExecute::errorReported (__attribute__ ((unused)) int current_state, __attribute__ ((unused)) int old_state)
 {
 	switch (exposure_started)
 	{
@@ -667,7 +667,7 @@ bool Execute::knowImage (Image *image)
 	return Element::knowImage (image);
 }
 
-int Execute::defnextCommand (rts2core::DevClient * _client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Execute::defnextCommand (rts2core::DevClient * _client, __attribute__ ((unused)) rts2core::Command ** new_command, __attribute__ ((unused)) char new_device[DEVICE_NAME_SIZE])
 {
 	if (connExecute == NULL)
 	{

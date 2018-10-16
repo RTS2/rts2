@@ -819,6 +819,7 @@ void NMonitor::processKey (int key)
 				activeWindow = NULL;
 				break;
 			}
+			__attribute__ ((fallthrough));
 		default:
 			ret = activeWindow->injectKey (key);
 			if (ret == RKEY_NOT_HANDLED)

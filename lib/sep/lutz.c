@@ -347,15 +347,15 @@ int lutz(pliststruct *plistin,
 /*
 Add an object to the object list based on info (pixel info)
 */
-void  lutzsort(infostruct *info, objliststruct *objlist)
+void  lutzsort(infostruct *inf, objliststruct *objlist) // declaration of 'info' shadows a global declaration
 {
   objstruct *obj = objlist->obj+objlist->nobj;
 
   memset(obj, 0, (size_t)sizeof(objstruct));
-  obj->firstpix = info->firstpix;
-  obj->lastpix = info->lastpix;
-  obj->flag = info->flag;
-  objlist->npix += info->pixnb;
+  obj->firstpix = inf->firstpix;
+  obj->lastpix = inf->lastpix;
+  obj->flag = inf->flag;
+  objlist->npix += inf->pixnb;
   
   preanalyse(objlist->nobj, objlist);
   

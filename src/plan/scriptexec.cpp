@@ -209,6 +209,7 @@ int ScriptExec::processOption (int in_opt)
 			break;
 		case 'o':
 			overwrite = true;
+			__attribute__ ((fallthrough));  // should it be here?
 		case 'e':
 			expandPath = new rts2core::ValueString ("expand_path");
 			expandPath->setValueString (optarg);
@@ -292,7 +293,7 @@ int ScriptExec::run ()
 	return ret;
 }
 
-void signal_winch (int sig)
+void signal_winch (__attribute__ ((unused)) int sig)
 {
 	setupterm (NULL, 2, NULL);
 }
@@ -456,13 +457,13 @@ int ScriptExec::idle ()
 	return rts2core::Client::idle ();
 }
 
-void ScriptExec::deviceIdle (rts2core::Connection * conn)
+void ScriptExec::deviceIdle (__attribute__ ((unused)) rts2core::Connection * conn)
 {
 	if (!isScriptRunning ())
 		endRunLoop ();
 }
 
-void ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
+void ScriptExec::getPosition (struct ln_equ_posn *pos, __attribute__ ((unused)) double JD)
 {
 	pos->ra = 20;
 	pos->dec = 20;

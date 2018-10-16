@@ -522,12 +522,14 @@ long Fram::isOpened ()
 				break;
 			flag = 1;
 			// follow on..
+			__attribute__ ((fallthrough));
 		case MOVE_OPEN_RIGHT:
 			openRight ();
 			break;
 		case MOVE_OPEN_RIGHT_WAIT:
 			if (!(isOn (KONCAK_OTEVRENI_PRAVY) || checkMotorTimeout ()))
 				break;
+			__attribute__ ((fallthrough));
 		default:
 			// if we are not opened..
 			if (!(isOn (KONCAK_OTEVRENI_PRAVY) || isOn (KONCAK_OTEVRENI_LEVY)))
@@ -634,6 +636,7 @@ long Fram::isClosed ()
 				break;
 			flag = 1;
 			// close dome..
+			__attribute__ ((fallthrough));
 		case MOVE_CLOSE_LEFT:
 			closeLeft ();
 			break;

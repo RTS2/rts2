@@ -70,7 +70,7 @@ const char * SolarSystem[] = { "Mercury", "Venus", "Moon", "Mars", "Jupiter", "S
 void getSexComponents(double value, int *d, int *m, int *s);
 
 
-int extractISOTime(char *timestr, struct ln_date *iso_date)
+int extractISOTime(__attribute__ ((unused)) char *timestr, __attribute__ ((unused)) struct ln_date *iso_date)
 {
   #ifdef RTS2_HAVE_NOVA_H	
   struct tm utm;

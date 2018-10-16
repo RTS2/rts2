@@ -73,7 +73,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		/**
 		 * Called before processImage, as soon as data becomes available.
 		 */
-		virtual void cameraImageReady (Image *image) {}
+		virtual void cameraImageReady (__attribute__ ((unused)) Image *image) {}
 
 		/**
 		 * This function carries image processing.  Based on the return value, image

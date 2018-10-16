@@ -555,7 +555,7 @@ int Target::compareWithTarget (Target *in_target, double in_sep_limit)
 	return (getDistance (&other_position) < in_sep_limit);
 }
 
-moveType Target::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
+moveType Target::startSlew (struct ln_equ_posn *position, __attribute__ ((unused)) std::string &p1, __attribute__ ((unused)) std::string &p2, bool update_position, int plan_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getObsTargetID ();
@@ -1308,7 +1308,7 @@ int Target::dropBonus ()
 	return 0;
 }
 
-float Target::getBonus (double JD)
+float Target::getBonus (__attribute__ ((unused)) double JD)
 {
 	return tar_priority + tar_bonus;
 }
@@ -1685,7 +1685,7 @@ int Target::printTargets (double radius, double JD, std::ostream &_os)
 	return tarset.size ();
 }
 
-int Target::printImages (double JD, std::ostream &_os, int flags, const char *imageFormat)
+int Target::printImages (double JD, __attribute__ ((unused)) std::ostream &_os, int flags, const char *imageFormat)
 {
 	struct ln_equ_posn tar_pos;
 	int ret;
@@ -1986,7 +1986,7 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD, int extended)
 	printExtra (_os, JD);
 }
 
-void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
+void Target::sendConstraints (Rts2InfoValStream & _os, __attribute__ ((unused)) double JD)
 {
 	_os << "Constraints" << std::endl;
 	getConstraints ()->printXML (*(_os.getStream ()));

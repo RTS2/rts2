@@ -377,13 +377,13 @@ AsyncCurrentAPI::~AsyncCurrentAPI ()
 {
 }
 
-void AsyncCurrentAPI::dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *_data)
+void AsyncCurrentAPI::dataReceived (__attribute__ ((unused)) rts2core::Connection *_conn, rts2core::DataAbstractRead *_data)
 {
 	if (_data == data)
 		sendData ();
 }
 
-void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
+void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, __attribute__ ((unused)) int status)
 {
 	if (isForConnection (_conn))
 	{
@@ -457,7 +457,7 @@ void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Da
 	AsyncDataAPI::fullDataReceived (_conn, _data);
 }
 
-void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, int status)
+void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, __attribute__ ((unused)) int status)
 {
 	if (isForConnection (_conn))
 	{

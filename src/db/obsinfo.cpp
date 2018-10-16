@@ -150,6 +150,7 @@ int ObservationInfo::doProcessing ()
 				break;
 			case EXT_INFO:
 				std::cout << obs << std::endl;
+				__attribute__ ((fallthrough));
 			case IMAGES:
 			case IMAGES_ASTR_OK:
 			case IMAGES_TRASH:

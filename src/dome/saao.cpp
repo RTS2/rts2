@@ -541,7 +541,7 @@ int SAAO::stop ()
 	return 0;
 }
 
-double SAAO::getSlitWidth (double alt)
+double SAAO::getSlitWidth (__attribute__ ((unused)) double alt)
 {
 	return 3;
 }

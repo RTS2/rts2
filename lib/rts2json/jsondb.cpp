@@ -52,7 +52,7 @@ rts2db::Target * rts2json::getTarget (XmlRpc::HttpParams *params, const char *pa
 	return target;
 }
 
-void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, std::ostringstream &os)
+void JSONDBRequest::dbJSON (const std::vector <std::string> vals, __attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, std::ostringstream &os)
 {
 	// returns all targets in database
 	if (vals[0] == "tlist")
@@ -966,7 +966,7 @@ void JSONDBRequest::jsonObservations (rts2db::ObservationSet *obss, std::ostream
 	os << "]";
 }
 
-void JSONDBRequest::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params)
+void JSONDBRequest::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, __attribute__ ((unused)) XmlRpc::HttpParams *params)
 {
 	os << "\"h\":["
 		"{\"n\":\"Image\",\"t\":\"ccdi\",\"c\":0},"

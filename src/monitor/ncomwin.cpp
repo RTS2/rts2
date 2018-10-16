@@ -77,7 +77,7 @@ keyRet NComWin::injectKey (int key)
 
 void NComWin::showHistory (int dir)
 {
-	if (dir > 0 && historyPos < history.size ())
+	if (dir > 0 && historyPos < (int)history.size ())
 		historyPos ++;
 
 	if (dir < 0 && historyPos > 0)
