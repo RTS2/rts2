@@ -22,6 +22,8 @@
 #include "utilsfunc.h"
 #include <iomanip>
 
+#include <sys/file.h>
+
 #define EVENT_TE_RAMP	      RTS2_LOCAL_EVENT + 678
 
 namespace rts2camd
@@ -175,7 +177,15 @@ int GXCCD::processOption (int opt)
 
 int GXCCD::initHardware ()
 {
+	// Crude hack to prevent simultaneous initialization of several cameras
+	int fd = open ("/tmp/.gxccd.init.lock", O_RDWR | O_CREAT, 0666);
+	flock (fd, LOCK_EX);
+	logStream (MESSAGE_DEBUG) << "locked GXCCD driver for initialization of camera id " << id->getValueInteger () << sendLog;
 	camera = gxccd_initialize_usb (id->getValueInteger ());
+	flock (fd, LOCK_UN);
+	close (fd);
+	logStream (MESSAGE_DEBUG) << "unlocked GXCCD driver after initialization of camera id " << id->getValueInteger () << sendLog;
+
 	if (camera == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueInteger () << sendLog;
