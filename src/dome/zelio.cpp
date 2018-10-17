@@ -920,6 +920,16 @@ int Zelio::info ()
 	sendValueAll (O3XT1);
 	sendValueAll (O4XT1);
 
+	if (zelioModel == ZELIO_ELYA)
+	{
+		// Guess initial state of voltage switches
+		dc12->setValueBool (regs[1] & ZI_ELYA_12V);
+		dc48->setValueBool (regs[1] & ZI_ELYA_48V);
+
+		sendValueAll (dc12);
+		sendValueAll (dc48);
+	}
+
 	return Dome::info ();
 }
 
