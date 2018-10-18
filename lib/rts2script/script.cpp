@@ -65,10 +65,21 @@ bool Script::isNext (const char *element)
 char *Script::nextElement ()
 {
 	char *elementStart;
+	char endChar = 0;
+
 	while (isspace (*cmdBufTop))
 		cmdBufTop++;
+
+	if (*cmdBufTop == '"' || *cmdBufTop == '\'')
+	{
+		// Quoted string started, we will select until matching end character;
+		endChar = *cmdBufTop;
+		cmdBufTop++;
+	}
+
 	elementStart = cmdBufTop;
-	while (!isspace (*cmdBufTop) && *cmdBufTop)
+	while (((endChar == 0 && !isspace (*cmdBufTop)) ||
+			(endChar && *cmdBufTop != endChar)) && *cmdBufTop)
 		cmdBufTop++;
 	if (*cmdBufTop)
 	{
@@ -238,14 +249,14 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 	target->getPosition (&target_pos);
 
 	strcpy (defaultDevice, cam_name);
-	
+
 	// set device specific values
 	Configuration *config = Configuration::instance ();
 	config->getFloat (cam_name, "readout_time", fullReadoutTime, fullReadoutTime);
 	config->getFloat (cam_name, "filter_movement", filterMovement, filterMovement);
 	config->getFloat ("observatory", "telescope_settle_time", telescopeSettleTime, telescopeSettleTime);
 	config->getFloat ("observatory", "telescope_speed", telescopeSpeed, telescopeSpeed);
-	
+
 	commentNumber = 1;
 	wholeScript = std::string ("");
 
@@ -802,7 +813,7 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, rts2operands::
 			{
 				cmp = rts2operands::CMP_GREAT;
 			}
-			else 
+			else
 			{
 				throw ParsingError ("In conditions, only == is allowed");
 			}
@@ -998,7 +1009,7 @@ double rts2script::getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &c
 		script.setTarget (cam->c_str (), tar);
 		double d = script.getExpectedDuration (tel, runnum);
 		if (d > md)
-			md = d;  
+			md = d;
 	}
 	return md;
 }
