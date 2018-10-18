@@ -58,7 +58,7 @@ int ConnCentrald::sendDeviceKey ()
 	dev_key = random ();
 	if (dev_key == 0)
 		dev_key = 1;
-	std::ostringstream _os;	
+	std::ostringstream _os;
 	// device number could change..device names don't
 	char *dev_name;
 	rts2core::Connection *dev;
@@ -577,16 +577,6 @@ int Centrald::init ()
 
 	centraldConnRunning (NULL);
 
-	std::ostringstream _os;
-	_os << getLockPrefix () << "centrald_" << getPort ();
-	setLockFile (_os.str ().c_str ());
-	ret = checkLockFile ();
-	if (ret)
-		return ret;
-	ret = doDaemonize ();
-	if (ret < 0)
-		return ret;
-
 #ifndef RTS2_HAVE_FLOCK
 	// reopen..
 	ret = checkLockFile ();
@@ -961,7 +951,7 @@ int Centrald::weatherUpdate (rts2core::Connection *conn)
 	char *w_update;
 	if (conn->paramNextString (&w_device) || conn->paramNextString (&w_update) || !conn->paramEnd ())
 		return -2;
-	
+
 	if (!strcmp (w_device, badWeatherDevice->getValue ()))
 	{
 		badWeatherReason->setValueCharArr (w_update);

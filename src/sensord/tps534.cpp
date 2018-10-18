@@ -1,5 +1,5 @@
-/* 
- * sensor daemon for cloudsensor AAG designed by António Alberto Peres Gomes 
+/*
+ * sensor daemon for cloudsensor AAG designed by António Alberto Peres Gomes
  * Copyright (C) 2009, Markus Wildi, Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -82,7 +82,7 @@ TPS534::processOption (int in_opt)
 	}
 	return 0;
 }
-int 
+int
 TPS534::willConnect (rts2core::NetworkAddress * in_addr)
 {
     if (doorDevice && in_addr->getType () == DEVICE_TYPE_DOME) {
@@ -98,13 +98,6 @@ TPS534::init ()
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
-	// make sure it forks before creating threads
-	ret = doDaemonize ();
-
-	if (ret) {
-	  logStream (MESSAGE_ERROR) << "Doorvermes::initValues could not daemonize"<< sendLog ;
-	  return ret;
-	}
 
 	addConstValue ("DOOR", doorDevice, "door device name to monitor its state (open/closed)");
 	connectDevice(device_file, 1);
@@ -112,7 +105,7 @@ TPS534::init ()
 	if (!std::isnan (triggerSky->getValueDouble ()))
 		setWeatherState (false, "cloud trigger unspecified");
 
-	
+
 	for( int i = 0; i < 6; i++) {
 	  tps534LastState.analogIn[i]= 0. ;
 	}
@@ -140,14 +133,14 @@ TPS534::info ()
         } else {
 	  doorOpen= false ;
       	}
-      }  
+      }
     } else {
       logStream (MESSAGE_DEBUG) << "TPS534::info doorState=NULL : "<< sendLog;
     }
-  }  
+  }
 
   if( doorOpen) {
-    // Check if thread died  
+    // Check if thread died
     if( last_read_oak_cnt >= read_oak_cnt) {
       logStream (MESSAGE_ERROR) << "TPS534::info oak thread died" << sendLog;
     } else {
