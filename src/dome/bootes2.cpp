@@ -1,4 +1,4 @@
-/* 
+/*
  * Dome driver for Bootes 2 station.
  * Copyright (C) 2005-2008 Stanislav Vitek
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
@@ -171,7 +171,7 @@ Bootes2::getVolts (int subdevice, int channel, double &volts)
 		return -1;
 	}
 	volts = comedi_to_phys (data, rqn, max);
-	if (isnan (volts))
+	if (std::isnan (volts))
 	{
 		logStream (MESSAGE_ERROR) << "Cannot convert data from subdevice "
 			<< subdevice << " channel " << channel << " to physical units" << sendLog;
@@ -385,10 +385,10 @@ Bootes2::startClose ()
 	ret = updateStatus ();
 	if (ret)
 		return -1;
-	
+
 	if (swCloseLeft->getValueBool () && swCloseRight->getValueBool ())
 		return -1;
-	
+
 	return roofChange ();
 }
 

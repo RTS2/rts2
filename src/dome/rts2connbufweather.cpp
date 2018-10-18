@@ -209,7 +209,7 @@ Rts2ConnBufWeather::receive (rts2core::Block *block)
 		master->setRainWeather (rain);
 		master->setHumidity (rtOutsideHum);
 		master->setWindSpeed (windspeed);
-		if (!isnan (cloud))
+		if (!std::isnan (cloud))
 		{
 			master->setCloud (cloud);
 		}
