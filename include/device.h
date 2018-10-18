@@ -1,4 +1,4 @@
-/* 
+/*
  * Device basic class.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -323,7 +323,7 @@ class Device:public Daemon
 
 		/**
 		 * Init hardware. This method shall close any opened connection
-		 * to hardware, and try to (re)-initialize hardware. 
+		 * to hardware, and try to (re)-initialize hardware.
 		 *
 		 * TODO should become pure virtual
 		 */
@@ -384,6 +384,8 @@ class Device:public Daemon
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		void setDeviceName (const char *n) { device_name = n; }
+
+		virtual void initLockFile () { setLockFile (std::string (getLockPrefix ()) + std::string (device_name)); }
 
 	private:
 		std::list <HostString> centraldHosts;

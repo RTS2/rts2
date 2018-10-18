@@ -1,4 +1,4 @@
-/* 
+/*
  * Daemon class.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -322,6 +322,36 @@ int Daemon::init ()
 		return -1;
 	}
 
+	// First we have to check the lock files
+	initLockFile ();
+	ret = checkLockFile ();
+
+	if (ret < 0)
+		exit (ret);
+
+	// We should daemonize before initializing autorestart
+	ret = doDaemonize ();
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Daemon::init could not daemonize"<< sendLog ;
+		exit (ret);
+	}
+
+	// Re-open the lock file as it is probably closed in doDaemonize
+#ifndef RTS2_HAVE_FLOCK
+	ret = checkLockFile ();
+	if (ret < 0)
+		exit (ret);
+#endif
+	ret = lockFile ();
+	if (ret)
+		exit (ret);
+
+	// We should initiate autorestart as early as possible, but after
+	// command-line option parsing, which is done in App::init ()
+	if (setupAutoRestart () != -1)
+		return -1;
+
 	listen_sock = socket (PF_INET, SOCK_STREAM, 0);
 	if (listen_sock == -1)
 	{
@@ -388,7 +418,7 @@ int Daemon::initValues ()
 			return -1;
 		}
 	}
- 
+
 	int ret = loadCreateFile ();
 	if (ret)
 		return ret;
@@ -476,8 +506,6 @@ int Daemon::run ()
 {
 	initDaemon ();
 	beforeRun ();
-	if (setupAutoRestart () != -1)
-		return 0;
 	while (!getEndLoop ())
 		oneRunLoop ();
 	return 0;
@@ -557,8 +585,10 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	int prio;
 	switch (daemonize)
 	{
-		case IS_DAEMONIZED:
 		case DO_DAEMONIZE:
+			// We are not yet daemonized, let's print to stdout too, so that the user see the errors is any
+			rts2core::Block::sendMessage (in_messageType, in_messageString);
+		case IS_DAEMONIZED:
 		case CENTRALD_OK:
 			// if at least one centrald is running..
 			if (someCentraldRunning ())
@@ -1267,7 +1297,7 @@ int Daemon::loadCreateFile ()
 {
 	if (valueFile == NULL)
 		return 0;
-	
+
 	IniParser *created = new IniParser (true);
 	int ret = created->loadFile (valueFile);
 	if (ret)
@@ -1292,7 +1322,7 @@ int Daemon::loadValuesFile (const char *filename, bool use_extenstions)
 {
 	if (filename == NULL || strlen(filename) == 0)
 		return 0;
-	
+
 	IniParser *autosave = new IniParser (true);
 	int ret = autosave->loadFile (filename);
 	if (ret)
@@ -1317,9 +1347,9 @@ int Daemon::loadModefile ()
 {
 	if (!modefile)
 		return 0;
-	
+
 	int ret;
-	
+
 	delete modeconf;
 	modeconf = new IniParser ();
 	ret = modeconf->loadFile (modefile);
