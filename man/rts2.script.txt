@@ -27,12 +27,14 @@ cmd {command}[({arg{,arg2..}})]::
     can be specified in round bracket, separated with comma,
     without any space between command and ending bracket.
 
-exe {executable filename}::
+exe {executable}::
     Execute external script. The script communicates with executor
     through standard input and outputs - both normal and error
     output. For documentation of the protocol, as well as
     available Python class for handling of this communication,
-    please see bellow.
+    please see bellow. The executable may be either a filename or a
+    quoted string containing filename and command-line parameters to
+    be passed to it.
 
 SEQUENCE {filter} {repeat} {exposure_time}::
     Performs exposure sequence. First set a filter, described as
@@ -77,7 +79,7 @@ I {exposure_time}::
     offsets,..) must be coma "," separated and enclosed in round
     brackets "(", ")". This is valid syntax for increase of the
     telescope offset by 10 degrees in RA and 5 degrees in DEC:
-    
+
     * T0.OFFS+=(10,5)
 
 {device name}.!{value name}operation{new value}::
@@ -240,7 +242,7 @@ exposure::
     others current settings will be used.
 
     When exposure is finished, controlling script receives notification
-    on standard input with *exposure_end* string. 
+    on standard input with *exposure_end* string.
 
     When the image is written to disk, controlling script receives image name
     on standard input, preceeded by *image* string. Script is responsible to
@@ -279,7 +281,7 @@ rename {image name} {expression}::
 echo exposure
 read exposure_end # is notified of exposure end
 read image imagename  # $image will hold "image" string
-echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}	
+echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}
 read new_name # reads new image name to $new_name
 ```
 
@@ -357,7 +359,7 @@ value {value name} {operator} {operand1 [operand2..]}::
 
 ``` bash
 echo value exposure += 1
-echo value WINDOW = 0 0 10 10 
+echo value WINDOW = 0 0 10 10
 ```
 
 device_by_type {device_type}::
@@ -424,7 +426,7 @@ waitidle {device name} {timeout}::
 
     This function is equvivalent to calling *S* command, compare status and
     return 1 if device properly reached idle, 0 if it timeouts.
-
+w
 C {device name} {command..}::
     Executes an arbitary command on device. Please see device drivers source
     code for allowed commands - they are called from commandAuthorize call.
@@ -655,7 +657,7 @@ focpos-=50 for 10 { E 5 focpos+=10 }
     This script test how various SPL_MODE affect resulting image. Sequence of
     1, 5 and 10 seconds exposures is taken, then SPL_MODE variable is increased
     by 1.
- 
+
 ```
 for 3 { E 1 E 5 E 10 SPL_MODE+=1 }
 ```
@@ -721,4 +723,3 @@ AUTHOR
 ------
 
 Petr Kubanek <petr@rts2.org>
-
