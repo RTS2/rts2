@@ -2082,7 +2082,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double utc1, double u
 	// transform CISC to observed
 	eraAtioq (ri, di, &astrom, &aob, &zob, &hob, &dob, &rob);
 
-	pos->ra = ln_rad_to_deg (rob);
+	pos->ra = ln_rad_to_deg (eraAnp (rob - eo));
 	pos->dec = ln_rad_to_deg (dob);
 	if (hrz != NULL)
 	{
