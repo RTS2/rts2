@@ -12,7 +12,7 @@
 # include <string.h>
 #endif
 
-#include <math.h>
+#include <cmath>
 
 namespace XmlRpc
 {
@@ -360,7 +360,7 @@ namespace XmlRpc
 	std::string XmlRpcValue::doubleToXml() const
 	{
 		char buf[256];
-		if (isnan (_value.asDouble))
+		if (std::isnan (_value.asDouble))
 			strcpy (buf, "NaN");
 		else
 			snprintf(buf, sizeof(buf)-1, getDoubleFormat().c_str(), _value.asDouble);

@@ -1,4 +1,4 @@
-/* 
+/*
  * (USB) SBIG driver.
  * Copyright (C) 2004-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <cmath>
 #include <math.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -215,7 +216,7 @@ int Sbig::startExposure ()
 	sep.left = chipUsedReadout->getYInt();
 	sep.height = chipUsedReadout->getHeightInt() / binningVertical ();
 	sep.width = chipUsedReadout->getWidthInt() / binningHorizontal ();
- 
+
 	ret = pcam->SBIGUnivDrvCommand (CC_START_EXPOSURE2, &sep, NULL);
 	return checkSbigHw (ret);
 }
@@ -404,7 +405,7 @@ SBIG_DEVICE_TYPE Sbig::getDevType ()
 int Sbig::initHardware ()
 {
 	setExposureMinMax (0, 655.35);
-	
+
 	tempSet->setMin (-100);
 	tempSet->setMax (50);
 	updateMetaInformations (tempSet);
@@ -625,7 +626,7 @@ int Sbig::camCoolHold ()
 	ret = fanState (TRUE);
 	if (ret)
 		return -1;
-	if (isnan (nightCoolTemp->getValueFloat ()))
+	if (std::isnan (nightCoolTemp->getValueFloat ()))
 		ret = setCoolTemp (-5);
 	else
 		ret = setCoolTemp (nightCoolTemp->getValueFloat ());

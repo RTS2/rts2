@@ -26,14 +26,14 @@ START_TEST(GETDUT1)
 	gmt.tm_year = 118;
 	gmt.tm_mon = 1;
 	gmt.tm_mday = 5;
-	ck_assert_msg (isnan (getDUT1 ("data/finals2000A.daily", &gmt)), "data for 2018 found!");
+	ck_assert_msg (std::isnan (getDUT1 ("data/finals2000A.daily", &gmt)), "data for 2018 found!");
 
 	gmt.tm_year = 117;
 	gmt.tm_mon = 6;
 	gmt.tm_mday = 28;
 	ck_assert_dbl_eq (getDUT1 ("data/finals2000A.daily", &gmt), 1.3652135, 10e-5);
 
-	ck_assert_msg (isnan (getDUT1 ("data/final2000A.daily", &gmt)), "data for not existing file found!");
+	ck_assert_msg (std::isnan (getDUT1 ("data/final2000A.daily", &gmt)), "data for not existing file found!");
 }
 END_TEST
 
@@ -55,10 +55,10 @@ START_TEST(UPDATE)
 
 	double dut1 = getDUT1 (fn, gmt);
 	printf ("Current DUT1: %f\n", dut1);
-	ck_assert_msg (!isnan (dut1), "current data not found in downloade time diff file!");
+	ck_assert_msg (!std::isnan (dut1), "current data not found in downloade time diff file!");
 
 	gmt->tm_year += 3;
-	ck_assert_msg (isnan (getDUT1 (fn, gmt)), "found data for DUT1 3 years from now!");
+	ck_assert_msg (std::isnan (getDUT1 (fn, gmt)), "found data for DUT1 3 years from now!");
 
 	unlink (fn);
 }

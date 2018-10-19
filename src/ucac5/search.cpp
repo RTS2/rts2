@@ -1,4 +1,4 @@
-/* 
+/*
  * UCAC5 indexing application
  * Copyright (C) 2018 Petr Kubanek <petr@kubanek.net>
  *
@@ -45,13 +45,13 @@ class UCAC5Search:public rts2core::App
 		UCAC5Search (int argc, char **argv);
 
 		virtual int run();
-	
+
 	protected:
 		virtual int processOption (int opt);
 		virtual int processArgs (const char *arg);
 
 		virtual void usage ();
-	
+
 	private:
 		std::string radec;
 		double ra;
@@ -74,7 +74,7 @@ int UCAC5Search::run()
 	int ret = init();
 	if (ret)
 		return ret;
-	if (isnan(ra) || isnan(dec) || isnan(minRad) || isnan(maxRad))
+	if (std::isnan(ra) || std::isnan(dec) || std::isnan(minRad) || std::isnan(maxRad))
 	{
 		std::cerr << "you must provide ra dec min max, please see -h for details" << std::endl;
 		return -2;
