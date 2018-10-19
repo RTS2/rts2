@@ -328,6 +328,8 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	std::size_t pos = 0;
 	std::size_t prev = 0;
 
+	_os << "<a href='" << getServer ()->getPagePrefix () << "/'>HTTPD</a> : ";
+
 	while (true)
 	{
 		pos = path.find ("/", pos);
@@ -338,7 +340,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		{
 			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path.substr (0, pos + 1) << "'>";
 			if (pos == 0)
-				_os << "ROOT";
+				_os << "PREVIEW";
 			else
 				_os << path.substr (prev, pos - prev);
 			_os << "</a> / ";
