@@ -118,6 +118,7 @@ class NMonitor:public rts2core::Client
 		virtual void addPollSocks ();
 		virtual void pollSuccess ();
 
+		enum { ORDER_RTS2, ORDER_ALPHA, ORDER_TYPE } connOrder;
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
@@ -175,7 +176,6 @@ class NMonitor:public rts2core::Client
 
 		rts2core::SimbadTarget *tarArg;
 
-		enum { ORDER_RTS2, ORDER_ALPHA, ORDER_TYPE } connOrder;
 		bool hideDebugValues;
 		NActionBool *hideDebugMenu;
 
@@ -246,4 +246,27 @@ class NMonCentralConn:public rts2core::ConnCentraldClient
 	private:
 		NMonitor * master;
 };
+
+/**
+ * Classes for sorting the list of connections
+ */
+class sortConnName
+{
+	public:
+		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
+};
+
+class sortConnType
+{
+	public:
+		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const
+		{
+			// Sort by device type, then by name
+			if (con1->getOtherType () != con2->getOtherType ())
+				return (con1->getOtherType () - con2->getOtherType ()) < 0;
+			else
+				return strcmp (con1->getName (), con2->getName ()) < 0;
+		}
+};
+
 #endif							 /* !__RTS2_NMONITOR__ */

@@ -221,7 +221,22 @@ void NCentraldWindow::draw ()
 	{
 		drawDevice (*iter);
 	}
-	for (iter = client->getConnections ()->begin (); iter != client->getConnections ()->end (); iter++)
+
+	rts2core::connections_t orderedConn = *client->getConnections ();
+	// sort the list the same way as parent does
+	switch (((NMonitor *)client)->connOrder)
+	{
+		case NMonitor::ORDER_RTS2:
+			break;
+		case NMonitor::ORDER_ALPHA:
+			std::sort (orderedConn.begin (), orderedConn.end (), sortConnName());
+			break;
+		case NMonitor::ORDER_TYPE:
+			std::sort (orderedConn.begin (), orderedConn.end (), sortConnType());
+			break;
+	}
+
+	for (iter = orderedConn.begin (); iter != orderedConn.end (); iter++)
 	{
 		drawDevice (*iter);
 	}
