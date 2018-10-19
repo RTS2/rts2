@@ -324,6 +324,31 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	preview.form (_os, pageno, prevsize, pagesiz, chan, label, quantiles, colourVariant);
 
 	_os << "</p><p>";
+	// Insert breadcrumb
+	std::size_t pos = 0;
+	std::size_t prev = 0;
+
+	while (true)
+	{
+		pos = path.find ("/", pos);
+
+		// printf("%U %s\n", pos, path.substr (0, pos + 1).c_str ());
+
+		if (pos != std::string::npos)
+		{
+			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path.substr (0, pos + 1) << "'>";
+			if (pos == 0)
+				_os << "ROOT";
+			else
+				_os << path.substr (prev, pos - prev);
+			_os << "</a> / ";
+			prev = pos + 1;
+			pos ++;
+		}
+		else
+			break;
+	}
+	_os << "</p><p>";
 
 	struct dirent **namelist;
 	int n;
