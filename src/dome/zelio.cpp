@@ -1,4 +1,4 @@
-/* 
+/*
  * Driver for Zelio dome controll.
  * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -120,6 +120,8 @@ class Zelio:public Dome
 
 		virtual void postEvent (rts2core::Event * event);
 
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -189,7 +191,7 @@ class Zelio:public Dome
 		rts2core::ValueBool *timeoCloseLeft;
 		rts2core::ValueBool *timeoOpenRight;
 		rts2core::ValueBool *timeoCloseRight;
-	
+
 		rts2core::ValueBool *blockOpenLeft;
 		rts2core::ValueBool *blockCloseLeft;
 		rts2core::ValueBool *blockOpenRight;
@@ -644,6 +646,28 @@ int Zelio::endClose ()
 	return 0;
 }
 
+int Zelio::commandAuthorized (rts2core::Connection * conn)
+{
+	if (zelioModel == ZELIO_ELYA)
+	{
+		if (conn->isCommand ("toggle48") || conn->isCommand ("toggle_mount"))
+		{
+			int ret = setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, true);
+
+			if (ret == 0)
+			{
+				usleep(USEC_SEC / 2);
+
+				ret = setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, false);
+			}
+
+			return ret == 0 ? 0 : -2;
+		}
+	}
+
+	return Dome::commandAuthorized (conn);
+}
+
 int Zelio::processOption (int in_opt)
 {
 	switch (in_opt)
@@ -896,6 +920,16 @@ int Zelio::info ()
 	sendValueAll (O3XT1);
 	sendValueAll (O4XT1);
 
+	if (zelioModel == ZELIO_ELYA)
+	{
+		// Guess initial state of voltage switches
+		dc12->setValueBool (regs[1] & ZI_ELYA_12V);
+		dc48->setValueBool (regs[1] & ZI_ELYA_48V);
+
+		sendValueAll (dc12);
+		sendValueAll (dc48);
+	}
+
 	return Dome::info ();
 }
 
@@ -907,7 +941,7 @@ int Zelio::initHardware ()
 		return -1;
 	}
 	zelioConn = new rts2core::ConnModbusTCP (this, host->getHostname (), host->getPort ());
-	
+
 	uint16_t regs[8];
 
 	try
@@ -1038,7 +1072,7 @@ void Zelio::createZelioValues ()
 			createValue (blockOpenLeft, "block_open", "open block", false);
 			createValue (blockCloseLeft, "block_close", "close block", false);
 			break;
-	
+
 		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			if (createonPower)
