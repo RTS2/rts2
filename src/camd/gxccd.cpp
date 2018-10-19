@@ -79,6 +79,7 @@ class GXCCD:public Camera
 		rts2core::ValueFloat *tempRamp;
 		rts2core::ValueFloat *tempTarget;
 		rts2core::ValueFloat *power;
+		rts2core::ValueFloat *voltage;
 		rts2core::ValueFloat *gain;
 
 		rts2core::ValueInteger *filterFailed;
@@ -109,6 +110,7 @@ GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
 	createValue (power, "TEMPPWR", "[%] utilization of cooling power", true);
+	createValue (voltage, "VOLTAGE", "[V] current voltage of the camera power supply", true);
 	createValue (gain, "GAIN", "[e-ADU] gain", true);
 
 	createValue (id, "product_id", "camera product identification", true);
@@ -346,6 +348,9 @@ int GXCCD::info ()
 
 	ret = gxccd_get_value (camera, GV_POWER_UTILIZATION, &val);
 	power->setValueFloat (ret ? NAN : val);
+
+	ret = gxccd_get_value (camera, GV_SUPPLY_VOLTAGE, &val);
+	voltage->setValueFloat (ret ? NAN : val);
 
 	return Camera::info ();
 }
