@@ -1,4 +1,4 @@
-/* 
+/*
  * Various utility functions.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -27,6 +27,7 @@
 #include <malloc.h>
 #endif
 #include <iostream>
+#include <cmath>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -234,10 +235,10 @@ std::vector<std::string> SplitStr(const std::string& text, const std::string& de
 	std::size_t delimlen = delimeter.length();
 
 	std::vector<std::string> result;
-	
+
 	if (text.empty ())
 		return result;
-	
+
 	while (pos != std::string::npos)
 	{
 		pos = text.find(delimeter, oldpos);
@@ -264,7 +265,7 @@ std::vector<char> Str2CharVector (std::string text)
 	std::vector<char> res;
 	for (std::string::iterator iter = text.begin(); iter != text.end(); iter++)
 	{
-		res.push_back (*iter);	
+		res.push_back (*iter);
 	}
 	return res;
 }
@@ -391,7 +392,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 	char *ret = fgets (*lineptr, *n, stream);
 	if (ret == NULL)
 		return -1;
-	return *n; 
+	return *n;
 }
 #endif
 
@@ -417,7 +418,7 @@ const char * multiWCS (const char *name, char multi_wcs)
 
 int db_nan_indicator (double value)
 {
-	return isnan (value) ? -1 : 0;
+	return std::isnan (value) ? -1 : 0;
 }
 
 double db_nan_double (double value, int ind)

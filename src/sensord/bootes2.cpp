@@ -1,4 +1,4 @@
-/* 
+/*
  * Access data from Bootes 2 weather station.
  * Copyright (C) 2009,2011 Petr Kubanek <petr@kubanek.net>
  *
@@ -56,13 +56,13 @@ class Bootes2: public SensorWeather
 		const char *comediFile;
 
 		rts2core::ValueBool *raining;
-	
+
 		rts2core::ValueDoubleStat *tempMeas;
 		rts2core::ValueDoubleStat *humiMeas;
 
 		bool rainOnOff;
 		bool humiOnOff;
-		
+
 		rts2core::ValueDouble *humBad;
 		rts2core::ValueDouble *humGood;
 
@@ -160,7 +160,7 @@ int Bootes2::getVolts (int subdevice, int channel, double &volts)
 		return -1;
 	}
 	volts = comedi_to_phys (data, rqn, max);
-	if (isnan (volts))
+	if (std::isnan (volts))
 	{
 		logStream (MESSAGE_ERROR) << "Cannot convert data from subdevice " << subdevice << " channel " << channel << " to physical units" << sendLog;
 		return -1;
@@ -171,9 +171,9 @@ int Bootes2::getVolts (int subdevice, int channel, double &volts)
 int Bootes2::updateHumidity ()
 {
 	double hum;
-	
+
 	humiOnOff = !humiOnOff;
-	
+
 	if (getVolts (0, 0, hum))
 	{
 		comedi_dio_write (comediDevice, 2, 3, humiOnOff);
@@ -184,13 +184,13 @@ int Bootes2::updateHumidity ()
 	humiMeas->addValue (hum, LIFOSIZE);
 	humiMeas->calculate ();
 
-	
-	if (!isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
+
+	if (!std::isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
 	{
 		setWeatherTimeout (600, "humidity rised above humidity_bad");
 		comedi_dio_write (comediDevice, 2, 3, 1);
 	}
-	if (!isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
+	if (!std::isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
 	{
 		setWeatherTimeout (600, "humidity does not drop bellow humidity_good");
 		comedi_dio_write (comediDevice, 2, 3, 0);
@@ -215,7 +215,7 @@ int Bootes2::updateRain ()
 {
 	int ret=0;
 	double rv;
-	
+
 	rainOnOff = !rainOnOff;
 
 	ret = getVolts (0, 5, rv);
@@ -313,7 +313,7 @@ int Bootes2::info ()
 {
 	int ret;
 
-	ret = updateRain ();	
+	ret = updateRain ();
 
 	ret = updateTemperature ();
 	if (ret)
@@ -327,7 +327,7 @@ int Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
-	
+
 	std::vector <double> vals;
 
 	for (int i = 0; i < 8; i++)
