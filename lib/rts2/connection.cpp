@@ -19,6 +19,7 @@
 
 #include "radecparser.h"
 
+#include "configuration.h"
 #include "connection.h"
 #include "centralstate.h"
 #include "block.h"
@@ -222,11 +223,30 @@ std::string Connection::getStateString (bool verbose)
 			_os << CentralState (getState ()).getString ();
 			break;
 		case DEVICE_TYPE_MOUNT:
-			if (verbose && getValue ("TEL"))
+			if (verbose)
 			{
-				rts2core::ValueRaDec *value = dynamic_cast<rts2core::ValueRaDec *> (getValueType ("TEL", RTS2_VALUE_RADEC));
-				LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
-				_os << " | " << v_radec << " | ";
+				if (getValue ("TEL"))
+				{
+					// Equatorial coordinates
+					rts2core::ValueRaDec *value = dynamic_cast<rts2core::ValueRaDec *> (getValueType ("TEL", RTS2_VALUE_RADEC));
+					LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
+					_os << " | " << v_radec << " | ";
+
+					if (getValue ("TEL_"))
+					{
+						// Horizontal coordinates
+						rts2core::ValueAltAz *value_altaz = dynamic_cast<rts2core::ValueAltAz *> (getValueType ("TEL_", RTS2_VALUE_ALTAZ));
+						double az = value_altaz->getAz ();
+
+						if (rts2core::Configuration::instance ()->getShowAzimuth () == rts2core::Configuration::AZ_NORTH_ZERO)
+							az = ln_range_degrees (180 + az);
+
+						LibnovaDeg v_ad = value_altaz->getAlt ();
+						LibnovaDeg v_zd = az;
+
+						_os <<  v_ad << " " << v_zd << " | ";
+					}
+				}
 			}
 			switch (real_state & TEL_MASK_MOVING)
 			{
@@ -303,6 +323,12 @@ std::string Connection::getStateString (bool verbose)
 			break;
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_CUPOLA:
+			if (verbose)
+			{
+				if (getValue ("automode"))
+					_os << (getValueInteger ("automode") ? "AUTO" : "MANUAL") << " ";
+			}
+
 			switch (real_state & DOME_DOME_MASK)
 			{
 				case DOME_CLOSED:
@@ -2343,12 +2369,12 @@ int Connection::commandValue (const char *v_name)
 			getOtherDevClient ()->valueChanged (value);
 		return ret;
 	}
-	logStream (MESSAGE_ERROR)
-		<< "unknow value from connection '" << getName () << "' "
-		<< v_name
-		<< " connection state " << getConnState ()
-		<< " value size " << values.size ()
-		<< sendLog;
+	// logStream (MESSAGE_ERROR)
+	// 	<< "unknow value from connection '" << getName () << "' "
+	// 	<< v_name
+	// 	<< " connection state " << getConnState ()
+	// 	<< " value size " << values.size ()
+	// 	<< sendLog;
 	return -2;
 }
 
