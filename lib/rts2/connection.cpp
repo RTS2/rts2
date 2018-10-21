@@ -296,6 +296,9 @@ std::string Connection::getStateString (bool verbose)
 				if (getValue("filter"))
 					_os << " " << getValueSelection ("filter");
 
+				if (getValue("binning"))
+					_os << " " << getValueSelection ("binning");
+
 				if (!std::isnan (progress) && progress < 100.0)
 					_os << " " << std::fixed << std::setw (3) << std::setprecision (0) << progress << "%";
 
