@@ -381,8 +381,6 @@ int AzCam3::callShiftExposure (  )
 
 	try
 	{
-		
-		logStream (MESSAGE_INFO) << "Sending focus.run right ... now " << sendLog;
 		commandConn->sendData ("focus.run\r\n");
 		return 0;
 	}
@@ -529,7 +527,6 @@ long AzCam3::isExposing ()
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "isExposing called normal"<<sendLog;
 			if( dataConn->imgWasRecvd() )
 			{
 				
@@ -634,6 +631,10 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	if (ret)
 		return ret;
 	
+	ret = callCommand ("exposure.set_roi", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	if (ret)
+		return ret;
+
 	commandConn->sendData("rts2.focuser_run\r\n");
 
 	if (ret)
