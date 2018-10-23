@@ -114,6 +114,12 @@ src/ucac5/ucac5-*
 checks/*.log
 stamp-h1
 test-driver
+conf/logrotate/logrotate-rts2.conf
+conf/rts2.service
+conf/rts2@.service
+rts2-init
+scripts/rts2-start
+scripts/rts2-stop
 **/.*pyc
 rts2-init
 scripts/rts2-start
