@@ -91,6 +91,7 @@
 
 #define ZI_ELYA_48V      0x0002
 #define ZI_ELYA_12V      0x0004
+#define ZI_ELYA_MOUNT    0x0800 //set when the mount is believed on, used by Zelio logic
 
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
@@ -101,6 +102,7 @@
 #define OPT_QA_NAME                OPT_LOCAL + 504
 #define OPT_NO_POWER               OPT_LOCAL + 505
 #define OPT_DONT_RESTART_OPENING   OPT_LOCAL + 506
+#define OPT_DEAD_TIMEOUT           OPT_LOCAL + 507
 
 namespace rts2dome
 {
@@ -215,6 +217,7 @@ class Zelio:public Dome
 		// ELYA values
 		rts2core::ValueBool *dc12;
 		rts2core::ValueBool *dc48;
+		rts2core::ValueBool *mountIsOn;
 
 		rts2core::ValueBool *lowOil;
 		rts2core::ValueBool *batteryFault;
@@ -693,6 +696,9 @@ int Zelio::processOption (int in_opt)
 		case OPT_DONT_RESTART_OPENING:
 			restartDuringOpening = false;
 			break;
+		case OPT_DEAD_TIMEOUT:
+			deadTimeout->setValueCharArr (optarg);
+			break;
 		default:
 			return Dome::processOption (in_opt);
 	}
@@ -780,6 +786,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	dc12 = NULL;
 	dc48 = NULL;
+	mountIsOn = NULL;
 	lowOil = NULL;
 	batteryFault = NULL;
 	onBattery = NULL;
@@ -795,6 +802,8 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	addOption (OPT_QA_NAME, "QA-name", 1, "name of the QA switch");
 
 	addOption (OPT_DONT_RESTART_OPENING, "dont-restart-opening", 0, "do not restart connection if it breaks during opening");
+
+	addOption (OPT_DEAD_TIMEOUT, "dead-timeout", 1, "timeout for dead man button");
 }
 
 Zelio::~Zelio (void)
@@ -925,9 +934,11 @@ int Zelio::info ()
 		// Guess initial state of voltage switches
 		dc12->setValueBool (regs[1] & ZI_ELYA_12V);
 		dc48->setValueBool (regs[1] & ZI_ELYA_48V);
+		mountIsOn->setValueBool(false);
 
 		sendValueAll (dc12);
 		sendValueAll (dc48);
+		sendValueAll (mountIsOn);
 	}
 
 	return Dome::info ();
@@ -1139,6 +1150,7 @@ void Zelio::createZelioValues ()
 		case ZELIO_ELYA:
 			createValue (dc12, "12VDC", "12V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			createValue (dc48, "48VDC", "48V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			createValue (mountIsOn, "mount_is_on", "Mount Is On", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			break;
 		default:
 			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
@@ -1190,6 +1202,8 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 				return setBitsInput (ZREG_J2XT1, ZI_ELYA_12V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			if (oldValue == dc48)
 				return setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == mountIsOn)
+				return setBitsInput (ZREG_J1XT1, ZI_ELYA_MOUNT, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			break;
 		default:
 			if (oldValue == Q9)
