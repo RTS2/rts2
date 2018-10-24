@@ -76,11 +76,17 @@ class ShiftStore:
         self.objects = None
         self.sequences = []
         self.xsep = self.ysep = 5
-        self.shifts = shifts
+        self.shifts = numpy.array(shifts)
         self.focpos = range(0, len(self.shifts) + 1)
         self.d = None
         self.progress = progress
 
+        if self.horizontal:
+            self.searchc = 'y'
+            self.otherc = 'x'
+        else:
+            self.searchc = 'x'
+            self.otherc = 'y'
 
     def plot_point(self, x, y, args):
         """
@@ -120,57 +126,41 @@ class ShiftStore:
         ----------
         can : array
            candidate list
+        rb : float
+           allowed relative brightnes deviation of the source
         """
-        for obj in numpy.sort(can, order='mag'):
+        for obj in numpy.sort(can, order='flux'):
             if __distance(x, y, obj['x'], obj['y']) < radius:
-                if abs((obj['mag'] - refbright) / refbright) < rb:
+                if abs((obj['mag'] - refflux) / refbright) < rb:
                     return obj
 
         return None
 
 
-    def test_objects(self, x, can, i, otherc, partial_len=None):
+    def find_candidates(self, pivot, pivot_position, can):
         """
-        Test if there is sequence among candidates matching expected
-        shifts.  Candidates are stars not far in X coordinate from
-        source (here we assume we are looking for vertical lines on
-        image; horizontal lines are searched just by changing otherc parameter
-        to the other axis index). Those are ordered by y and searched for stars
-        at the expected positions. If multiple stars falls inside this box,
-        then the one closest in magnitude/brightness estimate is
-        selected.
+        Finds stars on candidate sequence.
 
-        @param x       star sextractor row; ID X Y brightness estimate
-            postion are expected and used
-        @param can     catalogue of candidate stars
-        @param i       expected star index in shift pattern
-        @param otherc  index of other axis. Either 2 or 1
-            (for vertical or horizontal shifts)
-        @param partial_len allow partial matches (e.g. where stars are missing)
+        pivot : struct
         """
-        ret = []
-        # here we assume y is otherc (either second or third),
-        # and some brightnest estimate fourth member in x
-        yi = x[otherc]  # expected other axis position
-        xb = x['mag']  # expected brightness
-        # limits for star positions
-        low_y = yi - numpy.sum(self.shifts[:i]) - self.ysep
-        high_y = yi + numpy.sum(self.shifts[i:]) + self.ysep
 
-        can = can[can[otherc] >= low_y]
-        can = can[can[otherc] <= high_y]
+        ret = [None] * len(self.shifts)
+        ret[pivot_position] = pivot
 
-        yi -= numpy.sum(self.shifts[:i])
+        first_y = pivot[self.otherc] - self.shifts[:pivot_position].sum()
 
-        # go through list, check for candidate stars..
-        cs = None
-        sh = 0
-        pl = 0  # number of partial matches..
-        if self.progress:
-            self.d.set('regions group can delete')
-            self.plot_point(can['x'], can['y'],
-                'point=box 20 color=yellow tag={can}'
-            )
+        # stars are ordered from the best to the worsets..so find their match
+        # and put it to return sequence
+
+        for cs in can:
+            cs_y = cs[self.otherc]
+            shi = 0
+            if cs_y < first_y:
+                if ret[shi] is not None:
+                    ret[shi] = cs
+                break
+            # compute index where the star should fall
+
 
         while sh <= len(self.shifts):
             # now interate through candidates
@@ -187,14 +177,14 @@ class ShiftStore:
                     sh += 1
                     ret.append(x)
                 # get close enough..
-                dist = abs(can[j][otherc] - yi)
+                dist = abs(can[j][self.otherc] - yi)
                 if dist < self.ysep:
                     # find all other sources in vicinity..
                     k = None
                     cs = can[j]  # _c_andidate _s_tar
                     for k in range(j+1, len(can)):
                         # something close enough..
-                        if abs(can[k][otherc] - yi) < self.ysep:
+                        if abs(can[k][self.otherc] - yi) < self.ysep:
                             if abs(can[k]['mag'] - xb) < abs(cs['mag'] - xb):
                                 cs = can[k]
                             else:
@@ -215,7 +205,7 @@ class ShiftStore:
                     sh += 1
                 else:
                     logging.debug('rejected {0} and {1}, distance {2}'.format(
-                       can[j][otherc], yi, dist
+                       can[j][self.otherc], yi, dist
                     ))
 
             # no candiate exists
@@ -228,7 +218,7 @@ class ShiftStore:
                     return ret
  
             # insert dummy postion..
-            if otherc == 2:
+            if self.otherc == 'y':
                 ret.append([None, x[1], yi, None])
             else:
                 ret.append([None, yi, x[2], None])
@@ -240,6 +230,51 @@ class ShiftStore:
             except IndexError as ie:
                 break
             sh += 1
+
+
+    def test_objects(self, pivot, pivot_position, can, partial_len=None):
+        """
+        Test if there is sequence among candidates matching expected
+        shifts.  Candidates are stars not far in X coordinate from
+        source (here we assume we are looking for vertical lines on
+        image; horizontal lines are searched just by changing otherc parameter
+        to the other axis index). Those are ordered by y and searched for stars
+        at the expected positions. If multiple stars falls inside this box,
+        then the one closest in magnitude/brightness estimate is
+        selected.
+
+        pivot : hash
+            star sextractor row; id x y mag should be in
+        pivot_position : int
+            expected star index in shift pattern
+        can : array
+            candidate stars catalogue
+        partial_len : boolean
+            allows partial matches (e.g. where stars are missing)
+        """
+        ret = []
+        # here we assume y is otherc (either second or third),
+        # and some brightnest estimate fourth member in x
+        yi = pivot[self.otherc]  # expected other axis position
+        xb = pivot['mag']  # expected brightness
+        # limits for star positions
+        low_y = yi - numpy.sum(self.shifts[:pivot_position]) - self.ysep
+        high_y = yi + numpy.sum(self.shifts[pivot_position:]) + self.ysep
+
+        # otherc clipping of the search region
+        can = can[can[self.otherc] >= low_y]
+        can = can[can[self.otherc] <= high_y]
+
+        yi -= numpy.sum(self.shifts[:pivot_position])
+
+        # go through list, check for candidate stars..
+        pl = 0  # number of partial matches..
+        if self.progress:
+            self.d.set('regions group can delete')
+            self.plot_point(can['x'], can['y'],
+                'point=box 20 color=yellow tag={can}'
+            )
+        ret = self.find_candidates(pivot, pivot_position, can)
 
         # partial_len is not None
         if (len(self.shifts) + 1 - pl) >= partial_len:
@@ -253,21 +288,15 @@ class ShiftStore:
         as one member. Return the sequence, or None if the sequence
         cannot be found."""
 
-        searchc = 'x'
-        otherc = 'y'
-        if self.horizontal:
-            searchc = 'y'
-            otherc = 'x' 
-
-        xcor = x[searchc]
+        xcor = x[self.searchc]
 
         # candidate array should contain x - that's expected
         can = [x for x in self.objects
-           if abs(xcor - x[searchc]) < self.xsep
+           if abs(xcor - x[self.searchc]) < self.xsep
         ]     # canditate stars
         can = numpy.array(can, dtype=self.objects.dtype)
         # sort by Y axis..
-        can = numpy.sort(can, order=otherc)
+        can = numpy.sort(can, order=self.otherc)
         # assume selected object is one in shift sequence
         # place it at any possible position in shift sequence, and test if the
         # sequence can be found
@@ -281,7 +310,7 @@ class ShiftStore:
         max_ret = []
         for i in range(len(self.shifts) + 1):
             # test if sequence can be found..
-            ret = self.test_objects(x, can, i, otherc, partial_len)
+            ret = self.test_objects(x, i, can, partial_len)
             # and if it is found, return it
             if ret is not None:
                 if partial_len is None:
