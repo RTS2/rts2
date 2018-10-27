@@ -934,11 +934,9 @@ int Zelio::info ()
 		// Guess initial state of voltage switches
 		dc12->setValueBool (regs[1] & ZI_ELYA_12V);
 		dc48->setValueBool (regs[1] & ZI_ELYA_48V);
-		mountIsOn->setValueBool(false);
 
 		sendValueAll (dc12);
 		sendValueAll (dc48);
-		sendValueAll (mountIsOn);
 	}
 
 	return Dome::info ();
@@ -1151,6 +1149,7 @@ void Zelio::createZelioValues ()
 			createValue (dc12, "12VDC", "12V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			createValue (dc48, "48VDC", "48V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			createValue (mountIsOn, "mount_is_on", "Mount Is On", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			mountIsOn->setValueBool(false);
 			break;
 		default:
 			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
