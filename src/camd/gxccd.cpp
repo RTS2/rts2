@@ -444,7 +444,12 @@ int GXCCD::startExposure ()
 		return -1;
 	}
 
-	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 0, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight ());
+	// The GXCCD library expects pre-binned region coordinates and size
+	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 0,
+								(int) (getUsedX () / binningHorizontal ()),
+								(int) (getUsedY () / binningVertical ()),
+								(int) (getUsedWidth () / binningHorizontal ()),
+								(int) (getUsedHeight () / binningVertical ()));
 	if (ret)
 	{
 		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
@@ -478,13 +483,17 @@ int GXCCD::doReadout ()
 	if (ready == false)
 		return 100;
 
-	ssize_t s = 2 * getUsedWidth () * getUsedHeight ();
+	ssize_t s = 2 * getUsedWidthBinned () * getUsedHeightBinned ();
 
 	if (getWriteBinaryDataSize () == s)
 	{
 		ret = gxccd_read_image (camera, getDataBuffer (0), s);
 		if (ret < 0)
+		{
+			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+			logStream (MESSAGE_ERROR) << "data read error: " << gx_err << sendLog;
 			return -1;
+		}
 	}
 
 	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
