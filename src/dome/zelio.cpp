@@ -22,6 +22,10 @@
 
 #define EVENT_DEADBUT    RTS2_LOCAL_EVENT + 1350
 
+// Default values for timeouts
+#define DEFAULT_DEADMAN_TIMEOUT_S      60
+#define DEFAULT_COOLDOWN_LOCKOUT_S     1200    // Heat dissipation
+
 // Zelio registers
 
 #define ZREG_J1XT1       16
@@ -103,6 +107,7 @@
 #define OPT_NO_POWER               OPT_LOCAL + 505
 #define OPT_DONT_RESTART_OPENING   OPT_LOCAL + 506
 #define OPT_DEAD_TIMEOUT           OPT_LOCAL + 507
+#define OPT_COOLDOWN               OPT_LOCAL + 508
 
 namespace rts2dome
 {
@@ -165,6 +170,7 @@ class Zelio:public Dome
 		rts2core::ValueString *zelioModelString;
 
 		rts2core::ValueInteger *deadTimeout;
+		rts2core::ValueInteger *cooldownSecs;
 		rts2core::ValueIntegerMinMax *domeTimeout;
 
 		rts2core::ValueBool *rain;
@@ -603,7 +609,7 @@ int Zelio::startClose ()
 	 	return -1;
 	}
 	// 20 minutes timeout..
-	setWeatherTimeout (1200, "closed, timeout for opening (to allow dissipate motor heat)");
+	setWeatherTimeout (cooldownSecs->getValueInteger (), "closed, timeout for opening (to allow dissipate motor heat)");
 	return 0;
 }
 
@@ -699,6 +705,9 @@ int Zelio::processOption (int in_opt)
 		case OPT_DEAD_TIMEOUT:
 			deadTimeout->setValueCharArr (optarg);
 			break;
+		case OPT_COOLDOWN:
+			cooldownSecs->setValueCharArr (optarg);
+			break;
 		default:
 			return Dome::processOption (in_opt);
 	}
@@ -742,7 +751,10 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
 	createValue (deadTimeout, "dead_timeout", "[s] timeout for dead man button", false, RTS2_VALUE_WRITABLE);
-	deadTimeout->setValueInteger (60);
+	deadTimeout->setValueInteger (DEFAULT_DEADMAN_TIMEOUT_S);
+
+	createValue (cooldownSecs, "cooldown", "[s] min. interval between closing and opening dome", false, RTS2_VALUE_WRITABLE);
+	deadTimeout->setValueInteger (DEFAULT_COOLDOWN_LOCKOUT_S);
 
 	createValue (domeTimeout, "dome_timeout", "[s] dome timeout", false, RTS2_VALUE_WRITABLE);
 	domeTimeout->setValueInteger (-1);
@@ -804,6 +816,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	addOption (OPT_DONT_RESTART_OPENING, "dont-restart-opening", 0, "do not restart connection if it breaks during opening");
 
 	addOption (OPT_DEAD_TIMEOUT, "dead-timeout", 1, "timeout for dead man button");
+	addOption (OPT_COOLDOWN, "cooldown", 1, "min. interval [s] between closing and opening the dome.");
 }
 
 Zelio::~Zelio (void)
