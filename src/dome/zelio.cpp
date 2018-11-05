@@ -657,17 +657,19 @@ int Zelio::endClose ()
 
 int Zelio::commandAuthorized (rts2core::Connection * conn)
 {
-	if (zelioModel == ZELIO_ELYA)
+	if (zelioModel == ZELIO_ELYA || zelioModel == ZELIO_FRAM)
 	{
-		if (conn->isCommand ("toggle48") || conn->isCommand ("toggle_mount"))
+		if (conn->isCommand ("toggle48") || conn->isCommand ("toggle_q8") || conn->isCommand ("toggle_mount"))
 		{
-			int ret = setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, true);
+			int addr = (zelioModel == ZELIO_FRAM) ? ZREG_J1XT1 : ZREG_J2XT1;
+			int bits = (zelioModel == ZELIO_FRAM) ? ZI_FRAM_Q8 : ZI_ELYA_48V;
+			int ret = setBitsInput (addr, bits, true);
 
 			if (ret == 0)
 			{
 				usleep(USEC_SEC / 2);
 
-				ret = setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, false);
+				ret = setBitsInput (addr, bits, false);
 			}
 
 			return ret == 0 ? 0 : -2;
@@ -754,7 +756,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	deadTimeout->setValueInteger (DEFAULT_DEADMAN_TIMEOUT_S);
 
 	createValue (cooldownSecs, "cooldown", "[s] min. interval between closing and opening dome", false, RTS2_VALUE_WRITABLE);
-	deadTimeout->setValueInteger (DEFAULT_COOLDOWN_LOCKOUT_S);
+	cooldownSecs->setValueInteger (DEFAULT_COOLDOWN_LOCKOUT_S);
 
 	createValue (domeTimeout, "dome_timeout", "[s] dome timeout", false, RTS2_VALUE_WRITABLE);
 	domeTimeout->setValueInteger (-1);
@@ -950,6 +952,16 @@ int Zelio::info ()
 
 		sendValueAll (dc12);
 		sendValueAll (dc48);
+	}
+
+	if (zelioModel == ZELIO_FRAM)
+	{
+		// Guess initial state of voltage switches
+		Q8->setValueBool (regs[0] & ZI_FRAM_Q8);
+		Q9->setValueBool (regs[0] & ZI_FRAM_Q9);
+
+		sendValueAll (Q8);
+		sendValueAll (Q9);
 	}
 
 	return Dome::info ();
@@ -1150,19 +1162,23 @@ void Zelio::createZelioValues ()
 		createValue (humidity, "humidity", "Humidity sensor raw output", false);
 	}
 
+	if (zelioModel == ZELIO_ELYA || zelioModel == ZELIO_FRAM)
+	{
+		createValue (mountIsOn, "mount_is_on", "Mount Is On flag for Zelio dome safeguards", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		mountIsOn->setValueBool(false);
+	}
+
 	switch (zelioModel)
 	{
-		case ZELIO_FRAM:
 		case ZELIO_BOOTES3:
-			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE);
-			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
-			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE);
+			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		case ZELIO_FRAM:
+			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			break;
 		case ZELIO_ELYA:
 			createValue (dc12, "12VDC", "12V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			createValue (dc48, "48VDC", "48V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-			createValue (mountIsOn, "mount_is_on", "Mount Is On", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-			mountIsOn->setValueBool(false);
 			break;
 		default:
 			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
@@ -1200,14 +1216,16 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	switch (zelioModel)
 	{
-		case ZELIO_FRAM:
 		case ZELIO_BOOTES3:
+			if (oldValue == QA)
+				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		case ZELIO_FRAM:
 			if (oldValue == Q8)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			if (oldValue == Q9)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-			if (oldValue == QA)
-				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == mountIsOn)
+				return setBitsInput (ZREG_J1XT1, ZI_ELYA_MOUNT, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			break;
 		case ZELIO_ELYA:
 			if (oldValue == dc12)
