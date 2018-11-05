@@ -1,4 +1,4 @@
-/* 
+/*
  * Auger cosmic rays showers follow-up target.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -104,7 +104,7 @@ float Ddist (float a, float b, float d, float e)
 	return dist;
 }
 
-/* calculate slant depth */  
+/* calculate slant depth */
 float slantd_elev (float est, float nor, float X, float azimut, float sdphi, float theta, int month)
 {
 	float param[12][5][4] = {{{6.5,-185.45512,1217.75792,1051253.676},{13.1,-77.961719233,1149.3974354,879044.2975},{35.1,1.0659697329,1536.7105029,610800.76274},{100.0,0.000317101,670.97827193,743424.16762},{10000.0,0.01128292,1.0,1000000000.0}},{{6,-193.482906649,1227.277526,1057565.8919},{12.3,-88.047606534,1152.3562565,897335.90273},{37.6,0.67671779025,1457.9361143,625248.19669},{100,0.000318027297,664.79773683,743878.54879},{10000.0,0.01128292,1.0,1000000000.0}},{{7,-171.23355185,1207.1490848, 1026045.9111},{12.9,-73.878750552,1154.8360718,862344.55423},{35.7,0.94871056328,1508.6973496,612947.06993},{100, 0.00044621670109,658.64089387,743345.02082},{10000.0,0.01128292,1.0,1000000000.0}},{{8,-143.09810516,1181.8291825,980060.24638},{12.1,-76.979091502,1161.8632157,856027.7804},{36.2,0.83594885933,1440.4714686,620377.25203},{100,0.00033614110605,656.86460489,743498.68639},{10000.0,0.01128292,1.0,1000000000.0}},{{4.5,-273.88905394,1309.5120835,1129207.4375},{11.8,-98.373681864,1157.6082795,903757.61519},{36.3,0.82578384579,1447.8069611,617971.89079},{100,0.00035413747604,646.83919414,743288.08998},
@@ -348,17 +348,17 @@ void TargetAuger::load (int auger_id)
 		eye,
 		run,
 		event,
-		augerid, 
-		GPSSec, 
-		GPSNSec, 
-		SDId, 
+		augerid,
+		GPSSec,
+		GPSNSec,
+		SDId,
 		NPix,
 		SDPTheta,
 		SDPThetaErr,
 		SDPPhi,
 		SDPPhiErr,
 		SDPChi2,
-		SDPNdf, 
+		SDPNdf,
 		Rp,
 		RpErr,
 		Chi0,
@@ -367,7 +367,7 @@ void TargetAuger::load (int auger_id)
 		T0Err,
 		TimeChi2,
 		TimeChi2FD,
-		TimeNdf,	
+		TimeNdf,
 		Easting,
 		Northing,
 		Altitude,
@@ -503,17 +503,17 @@ void TargetAuger::load (int auger_id)
 	Eye = db_Eye;
 	Run = db_Run;
 	Event = db_Event;
-	AugerId = db_AugerId.arr; 
-	GPSSec = db_GPSSec; 
-	GPSNSec = db_GPSNSec; 
-	SDId = db_SDId; 
+	AugerId = db_AugerId.arr;
+	GPSSec = db_GPSSec;
+	GPSNSec = db_GPSNSec;
+	SDId = db_SDId;
 	NPix = db_NPix;
 	SDPTheta = db_SDPTheta;
 	SDPThetaErr = db_SDPThetaErr;
 	SDPPhi = db_SDPPhi;
 	SDPPhiErr = db_SDPPhiErr;
 	SDPChi2 = db_SDPChi2;
-	SDPNdf = db_SDPNdf; 
+	SDPNdf = db_SDPNdf;
 	Rp = db_Rp;
 	RpErr = db_RpErr;
 	Chi0 = db_Chi0;
@@ -522,7 +522,7 @@ void TargetAuger::load (int auger_id)
 	T0Err = db_T0Err;
 	TimeChi2 = db_TimeChi2;
 	TimeChi2FD = db_TimeChi2FD;
-	TimeNdf = db_TimeNdf;	
+	TimeNdf = db_TimeNdf;
 	Easting = db_Easting;
 	Northing = db_Northing;
 	Altitude = db_Altitude;
@@ -684,14 +684,14 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strcmp (device_name, "WF6"))
+	if (!strncmp (device_name, "WF", 2))
 	{
 		std::ostringstream _os;
 	 	_os << "filter=B ";
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
 		{
 			if (iter->ra != 0 || iter->dec != 0)
-				_os << "PARA.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
+				_os << "GM2000.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
 			_os << "E 30 ";
 		}
 		buf = _os.str ();
@@ -810,16 +810,16 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<int> ("GPSSec", GPSSec)
 		<< InfoVal<int> ("GPSNSec", GPSNSec)
 		<< InfoVal<int> ("SDId", SDId)
-	
+
 		<< InfoVal<int> ("NPix", NPix)
-	
+
 		<< InfoVal<double> ("SDPTheta", SDPTheta)
 		<< InfoVal<double> ("SDPThetaErr", SDPThetaErr)
 		<< InfoVal<double> ("SDPPhi", SDPPhi)
 		<< InfoVal<double> ("SDPPhiErr", SDPPhiErr)
 		<< InfoVal<double> ("SDPChi2", SDPChi2)
 		<< InfoVal<int> ("SDPNdf", SDPNdf)
-	
+
 		<< InfoVal<double> ("Rp", Rp)
 		<< InfoVal<double> ("RpErr", RpErr)
 		<< InfoVal<double> ("Chi0", Chi0)
@@ -829,7 +829,7 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<double> ("TimeChi2", TimeChi2)
 		<< InfoVal<double> ("TimeChi2FD", TimeChi2FD)
 		<< InfoVal<int> ("TimeNdf", TimeNdf)
-	
+
 		<< InfoVal<double> ("Easting", Easting)
 		<< InfoVal<double> ("Northing", Northing)
 		<< InfoVal<double> ("Altitude", Altitude)
@@ -839,7 +839,7 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<double> ("ThetaErr", ThetaErr)
 		<< InfoVal<double> ("Phi", Phi)
 		<< InfoVal<double> ("PhiErr", PhiErr)
-	
+
 		<< InfoVal<double> ("dEdXmax", dEdXmax)
 		<< InfoVal<double> ("dEdXmaxErr", dEdXmaxErr)
 		<< InfoVal<double> ("Xmax", Xmax)
@@ -851,21 +851,21 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<double> ("GHChi2", GHChi2)
 		<< InfoVal<int> ("GHNdf", GHNdf)
 		<< InfoVal<double> ("LineFitChi2", LineFitChi2)
-	
+
 		<< InfoVal<double> ("EmEnergy", EmEnergy)
 		<< InfoVal<double> ("EmEnergyErr", EmEnergyErr)
 		<< InfoVal<double> ("Energy", Energy)
 		<< InfoVal<double> ("EnergyErr", EnergyErr)
-	
+
 		<< InfoVal<double> ("MinAngle", MinAngle)
 		<< InfoVal<double> ("MaxAngle", MaxAngle)
 		<< InfoVal<double> ("MeanAngle", MeanAngle)
-	
+
 		<< InfoVal<int> ("NTank", NTank)
 		<< InfoVal<int> ("HottestTank", HottestTank)
 		<< InfoVal<double> ("AxisDist", AxisDist)
 		<< InfoVal<double> ("SDPDist", SDPDist)
-	
+
 		<< InfoVal<double> ("SDFDdT", SDFDdT)
 		<< InfoVal<double> ("XmaxEyeDist", XmaxEyeDist)
 		<< InfoVal<double> ("XTrackMin", XTrackMin)
@@ -917,16 +917,16 @@ void TargetAuger::writeToImage (rts2image::Image * image, double JD)
 	image->setValue ("AGR_GPSSec", GPSSec, "GPS second (SD)");
 	image->setValue ("AGR_GPSNSec", GPSNSec, "GPS nano second (SD)");
 	image->setValue ("AGR_SDId", SDId, "SD Event Id");
-	
+
 	image->setValue ("AGR_NPix", NPix, "Num. pixels with a pulse after FdPulseFinder");
-	
+
 	image->setValue ("AGR_SDPTheta", SDPTheta, "Zenith angle of SDP normal vector (deg)");
 	image->setValue ("AGR_SDPThetaErr", SDPThetaErr, "Uncertainty of SDPtheta");
 	image->setValue ("AGR_SDPPhi", SDPPhi, "Azimuth angle of SDP normal vector (deg)");
 	image->setValue ("AGR_SDPPhiErr", SDPPhiErr, "Uncertainty of SDPphi");
 	image->setValue ("AGR_SDPChi2", SDPChi2, "Chi^2 of SDP db_it");
 	image->setValue ("AGR_SDPNdf", SDPNdf, "Degrees of db_reedom of SDP db_it");
-	
+
 	image->setValue ("AGR_Rp", Rp, "Shower impact parameter Rp (m)");
 	image->setValue ("AGR_RpErr", RpErr, "Uncertainty of Rp (m)");
 	image->setValue ("AGR_Chi0", Chi0, "Angle of shower in the SDP (deg)");
@@ -936,7 +936,7 @@ void TargetAuger::writeToImage (rts2image::Image * image, double JD)
 	image->setValue ("AGR_TimeChi2", TimeChi2, "Full Chi^2 of axis db_it");
 	image->setValue ("AGR_TimeChi2FD", TimeChi2FD, "Chi^2 of axis db_it (FD only)");
 	image->setValue ("AGR_TimeNdf", TimeNdf, "Degrees of db_reedom of axis db_it");
-	
+
 	image->setValue ("AGR_Easting", Easting, "Core position in easting coordinate (m)");
 	image->setValue ("AGR_Northing", Northing, "Core position in northing coordinate (m)");
 	image->setValue ("AGR_Altitude", Altitude, "Core position altitude (m)");
@@ -946,7 +946,7 @@ void TargetAuger::writeToImage (rts2image::Image * image, double JD)
 	image->setValue ("AGR_ThetaErr", ThetaErr, "Uncertainty of zenith angle (deg)");
 	image->setValue ("AGR_Phi", Phi, "Shower azimuth angle in core coords. (deg)");
 	image->setValue ("AGR_PhiErr", PhiErr, "Uncertainty of azimuth angle (deg)");
-	
+
 	image->setValue ("AGR_dEdXmax", dEdXmax, "Energy deposit at shower max (GeV/(g/cm^2))");
 	image->setValue ("AGR_dEdXmaxErr", dEdXmaxErr, "Uncertainty of Nmax (GeV/(g/cm^2))");
 	image->setValue ("AGR_Xmax", Xmax, "Slant depth of shower maximum (g/cm^2)");
@@ -958,21 +958,21 @@ void TargetAuger::writeToImage (rts2image::Image * image, double JD)
 	image->setValue ("AGR_GHChi2", GHChi2, "Chi^2 of Gaisser-Hillas db_it");
 	image->setValue ("AGR_GHNdf", GHNdf, "Degrees of db_reedom of GH db_it");
 	image->setValue ("AGR_LineFitChi2", LineFitChi2, "Chi^2 of linear db_it to profile");
-	
+
 	image->setValue ("AGR_EmEnergy", EmEnergy, "Calorimetric energy db_rom GH db_it (EeV)");
 	image->setValue ("AGR_EmEnergyErr", EmEnergyErr, "Uncertainty of Eem (EeV)");
 	image->setValue ("AGR_Energy", Energy, "Total energy db_rom GH db_it (EeV)");
 	image->setValue ("AGR_EnergyErr", EnergyErr, "Uncertainty of Etot (EeV)");
-	
+
 	image->setValue ("AGR_MinAngle", MinAngle, "Minimum viewing angle (deg)");
 	image->setValue ("AGR_MaxAngle", MaxAngle, "Maximum viewing angle (deg)");
 	image->setValue ("AGR_MeanAngle", MeanAngle, "Mean viewing angle (deg)");
-	
+
 	image->setValue ("AGR_NTank", NTank, "Number of stations in hybrid db_it");
 	image->setValue ("AGR_HottestTank", HottestTank, "Station used in hybrid-geometry reco");
 	image->setValue ("AGR_AxisDist", AxisDist, "Shower axis distance to hottest station (m)");
 	image->setValue ("AGR_SDPDist", SDPDist, "SDP distance to hottest station (m)");
-	
+
 	image->setValue ("AGR_SDFDdT", SDFDdT, "SD/FD time offset after the minimization (ns)");
 	image->setValue ("AGR_XmaxEyeDist", XmaxEyeDist, "Distance to shower maximum (m)");
 	image->setValue ("AGR_XTrackMin", XTrackMin, "First recorded slant depth of track (g/cm^2)");
