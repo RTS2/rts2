@@ -473,10 +473,8 @@ int GXCCD::startExposure ()
 
 	// The GXCCD library expects pre-binned region coordinates and size
 	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 0,
-								(int) (getUsedX () / binningHorizontal ()),
-								(int) (getUsedY () / binningVertical ()),
-								(int) (getUsedWidth () / binningHorizontal ()),
-								(int) (getUsedHeight () / binningVertical ()));
+								getUsedXBinned (), getUsedYBinned (),
+								getUsedWidthBinned (), getUsedHeightBinned ());
 	if (ret)
 	{
 		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
