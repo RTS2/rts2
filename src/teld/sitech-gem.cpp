@@ -391,7 +391,7 @@ int Sitech::stopMove ()
 
 		wasStopped = true;
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot stop " << er << sendLog;
 		return -1;
@@ -431,7 +431,7 @@ void Sitech::getTel ()
 	{
 		serConn->getAxisStatus ('X');
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		delete serConn;
 

@@ -510,7 +510,7 @@ int D50::resetMount ()
                 raDrive->reset ();
                 decDrive->reset ();
         }
-        catch (TGDriveError e)
+        catch (TGDriveError &e)
         {
                 logStream (MESSAGE_ERROR) << "error reseting mount" << sendLog;
                 return -1;
@@ -711,7 +711,7 @@ int D50::endPark ()
         return 0;
 }
 
-void D50::setDiffTrack (double dra, double ddec)
+void D50::setDiffTrack (__attribute__((unused)) double dra, __attribute__((unused)) double ddec)
 {
 	logStream (MESSAGE_DEBUG) << "****** setDiffTrack ()" << sendLog;
         if (parking)

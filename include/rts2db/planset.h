@@ -80,7 +80,7 @@ class PlanSet:public std::list < Plan >
 				{
 					iss >> p;
 				}
-				catch (rts2core::Error er)
+				catch (rts2core::Error &er)
 				{
 					throw rts2core::Error (buf + " " + er.what ());
 				}

@@ -118,7 +118,7 @@ int BAIT::init ()
 		connBait = new rts2core::BAIT (this, bs, baitServer->getPort ());
 		ret = connBait->init ();
 	}
-	catch (rts2core::ConnError er)
+	catch (rts2core::ConnError &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;

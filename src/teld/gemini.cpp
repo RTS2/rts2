@@ -1,4 +1,4 @@
-/* 
+/*
  * Driver for Gemini systems.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -124,7 +124,7 @@ class Gemini:public TelLX200
 		 * Get date from Gemini. This call nulls all values stored in _tm.
 		 *
 		 * @param _tm Structure where date (years, days and monts) will be stored.
-		 * 
+		 *
 		 * @return -1 on error, 0 on success.
 		 */
 		 int readDate (struct tm *_tm, const char *command);
@@ -719,6 +719,7 @@ int Gemini::processOption (int in_opt)
 					std::cerr << "Invalid correction option " << optarg << std::endl;
 					return -1;
 			}
+		break;
 #endif
 		case OPT_EXPTYPE:
 			expectedType = atoi (optarg);
@@ -855,14 +856,14 @@ int Gemini::setCorrection ()
 {
 	if (gem_version < 4)
 		return 0;
-	
+
 	int ret = -1;
 #ifdef RTS2_LIBERFA
 	ret = serConn->writePort (":p3#", 4);
 #else
 	if (calculateAberation () && calculatePrecession () && calculateRefraction ())
 		ret = serConn->writePort (":p0#", 4);
-	else if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
+	else if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())
 		ret = serConn->writePort (":p1#", 4);
 	else if (calculateAberation () && calculatePrecession () && !calculateRefraction ())
 		ret = serConn->writePort (":p2#", 4);
@@ -1280,7 +1281,7 @@ int Gemini::startResync ()
 					//ra_diff_flip = pos.ra - getTelRa () + 180.0;
 					ra_diff_flip = - ha + haActual + 180.0;
 				}
-					
+
 				if (telLatitude->getValueDouble () > 0)
 					dec_diff_flip = (90.0 - getTelDec () + 90.0 - pos.dec);
 				else
@@ -1492,6 +1493,7 @@ int Gemini::isParking ()
 		case '0':
 			logStream (MESSAGE_ERROR) <<
 				"Losmandy isParking called without park command" << sendLog;
+            __attribute__ ((fallthrough));
 		default:
 			return -1;
 	}
@@ -1560,7 +1562,7 @@ int Gemini::setTo (double set_ra, double set_dec)
 	return setTo (set_ra, set_dec, syncAppendModel->getValueBool ());
 }
 
-int Gemini::correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec)
+int Gemini::correctOffsets (double cor_ra, double cor_dec, __attribute__((unused)) double real_ra, __attribute__((unused)) double real_dec)
 {
 	int32_t v205;
 	int32_t v206;

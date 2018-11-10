@@ -84,7 +84,7 @@ int Triax::info ()
 	{
 		getValue (motorPosition, "H0\r");
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -126,7 +126,7 @@ int Triax::init ()
 				return -1;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -141,7 +141,7 @@ int Triax::initValues ()
 		getValue (mainVersion, "z");
 		getValue (bootVersion, "y");
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -189,7 +189,7 @@ int Triax::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -2;

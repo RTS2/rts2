@@ -645,7 +645,7 @@ int SitechAltAz::stopMove ()
 
 		wasStopped = true;
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot stop " << er << sendLog;
 		return -1;
@@ -1408,7 +1408,7 @@ void SitechAltAz::changeSitechLogFile ()
 				telConn->startLogging (sitechLogExpander->expandPath (sitechLogFile->getValue ()).c_str ());
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_WARNING) << "cannot expand " << sitechLogFile->getValue () << sendLog;
 	}

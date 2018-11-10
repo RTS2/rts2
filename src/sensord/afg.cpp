@@ -64,7 +64,7 @@ int AFG::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	{
 
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set " << new_value->getName () << " " << er << sendLog;
 		return -2;
@@ -77,7 +77,7 @@ int AFG::info ()
 	try
 	{
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		setReplyWithValueName (true);

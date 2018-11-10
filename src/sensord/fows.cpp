@@ -295,7 +295,11 @@ int FOWS::initHardware ()
 {
 	libusb_init (NULL);
 	if (getDebug ())
-		libusb_set_debug (NULL, LIBUSB_LOG_LEVEL_INFO);
+        #if LIBUSB_API_VERSION >= 0x01000106
+            libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+        #else
+            libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_INFO);
+        #endif
 
 	devh = libusb_open_device_with_vid_pid (NULL, FOWS_VENDOR, FOWS_PRODUCT);
 	if (devh == NULL)

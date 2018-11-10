@@ -253,7 +253,7 @@ int Cryocon::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -2;
@@ -399,7 +399,7 @@ int Cryocon::info ()
 		readValue ("SYSTEM:", systemList, 0);
 		readValue ("CONTROL?", heaterEnabled);
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -422,7 +422,7 @@ int Cryocon::commandAuthorized (rts2core::Connection * conn)
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_DEBUG) << er << sendLog;
 		return -1;

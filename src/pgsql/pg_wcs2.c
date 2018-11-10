@@ -25,6 +25,10 @@
 PG_MODULE_MAGIC;
 #endif
 
+#ifndef SET_VARSIZE
+#define SET_VARSIZE(v,l) (VARATT_SIZEP(v) = (l))
+#endif
+
 #include <ctype.h>
 #include <stdio.h>
 
@@ -340,11 +344,7 @@ imgrange2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-#ifdef RTS2_HAVE_PGSQL_SET_VARSIZE
   SET_VARSIZE (res, VARHDRSZ + l);
-#else
-  VARATT_SIZEP (res) = VARHDRSZ + l;
-#endif
   memcpy (VARDATA (res), buffer, l);
 
   pfree (buffer);

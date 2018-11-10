@@ -159,6 +159,7 @@ int Rts2ConnFwGrb::idle ()
 				setConnState (CONN_CONNECTED);
 			}
 			// kill us when we were in conn_connecting state for to long
+		__attribute__ ((fallthrough));
 		case CONN_BROKEN:
 			if (nextTime < now)
 			{
@@ -288,7 +289,7 @@ int Rts2ConnFwGrb::add (rts2core::Block *block)
 	return rts2core::Connection::add (block);
 }
 
-void Rts2ConnFwGrb::connectionError (int last_data_size)
+void Rts2ConnFwGrb::connectionError (__attribute__((unused)) int last_data_size)
 {
 	logStream (MESSAGE_DEBUG) << "Rts2ConnFwGrb::connectionError" << sendLog;
 	if (sock > 0)
@@ -408,11 +409,11 @@ class Rts2AppFw:public rts2core::Block
 		int forwardPort;
 
 	protected:
-		virtual rts2core::Connection * createClientConnection (char *in_deviceName)
+		virtual rts2core::Connection * createClientConnection (__attribute__((unused)) char *in_deviceName)
 		{
 			return NULL;
 		}
-		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr)
+		virtual rts2core::Connection *createClientConnection (__attribute__((unused)) rts2core::NetworkAddress * in_addr)
 		{
 			return NULL;
 		}

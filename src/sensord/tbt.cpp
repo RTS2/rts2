@@ -164,7 +164,7 @@ int TBT::info ()
 	{
 		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
-	catch (rts2core::ConnError err)
+	catch (rts2core::ConnError &err)
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
 		return -1;
@@ -221,7 +221,7 @@ int TBT::initHardware ()
 		zelioConn->init ();
 		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
-	catch (rts2core::ConnError er)
+	catch (rts2core::ConnError &er)
 	{
 		logStream (MESSAGE_ERROR) << "initHardware " << er << sendLog;
 		return -1;
@@ -278,7 +278,7 @@ int TBT::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		if (oldValue == Q3)
 			return setBitsInput (ZREG_J1XT1, ZS_TBT_Q3, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	}
-	catch (rts2core::ConnError err)
+	catch (rts2core::ConnError &err)
 	{
 		logStream (MESSAGE_ERROR) << "setValue " << oldValue->getName () << " " << err << sendLog;
 			return -2;
@@ -298,7 +298,7 @@ int TBT::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 			oldValue |= mask;
 		zelioConn->writeHoldingRegister (unitId, reg, oldValue);
 	}
-	catch (rts2core::ConnError err)
+	catch (rts2core::ConnError &err)
 	{
 		logStream (MESSAGE_ERROR) << err << sendLog;
 		return -1;

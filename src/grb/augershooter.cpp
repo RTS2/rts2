@@ -236,7 +236,7 @@ void DevAugerShooter::augerMessage ()
 	sendValueAll (lastAugerMessage);
 }
 
-void DevAugerShooter::rejectedShower (double lastDate, double ra, double dec)
+void DevAugerShooter::rejectedShower (double lastDate, __attribute__((unused)) double ra, __attribute__((unused)) double dec)
 {
 	lastAugerSeen->setValueDouble (lastDate);
 	sendValueAll (lastAugerSeen);

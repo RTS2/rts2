@@ -446,7 +446,7 @@ int OpenTPL::initHardware ()
 		opentplConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
 		opentplConn->init ();
 	}
-	catch (rts2core::ConnError er)
+	catch (rts2core::ConnError &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;

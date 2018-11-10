@@ -621,7 +621,7 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 			queueEnabled->setValueBool (queue.queue_enabled);
 			queueWindow->setValueFloat (queue.queue_window);
 		}
-		catch (rts2db::SqlError)
+		catch (rts2db::SqlError &err)
 		{
 			queue.queue_type = getQueueType ();
 			queue.skip_below_horizon = getSkipBelowHorizon ();

@@ -473,7 +473,7 @@ int main (int argc, char ** argv)
 		Rts2ScheduleApp app (argc, argv);
 		return app.run ();
 	}
-	catch (rts2db::SqlError err)
+	catch (rts2db::SqlError &err)
 	{
 		std::cerr << err << std::endl;
 	}

@@ -82,7 +82,7 @@ int MM2500::info ()
 		ax2->setValueInteger (getAxis (2, "TP"));
 		dp2->setValueInteger (getAxis (2, "DP"));
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -124,7 +124,7 @@ int MM2500::moveAxis (int axis, int newVal)
 		moveCount->inc ();
 		sendValueAll (moveCount);
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_DEBUG) << er << sendLog;
 		return -2;

@@ -115,7 +115,7 @@ void ConnGpibEnet::gpibRead (void *reply, int &blen)
 			delete[] sbuf;
 		}
 	}
-	catch (ErrorGpibEnetFlags er)
+	catch (ErrorGpibEnetFlags &er)
 	{
 		if (data_len > 0)
 		{

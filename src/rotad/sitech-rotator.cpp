@@ -304,6 +304,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 	{
 		case rts2core::ConnSitech::SERVO_I:
 		case rts2core::ConnSitech::SERVO_II:
+        case rts2core::ConnSitech::FORCE_TWO:
 			break;
 		case rts2core::ConnSitech::FORCE_ONE:
 		{

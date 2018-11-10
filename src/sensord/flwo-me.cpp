@@ -153,7 +153,7 @@ void MEarthWeather::paramNextSkyME (rts2core::ValueDoubleStat *val, rts2core::Va
 	val->calculate ();
 }
 
-int MEarthWeather::process (size_t len, struct sockaddr_in &from)
+int MEarthWeather::process (__attribute__ ((unused)) size_t len, __attribute__ ((unused)) struct sockaddr_in &from)
 {
 	try
 	{
@@ -172,7 +172,7 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 		paramNextFloatME (((FlwoMe *) master)->me_hail_intensity);
 		paramNextSkyME (((FlwoMe *) master)->me_sky_temp, ((FlwoMe *) master)->me_rain, ((FlwoMe *) master)->me_sky_avg->getValueInteger ());
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_DEBUG) << "cannot parse MEarth UDP packet, rest contet is " << buf << ", erorr is " << er << sendLog;
 		return -1;

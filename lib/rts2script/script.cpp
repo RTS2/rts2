@@ -203,7 +203,7 @@ void Script::parseScript (Rts2Target *target)
 		{
 			element->checkParameters ();
 		}
-		catch (ParsingError err)
+		catch (ParsingError &err)
 		{
 			delete element;
 			throw err;

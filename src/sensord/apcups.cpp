@@ -269,7 +269,7 @@ int ApcUps::info ()
 	status->setValueString (connApc->getString ("STATUS"));
 	setInfoTime (connApc->getDate ("DATE"));
 	}
-	catch (rts2core::ConnError er)
+	catch (rts2core::ConnError &er)
 	{
 	logStream (MESSAGE_ERROR) << er << sendLog;
 	setWeatherTimeout (120, er.what ());

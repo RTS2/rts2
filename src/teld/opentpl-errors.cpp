@@ -310,7 +310,7 @@ AppOpenTPLError::init ()
 	{
 		opentplConn->init();
 	}
-	catch (ConnError er)
+	catch (ConnError &er)
 	{
 		std::cerr << "Cannot init connection to mount server, error: " << er << std::endl;
 	}

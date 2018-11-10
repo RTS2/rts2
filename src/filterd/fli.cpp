@@ -161,7 +161,7 @@ int Fli::initHardware ()
 	}
 	else
 	{
-		ret = FLIOpen (&dev, name, deviceDomain);
+		ret = FLIOpen (&dev, (char*)name, deviceDomain);
 	}
 	if (ret)
 	{

@@ -1276,7 +1276,7 @@ int Trencin::stopMove ()
 	return 0;
 }
 
-void Trencin::startOffseting (rts2core::Value *changed_value)
+void Trencin::startOffseting (__attribute__((unused)) rts2core::Value *changed_value)
 {
 	int32_t new_ra_off = haCpd * getOffsetRa ();
 	int32_t new_dec_off = decCpd * getOffsetDec ();

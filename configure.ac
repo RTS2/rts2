@@ -17,7 +17,7 @@ AM_MAINTAINER_MODE
 # Checks for programs.
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11
+AX_CXX_COMPILE_STDCXX_17
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
@@ -43,7 +43,7 @@ AS_IF([test "x$ERFA_LIBS" != x], [
 
 libwebsockets="no"
 
-PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.7.0 libwebsockets < 2.2.0],,AC_MSG_RESULT(not found))
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.7.0],,AC_MSG_RESULT(not found))
 AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
 AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
@@ -365,7 +365,7 @@ AS_IF([test x${target_os} == xcygwin], [
 	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src"
 ], [
 	LIB_ARC="-L${ARC}/Release/x64 -lCArcDevice -lCArcDeinterlace";
-	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src -std=gnu++11"
+	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src -std=gnu++17"
 ]),
 [ARC_3=no])
 

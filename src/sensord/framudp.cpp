@@ -31,7 +31,7 @@
 
 using namespace rts2sensord;
 
-ConnFramWeather::ConnFramWeather (int _weather_port, int _weather_timeout, FramWeather * _master):rts2core::ConnNoSend (_master)
+ConnFramWeather::ConnFramWeather (int _weather_port, __attribute__ ((unused)) int _weather_timeout, FramWeather * _master):rts2core::ConnNoSend (_master)
 {
 	master = _master;
 	weather_port = _weather_port;

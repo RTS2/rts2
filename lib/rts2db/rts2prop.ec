@@ -67,7 +67,7 @@ Target * Rts2Prop::getTarget ()
 	{
 		target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver(), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 	}
-	catch (SqlError err)
+	catch (SqlError &err)
 	{
 	  	logStream (MESSAGE_ERROR) << "error while retrieving target for plan: " << err << sendLog;
 		return NULL;

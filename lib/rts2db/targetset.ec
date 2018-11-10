@@ -181,7 +181,7 @@ void TargetSet::load (const char * name, TargetSet::iterator const (*multiple_re
 				(*this)[tid] = tar;
 				return;
 			}
-			catch (SqlError err)
+			catch (SqlError &err)
 			{
 				if (resType == ID_ONLY)
 					throw UnresolvedTarget (name);

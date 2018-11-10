@@ -25,7 +25,7 @@
 PG_MODULE_MAGIC;
 #endif
 
-#include <wcstools/wcs.h>
+#include <wcs/wcs.h>
 
 #include <ctype.h>
 #include <string.h>
@@ -37,6 +37,10 @@ PG_MODULE_MAGIC;
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
+
+#ifndef SET_VARSIZE
+#define SET_VARSIZE(v,l) (VARATT_SIZEP(v) = (l))
+#endif
 
 #include <rts2-config.h>
 
@@ -279,11 +283,7 @@ imgrange (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-#ifdef RTS2_HAVE_PGSQL_SET_VARSIZE
   SET_VARSIZE (res, VARHDRSZ + l);
-#else
-  VARATT_SIZEP (res) = VARHDRSZ + l;
-#endif
   memcpy (VARDATA (res), buffer, l);
 
   pfree (buffer);
@@ -331,11 +331,7 @@ img_wcs_ctype1 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-#ifdef RTS2_HAVE_PGSQL_SET_VARSIZE
   SET_VARSIZE (res, VARHDRSZ + l);
-#else
-  VARATT_SIZEP (res) = VARHDRSZ + l;
-#endif
   memcpy (VARDATA (res), arg->ctype1, l);
 
   PG_RETURN_TEXT_P (res);
@@ -356,11 +352,7 @@ img_wcs_ctype2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-#ifdef RTS2_HAVE_PGSQL_SET_VARSIZE
   SET_VARSIZE (res, VARHDRSZ + l);
-#else
-  VARATT_SIZEP (res) = VARHDRSZ + l;
-#endif
   memcpy (VARDATA (res), arg->ctype2, l);
 
   PG_RETURN_TEXT_P (res);

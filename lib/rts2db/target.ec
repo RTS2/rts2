@@ -965,7 +965,7 @@ void Target::setConstraints (Constraints &cons)
 		cons.printXML (ofs);
 		ofs.close ();
 	}
-	catch (std::ofstream::failure f)
+	catch (std::ofstream::failure &f)
 	{
 		throw rts2core::Error ((std::string ("cannot write constraint file ") + getConstraintFile () + " : " + strerror (errno)).c_str ());
 	}

@@ -265,21 +265,21 @@ int NUT::initHardware ()
 	try {
 		connNUT->getVal ("ups.load", vf);
 		createValue (loadpct, "ups.load", "UPS load", false);
-	} catch (rts2core::Error er) {
+	} catch (rts2core::Error &er) {
 		logStream (MESSAGE_DEBUG) << "ups.load value does not exist" << sendLog;
 	}
 
 	try {
 		connNUT->getVal ("battery.charge", vf);
 		createValue (bcharge, "battery.charge", "battery charge", false);
-	} catch (rts2core::Error er) {
+	} catch (rts2core::Error &er) {
 		logStream (MESSAGE_DEBUG) << "battery.charge value does not exist" << sendLog;
 	}
 
 	try {
 		connNUT->getVal ("battery.runtime", vi);
 		createValue (bruntime, "battery.runtime", "time left for on-UPS operations", false);
-	} catch (rts2core::Error er) {
+	} catch (rts2core::Error &er) {
 		logStream (MESSAGE_DEBUG) << "battery.runtime value does not exist" << sendLog;
 	}
 
@@ -305,7 +305,7 @@ int NUT::info ()
 			connNUT->getValue ("battery.runtime", bruntime);
 		connNUT->getValue ("ups.status", upsstatus);
 	}
-	catch (rts2core::ConnError err)
+	catch (rts2core::ConnError &err)
 	{
 		logStream (MESSAGE_ERROR) << err << sendLog;
 		return -1;

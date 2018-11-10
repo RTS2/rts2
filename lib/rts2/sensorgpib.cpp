@@ -234,7 +234,7 @@ int Gpib::initHardware ()
 		connGpib->setDebug (debug);
 		connGpib->initGpib ();
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;

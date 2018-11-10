@@ -105,7 +105,7 @@ int AgilentE3631A::info ()
 		if (! (buf[0] == '+' && buf[1] == '0'))
 			logStream (MESSAGE_ERROR) << "SYSTEM ERROR " << buf << sendLog;
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -166,7 +166,7 @@ int AgilentE3631A::setValue (rts2core::Value * oldValue, rts2core::Value * newVa
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -2;

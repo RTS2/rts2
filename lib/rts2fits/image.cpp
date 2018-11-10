@@ -431,7 +431,7 @@ void Image::getHeaders ()
 		getValue ("CTIME", tv.tv_sec, true);
 		getValue ("USEC", tv.tv_usec, true);
 	}
-	catch (rts2core::Error )
+	catch (rts2core::Error &err)
 	{
 		char daobs[100];
 		getValue ("DATE-OBS", daobs, 100, NULL, verbose);
@@ -444,7 +444,7 @@ void Image::getHeaders ()
 	{
 		getValue ("EXPTIME", exposureLength, false);
 	}
-	catch (rts2core::Error)
+	catch (rts2core::Error &err)
 	{
 		getValue ("EXPOSURE", exposureLength, verbose);
 	}
@@ -1818,7 +1818,7 @@ int Image::getImgId ()
 		if (imgId < 0)
 			getTargetHeaders ();
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot read image header " << er << sendLog;
 	}
@@ -2029,7 +2029,7 @@ const void* Image::getChannelData (int chan)
 		{
 			loadChannels ();
 		}
-		catch (rts2core::Error er)
+		catch (rts2core::Error &er)
 		{
 			logStream (MESSAGE_ERROR) << er << sendLog;
 			return NULL;

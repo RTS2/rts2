@@ -185,7 +185,7 @@ int Lakeshore::info ()
 		readValue ("RAMPS?", rampStatus);
 		readValue ("TUNE?", tunest);
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -261,7 +261,7 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -2;
@@ -269,7 +269,7 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 	return Gpib::setValue (oldValue, newValue);
 }
 
-void Lakeshore::changeTempValue (char chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue)
+void Lakeshore::changeTempValue (char chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, __attribute__ ((unused)) rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	std::ostringstream _os;
 	_os << it->first << " " << chan;

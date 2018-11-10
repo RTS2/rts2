@@ -289,7 +289,7 @@ int Hlohovec::resetMount ()
 		raDrive->reset ();
 		decDrive->reset ();
 	}
-	catch (TGDriveError e)
+	catch (TGDriveError &e)
 	{
 	  	logStream (MESSAGE_ERROR) << "error reseting mount" << sendLog;
 		return -1;

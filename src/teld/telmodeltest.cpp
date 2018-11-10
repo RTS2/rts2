@@ -428,7 +428,7 @@ void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 
 }
 
-void TelModelTest::runOnRTS2DatFile (std::string filename, std::ostream & os)
+void TelModelTest::runOnRTS2DatFile (__attribute__((unused)) std::string filename, __attribute__((unused)) std::ostream & os)
 {
 }
 

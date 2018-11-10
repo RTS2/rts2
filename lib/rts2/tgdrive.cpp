@@ -225,7 +225,7 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 			return 1;
 		}
 	}
-	catch (TGDriveError e)
+	catch (TGDriveError &e)
 	{
 		return -2;
 	}

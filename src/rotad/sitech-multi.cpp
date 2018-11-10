@@ -144,7 +144,7 @@ int SitechMulti::callInfo ()
 		if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
 			derSetTarget ();
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "exception during callInfo: " << er << sendLog;
 		delete derConn;
@@ -207,7 +207,7 @@ void SitechMulti::derSetTarget ()
 			rotators[1]->updateTrackingFrequency ();
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "error in derSetTarget: " << er << sendLog;
 	}

@@ -315,7 +315,7 @@ rts2core::DevClient *FocusClient::createOtherType (rts2core::Connection * conn, 
 	}
 }
 
-void signal_winch (int sig)
+void signal_winch (__attribute__((unused)) int sig)
 {
 	setupterm (NULL, 2, NULL);
 }

@@ -24,7 +24,7 @@
 
 int main (int argc, char **argv)
 {
-	if (!argv[1])
+	if (argc < 2 || !argv[1])
 	{
 		std::cout << "Don't get image!" << std::endl;
 		return 1;

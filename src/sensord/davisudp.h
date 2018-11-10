@@ -71,7 +71,7 @@ class DavisUdp:public rts2core::ConnNoSend
 	protected:
 		void setWeatherTimeout (time_t wait_time, const char *msg);
 
-		virtual void connectionError (int last_data_size)
+		virtual void connectionError (__attribute__ ((unused)) int last_data_size)
 		{
 			// do NOT call Rts2Conn::connectionError. Weather connection must be kept even when error occurs.
 			return;

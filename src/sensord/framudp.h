@@ -39,7 +39,7 @@ class ConnFramWeather:public rts2core::ConnNoSend
 	protected:
 		int weather_port;
 
-		virtual void connectionError (int last_data_size)
+		virtual void connectionError (__attribute__ ((unused)) int last_data_size)
 		{
 			// do NOT call Rts2Conn::connectionError. Weather connection must be kept even when error occurs.
 			return;

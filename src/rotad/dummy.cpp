@@ -40,7 +40,7 @@ class Dummy:public Rotator
 
 using namespace rts2rotad;
 
-void Dummy::setTarget (double vt)
+void Dummy::setTarget (__attribute__ ((unused)) double vt)
 {
 }
 

@@ -719,7 +719,7 @@ int Rts2SchedBag::getNSGARankSize (int _rank)
 	{
 		return NSGAfrontsSize.at(_rank);
 	}
-	catch (std::out_of_range _err)
+	catch (std::out_of_range &_err)
 	{
 		return 0;
 	}

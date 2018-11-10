@@ -1,4 +1,4 @@
-/* 
+/*
  * Skeleton for applications which works with targets.
  * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -30,75 +30,75 @@ using namespace rts2db;
 
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):AppDb (in_argc, in_argv)
 {
-	target = NULL;
-	obs = NULL;
+    target = NULL;
+    obs = NULL;
 }
 
 Rts2TargetApp::~Rts2TargetApp (void)
 {
-	delete target;
+    delete target;
 }
 
 void Rts2TargetApp::getObject (std::string tar_name)
 {
-	target = createTargetByString (tar_name, getDebug ());
+    target = createTargetByString (tar_name, getDebug ());
 }
 
 int Rts2TargetApp::askForDegrees (const char *desc, double &val)
 {
-	LibnovaDegDist degDist = LibnovaDegDist (val);
-	while (1)
-	{
-		std::cout << desc << " [" << degDist << "]: ";
-		std::cin >> degDist;
-		if (!std::cin.fail ())
-			break;
-		std::cout << "Invalid string!" << std::endl;
-		std::cin.clear ();
-		std::cin.ignore (2000, '\n');
-	}
-	val = degDist.getDeg ();
-	std::cout << desc << ": " << degDist << std::endl;
-	return 0;
+    LibnovaDegDist degDist = LibnovaDegDist (val);
+    while (1)
+    {
+        std::cout << desc << " [" << degDist << "]: ";
+        std::cin >> degDist;
+        if (!std::cin.fail ())
+            break;
+        std::cout << "Invalid string!" << std::endl;
+        std::cin.clear ();
+        std::cin.ignore (2000, '\n');
+    }
+    val = degDist.getDeg ();
+    std::cout << desc << ": " << degDist << std::endl;
+    return 0;
 }
 
 int Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 {
-	int ret;
-	if (obj_text.length () == 0)
-	{
-		ret = askForString (desc, obj_text);
-		if (ret)
-			return ret;
-	}
+    int ret;
+    if (obj_text.length () == 0)
+    {
+        ret = askForString (desc, obj_text);
+        if (ret)
+            return ret;
+    }
 
-	try
-	{
-		getObject (obj_text);
-		return 0;
-	}
-	catch (rts2core::Error err)
-	{
-		std::cerr << err;
-		return -1;
-	}
+    try
+    {
+        getObject (obj_text);
+        return 0;
+    }
+    catch (rts2core::Error &err)
+    {
+        std::cerr << err;
+        return -1;
+    }
 }
 
 int Rts2TargetApp::init ()
 {
-	int ret;
+    int ret;
 
-	ret = AppDb::init ();
-	if (ret)
-		return ret;
+    ret = AppDb::init ();
+    if (ret)
+        return ret;
 
-	rts2core::Configuration *config;
-	config = rts2core::Configuration::instance ();
+    rts2core::Configuration *config;
+    config = rts2core::Configuration::instance ();
 
-	if (!obs)
-	{
-		obs = config->getObserver ();
-	}
+    if (!obs)
+    {
+        obs = config->getObserver ();
+    }
 
-	return 0;
+    return 0;
 }

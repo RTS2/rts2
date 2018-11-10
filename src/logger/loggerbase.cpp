@@ -202,7 +202,7 @@ int LoggerBase::willConnect (rts2core::NetworkAddress * in_addr)
 	return 0;
 }
 
-rts2core::DevClient * LoggerBase::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * LoggerBase::createOtherType (rts2core::Connection * conn, __attribute__ ((unused)) int other_device_type)
 {
 	LogValName *val = getLogVal (conn->getName ());
 	if (val)

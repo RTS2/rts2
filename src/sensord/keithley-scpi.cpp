@@ -324,7 +324,7 @@ int Keithley::initHardware ()
 		meas_times->clear ();
 		waitOpc ();
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 	 	logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -401,7 +401,7 @@ int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set " << new_value->getName () << " " << er << sendLog;
 		return -2;
@@ -502,7 +502,7 @@ int Keithley::info ()
 			readValue ("SOUR:VOLT:INT:FAIL?", s10vinterlock);
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;

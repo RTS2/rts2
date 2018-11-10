@@ -470,7 +470,7 @@ int APGTO::setCalenderDate(int dd, int mm, int yy)
 	return 0;
 }
 
-int APGTO::recoverLimits (int ral, int rah, int dech)
+int APGTO::recoverLimits (int ral, int rah, __attribute__((unused)) int dech)
 {
 	if (ral && !rah && !(getState () & (TEL_MOVING | TEL_PARKING)))
 	{
@@ -965,7 +965,7 @@ int APGTO::isInPosition(double coord1, double coord2, double err1, double err2, 
 
 			if (fabs(currentHa-coord1) < err1 && fabs(getTelDec()-coord2) < err2)
 				return 0;
-      
+            __attribute__ ((fallthrough));
 		default:
 			return  -1;
 

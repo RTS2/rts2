@@ -232,7 +232,7 @@ int Lakeshore::info ()
 		readValue ("HTRST?", htrst);
 		readValue ("RANGE?", range);
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -296,7 +296,7 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 			}
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -2;

@@ -110,6 +110,7 @@ int Binder::processOption (int in_opt)
 			break;
 		case 'u':
 			unitId = atoi (optarg);
+		__attribute__ ((fallthrough));
 		default:
 			return Sensor::processOption (in_opt);
 	}
@@ -157,7 +158,7 @@ int Binder::info ()
 		binderConn->readHoldingRegisters (unitId, 0x1583, 2, regs);
 		set_hum->setValueFloat (getFloat (regs));
 	}
-	catch (rts2core::ConnError err)
+	catch (rts2core::ConnError &err)
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
 		binderConn = NULL;
@@ -250,7 +251,7 @@ int Binder::reinit ()
 		binderConn->init ();
 		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
 	}
-	catch (rts2core::ConnError er)
+	catch (rts2core::ConnError &er)
 	{
 		logStream (MESSAGE_ERROR) << "reinit " << er << sendLog;
 		binderConn = NULL;

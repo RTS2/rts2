@@ -80,7 +80,7 @@ int Keithley487::init ()
 	{
 		gpibWrite ("C0N1T5");
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -112,7 +112,7 @@ int Keithley487::info ()
 			return -1;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
@@ -148,7 +148,7 @@ int Keithley487::setValue (rts2core::Value * old_value, rts2core::Value * new_va
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;

@@ -85,7 +85,7 @@ int CPX400::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 			return 0;
 		}
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set " << new_value->getName () << " " << er << sendLog;
 		return -2;
@@ -103,7 +103,7 @@ int CPX400::info ()
 		setReplyWithValueName (false);
 		readValue ("OP1?", on);
 	}
-	catch (rts2core::Error er)
+	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;

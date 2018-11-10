@@ -352,7 +352,7 @@ int LX200::setTo (double ra, double dec)
  *
  * @return -1 and set errno on error, 0 otherwise.
  */
-int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
+int LX200::correct (__attribute__((unused)) double cor_ra, __attribute__((unused)) double cor_dec, double real_ra, double real_dec)
 {
 	if (setTo (real_ra, real_dec))
 		return -1;

@@ -444,7 +444,7 @@ connectDevice(char *oakAdDevice, int connecting)
 #include <sys/types.h>
 #include <unistd.h>
 void *
-tps534_oak_digin_thread(void * args)
+tps534_oak_digin_thread(__attribute__ ((unused)) void * args)
 {
   static struct hiddev_event ev[64];
   int rd ;
@@ -463,7 +463,7 @@ tps534_oak_digin_thread(void * args)
       syslog (LOG_DEBUG, "tps534_oak_digin_thread(): %d bytes read\n", rd);
     }
 
-    if (rd < sizeof(ev[0])) {
+    if (rd < (int)sizeof(ev[0])) {
       syslog (LOG_ERR, "incomplete read from Oak device (%d bytes)\nsleeping\n", rd);
       goto NEXT;
     }
@@ -475,7 +475,7 @@ tps534_oak_digin_thread(void * args)
 
     int i;
     double f;
-    for (i = 0;(i < devInfo.numberOfChannels) && (i < 6) && (i < kCount);i++) {
+    for (i = 0;(i < devInfo.numberOfChannels) && (i < 6) && (i < (int)kCount);i++) {
       if (debug >= 3) {
 	syslog (LOG_DEBUG, "tps534_oak_digin_thread(): ch %d, exp: %d, sign: %d\n", i, channelInfos[i].unitExponent, channelInfos[i].isSigned);
       }

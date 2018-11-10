@@ -346,6 +346,7 @@ int ConnGrb::pr_swift_without_radec ()
 				logStream (MESSAGE_INFO) << "ignoring SWIFT UVOT SRC with UVOT_SrcList Noticed forced-out via the watchdog timeout" << sendLog;
 				return -1;
 			}
+		__attribute__ ((fallthrough));
 		case TYPE_SWIFT_SCALEDMAP_SRC:
 		case TYPE_SWIFT_XRT_CENTROID_SRC:
 		case TYPE_SWIFT_UVOT_SLIST_SRC:
@@ -1450,7 +1451,7 @@ int ConnGrb::add (rts2core::Block *block)
 	return rts2core::Connection::add (block);
 }
 
-void ConnGrb::connectionError (int last_data_size)
+void ConnGrb::connectionError (__attribute__((unused)) int last_data_size)
 {
 	logStream (MESSAGE_ERROR) << "lost GCN connection - SN=" << getPktSod () << " delta=" << deltaValue << " last_delta=" << (getPktSod () - last_imalive_sod) << sendLog;
 	if (sock > 0)
@@ -1635,7 +1636,7 @@ int ConnGrb::receive (rts2core::Block *block)
 			// enable others to catch-up (FW connections will forward packet to their sockets)
 			getMaster ()->postEvent (new rts2core::Event (RTS2_EVENT_GRB_PACKET, nbuf));
 		}
-		catch (rts2core::Error er)
+		catch (rts2core::Error &er)
 		{
 			logStream (MESSAGE_ERROR) << er << sendLog;
 		}
