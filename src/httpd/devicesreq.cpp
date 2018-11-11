@@ -21,7 +21,7 @@
 
 using namespace rts2xmlrpc;
 
-void Devices::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Devices::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
 	response_type = "text/html";
@@ -106,7 +106,7 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Devices::callDeviceAPI (const char *device, XmlRpc::HttpParams *params, const char * &response_type, char * &response, size_t &response_length)
+void Devices::callDeviceAPI (__attribute__ ((unused)) const char *device, __attribute__ ((unused)) XmlRpc::HttpParams *params, __attribute__ ((unused)) const char * &response_type, __attribute__ ((unused)) char * &response, __attribute__ ((unused)) size_t &response_length)
 {
 	
 }

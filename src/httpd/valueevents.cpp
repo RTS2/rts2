@@ -81,7 +81,7 @@ void ValueChangeCommand::run (rts2core::Value *val, double validTime)
 	master->addConnection (cf);
 }
 
-void ValueChangeEmail::run (rts2core::Value *val, double validTime)
+void ValueChangeEmail::run (__attribute__ ((unused)) rts2core::Value *val, __attribute__ ((unused)) double validTime)
 {
 	EmailAction::run (master);
 }

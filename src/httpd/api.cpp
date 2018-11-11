@@ -180,7 +180,8 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			image->getImgHeader (&im_h, chan);
 			if (abs (ntohs (im_h.data_type)) < abs (newType))
 				throw JSONException ("data type specified for scaling is bigger than actual image data type");
-			if (newType != 0 && ((ntohs (im_h.data_type) < 0 && newType > 0) || (ntohs (im_h.data_type) > 0 && newType < 0)))
+            int dt = ntohs (im_h.data_type);
+			if (newType != 0 && ((dt < 0 && newType > 0) || ((int)ntohs (im_h.data_type) > 0 && newType < 0)))
 				throw JSONException ("converting from integer into float type, or from float to integer");
 
 			response_type = "binary/data";
@@ -577,7 +578,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			}
 			else if (vals[0] == "object")
 			{
-				const char *name = params->getString ("n", "");
+				//const char *name = params->getString ("n", "");
 				double ra = params->getDouble ("ra", NAN);
 				double dec = params->getDouble ("dec", NAN);
 				if (ra == NAN && dec == NAN)
@@ -752,7 +753,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 	returnJSON (os, response_type, response, response_length);
 }
 
-void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended)
+void API::sendOwnValues (std::ostringstream & os, __attribute__ ((unused)) HttpParams *params, double from, bool extended)
 {
 	os << "\"d\":{" << std::fixed;
 	bool first = true;
@@ -790,7 +791,7 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << rts2json::JsonDouble (from); 
 }
 
-void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void API::getWidgets (const std::vector <std::string> &vals, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream os;
 

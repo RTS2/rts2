@@ -30,7 +30,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void Auger::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Auger::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "text/html";
 
@@ -48,10 +48,13 @@ void Auger::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, X
 			break;
 		case 3:
 			day = atoi (vals[2].c_str ());
+            __attribute__ ((fallthrough));
 		case 2:
 			month = atoi (vals[1].c_str ());
+            __attribute__ ((fallthrough));
 		case 1:
 			year = atoi (vals[0].c_str ());
+            __attribute__ ((fallthrough));
 		case 0:
 			printTable (year, month, day, response, response_length);
 			break;
@@ -60,7 +63,7 @@ void Auger::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, X
 	}
 }
 
-void Auger::printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length)
+void Auger::printTarget (int auger_id, __attribute__ ((unused)) const char* &response_type, __attribute__ ((unused)) char* &response, __attribute__ ((unused)) size_t &response_length)
 {
 	rts2db::TargetAuger ta (-1, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude (), -1);
 

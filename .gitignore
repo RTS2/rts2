@@ -120,3 +120,8 @@ scripts/rts2-stop
 conf/logrotate/logrotate-rts2.conf
 conf/rts2.service
 conf/rts2@.service
+RTS2.config
+RTS2.creator
+RTS2.creator.user
+RTS2.files
+RTS2.includes

@@ -65,7 +65,7 @@ class StateChange
 		/**
 		 * Returns true if this entry belongs to given device.
 		 */
-		bool isForDevice (std::string _deviceName, int _deviceType)
+		bool isForDevice (std::string _deviceName, __attribute__ ((unused)) int _deviceType)
 		{
 			return deviceName == _deviceName;
 		}
@@ -134,7 +134,7 @@ class StateChangeEmail: public StateChange, public EmailAction
 		{
 		}
 
-		virtual void run (HttpD *_master, rts2core::Connection *_conn, double validTime)
+		virtual void run (HttpD *_master, __attribute__ ((unused)) rts2core::Connection *_conn, __attribute__ ((unused)) double validTime)
 		{
 			EmailAction::run (_master);
 		}

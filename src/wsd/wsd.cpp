@@ -91,13 +91,15 @@ static struct lws_protocols protocols[] = {
 		"http-only",		/* name */
 		callback_http,		/* callback */
 		sizeof (struct per_session_data__http),	/* per_session_data_size */
-		0			/* max frame size / rx buffer */
+		0,			/* max frame size / rx buffer */
+        0, NULL, 0
 	},
 	{
 		"dumb-increment-protocol",
 		callback_dumb_increment,
 		sizeof(struct per_session_data__dumb_increment),
-		10
+		10,
+        0, NULL, 0
 	}
 };
 

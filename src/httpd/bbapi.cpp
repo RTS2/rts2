@@ -34,7 +34,7 @@ BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::Xm
 {
 }
 
-void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void BBAPI::executeJSON (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
@@ -101,7 +101,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 	returnJSON (os, response_type, response, response_length);
 }
 
-int BBAPI::scheduleTarget (time_t &ret_from, XmlRpc::HttpParams *params, bool only_confirm, std::vector <std::pair <double, double> > &free_time)
+int BBAPI::scheduleTarget (time_t &ret_from, XmlRpc::HttpParams *params, bool only_confirm, __attribute__ ((unused)) std::vector <std::pair <double, double> > &free_time)
 {
 	rts2db::Target *tar = rts2json::getTarget (params);
 	double from = params->getDouble ("from", getNow ());

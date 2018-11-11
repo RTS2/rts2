@@ -193,7 +193,7 @@ int Client::splitDeviceVariable (const char *device, std::string &deviceName, st
 	return 0;
 }
 
-int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
+int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, __attribute__ ((unused)) bool printRes)
 {
 	int ret;
 
@@ -248,7 +248,7 @@ int Client::doTests ()
 	{
 		runXmlMethod (R2X_DEVICES_LIST, oneArg, result);
 
-	} catch (XmlRpcException e)
+	} catch (XmlRpcException &e)
 	{
 		if (xmlVerbosity >= 0)
 			std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
@@ -316,7 +316,7 @@ int Client::doHttpGet ()
 			if (ret)
 				return ret;
 		}
-		catch (XmlRpcException e)
+		catch (XmlRpcException &e)
 		{
 			if (xmlVerbosity >= 0)
 				std::cerr << "Cannot retrieve document " << *iter << std::endl;
@@ -333,7 +333,7 @@ int Client::testConnect ()
 	try
 	{
 		runXmlMethod (R2X_DEVICES_LIST, nullArg, result);
-	} catch (XmlRpcException e)
+	} catch (XmlRpcException &e)
 	{
 		if (xmlVerbosity >= 0)
 			std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;

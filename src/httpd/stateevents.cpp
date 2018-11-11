@@ -33,7 +33,7 @@ void StateChangeRecord::run (HttpD *_master, rts2core::Connection *_conn, double
 
 #endif /* RTS2_HAVE_PGSQL */
 
-void StateChangeCommand::run (HttpD *_master, rts2core::Connection *_conn, double validTime)
+void StateChangeCommand::run (HttpD *_master, rts2core::Connection *_conn, __attribute__ ((unused)) double validTime)
 {
 	int ret;
 	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, false, 100);

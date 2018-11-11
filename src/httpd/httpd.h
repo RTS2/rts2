@@ -282,7 +282,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 */
 		void setScriptExpand (const char *fe);
 
-		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
+		int findScript (__attribute__ ((unused)) std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
 		virtual void newDataConn (int data_conn);
 		virtual void dataReceived (DataAbstractRead *data);
@@ -349,7 +349,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		rts2core::Command *scriptKillCommand;
 
-		template < typename T > void createOrReplaceValue (T * &val, rts2core::Connection *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
+		template < typename T > void createOrReplaceValue (T * &val, rts2core::Connection *conn, int32_t expectedType, const char *suffix, const char *description, __attribute__ ((unused)) bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
 		{
 			std::string vn = std::string (conn->getName ()) + suffix;
 			rts2core::Value *v = ((rts2core::Daemon *) conn->getMaster ())->getOwnValue (vn.c_str ());

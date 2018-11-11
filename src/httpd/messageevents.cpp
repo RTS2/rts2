@@ -47,7 +47,7 @@ void MessageCommand::run (rts2core::Message *message)
 	master->addConnection (cf);
 }
 
-void MessageEmail::run (rts2core::Message *message)
+void MessageEmail::run (__attribute__ ((unused)) rts2core::Message *message)
 {
 	EmailAction::run (master);
 }

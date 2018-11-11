@@ -198,7 +198,7 @@ int Client::splitDeviceVariable (const char *device, std::string &deviceName, st
 	return 0;
 }
 
-int Client::runJsonMethod (const std::string url, JsonParser *&result, bool printRes)
+int Client::runJsonMethod (const std::string url, JsonParser *&result, __attribute__ ((unused)) bool printRes)
 {
 	GError *error = NULL;
 
@@ -288,7 +288,7 @@ void printNode (JsonNode *node)
 	}
 }
 
-void printArray (JsonArray *array, guint index, JsonNode *node, gpointer user_data)
+void printArray (__attribute__ ((unused)) JsonArray *array, guint index, JsonNode *node, __attribute__ ((unused)) gpointer user_data)
 {
 	if (index > 0)
 		std::cout << ",";
@@ -329,7 +329,7 @@ void printNodeValue (JsonNode *node, bool pretty)
 	}
 }
 
-void printValue (JsonObject *object, const gchar *member_name, JsonNode *node, gpointer user_data)
+void printValue (__attribute__ ((unused)) JsonObject *object, const gchar *member_name, JsonNode *node, gpointer user_data)
 {
 	if (user_data)
 	{
@@ -617,7 +617,7 @@ int Client::getMasterState ()
 	return 0;
 }
 
-int Client::schedTicketInfo (int ticketId)
+int Client::schedTicketInfo (__attribute__ ((unused)) int ticketId)
 {
 /*	XmlRpcValue oneArg, result;
 	oneArg = ticketId;
@@ -626,7 +626,7 @@ int Client::schedTicketInfo (int ticketId)
 	return 0;
 }
 
-int Client::getVariables (bool pretty)
+int Client::getVariables (__attribute__ ((unused)) bool pretty)
 {
 	int e = 0;
 	// store results per device
@@ -711,7 +711,7 @@ int Client::getTypes ()
 	return 0;
 }
 
-void printMessage (JsonArray *array, guint index, JsonNode *node, gpointer user_data)
+void printMessage (__attribute__ ((unused)) JsonArray *array, guint index, JsonNode *node, __attribute__ ((unused)) gpointer user_data)
 {
 	JsonArray *arr = json_node_get_array (node);
 	std::cout << std::setw (5) << std::right << (index + 1) << ": "
@@ -739,7 +739,7 @@ int Client::getMessages ()
 	return ret;
 }
 
-void Client::printTargets (JsonNode *results)
+void Client::printTargets (__attribute__ ((unused)) JsonNode *results)
 {
 //	for (int i=0; i < results.size (); i++)
 //	{
@@ -995,7 +995,9 @@ int Client::init ()
 	if (verbosity >= 0)
 		XmlRpc::setVerbosity (verbosity);
 
+#if !GLIB_CHECK_VERSION(2,35,0)
 	g_type_init ();
+#endif
 
 	std::cout << std::fixed;
 

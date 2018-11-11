@@ -945,7 +945,7 @@ void HttpD::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * ne
 				vc->run (new_value, now);
 				vc->runSuccessfully (now);
 			}
-			catch (rts2core::Error err)
+			catch (rts2core::Error &err)
 			{
 				logStream (MESSAGE_ERROR) << err << sendLog;
 			}
@@ -985,7 +985,7 @@ void HttpD::message (Message & msg)
 			{
 				me->run (&msg);
 			}
-			catch (rts2core::Error err)
+			catch (rts2core::Error &err)
 			{
 				logStream (MESSAGE_ERROR) << err << sendLog;
 			}
@@ -1015,7 +1015,7 @@ int HttpD::commandAuthorized (rts2core::Connection *conn)
 #endif
 }
 
-void HttpD::fileModified (struct inotify_event *event)
+void HttpD::fileModified (__attribute__ ((unused)) struct inotify_event *event)
 {
 #ifdef RTS2_HAVE_PGSQL
 	rts2db::MasterConstraints::clearCache ();

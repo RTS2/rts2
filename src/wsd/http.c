@@ -75,7 +75,7 @@ dump_handshake_info(struct lws *wsi)
 		}
 
 		len = lws_hdr_total_length(wsi, n);
-		if (!len || len > sizeof(buf) - 1) {
+		if (!len || len > (int)sizeof(buf) - 1) {
 			n++;
 			continue;
 		}
@@ -119,11 +119,11 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 	struct per_session_data__http *pss =
 			(struct per_session_data__http *)user;
 	unsigned char buffer[4096 + LWS_PRE];
-	unsigned long amount, file_len, sent;
+	unsigned long sent; // file_len, amount,
 	char leaf_path[1024];
 	const char *mimetype;
 	char *other_headers;
-	unsigned char *end;
+	//unsigned char *end;
 	struct timeval tv;
 	unsigned char *p;
 	char buf[256];
@@ -162,7 +162,8 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			return 0;
 
 		/* check for the "send a big file by hand" example case */
-
+// useless no working example!
+#if 0
 		if (!strcmp((const char *)in, "/leaf.jpg")) {
 			if (strlen(resource_path) > sizeof(leaf_path) - 10)
 				return -1;
@@ -173,8 +174,9 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			p = buffer + LWS_PRE;
 			end = p + sizeof(buffer) - LWS_PRE;
 
-			pss->fd = lws_plat_file_open(wsi, leaf_path, &file_len,
-						     LWS_O_RDONLY);
+            // lws_plat_file_open - deprecated
+			//pss->fd = lws_plat_file_open(wsi, leaf_path, &file_len,
+			//			     LWS_O_RDONLY);
 
 			if (pss->fd == LWS_INVALID_FILE) {
 				lwsl_err("faild to open file %s\n", leaf_path);
@@ -235,7 +237,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			lws_callback_on_writable(wsi);
 			break;
 		}
-
+#endif
 		/* if not, send a file the easy way */
 		strcpy(buf, resource_path);
 		if (strcmp(in, "/")) {
@@ -340,7 +342,8 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			if (m != -1 && m < n)
 				/* he couldn't handle that much */
 				n = m;
-
+#if 0
+            // lws_plat_file_read - deprecated!
 			n = lws_plat_file_read(wsi, pss->fd,
 					       &amount, buffer + LWS_PRE, n);
 			/* problem reading, close conn */
@@ -352,7 +355,8 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			/* sent it all, close conn */
 			if (n == 0)
 				goto penultimate;
-			/*
+#endif
+            /*
 			 * To support HTTP2, must take care about preamble space
 			 *
 			 * identification of when we send the last payload frame
@@ -373,13 +377,13 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 later:
 		lws_callback_on_writable(wsi);
 		break;
-penultimate:
-		lws_plat_file_close(wsi, pss->fd);
+//penultimate:
+		//lws_plat_file_close(wsi, pss->fd); - deprecated
 		pss->fd = LWS_INVALID_FILE;
 		goto try_to_reuse;
 
 bail:
-		lws_plat_file_close(wsi, pss->fd);
+		// lws_plat_file_close(wsi, pss->fd);
 
 		return -1;
 

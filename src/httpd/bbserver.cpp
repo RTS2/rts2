@@ -102,7 +102,9 @@ BBServer::BBServer (HttpD *_server, char *_serverApi, int _observatoryId, char *
 	push_thread = 0;
 
 #ifdef RTS2_JSONSOUP
+#if !GLIB_CHECK_VERSION(2,35,0)
 	g_type_init ();
+#endif
 #endif // RTS2_JSONSOUP
 }
 

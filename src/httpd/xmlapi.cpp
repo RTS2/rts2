@@ -170,7 +170,7 @@ void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, Xml
 	sessionExecute (params, result);
 }
 
-void Login::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
+void Login::execute (__attribute__ ((unused)) struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 {
 	if (params.size () != 2)
 	{
@@ -185,12 +185,12 @@ void Login::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue
 	result = ((HttpD *) getMasterApp ())->addSession (params[0], 3600);
 }
 
-void DeviceCount::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void DeviceCount::sessionExecute (__attribute__ ((unused)) XmlRpcValue& params, XmlRpcValue& result)
 {
 	result = ((HttpD *) getMasterApp ())->connectionSize ();
 }
 
-void ListDevices::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void ListDevices::sessionExecute (__attribute__ ((unused)) XmlRpcValue& params, XmlRpcValue& result)
 {
 	HttpD *serv = (HttpD *) getMasterApp ();
 	connections_t::iterator iter;
@@ -232,7 +232,7 @@ void DeviceType::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 	result = conn->getOtherType ();
 }
 
-void MasterState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void MasterState::sessionExecute (__attribute__ ((unused)) XmlRpcValue& params, XmlRpcValue& result)
 {
 	result = int (((HttpD *) getMasterApp ())->getMasterStateFull ());
 }
@@ -270,7 +270,7 @@ void MasterStateIs::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	}
 }
 
-void DeviceCommand::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
+void DeviceCommand::sessionExecute (XmlRpcValue& params, __attribute__ ((unused)) XmlRpcValue &result)
 {
 	if (params.size () != 2)
 		throw XmlRpcException ("Device name and command (as single parameter) expected");
@@ -305,7 +305,7 @@ void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	result[1] = (int) conn->getRealState ();
 }
 
-void ListValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void ListValues::sessionExecute (__attribute__ ((unused)) XmlRpcValue& params, XmlRpcValue& result)
 {
 	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn;
@@ -597,7 +597,7 @@ void SessionMethodValue::setXmlValutRts2 (rts2core::Connection *conn, std::strin
 }
 
 
-void SetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void SetValue::sessionExecute (XmlRpcValue& params, __attribute__ ((unused)) XmlRpcValue& result)
 {
 	std::string devName = params[0];
 	std::string valueName = params[1];
@@ -610,7 +610,7 @@ void SetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	setXmlValutRts2 (conn, valueName, params[2]);
 }
 
-void SetValueByType::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void SetValueByType::sessionExecute (XmlRpcValue& params, __attribute__ ((unused)) XmlRpcValue& result)
 {
 	int devType = params[0];
 	std::string valueName = params[1];
@@ -627,7 +627,7 @@ void SetValueByType::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	}
 }
 
-void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void IncValue::sessionExecute (XmlRpcValue& params, __attribute__ ((unused)) XmlRpcValue& result)
 {
 	std::string devName = params[0];
 	std::string valueName = params[1];
@@ -696,7 +696,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	}
 }
 
-void GetMessages::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+void GetMessages::sessionExecute (__attribute__ ((unused)) XmlRpcValue& params, XmlRpcValue& result)
 {
 	int i = 0;
 	XmlRpcValue retVar;
@@ -984,7 +984,7 @@ void TicketInfo::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 
 		xs << t;
 	}
-	catch (rts2db::SqlError e)
+	catch (rts2db::SqlError &e)
 	{
 		throw XmlRpcException (e.what ());
 	}
@@ -1015,7 +1015,7 @@ void RecordsValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 			result[i++] = res;
 		}
 	}
-	catch (rts2db::SqlError err)
+	catch (rts2db::SqlError &err)
 	{
 		throw XmlRpcException (err.what ());
 	}
@@ -1042,7 +1042,7 @@ void Records::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 			result[i++] = res;
 		}
 	}
-	catch (rts2db::SqlError err)
+	catch (rts2db::SqlError &err)
 	{
 		throw XmlRpcException (err.what ());
 	}
@@ -1072,13 +1072,13 @@ void RecordsAverage::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 			result[i++] = res;
 		}
 	}
-	catch (rts2db::SqlError err)
+	catch (rts2db::SqlError &err)
 	{
 		throw XmlRpcException (err.what ());
 	}
 }
 
-void UserLogin::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
+void UserLogin::execute (__attribute__ ((unused)) struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 {
 	if (params.size() != 2)
 		throw XmlRpcException ("Invalid number of parameters");
