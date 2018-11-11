@@ -76,7 +76,7 @@ ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEn
 			// Non-empty token
 			if (count == 0)
 			{
-				exePath = new char[pos - start];
+				exePath = new char[pos - start + 1];
 				strcpy (exePath, start);
 			}
 			else
@@ -105,7 +105,7 @@ ConnFork::~ConnFork ()
 		close (sockerr);
 	if (sockwrite > 0)
 		close (sockwrite);
-	delete[]exePath;
+	delete[] exePath;
 }
 
 int ConnFork::writeToProcess (const char *msg)
