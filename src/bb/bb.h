@@ -62,8 +62,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		void update (XmlRpcValue &value);
 
-		virtual bool isPublic (struct sockaddr_in *saddr, const std::string &path) { return false; }
-		virtual bool existsSession (std::string sessionId) { return false; }
+		virtual bool isPublic (__attribute__ ((unused)) struct sockaddr_in *saddr, __attribute__ ((unused)) const std::string &path) { return false; }
+		virtual bool existsSession (__attribute__ ((unused)) std::string sessionId) { return false; }
 		virtual void addExecutedPage () {}
 		virtual const char* getPagePrefix () { return ""; }
 

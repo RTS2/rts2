@@ -9,6 +9,7 @@
 
 int main( const int argc, const char **argv)
 {
+    if(argc != 2) return -1;
    FILE *ifile = fopen( argv[1], "rb");
    char line1[100], line2[100];
 

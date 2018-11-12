@@ -62,7 +62,7 @@ class BBTask
 class BBTaskSchedule:public BBTask
 {
 	public:
-		BBTaskSchedule (ObservatorySchedule *_schedule, int _tar_id, int _observatory_id)
+		BBTaskSchedule (ObservatorySchedule *_schedule, int _tar_id, __attribute__ ((unused)) int _observatory_id)
 		{
 			obs_sched = _schedule;
 			tar_id = _tar_id;

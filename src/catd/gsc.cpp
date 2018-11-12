@@ -42,7 +42,7 @@ GSC::~GSC ()
 }
 
 
-int GSC::searchCataloge (struct ln_equ_posn *c1, struct ln_equ_posn *c2, int num)
+int GSC::searchCataloge (__attribute__ ((unused)) struct ln_equ_posn *c1, __attribute__ ((unused)) struct ln_equ_posn *c2, __attribute__ ((unused)) int num)
 {
 	return 0;
 }

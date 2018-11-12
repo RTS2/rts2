@@ -183,7 +183,7 @@ void BB::processSchedule (ObservatorySchedule *obs_sched)
 		// inform selected observatory..
 		task_queue.queueTask (new BBConfirmTask (obs_sched->getScheduleId (), min_observatory));
 	}
-	catch (rts2core::Error)
+	catch (rts2core::Error &e)
 	{
 		logStream (MESSAGE_ERROR) << "cannot process schedule requests " << obs_sched->getScheduleId () << sendLog;
 	}

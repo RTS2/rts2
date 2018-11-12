@@ -118,7 +118,7 @@ ConnBBQueue *rts2bb::scheduleTarget (int tar_id, int observatory_id, Observatory
 		bbqueue->addArg ("--obs-tar-id");
 		bbqueue->addArg (obs_tar_id);
 	}
-	catch (rts2db::SqlError er)
+	catch (rts2db::SqlError &er)
 	{
 		bbqueue->addArg ("--create");
 		bbqueue->addArg (tar_id);

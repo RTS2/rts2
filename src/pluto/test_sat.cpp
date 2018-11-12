@@ -78,7 +78,7 @@ static double test_data[5 * 6 * 5] = {
                       -1.11986055,      0.85410149,      -1.49506933 };
 
 /* Main program */
-int main( int argc, char **argv)
+int main( int argc, __attribute__ ((unused)) char **argv)
 {
   double vel[3], pos[3]; /* Satellite position and velocity vectors */
   double *test_ptr = test_data;

@@ -37,7 +37,9 @@ using namespace rts2bb;
 
 BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue):rts2json::JSONDBRequest (prefix, _http_server, s)
 {
-	g_type_init ();
+#if !GLIB_CHECK_VERSION(2,35,0)
+    g_type_init ();
+#endif
 	queue = _queue;
 }
 

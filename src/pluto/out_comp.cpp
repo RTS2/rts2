@@ -15,6 +15,7 @@ static int is_position_line( const char *buff)
 
 int main( const int argc, const char **argv)
 {
+    if(argc != 3) return -1;
    FILE *ifile1 = fopen( argv[1], "rb");
    FILE *ifile2 = fopen( argv[2], "rb");
    char buff1[80], buff2[80];

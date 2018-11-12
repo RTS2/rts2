@@ -22,7 +22,7 @@
 
 using namespace rts2bb;
 
-void SchedReq::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void SchedReq::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *source, std::string path, __attribute__ ((unused)) XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "text/html";
 	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));

@@ -26,7 +26,7 @@
 
 using namespace rts2bb;
 
-static void auth (SoupSession *session, SoupMessage *msg, SoupAuth *_auth, gboolean retrying, gpointer data)
+static void auth (__attribute__ ((unused)) SoupSession *session, __attribute__ ((unused)) SoupMessage *msg, SoupAuth *_auth, gboolean retrying, gpointer data)
 {
 	if (retrying)
 		return;
@@ -41,11 +41,13 @@ JsonParser *BBTask::jsonRequest (int observatory_id, std::string path)
 	std::ostringstream request;
 	request << obs.getURL () << path;
 
-	g_type_init ();
+#if !GLIB_CHECK_VERSION(2,35,0)
+    g_type_init ();
+#endif
 
 	SoupMessage *msg = soup_message_new (SOUP_METHOD_GET, request.str ().c_str ());
 
-	SoupSession *session = soup_session_sync_new_with_options (
+	SoupSession *session = soup_session_new_with_options (
 		SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_CONTENT_DECODER,
 		SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_COOKIE_JAR,
 		SOUP_SESSION_USER_AGENT, "rts2 bb",
