@@ -686,7 +686,7 @@ class CommandChange:public Command
 class CommandCorrect:public Command
 {
 	public:
-		CommandCorrect (Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err);
+		CommandCorrect (Block * _master, int corr_mark, int corr_img, int corr_obs, int img_id, int obs_id, double ra_corr, double dec_corr, double pos_err);
 };
 
 class CommandStartGuide:public Command

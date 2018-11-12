@@ -198,10 +198,6 @@ int ThriftD::init ()
 	if (ret)
 		return ret;
 
-	ret = rts2core::Device::doDaemonize ();
-	if (ret)
-		return ret;
-
 	pthread_create (&thrift_thr, NULL, &thrift_thread, NULL);
 	return 0;
 }
@@ -287,7 +283,7 @@ int ThriftD::idle ()
 			domeInfo.DomeAngle = ln_range_degrees (val->getValueDouble () + 180.0);
 		}
 	}
-	
+
 	return Device::idle ();
 }
 

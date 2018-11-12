@@ -1,4 +1,4 @@
-/* 
+/*
  * Parser for RA DEC string.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -18,11 +18,11 @@
  */
 
 #include <sstream>
+#include <cmath>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-#include <math.h>
 #include <string.h>
 
 #include "radecparser.h"
@@ -59,7 +59,7 @@ double parseDMS (const char *hptr, double *mul)
 		errno = 0;
 		// convert test
 		double n = strtod (locptr, &endptr);
-		if (isnan (n) || isinf (n))
+		if (std::isnan (n) || std::isinf (n))
 		{
 			errno = ERANGE;
 			return NAN;

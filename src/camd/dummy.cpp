@@ -92,6 +92,15 @@ class Dummy:public Camera
 			createValue (aamp, "astar_amp", "[adu] artificial star amplitude", false, RTS2_VALUE_WRITABLE);
 			aamp->setValueInteger (200000);
 
+			createValue (moffat_beta, "moffat_beta", "artificial star Moffat beta", false, RTS2_VALUE_WRITABLE);
+			moffat_beta->setValueInteger (2.5);
+
+			createValue (defocus_scale, "defoc_scale", "scale of defocusing", false, RTS2_VALUE_WRITABLE);
+			defocus_scale->setValueInteger (100);
+
+			createValue (mag_slope, "mag_slope", "slope of brightness distribution of stars", false, RTS2_VALUE_WRITABLE);
+			mag_slope->setValueInteger (1);
+
 			createValue (noiseBias, "noise_bias", "[ADU] noise base level", false, RTS2_VALUE_WRITABLE);
 			noiseBias->setValueDouble (400);
 
@@ -322,6 +331,10 @@ class Dummy:public Camera
 		rts2core::ValueDouble *astarY;
 
 		rts2core::ValueDouble *aamp;
+
+		rts2core::ValueDouble *moffat_beta;
+		rts2core::ValueDouble *defocus_scale;
+		rts2core::ValueDouble *mag_slope;
 
 		rts2core::ValueBool *fitsTransfer;
 
@@ -596,6 +609,11 @@ void Dummy::generateImage (size_t pixelsize, int chan)
 	}
 }
 
+inline double moffat (double r, double r0, double sigma2, double beta)
+{
+	return pow (1 + (r - r0)*(r - r0) / sigma2, -beta);
+}
+
 template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 {
 	double sx = astarX->getValueDouble () / binningHorizontal ();
@@ -607,20 +625,32 @@ template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 	sy *= sy;
 
 	int focPos = getFocPos ();
-	double beta = 1.5; // Moffat profile beta
+	double beta = moffat_beta->getValueDouble (); // Moffat profile beta
+	double r0; // Moffat off-center parameter for defocusing
+	double deFocScale = defocus_scale->getValueDouble (); // Defocusing scale, focuser shift causing large effect
+	double magSlope = mag_slope->getValueDouble (); // Slope of brightness distribution in stellar field
 
 	if (focPos != -1 && genType->getValueInteger () == 6)
 	{
 		// Simulate de-focusing for stellar field.
 		// Optimal focus is at -1, to match absence of focuser
-		sx *= (1.0 + fabs (focPos + 1) / 100);
-		sy *= (1.0 + fabs (focPos + 1) / 100);
+		sx *= (1.0 + fabs (focPos + 1) / deFocScale);
+		sy *= (1.0 + fabs (focPos + 1) / deFocScale);
 
-		xmax *= fmin (3.0, (1.0 + fabs (focPos + 1) / 100));
-		ymax *= fmin (3.0, (1.0 + fabs (focPos + 1) / 100));
+		xmax *= fmin (3.0, (1.0 + fabs (focPos + 1) / deFocScale));
+		ymax *= fmin (3.0, (1.0 + fabs (focPos + 1) / deFocScale));
 
-		beta = fmax (1.02, 1.5 - 0.03 * fabs (focPos + 1) / 100);
+		beta = fmax (1.02, 2.5 - 0.03 * fabs (focPos + 1) / deFocScale);
+
+		r0 = 0.1*xmax*fmax (0.3, 0.3*fabs (focPos + 1) / deFocScale);
 	}
+
+	// Normalization for (ring-shaped) Moffat can't be done analytically, so ...
+	double moffat_norm = 0;
+
+	for(int x = -xmax; x < xmax; x++)
+		for(int y = -ymax; y < ymax; y++)
+			moffat_norm += moffat (hypot (x, y), r0, sx, beta);
 
 	for (size_t i = 0; i < pixelSize; i++, data++)
 	{
@@ -695,15 +725,12 @@ template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 				double aax = x - (*astar_Xp)[j];
 				double aay = y - (*astar_Yp)[j];
 
-				double flux = pow (1.0 + j, -1.0); // Distribution of relative fluxes
+				double r = hypot (aax, aay);
+				double flux = pow (1.0 + j, -magSlope); // Distribution of relative fluxes
 
-				if (hypot (aax, aay) < xmax)
+				if (r < xmax)
 				{
-					aax *= aax;
-					aay *= aay;
-
-					*data += flux * aamp->getValueDouble () *
-								 (beta - 1) / M_PI / sqrt (sx) * pow (1 + (aax + aay) / sx, -beta);
+					*data += 3.0 * flux * aamp->getValueDouble () * moffat (r, r0, sx, beta) / moffat_norm;
 				}
 			}
 		}

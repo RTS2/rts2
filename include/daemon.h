@@ -1,4 +1,4 @@
-/* 
+/*
  * Daemon class.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -73,14 +73,14 @@ class Daemon:public Block
 		void initDaemon ();
 
 		/**
-		 * Set timer to send updates every interval seconds. This method is designed to keep user 
+		 * Set timer to send updates every interval seconds. This method is designed to keep user
 		 * infromed about progress of actions which rapidly changes values read by info call.
 		 *
-		 * @param interval If > 0, set idle info interval to this value. Daemon will then call info method every interval 
+		 * @param interval If > 0, set idle info interval to this value. Daemon will then call info method every interval
 		 *   seconds and distribute updates to all connected clients. If <= 0, disables automatic info.
 		 *
 		 * @see info()
-		 */  
+		 */
 		void setIdleInfoInterval (double interval);
 
 		/**
@@ -219,7 +219,7 @@ class Daemon:public Block
 		 * Delete all saved reference of given value.
 		 *
 		 * Used to clear saved values when the default value shall be changed.
-		 * 
+		 *
 		 * @param val Value which references will be deleted.
 		 */
 		void deleteSaveValue (CondValue * val);
@@ -235,7 +235,14 @@ class Daemon:public Block
 		/**
 		 * Sets lock filename.
 		 */
+		void setLockFile (std::string _lock_fname) { lock_fname = _lock_fname; }
 		void setLockFile (const char *_lock_fname) { lock_fname = std::string (_lock_fname); }
+
+		/**
+		 * Initializes the lock filename
+		 * To be reimplemented in derived classes that need custom lock file names
+		 */
+		virtual void initLockFile () { };
 
 		/**
 		 * Checks lockfile existence.
@@ -244,7 +251,6 @@ class Daemon:public Block
 		 * file should not be created, and -1 on error.
 		 */
 		int checkLockFile ();
-
 
 		void setNotDaemonize ()
 		{
@@ -299,7 +305,7 @@ class Daemon:public Block
 		{
 			lockPrefix = _lockPrefix;
 		}
-	
+
 		/**
 		 * Return prefix (directory) for lock files.
 		 *
@@ -379,7 +385,7 @@ class Daemon:public Block
 
 		/**
 		 * Set value. This is the function that get called when user want to change some value, either interactively through
-		 * rts2-mon, XML-RPC or from the script. You can overwrite this function in descendants to allow additional variables 
+		 * rts2-mon, XML-RPC or from the script. You can overwrite this function in descendants to allow additional variables
 		 * beiing overwritten. If variable has flag RTS2_VALUE_WRITABLE, default implemetation returns sucess. If setting variable
 		 * involves some special commands being send to the device, you most probably want to overwrite setValue, and provides
 		 * set action for your values in it.
@@ -519,7 +525,7 @@ class Daemon:public Block
 		{
 			if (std::isnan (info_time->getValueDouble ()))
 				return 86400;
-			return getNow () - info_time->getValueDouble ();	
+			return getNow () - info_time->getValueDouble ();
 		}
 
 
@@ -648,7 +654,7 @@ class Daemon:public Block
 		rts2core::ValueSelection *modesel;
 
 		/**
-		 * Add group to group list. Group values are values prefixed with 
+		 * Add group to group list. Group values are values prefixed with
 		 * group name, followed by '.'.
 		 *
 		 * For example if group list specify groups with names A and B, A.aa and

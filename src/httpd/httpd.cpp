@@ -1,4 +1,4 @@
-/* 
+/*
  * XML-RPC daemon.
  * Copyright (C) 2007-2012 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
@@ -284,7 +284,7 @@ bool XmlDevCameraClient::isScriptRunning ()
 	connection->postEvent (new Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
-	
+
 	return false;
 }
 
@@ -308,7 +308,7 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 	{
 		throw JSONException (er.what ());
 	}
-	
+
 	if (killScripts)
 	{
 		if (scriptRunning->getValueBool ())
@@ -579,7 +579,7 @@ int HttpD::init ()
 
 	for (std::vector <DirectoryMapping>::iterator iter = events.dirs.begin (); iter != events.dirs.end (); iter++)
 		directories.push_back (new rts2json::Directory (iter->getTo (), this, iter->getPath (), "", this));
-	
+
 	if (events.docroot.length () > 0)
 		XmlRpcServer::setDefaultGetRequest (new rts2json::Directory (NULL, this, events.docroot.c_str (), "index.html", NULL));
 	if (events.defchan != INT_MAX)
@@ -595,7 +595,7 @@ int HttpD::init ()
 	}
 
 	if (startTestScript ())
-		exit (1);	
+		exit (1);
 
 #ifndef RTS2_HAVE_PGSQL
 	{ // always load for non-DB build
@@ -991,7 +991,7 @@ void HttpD::message (Message & msg)
 			}
 		}
 	}
-	
+
 	while (messages.size () > (size_t) (messageBufferSize->getValueInteger ()))
 	{
 		messages.pop_front ();
@@ -1122,7 +1122,13 @@ void HttpD::reloadEventsFile ()
 {
 	if (stateChangeFile != NULL)
 	{
-		events.load (stateChangeFile);
+		try {
+			events.load (stateChangeFile);
+		} catch (XmlError err)
+		{
+			logStream (MESSAGE_ERROR) << "error loading events: " << err << sendLog;
+		}
+
 	  	defLabel = events.getDefaultImageLabel ();
 		if (defLabel == NULL)
 			defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";

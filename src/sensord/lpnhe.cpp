@@ -1,4 +1,4 @@
-/* 
+/*
  * LPNHE Paris LSST controll board (filter wheel, humidity measurements).
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -60,7 +60,7 @@ class LPNHE: public Sensor
 		rts2core::ValueBool *filterHomed;
 		rts2core::ValueBool *filterMoving;
 		rts2core::ValueBool *shutter;
-	
+
 		int filterChange (int num);
 
 		int homeFilter ();
@@ -258,7 +258,7 @@ int LPNHE::filterChange (int num)
 		if (comedi_dio_write (comediDevice, 2, 0, 1) != 1)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to off, ignoring" << sendLog;
-		} 
+		}
 
 		// wait for moving becoming low
 		uint32_t value;
@@ -334,7 +334,7 @@ int LPNHE::getVolts (int subdevice, int channel, double &volts)
 		return -1;
 	}
 	volts = comedi_to_phys (data, rqn, max);
-	if (isnan (volts))
+	if (std::isnan (volts))
 	{
 		logStream (MESSAGE_ERROR) << "Cannot convert data from subdevice "
 			<< subdevice << " channel " << channel << " to physical units" << sendLog;

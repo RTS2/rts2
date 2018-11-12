@@ -1,5 +1,5 @@
-/* 
- * State changes triggering infrastructure. 
+/*
+ * State changes triggering infrastructure.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 
 #include "httpd.h"
 
-#include "connection/fork.h"
+#include "rts2script/connexe.h"
 #include "timestamp.h"
 
 using namespace rts2xmlrpc;
@@ -36,7 +36,7 @@ void StateChangeRecord::run (HttpD *_master, rts2core::Connection *_conn, double
 void StateChangeCommand::run (HttpD *_master, rts2core::Connection *_conn, __attribute__ ((unused)) double validTime)
 {
 	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, false, 100);
+	rts2script::ConnExe *cf = new rts2script::ConnExe (_master, commandName.c_str (), true, 100);
 	cf->addArg (_conn->getName ());
 	cf->addArg (_conn->getStateString ());
 	ret = cf->init ();

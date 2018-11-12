@@ -1,4 +1,4 @@
-/* 
+/*
  * Log steam, used for logging output.
  * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
  *

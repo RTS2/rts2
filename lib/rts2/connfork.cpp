@@ -1,4 +1,4 @@
-/* 
+/*
  * Forking connection handling.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -35,8 +35,58 @@ ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEn
 	else
 		sockwrite = -1;
 
-	exePath = new char[strlen (_exe) + 1];
-	strcpy (exePath, _exe);
+	// Parse command string into executable proper and arguments
+	char *pos = (char *)_exe;
+	bool finished = false;
+	int count = 0;
+
+	while (!finished)
+	{
+		char *start = pos; // Start of token
+		char endChar = 0;
+
+		while (isspace(*pos) && *pos)
+		{
+			pos++;
+			start++;
+		}
+
+		if (*pos == '"' || *pos == '\'')
+		{
+			// Quoted string started
+			endChar = *pos;
+			pos++;
+			start++;
+		}
+
+		while (((endChar == 0 && !isspace(*pos)) ||
+				(endChar && *pos != endChar)) && *pos)
+			pos++;
+
+		if (!*pos)
+			finished = true;
+		else
+		{
+			*pos = '\0';
+			pos++;
+		}
+
+		if (pos > start)
+		{
+			// Non-empty token
+			if (count == 0)
+			{
+				exePath = new char[pos - start];
+				strcpy (exePath, start);
+			}
+			else
+			{
+				addArg (start);
+			}
+		}
+
+		count ++;
+	}
 
 	connDebug = false;
 
@@ -79,7 +129,7 @@ int ConnFork::writeToProcess (const char *msg)
 		logStream (MESSAGE_DEBUG) << "wrote to process " << getExePath () << ":" << completeMessage.substr (0, ret) << sendLog;
 	}
 	setInput (completeMessage.substr (ret));
-	return 0;	
+	return 0;
 }
 
 int ConnFork::writeToProcessInt (int msg)
