@@ -720,7 +720,7 @@ class Camera:public rts2core::ScriptDevice
 		 * Get Y offset of used aread (in pixels), divided by binning factor
 		 *
 		 */
-		const int getUsedYBinned () { return getBinningRounding (getUsedY () / binningVertical ()); }
+		int getUsedYBinned () { return getBinningRounding (getUsedY () / binningVertical ()); }
 
 		/**
 		 * Get X offset of used aread (in pixels)
@@ -732,7 +732,7 @@ class Camera:public rts2core::ScriptDevice
 		 * Get X offset of used aread (in pixels), divided by binning factor
 		 *
 		 */
-		const int getUsedXBinned () { return getBinningRounding (getUsedX () / binningHorizontal ()); }
+		int getUsedXBinned () { return getBinningRounding (getUsedX () / binningHorizontal ()); }
 
 		/**
 		 * Get width of used area (in pixels).

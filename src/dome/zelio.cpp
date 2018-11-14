@@ -205,11 +205,6 @@ class Zelio:public Dome
 		rts2core::ValueBool *blockOpenRight;
 		rts2core::ValueBool *blockCloseRight;
 
-        rts2core::ValueBool *blockOpenLeft;
-        rts2core::ValueBool *blockCloseLeft;
-        rts2core::ValueBool *blockOpenRight;
-        rts2core::ValueBool *blockCloseRight;
-
         rts2core::ValueBool *emergencyReset;
 
         rts2core::ValueBool *Q8;
@@ -223,11 +218,12 @@ class Zelio:public Dome
         rts2core::ValueFloat *battery;
         rts2core::ValueFloat *batteryMin;
 
-rts2core::ValueBool *mountIsOn;
+        rts2core::ValueFloat *humidity;
 
         // ELYA values
         rts2core::ValueBool *dc12;
         rts2core::ValueBool *dc48;
+        rts2core::ValueBool *mountIsOn;
 
         rts2core::ValueBool *lowOil;
         rts2core::ValueBool *batteryFault;
@@ -901,6 +897,7 @@ int Zelio::info ()
 				domeTimeout->setValueInteger (-1);
 			else
 				domeTimeout->setValueInteger ((regs[2] & ZI_TIMEOUT_MASK) >> 7);
+        __attribute__ ((fallthrough));
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			if (onPower)
@@ -908,10 +905,12 @@ int Zelio::info ()
 				onPower->setValueBool (regs[7] & ZS_POWER);
 				sendValueAll (onPower);
 			}
+		__attribute__ ((fallthrough));
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_SIMPLE:
 			sendSwInfo (regs + 4);
+		__attribute__ ((fallthrough));
 		case ZELIO_UNKNOW:
 			break;
 	}
@@ -987,7 +986,7 @@ int Zelio::initHardware ()
 		zelioConn->init ();
 		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
-	catch (rts2core::ConnError er)
+	catch (rts2core::ConnError &er)
 	{
 		logStream (MESSAGE_ERROR) << "initHardware " << er << sendLog;
 		return -1;
@@ -1115,6 +1114,7 @@ void Zelio::createZelioValues ()
 		case ZELIO_BOOTES3:
 			if (createonPower)
 				createValue (onPower, "on_power", "true if power is connected", false);
+		__attribute__ ((fallthrough));
 		case ZELIO_FRAM:
 		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
@@ -1176,6 +1176,7 @@ void Zelio::createZelioValues ()
 	{
 		case ZELIO_BOOTES3:
 			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		__attribute__ ((fallthrough));
 		case ZELIO_FRAM:
 			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
@@ -1223,6 +1224,7 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		case ZELIO_BOOTES3:
 			if (oldValue == QA)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		__attribute__ ((fallthrough));
 		case ZELIO_FRAM:
 			if (oldValue == Q8)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
@@ -1288,7 +1290,7 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			}
 		}
 	}
-	catch (rts2core::ConnError err)
+	catch (rts2core::ConnError &err)
 	{
 		logStream (MESSAGE_ERROR) << "setValue " << oldValue->getName () << " " << err << sendLog;
 		return -2;

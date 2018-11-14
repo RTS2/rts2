@@ -262,7 +262,7 @@ void Dummy::runTracking ()
 	Telescope::runTracking ();
 }
 
-int Dummy::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Dummy::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, __attribute__ ((unused)) struct ln_hrz_posn *hrz_out, int32_t &ac, int32_t &dc, bool writeValues, __attribute__ ((unused)) double haMargin, __attribute__ ((unused)) bool forceShortest)
 {
 	ac = pos->ra * 10000;
 	dc = pos->dec * 10000;
