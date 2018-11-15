@@ -1221,11 +1221,7 @@ int Connection::queCommand (Command * cmd)
 	std::cout << "Connection::queCommand " << cmd->getText () << " runningCommand " << runningCommand << " queu size " << commandQue.size () << std::endl;
 	#endif
 	cmd->setConnection (this);
-	if (runningCommand
-		|| isConnState (CONN_CONNECTING)
-		|| isConnState (CONN_INPROGRESS)
-		|| isConnState (CONN_AUTH_PENDING)
-		|| isConnState (CONN_UNKNOW))
+	if (runningCommand || (getConnState () != CONN_AUTH_OK && getConnState () != CONN_CONNECTED))
 	{
 		commandQue.push_back (cmd);
 		return 1;
