@@ -17,7 +17,7 @@ AM_MAINTAINER_MODE
 # Checks for programs.
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_17
+AX_CXX_COMPILE_STDCXX_11
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
@@ -365,7 +365,7 @@ AS_IF([test x${target_os} == xcygwin], [
 	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src"
 ], [
 	LIB_ARC="-L${ARC}/Release/x64 -lCArcDevice -lCArcDeinterlace";
-	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src -std=gnu++17"
+	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src -std=gnu++11"
 ]),
 [ARC_3=no])
 
