@@ -548,6 +548,7 @@ class Camera:public rts2core::ScriptDevice
 		 * @return Size of pixel data from current configured single CCD channel in bytes
 		 */
 		virtual size_t chipByteSize () { return chipUsedSize () * usedPixelByteSize (); }
+		virtual size_t lastExposureChipByteSize () { return lastExposureBytes; }
 
 		/**
 		 * Returns size of one line in bytes.
@@ -1016,6 +1017,10 @@ class Camera:public rts2core::ScriptDevice
 		// data buffers - separated for each channel
 		char** dataBuffers;
 		size_t *dataWritten;
+
+		// Sizes of last exposed frame, to be used for readout
+		size_t lastExposurePixels;
+		size_t lastExposureBytes;
 
 		int histories;
 		int comments;

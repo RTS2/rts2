@@ -512,7 +512,10 @@ int GXCCD::doReadout ()
 	if (ready == false)
 		return 100;
 
-	ssize_t s = 2 * getUsedWidthBinned () * getUsedHeightBinned ();
+	ssize_t s = lastExposureChipByteSize ();
+
+	// Clear the buffer so that in case of readout error no previous data is stored in new image
+	memset (getDataBuffer (0), 0, getWriteBinaryDataSize ());
 
 	if (getWriteBinaryDataSize () == s)
 	{
@@ -523,6 +526,11 @@ int GXCCD::doReadout ()
 			logStream (MESSAGE_ERROR) << "data read error: " << gx_err << sendLog;
 			return -1;
 		}
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "data size error: expected " << s << " got " << getWriteBinaryDataSize () << sendLog;
+		return -1;
 	}
 
 	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());

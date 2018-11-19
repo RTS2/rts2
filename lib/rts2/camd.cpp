@@ -285,7 +285,7 @@ void Camera::startImageData (rts2core::Connection * conn)
 	size_t chansize[chnTot];
 	int i;
 	for (i = 0; i < chnTot; i++)
-		chansize[i] = chipByteSize () + sizeof (imghdr);
+		chansize[i] = lastExposureChipByteSize () + sizeof (imghdr);
 
 	if (sharedData)
 	{
@@ -404,7 +404,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	chan1delta = NULL;
 	chan2delta = NULL;
-        acquireTime = NULL;
+	acquireTime = NULL;
 
 	shiftstoreLines = NULL;
 
@@ -428,6 +428,9 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	dataBuffers = NULL;
 	dataWritten = NULL;
+
+	lastExposurePixels = 0;
+	lastExposureBytes = 0;
 
 	histories = 0;
 	comments = 0;
@@ -1703,7 +1706,7 @@ int Camera::camStartExposureWithoutCheck ()
 
 	double now = getNow ();
 
-        exposureEnd->setValueDouble (now + ( acquireTime ? acquireTime->getValueDouble () : exposure->getValueDouble () ));
+	exposureEnd->setValueDouble (now + ( acquireTime ? acquireTime->getValueDouble () : exposure->getValueDouble () ));
 
 	infoAll ();
 
@@ -1767,6 +1770,11 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue,
 	}
 
 	exposureConn = conn;
+
+	// Cache frame size in pixels and bytes so that the readout may use these actual values, and not
+	// the ones at readout start (as it may be after current script end + reset of parameters)
+	lastExposurePixels = getUsedHeightBinned () * getUsedWidthBinned ();
+	lastExposureBytes = chipByteSize ();
 
 	ret = camStartExposure (careBlock);
 	if (ret)
@@ -1837,7 +1845,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	}
 
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
-		calculateDataSize = chipByteSize ();
+		calculateDataSize = lastExposureChipByteSize ();
 
 	memset (dataWritten, 0, getNumChannels () * sizeof (size_t));
 
@@ -1849,7 +1857,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
-		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
+		readoutPixels = lastExposurePixels;
 		if (std::isnan (timeReadoutStart))
 			timeReadoutStart = getNow ();
 		return readoutStart ();
@@ -2063,7 +2071,7 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		}
 		else if (strcmp (kind, "end") == 0)
 		{
-			if (conn->paramNextInteger (&shift) << conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
 				return -2;
 			return shiftStoreEnd (conn, shift, exptime);
 		}
