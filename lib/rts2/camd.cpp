@@ -1771,16 +1771,17 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue,
 
 	exposureConn = conn;
 
-	// Cache frame size in pixels and bytes so that the readout may use these actual values, and not
-	// the ones at readout start (as it may be after current script end + reset of parameters)
-	lastExposurePixels = getUsedHeightBinned () * getUsedWidthBinned ();
-	lastExposureBytes = chipByteSize ();
-
 	ret = camStartExposure (careBlock);
 	if (ret)
 	{
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
 	}
+
+	// Cache frame size in pixels and bytes so that the readout may use these actual values, and not
+	// the ones at readout start (as it may be after current script end + reset of parameters)
+	lastExposurePixels = getUsedHeightBinned () * getUsedWidthBinned ();
+	lastExposureBytes = chipByteSize ();
+
 	return ret;
 }
 
