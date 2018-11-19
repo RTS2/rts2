@@ -133,6 +133,29 @@ int LX200::commandAuthorized (rts2core::Connection *conn)
 		else
 			return DEVDEM_E_COMMAND;
 	}
+	else if (conn->isCommand ("cmd"))
+	{
+		char *cmd;
+		char rbuf[100];
+
+		if (conn->paramNextString (&cmd) || !conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
+
+		if (serConn->writeRead (cmd, strlen(cmd), rbuf, 100, '#') < 0)
+			return DEVDEM_E_HW;
+
+		char *pos = strchr(rbuf, '#');
+
+		if (pos)
+		{
+			*pos = '\0';
+			logStream (MESSAGE_INFO) << "mount reply for " << cmd << " : " << rbuf << sendLog;
+		}
+		else
+			logStream (MESSAGE_INFO) << "wrong mount reply for " << cmd << sendLog;
+
+		return DEVDEM_OK;
+	}
 
 	return TelLX200::commandAuthorized (conn);
 }
@@ -239,26 +262,25 @@ int LX200::info ()
 			else
 				maskState (TEL_MASK_TRACK, TEL_NOTRACK);
 
-			if (rbuf[0] != '5' && (getState () & TEL_PARKED))
+			if (rbuf[0] != '5' && (getState () & TEL_PARKED)){
+				logStream (MESSAGE_DEBUG) << "Wrong mount state '" << rbuf[0] << "' while TEL_PARKED is set" << sendLog;
+
 				// Unset parking state if Gstat says it is not parked
-				maskState (TEL_MASK_MOVING, TEL_MOVING);
+				maskState (TEL_MASK_MOVING, TEL_OBSERVING);
+			}
+		}
+
+		if (serConn->writeRead (":pS#", 4, rbuf, 99, '#') >= 0)
+		{
+			char *pos = strchr(rbuf, '#');
+
+			if (pos)
+			{
+				*pos = '\0';
+				mntflip->setValueCharArr (rbuf);
+			}
 		}
 	}
-
-	//char rbuff[100];
-	//int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
-	//int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
-	//cout << "ret " << ret << endl;
-	//	if (ret < 0)
-	//	return -1;
-	//if (ret > 0)
-	//	rbuff[ret] = '\0';
-	//else
-	//	rbuff[0] = '\0';
-
-        //mntflip->setValueCharArr (rbuff);
-
-	//telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
 
 	return Telescope::info ();
 }
@@ -319,7 +341,7 @@ int LX200::tel_slew_to (double ra, double dec)
  * @param ra		target right ascenation
  * @param dec		target declination
  *
- * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
+ park* @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
 int LX200::tel_check_coords (double ra, double dec)
 {
@@ -392,7 +414,7 @@ int LX200::isMoving ()
 		// 10micron reports tracking and moving state in Gstat
 		// FIXME: seems to report end of moving too early?..
 		char rbuf[100];
-		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
+		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0 || rbuf[0] == '1')
 			return -1;
 		else if (rbuf[0] == '0')
 			return -2;
@@ -509,7 +531,7 @@ int LX200::isParking ()
 		char rbuf[100];
 		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
 			return -1;
-		else if (rbuf[0] == '5')
+		else if (rbuf[0] == '5' || rbuf[0] == '1')
 			return -2;
 		else
 			return USEC_SEC;
