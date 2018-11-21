@@ -162,6 +162,8 @@ int LX200::commandAuthorized (rts2core::Connection *conn)
 
 int LX200::initHardware ()
 {
+	setIdleInfoInterval (1);
+
 	int ret = TelLX200::initHardware ();
 	if (ret)
 		return ret;
@@ -332,6 +334,20 @@ int LX200::tel_slew_to (double ra, double dec)
 		return -1;
 	if (retstr == '0')
 		return 0;
+	else
+	{
+		// Extended reply, should read it all and report the error
+		char rbuf[100];
+		int ret = serConn->readPort (rbuf, 99, '#');
+
+		if (ret > 0)
+		{
+			rbuf[ret - 1] = '\0';
+			logStream (MESSAGE_ERROR) << "Mount slew error: " << rbuf << sendLog;
+		}
+		else
+			logStream (MESSAGE_ERROR) << "Mount slew error" << sendLog;
+	}
 	return -1;
 }
 
@@ -617,9 +633,9 @@ int LX200::stopDir (char *dir)
 
 int LX200::idle ()
 {
-	info ();
+	// info ();
 
-	return Telescope::idle ();
+	return TelLX200::idle ();
 }
 
 int main (int argc, char **argv)
