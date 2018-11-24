@@ -362,7 +362,7 @@ void ElementAcquired::postEvent (rts2core::Event * event)
 				elseBlock->postEvent (event);
 				break;
 			}
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case NOT_CALLED:
 			Element::postEvent (event);
 			break;
@@ -408,7 +408,7 @@ int ElementAcquired::processImage (Image * image)
 		case ACQ_FAILED:
 			if (elseBlock)
 				return elseBlock->processImage (image);
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		default:
 			return Element::processImage (image);
 	}
@@ -420,11 +420,11 @@ int ElementAcquired::waitForSignal (int in_sig)
 	{
 		case ACQ_OK:
 			return ElementBlock::waitForSignal (in_sig);
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case ACQ_FAILED:
 			if (elseBlock)
 				return elseBlock->waitForSignal (in_sig);
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		default:
 			return Element::waitForSignal (in_sig);
 	}
@@ -443,7 +443,7 @@ void ElementAcquired::cancelCommands ()
 				elseBlock->cancelCommands ();
 				break;
 			}
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case NOT_CALLED:
 			Element::cancelCommands ();
 			break;

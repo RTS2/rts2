@@ -1493,7 +1493,7 @@ int Gemini::isParking ()
 		case '0':
 			logStream (MESSAGE_ERROR) <<
 				"Losmandy isParking called without park command" << sendLog;
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
 		default:
 			return -1;
 	}

@@ -159,7 +159,7 @@ int Rts2ConnFwGrb::idle ()
 				setConnState (CONN_CONNECTED);
 			}
 			// kill us when we were in conn_connecting state for to long
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case CONN_BROKEN:
 			if (nextTime < now)
 			{

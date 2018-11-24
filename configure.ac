@@ -25,6 +25,33 @@ AM_PATH_PYTHON
 
 libcheck="no"
 
+AC_DEFUN([AX_GCC_VERSION], [
+  GCC_VERSION=""
+  AX_CHECK_COMPILE_FLAG([-dumpversion],
+     [ax_gcc_version_option=yes],
+     [ax_gcc_version_option=no])
+
+  AS_IF([test "x$GCC" = "xyes"],[
+    AS_IF([test "x$ax_gcc_version_option" != "xno"],[
+      AC_CACHE_CHECK([gcc version],[ax_cv_gcc_version],[
+        ax_cv_gcc_version="`$CC -dumpversion`"
+        AS_IF([test "x$ax_cv_gcc_version" = "x"],[
+          ax_cv_gcc_version=""
+        ])
+      ])
+      GCC_VERSION=$ax_cv_gcc_version
+    ])
+  ])
+  AC_SUBST([GCC_VERSION])
+])
+
+GCC_VERSION_MAJOR=$(echo $GCC_VERSION | cut -d'.' -f1)
+AM_CONDITIONAL(GCCVERS, test "$GCC_VERSION_MAJOR" > "6")
+AS_IF([test "$GCC_VERSION_MAJOR" > "6"], [
+	AC_DEFINE([FALLTHRU], [__attribute__ ((fallthrough))], [fallthrough check works])], [
+	AC_DEFINE([FALLTHRU], [], [fallthrough check not works])]
+)
+
 PKG_CHECK_MODULES([CHECK],[check >= 0.9.6],,AC_MSG_RESULT(not found))
 AM_CONDITIONAL(LIBCHECK, test "x$CHECK_LIBS" != x)
 AS_IF([test "x$CHECK_LIBS" != x], [
@@ -62,17 +89,19 @@ AS_IF([test "x$HIREDIS_LIBS" != x], [
 # check for lang
 AC_LANG_CPLUSPLUS
 
-CFLAGS="-Wall -Werror -Wextra -Wshadow -g"
+#CFLAGS="-Wall -Werror -Wextra -Wshadow -g"
+CFLAGS=""
 AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Werror -Wextra -Wshadow -g"
+#CXXFLAGS="-Wall -Werror -Wextra -Wshadow -g"
+CXXFLAGS=""
 AC_SUBST(CXXFLAGS)
 
-#AC_CHECK_LIB([m], [cos], LIB_M="-lm";
-#LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
-#**** You don't have math library.
-#**** Please install one and make sure, that it is available.
-#EOF
-#exit 1])
+AC_CHECK_LIB([m], [cos], LIB_M="-lm";
+LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
+**** You don't have math library.
+**** Please install one and make sure, that it is available.
+EOF
+exit 1])
 
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)

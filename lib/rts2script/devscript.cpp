@@ -105,7 +105,7 @@ void DevScript::postEvent (rts2core::Event * event)
 				dont_execute_for = currentTarget->getTargetID ();
 				dont_execute_for_obsid = currentTarget->getObsId ();
 			}
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case EVENT_KILL_ALL:
 		case EVENT_SET_TARGET_KILL:
 		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
@@ -182,7 +182,7 @@ void DevScript::postEvent (rts2core::Event * event)
 			if (currentTarget)
 				break;
 			// currentTarget is defined - tested in if (event->getArg ())
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case EVENT_OBSERVE:
 			// we can start script before we get EVENT_OBSERVE - don't start us in such case
 			if (currentTarget)
@@ -271,7 +271,7 @@ void DevScript::postEvent (rts2core::Event * event)
 			}
 			// that's intentional, as acqueryQuery should be send to all
 			// scripts for processing
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case EVENT_SIGNAL_QUERY:
 			if (script.get ())
 				script->postEvent (new rts2core::Event (event));

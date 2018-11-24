@@ -285,7 +285,7 @@ std::vector <int> parseRange (const char *range_str, int array_size, const char 
 			{
 				case ARRAY_LEFT:
 					state = FROM;
-					__attribute__ ((fallthrough));
+					RTS2_FALLTHRU;
 				case FROM:
 					from = from * 10 + (*endp) - '0';
 					break;

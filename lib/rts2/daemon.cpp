@@ -588,9 +588,8 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 		case DO_DAEMONIZE:
 			// We are not yet daemonized, let's print to stdout too, so that the user see the errors is any
 			rts2core::Block::sendMessage (in_messageType, in_messageString);
-      __attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case IS_DAEMONIZED:
-      __attribute__ ((fallthrough));
 		case CENTRALD_OK:
 			// if at least one centrald is running..
 			if (someCentraldRunning ())
@@ -615,7 +614,7 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 			syslog (prio, "%s", in_messageString);
 			if (daemonize == IS_DAEMONIZED)
 				break;
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case DONT_DAEMONIZE:
 			// print to stdout
 			rts2core::Block::sendMessage (in_messageType, in_messageString);
@@ -796,7 +795,7 @@ Value * Daemon::duplicateValue (Value * old_value, bool withVal)
 			}
 			if (dup_val)
 				break;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case RTS2_VALUE_TIMESERIE:
 			dup_val = new ValueDoubleTimeserie (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
 			break;

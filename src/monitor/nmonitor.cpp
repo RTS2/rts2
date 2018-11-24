@@ -800,7 +800,7 @@ void NMonitor::processKey (int key)
                 activeWindow = NULL;
                 break;
             }
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
         default:
             ret = activeWindow->injectKey (key);
             if (ret == RKEY_NOT_HANDLED)

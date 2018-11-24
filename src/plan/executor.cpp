@@ -570,7 +570,7 @@ void Executor::changeMasterState (rts2_status_t old_state, rts2_status_t new_sta
 				next_night->setValueBool (true);
 			}
 			sendValueAll (next_night);
-			__attribute__ ((fallthrough)); // ?
+			RTS2_FALLTHRU; // ?
 		case SERVERD_MORNING:
 			// re-enables selector selection
 			selectorNext->setValueBool (true);
@@ -578,7 +578,7 @@ void Executor::changeMasterState (rts2_status_t old_state, rts2_status_t new_sta
 			// switch target if current is flats or darks
 			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && !(getActiveQueue ()->empty ()))
 				setNow (getActiveQueue ()->front ().target->getTargetID (), getActiveQueue ()->front ().plan_id);
-			__attribute__ ((fallthrough)); // ?
+			RTS2_FALLTHRU; // ?
 		case SERVERD_EVENING:
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
@@ -1002,7 +1002,7 @@ int Executor::switchTarget ()
 					doSwitch ();
 					break;
 				}
-				__attribute__ ((fallthrough));
+				RTS2_FALLTHRU;
 			default:
 				if (currentTarget)
 				{

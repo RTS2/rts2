@@ -1503,7 +1503,7 @@ void Connection::sendCommand ()
 			case CIP_WAIT:
 				// if the bock bit is still set..
 				runningCommand->setStatusCallProgress (CIP_RUN);
-				__attribute__ ((fallthrough));
+				RTS2_FALLTHRU;
 			case CIP_RUN:
 				if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
 				{

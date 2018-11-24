@@ -94,7 +94,7 @@ std::string rts2core::getDisplayValue (rts2core::Value * value)
 				_os << (value->getValueInteger () == 1 ? "on" : "off");
 				break;
 			}
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		default:
 			tmp_val = value->getDisplayValue ();
 			if (tmp_val)

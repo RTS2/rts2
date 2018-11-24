@@ -467,13 +467,13 @@ void APMAux::setOCBlock ()
 	{
 		case 1:   // OPENING
 			b |= DEVICE_BLOCK_CLOSE;
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case 0:   // CLOSED
 			b |= DEVICE_BLOCK_OPEN;
 			break;
 		case 3:   // CLOSING
 			b |= DEVICE_BLOCK_OPEN;
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case 2:   // OPENED
 			b |= DEVICE_BLOCK_CLOSE;
 			break;
@@ -484,13 +484,13 @@ void APMAux::setOCBlock ()
 		{
 			case 1:   // OPENING
 				b |= DEVICE_BLOCK_CLOSE;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 			case 0:   // CLOSED
 				b |= DEVICE_BLOCK_OPEN;
 				break;
 			case 3:   // CLOSING
 				b |= DEVICE_BLOCK_OPEN;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 			case 2:   // OPENED
 				b |= DEVICE_BLOCK_CLOSE;
 				break;

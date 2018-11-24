@@ -897,7 +897,7 @@ int Zelio::info ()
 				domeTimeout->setValueInteger (-1);
 			else
 				domeTimeout->setValueInteger ((regs[2] & ZI_TIMEOUT_MASK) >> 7);
-        __attribute__ ((fallthrough));
+        RTS2_FALLTHRU;
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			if (onPower)
@@ -905,12 +905,12 @@ int Zelio::info ()
 				onPower->setValueBool (regs[7] & ZS_POWER);
 				sendValueAll (onPower);
 			}
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_SIMPLE:
 			sendSwInfo (regs + 4);
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case ZELIO_UNKNOW:
 			break;
 	}
@@ -1114,7 +1114,7 @@ void Zelio::createZelioValues ()
 		case ZELIO_BOOTES3:
 			if (createonPower)
 				createValue (onPower, "on_power", "true if power is connected", false);
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case ZELIO_FRAM:
 		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
@@ -1176,7 +1176,7 @@ void Zelio::createZelioValues ()
 	{
 		case ZELIO_BOOTES3:
 			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case ZELIO_FRAM:
 			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
@@ -1224,7 +1224,7 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		case ZELIO_BOOTES3:
 			if (oldValue == QA)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		case ZELIO_FRAM:
 			if (oldValue == Q8)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
@@ -1344,7 +1344,7 @@ void Zelio::sendSwInfo (uint16_t regs[2])
                 sendValueAll (blockOpenRight);
                 sendValueAll (blockCloseRight);
             }
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
         case ZELIO_SIMPLE:
             if (swOpenLeft->getValueBool () != !!(regs[0] & ZO_EP_OPEN))
                 logStream (MESSAGE_INFO) << "open " << (zelioModel == ZELIO_SIMPLE ? "" : "left ") << "changed value to " << (regs[0] & ZO_EP_OPEN) << sendLog;

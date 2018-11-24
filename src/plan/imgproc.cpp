@@ -381,7 +381,7 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 			sendValueAll (nightBadImages);
 			sendValueAll (nightDarks);
 			sendValueAll (nightFlats);
-			__attribute__ ((fallthrough)); // ?
+			RTS2_FALLTHRU; // ?
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
 			if (!(new_state & SERVERD_ONOFF_MASK))
@@ -395,7 +395,7 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 				reprocessingPossible = 0;
 				break;
 			}
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		default:
 			if (strlen (image_glob->getValue ()))
 			{

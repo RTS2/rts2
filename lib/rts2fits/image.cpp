@@ -2277,7 +2277,7 @@ void Image::writeConnBaseValue (const std::string sname, rts2core::Value * val, 
 						setValue (name, os.str ().c_str (), desc);
 						break;
 					}
-					__attribute__ ((fallthrough));
+					RTS2_FALLTHRU;
 				default:
 					setValue (name, val->getValueDouble (), desc);
 					break;

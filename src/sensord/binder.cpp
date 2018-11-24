@@ -110,7 +110,7 @@ int Binder::processOption (int in_opt)
 			break;
 		case 'u':
 			unitId = atoi (optarg);
-		__attribute__ ((fallthrough));
+		RTS2_FALLTHRU;
 		default:
 			return Sensor::processOption (in_opt);
 	}

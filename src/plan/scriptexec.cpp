@@ -209,7 +209,7 @@ int ScriptExec::processOption (int in_opt)
 			break;
 		case 'o':
 			overwrite = true;
-			__attribute__ ((fallthrough));  // should it be here?
+			RTS2_FALLTHRU;  // should it be here?
 		case 'e':
 			expandPath = new rts2core::ValueString ("expand_path");
 			expandPath->setValueString (optarg);

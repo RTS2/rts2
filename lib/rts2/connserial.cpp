@@ -166,7 +166,7 @@ int ConnSerial::init ()
 			break;
 		case ODD:
 			s_termios.c_cflag |= PARODD;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case EVEN:
 			s_termios.c_cflag |= PARENB;
 			break;

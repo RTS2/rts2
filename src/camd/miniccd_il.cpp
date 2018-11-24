@@ -484,7 +484,7 @@ long MiniccdIl::isExposing ()
 				return -2;
 			}
 			slaveState = SLAVE2_EXPOSING;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case SLAVE2_EXPOSING:
 			ret = isChipExposing (0);
 			if (ret != -2)
@@ -494,7 +494,7 @@ long MiniccdIl::isExposing ()
 			timersub (&now, &slave1ReadoutStart, &slave1ReadoutStart);
 			firstReadoutTime = slave1ReadoutStart.tv_sec * USEC_SEC + slave1ReadoutStart.tv_usec;
 			slaveState = SLAVE1_READOUT;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case SLAVE1_READOUT:
 			ret = isChipExposing (1);
 			if (ret)
@@ -518,7 +518,7 @@ int MiniccdIl::doReadout ()
 		case SLAVE2_READOUT:
 			doBinning ((uint16_t *) (row[0]), (uint16_t *) (row[1]));
 			slaveState = SENDING;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case SENDING:
 			ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 			if (ret < 0)

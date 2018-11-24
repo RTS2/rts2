@@ -965,7 +965,7 @@ int APGTO::isInPosition(double coord1, double coord2, double err1, double err2, 
 
 			if (fabs(currentHa-coord1) < err1 && fabs(getTelDec()-coord2) < err2)
 				return 0;
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
 		default:
 			return  -1;
 

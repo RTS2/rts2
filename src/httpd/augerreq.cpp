@@ -48,13 +48,13 @@ void Auger::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *so
 			break;
 		case 3:
 			day = atoi (vals[2].c_str ());
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
 		case 2:
 			month = atoi (vals[1].c_str ());
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
 		case 1:
 			year = atoi (vals[0].c_str ());
-            __attribute__ ((fallthrough));
+            RTS2_FALLTHRU;
 		case 0:
 			printTable (year, month, day, response, response_length);
 			break;

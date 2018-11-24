@@ -187,7 +187,7 @@ int NG::isFocusing ()
 		case TCSNG_MOVE_CALLED:
 			if( _isMoving )
 				moveState->setValueInteger(TCSNG_MOVING);
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case TCSNG_MOVING:
 			if( !_isMoving )
 			{

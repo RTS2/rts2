@@ -544,7 +544,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 				break;
 			}
 			// don't break, as sidereal tracking will be used
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		default:
 			// get from ORI, if constant..
 			getOrigin (out_tar);

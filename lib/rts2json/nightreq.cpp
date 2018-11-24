@@ -70,19 +70,19 @@ void Night::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *so
 				action = API;
 			else
 				day = atoi (vals[2].c_str ());
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case 2:
 			if (vals[1] == "api")
 				action = API;
 			else
 				month = atoi (vals[1].c_str ());
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case 1:
 			if (vals[0] == "api")
 				action = API;
 			else
 				year = atoi (vals[0].c_str ());
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case 0:
 			switch (action)
 			{

@@ -138,7 +138,7 @@ int parseRaDec (const char *radec, double &ra, double &dec)
 		{
 			case NOT_GET:
 				state = RA;
-				__attribute__ ((fallthrough));
+				RTS2_FALLTHRU;
 			case RA:
 				ra += (val / step);
 				if (step > 1)

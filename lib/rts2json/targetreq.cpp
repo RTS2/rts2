@@ -134,14 +134,14 @@ void Targets::authorizedExecute (__attribute__ ((unused)) XmlRpc::XmlRpcSource *
 					break;
 				}
 #endif /* RTS2_HAVE_LIBJPEG */
-				__attribute__ ((fallthrough));
+				RTS2_FALLTHRU;
 			case 3:
 				if (vals[1] == "api")
 				{
 					callTargetAPI (tar, vals[2], params, response_type, response, response_length);
 					break;
 				}
-				__attribute__ ((fallthrough));
+				RTS2_FALLTHRU;
 			default:
 				throw rts2core::Error ("Invalid path!");
 		}

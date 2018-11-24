@@ -380,7 +380,7 @@ keyRet NDeviceWindow::injectKey (int key)
 			// don't create new box if one already exists
 			if (valueBox || searchBox)
 				break;
-			__attribute__ ((fallthrough));
+			RTS2_FALLTHRU;
 		case KEY_F (6):
 			if (searchBox)
 				endSearchBox ();

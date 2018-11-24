@@ -583,7 +583,7 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 					case OBS_MOVE:
 						fixedOffset.ra = 0;
 						fixedOffset.dec = 0;
-						__attribute__ ((fallthrough));
+						RTS2_FALLTHRU;
 					case OBS_MOVE_FIXED:
 						queCommand (new rts2core::CommandScriptEnds (getMaster ()));
 					case OBS_ALREADY_STARTED:
