@@ -258,10 +258,10 @@ void NDeviceWindow::createValueBox ()
 	switch (val->getValueType ())
 	{
 		case RTS2_VALUE_BOOL:
-			valueBox = new ValueBoxBool (this, (rts2core::ValueBool *) val, 21, s - 1);
+			valueBox = new ValueBoxBool (this, (rts2core::ValueBool *) val, 21, s);
 			break;
 		case RTS2_VALUE_STRING:
-			valueBox = new ValueBoxString (this, (rts2core::ValueString *) val, 21, s - 1);
+			valueBox = new ValueBoxString (this, (rts2core::ValueString *) val, 21, s);
 			break;
 		case RTS2_VALUE_INTEGER:
 			valueBox = new ValueBoxInteger (this, (rts2core::ValueInteger *) val, 21, s);
@@ -295,7 +295,7 @@ void NDeviceWindow::createValueBox ()
 			switch (val->getValueExtType ())
 			{
 				case RTS2_VALUE_RECTANGLE:
-					valueBox = new ValueBoxRectangle (this, (rts2core::ValueRectangle *) val, 21, s - 1);
+					valueBox = new ValueBoxRectangle (this, (rts2core::ValueRectangle *) val, 21, s);
 					break;
 				case RTS2_VALUE_ARRAY:
 					valueBox = new ValueBoxArray (this, (rts2core::ValueArray *) val, 21, s);
