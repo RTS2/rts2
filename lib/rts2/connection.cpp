@@ -451,10 +451,22 @@ std::string Connection::getStateString (bool verbose)
 			_os << "augershooter " << real_state;
 			break;
 		case DEVICE_TYPE_EXECUTOR:
-			if (verbose && getValue ("current") && getValueInteger ("current") >= 0)
+			if (verbose)
 			{
-				_os << " | " << getValueInteger ("current") << " " << getValueChar ("current_name")
-					<< " " << getValueInteger ("obsid") << " | ";
+				_os << " |";
+
+				if (getValue ("current") && getValueInteger ("current") >= 0)
+					_os << " " << getValueInteger ("current") << " " << getValueChar ("current_name")
+						<< " " << getValueInteger ("obsid");
+
+				if (getValue ("auto_loop") && getValueInteger ("auto_loop"))
+					_os << " loop";
+
+				if (getValue ("ignore_day") && getValueInteger ("ignore_day"))
+					_os << " ignore_day";
+
+				_os << " | ";
+
 			}
 			switch (real_state & EXEC_STATE_MASK)
 			{
