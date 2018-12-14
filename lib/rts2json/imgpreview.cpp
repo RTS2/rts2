@@ -307,7 +307,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 	// get page number and size of page
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
+	int pagesiz = params->getInteger ("s", 400);
 
 	if (pageno <= 0)
 		pageno = 1;
