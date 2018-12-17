@@ -1,4 +1,4 @@
-/* 
+/*
  * Abstract target class.
  * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -180,6 +180,8 @@ class Rts2Target
 		virtual void getPosition (struct ln_equ_posn *pos, double JD) = 0;
 
 		// move functions
+
+		void moveNotStarted () { moveState = TARGET_NOT_MOVED; }
 
 		void moveStarted () { moveState = TARGET_MOVE_STARTED; }
 
