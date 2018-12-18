@@ -30,6 +30,7 @@ import subprocess
 import sys
 import re
 import time
+import posixpath
 try:
 	import astropy.io.fits as pyfits
 except ImportError:
@@ -94,9 +95,10 @@ def cd2crota(fitsh):
 
 class AstrometryScript:
 	"""calibrate a fits image with astrometry.net."""
-	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
+	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex', astrometry_config=None):
 		self.scale_relative_error=scale_relative_error
 		self.astrometry_bin=astrometry_bin
+		self.astrometry_config = astrometry_config
 
 		self.fits_file = fits_file
 		self.odir = odir
@@ -112,6 +114,10 @@ class AstrometryScript:
 	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots']
+
+		if self.astrometry_config is not None and posixpath.exists(self.astrometry_config):
+			solve_field.append('--config')
+			solve_field.append(self.astrometry_config)
 
 		if scale is not None:
 			scale_low=scale*(1-self.scale_relative_error)
