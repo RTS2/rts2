@@ -34,7 +34,7 @@ ConnExe::ConnExe (rts2core::Block *_master, const char *_exec, bool fillConnEnv,
 
 ConnExe::~ConnExe ()
 {
-	// as safety 
+	// as safety
 	for (std::vector <std::string>::iterator iter = tempentries.begin (); iter != tempentries.end (); iter++)
 	{
 		int ret = rmdir_r (("/tmp/" + (*iter)).c_str ());
@@ -378,14 +378,14 @@ void ConnExe::processCommand (char *cmd)
 	else if (isValueCommand (cmd, "string", vflags))
 	{
 		char *val;
-		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
+		if (paramNextString (&vname) || paramNextString (&desc) || ((val = paramNextWholeString ()) == NULL))
 			throw rts2core::Error ("invalid string");
 		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
 			if (v->getValueBaseType () != RTS2_VALUE_STRING)
-				throw rts2core::Error (std::string ("value is not double ") + vname);
+				throw rts2core::Error (std::string ("value is not string ") + vname);
 			testWritableVariable (cmd, vflags, v);
 			((rts2core::ValueInteger *) v)->setValueCharArr (val);
 			((rts2core::Daemon *) master)->sendValueAll (v);
@@ -461,7 +461,7 @@ void ConnExe::processCommand (char *cmd)
 		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		if (v == NULL)
 			throw rts2core::Error (std::string ("variable with name ") + vname + "does not exists");
-		
+
 		if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 			throw rts2core::Error (std::string ("value is not double array") + vname);
 		rts2core::DoubleArray *vad = (rts2core::DoubleArray *) v;
@@ -607,8 +607,8 @@ rts2core::Connection *ConnExe::getConnectionForScript (const char *_name)
 int ConnExe::getDeviceType (const char *_name)
 {
 	#define NUMTYPES   13
-	struct { const char *dev; int type; } types[NUMTYPES] = 
-	{	
+	struct { const char *dev; int type; } types[NUMTYPES] =
+	{
 		{"TELESCOPE", DEVICE_TYPE_MOUNT},
 		{"CCD",       DEVICE_TYPE_CCD},
 		{"DOME",      DEVICE_TYPE_DOME},
