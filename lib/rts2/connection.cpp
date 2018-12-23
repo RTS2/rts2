@@ -465,8 +465,10 @@ std::string Connection::getStateString (bool verbose)
 				if (getValue ("ignore_day") && getValueInteger ("ignore_day"))
 					_os << " ignore_day";
 
-				_os << " | ";
+				if (getValue ("selector_next") && getValueInteger ("selector_next"))
+					_os << " sel";
 
+				_os << " | ";
 			}
 			switch (real_state & EXEC_STATE_MASK)
 			{
@@ -526,6 +528,22 @@ std::string Connection::getStateString (bool verbose)
 				_os << "idle";
 			break;
 		case DEVICE_TYPE_SELECTOR:
+			if (verbose)
+			{
+				_os << " |";
+
+				if (getValue ("next_id") && getValueInteger ("next_id") >= 0)
+				{
+					_os << " " << getValueInteger ("next_id");
+					if (getValue ("next_started") && getValueInteger ("next_started"))
+						_os << " STARTED";
+				}
+
+				if (getValue ("selector_enabled") && !getValueInteger ("selector_enabled"))
+					_os << " DISABLED";
+
+				_os << " | ";
+			}
 			if (real_state & SENSOR_INPROGRESS)
 				_os << "CHANGING";
 			else
@@ -764,6 +782,7 @@ void Connection::processLine ()
 	int ret;
 
 	// find command parameters end
+	command_full = std::string (command_start);
 
 	while (*command_buf_top && !isspace (*command_buf_top))
 		command_buf_top++;
@@ -1031,13 +1050,13 @@ void Connection::processLine ()
 			sendCommandEnd (DEVDEM_OK, "OK");
 			break;
 		case DEVDEM_E_COMMAND:
-                        // shall be handled by command itself, which should sendCommandEnd..
+			// shall be handled by command itself, which should sendCommandEnd..
 			break;
 		case DEVDEM_E_PARAMSNUM:
-			sendCommandEnd (DEVDEM_E_PARAMSNUM, (std::string ("invalid parameters/invalid number of parameters - ") + getCommand ()).c_str ());
+			sendCommandEnd (DEVDEM_E_PARAMSNUM, (std::string ("invalid parameters/invalid number of parameters - ") + getCommandFull ()).c_str ());
 			break;
 		case DEVDEM_E_PARAMSVAL:
-			sendCommandEnd (DEVDEM_E_PARAMSVAL, (std::string ("invalid parameter values for command ") + getCommand ()).c_str ());
+			sendCommandEnd (DEVDEM_E_PARAMSVAL, (std::string ("invalid parameter values for command ") + getCommandFull ()).c_str ());
 			break;
 		default:
 			break;

@@ -214,6 +214,7 @@ class Connection:public Object
 		 * Return current command.
 		 */
 		inline char *getCommand () { return command_start; }
+		std::string getCommandFull () { return command_full; }
 
 		/**
 		 * Check if the command match given string.
@@ -678,6 +679,7 @@ class Connection:public Object
 		 */
 		Block *master;
 		char *command_start;
+		std::string command_full;
 
 		/**
 		 * Connection file descriptor.
