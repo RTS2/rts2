@@ -221,6 +221,11 @@ std::string Connection::getStateString (bool verbose)
 	{
 		case DEVICE_TYPE_SERVERD:
 			_os << CentralState (getState ()).getString ();
+			if (verbose)
+			{
+				if (getValue ("next_state"))
+					_os << " | next in " << TimeDiff (getNow (), getValueDouble ("next_state_change")) << " " << getValueSelection ("next_state");
+			}
 			break;
 		case DEVICE_TYPE_MOUNT:
 			if (verbose)
@@ -541,6 +546,9 @@ std::string Connection::getStateString (bool verbose)
 
 				if (getValue ("selector_enabled") && !getValueInteger ("selector_enabled"))
 					_os << " DISABLED";
+
+				if (getValue ("ignore_day") && getValueInteger ("ignore_day"))
+					_os << " ignore_day";
 
 				_os << " | ";
 			}

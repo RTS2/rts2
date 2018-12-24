@@ -79,7 +79,7 @@ class Selector
 		void init ();
 
 		// return next observation..
-		int selectNext (int masterState, double length = NAN);
+		int selectNext (int masterState, double length = NAN, bool ignoreDay = false);
 		int selectNextNight (int in_bonusLimit = 0, bool verbose = false, double length = NAN);
 
 		double getFlatSunMin () { return flat_sun_min; }
@@ -180,8 +180,8 @@ class Selector
 
 template <class Predicate> void Selector::printPossible (std::ostream &os, Predicate pred)
 {
-	os << "List of targets selected for observations. Sort from the one with the highest priority to lowest priorities" << std::endl << std::endl;  
-	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();  
+	os << "List of targets selected for observations. Sort from the one with the highest priority to lowest priorities" << std::endl << std::endl;
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();
 	os << std::fixed;
 	for (int i = 1; iter != possibleTargets.end (); iter++)
 	{

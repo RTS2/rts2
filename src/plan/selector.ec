@@ -69,12 +69,16 @@ void Selector::init ()
 	}
 }
 
-int Selector::selectNext (int masterState, double length)
+int Selector::selectNext (int masterState, double length, bool ignoreDay)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn sun_hrz;
 	double JD;
 	int ret;
+
+	if (ignoreDay && (masterState & SERVERD_ONOFF_MASK) == SERVERD_ON)
+			return selectNextNight (0, false, length);
+
 	// take care of state - select to make darks when we are able to
 	// make darks.
 	switch (masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
@@ -286,7 +290,7 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 	{
 		(*target_list)->updateBonus ();
 	}
-	
+
 	// sort them..
 	std::sort (possibleTargets.begin (), possibleTargets.end (), bonusSort ());
 
@@ -435,7 +439,7 @@ void Selector::disableTarget (int n)
 
 void Selector::saveTargets ()
 {
-	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();  
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();
 	for (; iter != possibleTargets.end (); iter++)
 	{
 		(*iter)->target->save (false);
