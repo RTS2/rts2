@@ -224,7 +224,7 @@ std::string Connection::getStateString (bool verbose)
 			if (verbose)
 			{
 				if (getValue ("next_state"))
-					_os << " | next in " << TimeDiff (getNow (), getValueDouble ("next_state_change")) << " " << getValueSelection ("next_state");
+					_os << " | next in " << TimeDiff (getNow (), getValueDouble ("next_state_change"), false) << " " << getValueSelection ("next_state");
 			}
 			break;
 		case DEVICE_TYPE_MOUNT:
