@@ -51,6 +51,7 @@ void NMonitor::sendCommand ()
 	char *cmd_top = command;
 	rts2core::Connection *conn = NULL;
 	bool sendAll = false;
+	bool sendCentrald = false;
 
 	comWindow->getWinString (command, curX);
 	command[curX] = '\0';
@@ -65,13 +66,15 @@ void NMonitor::sendCommand ()
 			*cmd_top = '\0';
 			if (!strcmp (command, "*") || !strcmp (command, "all"))
 				sendAll = true;
+			else if (!strcmp (command, "centrald"))
+				sendCentrald = true;
 			else
 				conn = getConnection (command);
 
 			*cmd_top = '.';
 			cmd_top++;
 
-			if (!conn && !sendAll)
+			if (!conn && !sendAll && !sendCentrald)
 			{
 				// Wrong device name? Do not send it anywhere, just echo
 				comWindow->winclear ();
@@ -82,7 +85,7 @@ void NMonitor::sendCommand ()
 		}
 		cmd_top++;
 	}
-	if (conn == NULL && !sendAll)
+	if (conn == NULL && !sendAll && !sendCentrald)
 	{
 		conn = connectionAt (deviceList->getSelRow ());
 		cmd_top = command;
@@ -102,6 +105,8 @@ void NMonitor::sendCommand ()
 
 		if (conn)
 			conn->queCommand (oldCommand);
+		else if (sendCentrald)
+			queAllCentralds (oldCommand);
 		else if (sendAll)
 			// TODO: should we also broadcast it to all centralds?
 			queAll (oldCommand);
