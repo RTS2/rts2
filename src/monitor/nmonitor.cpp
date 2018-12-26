@@ -788,6 +788,11 @@ void NMonitor::processKey (int key)
 				}
 			}
 			break;
+		case KEY_CTRL ('U'):
+			changeActive(deviceList);
+			deviceList->setSelRow (-1);
+			changeListConnection ();
+			break;
 		case KEY_ENTER:
 		case K_ENTER:
 			// preproccesed enter in case device window is selected..
