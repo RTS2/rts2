@@ -464,6 +464,9 @@ std::string Connection::getStateString (bool verbose)
 					_os << " " << getValueInteger ("current") << " " << getValueChar ("current_name")
 						<< " " << getValueInteger ("obsid");
 
+				if (getValue ("enabled") && !getValueInteger ("enabled"))
+					_os << " DISABLED";
+
 				if (getValue ("auto_loop") && getValueInteger ("auto_loop"))
 					_os << " loop";
 

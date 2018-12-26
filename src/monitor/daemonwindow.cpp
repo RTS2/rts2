@@ -186,10 +186,28 @@ void NDevListWindow::draw ()
 
 void NCentraldWindow::printState (rts2core::Connection * conn)
 {
+	double progress = conn->getProgress (getNow ());
+	int real_state = conn->getRealState ();
+
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
 	else if (!conn->isGoodWeather ())
 		wcolor_set (getWriteWindow (), CLR_WARNING, NULL);
+	else if (!std::isnan (progress) && progress < 100.0)
+		wcolor_set (getWriteWindow (), CLR_PRIORITY, NULL);
+	else if (conn->getOtherType () == DEVICE_TYPE_FOCUS && real_state & FOC_FOCUSING)
+		wcolor_set (getWriteWindow (), CLR_PRIORITY, NULL);
+	else if (conn->getOtherType () == DEVICE_TYPE_MOUNT)
+	{
+		if ((real_state & TEL_MASK_MOVING) == TEL_MOVING ||
+			(real_state & TEL_MASK_MOVING) == TEL_PARKING)
+			wcolor_set (getWriteWindow (), CLR_PRIORITY, NULL);
+		else if ((real_state & TEL_MASK_MOVING) == TEL_OBSERVING &&
+				 !(real_state & TEL_TRACKING))
+			wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+		else
+			wcolor_set (getWriteWindow (), CLR_OK, NULL);
+	}
 	else
 		wcolor_set (getWriteWindow (), CLR_OK, NULL);
 	wprintw (getWriteWindow (), "%-5s %s (%x)\n", conn->getName (),
