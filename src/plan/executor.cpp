@@ -273,7 +273,7 @@ int Executor::init ()
 	ret = notifyConn->init ();
 	if (ret)
 		return ret;
-	
+
 	addConnection (notifyConn);
 
 	return ret;
@@ -418,6 +418,12 @@ void Executor::postEvent (rts2core::Event * event)
 				if (scriptCount->getValueInteger () == 0
 					&& currentTarget->observationStarted ())
 				{
+					maskState (EXEC_STATE_MASK, EXEC_IDLE);
+					switchTarget ();
+				}
+				else if (scriptCount->getValueInteger () == 0)
+				{
+					logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED with observations not started" << sendLog;
 					maskState (EXEC_STATE_MASK, EXEC_IDLE);
 					switchTarget ();
 				}
