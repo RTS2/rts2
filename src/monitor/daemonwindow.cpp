@@ -188,6 +188,8 @@ void NCentraldWindow::printState (rts2core::Connection * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+	else if (!conn->isGoodWeather ())
+		wcolor_set (getWriteWindow (), CLR_WARNING, NULL);
 	else
 		wcolor_set (getWriteWindow (), CLR_OK, NULL);
 	wprintw (getWriteWindow (), "%-5s %s (%x)\n", conn->getName (),
