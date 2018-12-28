@@ -32,6 +32,7 @@
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
 #define OPT_DONT_DARK     OPT_LOCAL + 101
 #define OPT_DISABLE_AUTO  OPT_LOCAL + 102
+#define OPT_EXE_TIMEOUT   OPT_LOCAL + 103
 
 namespace rts2plan
 {
@@ -154,6 +155,8 @@ class Executor:public rts2db::DeviceDb
 
 		rts2core::ValueInteger *img_id;
 
+		rts2core::ValueDouble *exe_timeout;
+
 		rts2core::ConnNotify *notifyConn;
 };
 
@@ -215,6 +218,9 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
+	createValue (exe_timeout, "exe_timeout", "inactivity timeout interval for external scripts", false, RTS2_VALUE_WRITABLE);
+	exe_timeout->setValueDouble (600.0);
+
 	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false, RTS2_VALUE_WRITABLE);
 	doDarks->addSelVal ("not at all");
 	doDarks->addSelVal ("just from queue");
@@ -236,6 +242,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
 	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
 	addOption (OPT_DISABLE_AUTO, "no-auto", 0, "disable autolooping");
+	addOption (OPT_EXE_TIMEOUT, "exe-timeout", 1, "external script inactivity timeout");
 }
 
 Executor::~Executor (void)
@@ -258,6 +265,9 @@ int Executor::processOption (int in_opt)
 		case OPT_DISABLE_AUTO:
 			autoLoop->setValueBool (false);
 			defaultAutoLoop->setValueBool (false);
+			break;
+		case OPT_EXE_TIMEOUT:
+			exe_timeout->setValueCharArr (optarg);
 			break;
 		default:
 			return rts2db::DeviceDb::processOption (in_opt);

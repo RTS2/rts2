@@ -54,6 +54,8 @@ class ConnExecute:public ConnExe
 		int processImage (rts2image::Image *image);
 		bool knowImage (rts2image::Image *image);
 
+		virtual int writeToProcess (const char *msg);
+
 	protected:
 		virtual void processCommand (char *cmd);
 

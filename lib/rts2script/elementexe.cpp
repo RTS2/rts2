@@ -21,6 +21,8 @@
 #include "rts2script/execcli.h"
 #include "rts2script/script.h"
 
+#define DEBUG_EXE
+
 using namespace rts2script;
 using namespace rts2image;
 
@@ -99,7 +101,15 @@ void ConnExecute::processCommand (char *cmd)
 	char *operat;
 	char *operand;
 	char *comm;
-	
+
+#ifdef DEBUG_EXE
+	logStream (MESSAGE_DEBUG) << "connexe: " << cmd << " " << command_buf_top << sendLog;
+#endif
+	// initiate timeout for external script inactivity - connection will terminate if nothing received for a long time
+	if (getMaster ()->getValue (".", "exe_timeout") &&
+		getMaster ()->getValue (".", "exe_timeout")->getValueDouble () > 0)
+		endTime = getNow () + getMaster ()->getValue (".", "exe_timeout")->getValueDouble ();
+
 	if (!strcasecmp (cmd, "exposure"))
 	{
 		if (!checkActive (true))
@@ -432,7 +442,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		std::ostringstream os;
 		if (masterElement == NULL || masterElement->getScript () == NULL)
-			os << "-1";		
+			os << "-1";
 		else
 			os << masterElement->getScript ()->getLoopCount ();
 		writeToProcess (os.str ().c_str ());
@@ -570,7 +580,7 @@ int ConnExecute::processImage (Image *image)
 	{
 		logStream (MESSAGE_WARNING) << "script executes method to start image processing without trigerring an exposure (" << exposure_started << ")" << sendLog;
 		return -1;
-	} 
+	}
 	return 1;
 }
 
@@ -588,6 +598,15 @@ std::list <Image *>::iterator ConnExecute::findImage (const char *path)
 			return iter;
 	}
 	return iter;
+}
+
+int ConnExecute::writeToProcess (const char *msg)
+{
+#ifdef DEBUG_EXE
+	logStream (MESSAGE_DEBUG) << "connexe reply: " << msg << sendLog;
+#endif
+
+	return ConnExe::writeToProcess (msg);
 }
 
 Execute::Execute (Script * _script, rts2core::Block * _master, const char *_exec, Rts2Target *_target): Element (_script)
@@ -614,7 +633,6 @@ Execute::~Execute ()
 	}
 	client = NULL;
 }
-
 
 void Execute::errorReported (int current_state, int old_state)
 {
