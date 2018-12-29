@@ -54,6 +54,7 @@ ConnSerial::ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT
 		logStream (MESSAGE_ERROR) << "cannot open serial port:" << _devName << sendLog;
 
 	// some defaults
+	devName = std::string (_devName);
 	baudSpeed = _baudSpeed;
 
 	cSize = _cSize;
@@ -194,10 +195,18 @@ int ConnSerial::setVTime (int _vtime)
 int ConnSerial::writePort (unsigned char ch)
 {
 	int wlen = 0;
+
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
+
 	if (debugComm)
 	{
 		logStream (MESSAGE_DEBUG) << "write char 0x" << std::hex << std::setfill ('0') << std::setw (2) << (int) ch << sendLog;
 	}
+
 	while (wlen < 1)
 	{
 		int ret = write (sock, &ch, 1);
@@ -221,6 +230,13 @@ int ConnSerial::writePort (unsigned char ch)
 int ConnSerial::writePort (const char *wbuf, int b_len)
 {
 	int wlen = 0;
+
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
+
 	if (debugComm)
 	{
 		LogStream ls = logStream (MESSAGE_DEBUG);
@@ -228,6 +244,7 @@ int ConnSerial::writePort (const char *wbuf, int b_len)
 		logBuffer (ls, wbuf, b_len);
 		ls <<  "'" << sendLog;
 	}
+
 	while (wlen < b_len)
 	{
 		int ret = write (sock, wbuf, b_len);
@@ -253,6 +270,12 @@ int ConnSerial::readPort (char &ch)
 	int rlen = 0;
 	// it looks max vtime is 100, do not know why..
 	int ntries = getVTime () / 100;
+
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
 
 	while (rlen == 0)
 	{
@@ -285,6 +308,13 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 {
 	int rlen = 0;
 	int ntries = getVTime () / 100;
+
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
+
 	while (rlen < b_len)
 	{
 		int ret = read (sock, rbuf + rlen, b_len - rlen);
@@ -335,6 +365,12 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 
 size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
 {
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
+
 	int old_flags = fcntl (sock, F_GETFL, 0);
 	int ret = fcntl (sock, F_SETFL, O_NONBLOCK);
 	if (ret)
@@ -361,6 +397,13 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 {
 	int rlen = 0;
 	int ntries = getVTime () / 100;
+
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
+
 	while (rlen < b_len)
 	{
 		int ret = read (sock, rbuf + rlen, 1);
@@ -419,6 +462,13 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 int ConnSerial::readPort (char *rbuf, int b_len, const char *endChar)
 {
 	int tl = 0;
+
+	if (checkConnected ())
+	{
+		logStream (MESSAGE_ERROR) << "serial port not connected" << sendLog;
+		return -1;
+	}
+
 	while (true)
 	{
 		if ((b_len - tl) < (int) strlen (endChar))
@@ -552,4 +602,30 @@ int ConnSerial::flushPortIO ()
 int ConnSerial::flushPortO ()
 {
 	return tcflush (sock, TCOFLUSH);
+}
+
+#include <sys/stat.h>
+
+int ConnSerial::checkConnected ()
+{
+	struct stat s;
+	if (stat(devName.c_str (), &s) == 0 &&
+		(fcntl(sock, F_GETFL) != -1 || errno != EBADF) &&
+		fstat(sock, &s) == 0 && s.st_nlink > 0)
+	{
+		return 0;
+	}
+
+	if (sock >= 0)
+		logStream (MESSAGE_DEBUG) << "lost connection to serial port" << sendLog;
+
+	// Device is disconnected, try to re-connect
+	sock = open (devName.c_str (), O_RDWR | O_NOCTTY | O_NDELAY);
+	if (sock >= 0 && init () == 0)
+	{
+		logStream (MESSAGE_DEBUG) << "successfully re-opened serial port" << sendLog;
+		return 0;
+	}
+
+	return -1;
 }

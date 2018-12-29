@@ -206,6 +206,7 @@ class ConnSerial: public ConnNoSend
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, const char *endChar);
 
 	private:
+		std::string devName;
 		struct termios s_termios;
 
 		bSpeedT baudSpeed;
@@ -239,6 +240,7 @@ class ConnSerial: public ConnNoSend
 
 		void flushError ();
 
+		int checkConnected ();
 };
 
 }
