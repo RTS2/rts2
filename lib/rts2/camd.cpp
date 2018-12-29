@@ -754,6 +754,9 @@ int Camera::scriptEnds ()
 	dataType->setValueInteger (0);
 	sendValueAll (dataType);
 
+	// Clear PRIORITY CHANGED state
+	maskState (DEVICE_ERROR_KILL, 0, "cleared PRIORITY CHANGED state");
+
 	return rts2core::ScriptDevice::scriptEnds ();
 }
 
