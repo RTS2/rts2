@@ -211,9 +211,10 @@ void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, in
 	std::string fp (fpath);
 	XmlRpc::urlencode (fp, true);
 	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")";
+
 	if (prevsize > 0)
 		_os << "' width='" << prevsize;
-	_os << "' src='" << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "'/>" << std::endl;
+	_os << "' src='" << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "' title='" << SplitStr (fpath, "/").back() << "'/>" << std::endl;
 }
 
 void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan, int colourVariant)
