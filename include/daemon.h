@@ -82,6 +82,7 @@ class Daemon:public Block
 		 * @see info()
 		 */
 		void setIdleInfoInterval (double interval);
+		double getIdleInfoInterval () { return idleInfoInterval; }
 
 		/**
 		 * Updates info_time to current time.

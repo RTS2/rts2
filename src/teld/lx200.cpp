@@ -72,6 +72,8 @@ class LX200:public TelLX200
 		rts2core::ValueString *productName;
 		rts2core::ValueString *mntflip;
 
+		rts2core::ValueString *Gstat;
+
 		bool hasAstroPhysicsExtensions;
 };
 
@@ -216,6 +218,8 @@ int LX200::initHardware ()
 
 		if (rbuf[0] == '5')
 			maskState (TEL_MASK_MOVING, TEL_PARKED, "telescope was parked at initializiation");
+
+		createValue (Gstat, "Gstat", "low-level status as returned by mount");
 	}
 
 	serConn->setVTime (ovtime);
@@ -249,8 +253,18 @@ int LX200::initValues ()
 
 int LX200::info ()
 {
+	serConn->flushPortIO ();
+
 	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
+	{
+		if (hasAstroPhysicsExtensions && getNow () - getInfoTime () > 3.0*getIdleInfoInterval ())
+		{
+			maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "mount did not respond to status queries");
+			Gstat->setValueString ("disconnected");
+		}
+
 		return -1;
+	}
 
 	if (hasAstroPhysicsExtensions)
 	{
@@ -258,11 +272,27 @@ int LX200::info ()
 
 		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') >= 0)
 		{
+			char *pos = strchr(rbuf, '#');
+
+			if (pos)
+			{
+				*pos = '\0';
+				Gstat->setValueString (rbuf);
+			}
+			else
+				Gstat->setValueString ("?");
+
 			// Guess tracking state
 			if (rbuf[0] == '0')
 				maskState (TEL_MASK_TRACK, TEL_TRACKING);
 			else
 				maskState (TEL_MASK_TRACK, TEL_NOTRACK);
+
+			if (rbuf[0] == '9' && rbuf[1] == '9')
+				// 99 state is HW error
+				maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "mount reported error state");
+			else if (getState () & DEVICE_ERROR_HW)
+				maskState (DEVICE_ERROR_HW, 0, "cleared error state");
 
 			if (rbuf[0] != '5' && (getState () & TEL_PARKED)){
 				logStream (MESSAGE_DEBUG) << "Wrong mount state '" << rbuf[0] << "' while TEL_PARKED is set" << sendLog;
@@ -434,6 +464,8 @@ int LX200::isMoving ()
 			return -1;
 		else if (rbuf[0] == '0')
 			return -2;
+		else if (rbuf[0] == '9' && rbuf[1] == '9')
+			return -1;
 		else
 			return USEC_SEC;
 	}
@@ -504,7 +536,6 @@ int LX200::setTo (double ra, double dec)
 	return ret == 1;
 }
 
-
 /*!
  * Correct telescope coordinates.
  *
@@ -549,6 +580,8 @@ int LX200::isParking ()
 			return -1;
 		else if (rbuf[0] == '5' || rbuf[0] == '1')
 			return -2;
+		else if (rbuf[0] == '9' && rbuf[1] == '9')
+			return -1;
 		else
 			return USEC_SEC;
 	}
