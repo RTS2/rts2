@@ -208,6 +208,10 @@ void NCentraldWindow::printState (rts2core::Connection * conn)
 		else
 			wcolor_set (getWriteWindow (), CLR_OK, NULL);
 	}
+	else if ((conn->getOtherType () == DEVICE_TYPE_DOME || conn->getOtherType () == DEVICE_TYPE_CUPOLA) &&
+			 (real_state & DOME_DOME_MASK) != DOME_CLOSED &&
+			 (real_state & DOME_DOME_MASK) != DOME_OPENED)
+		wcolor_set (getWriteWindow (), CLR_PRIORITY, NULL);
 	else
 		wcolor_set (getWriteWindow (), CLR_OK, NULL);
 	wprintw (getWriteWindow (), "%-5s %s (%x)\n", conn->getName (),
