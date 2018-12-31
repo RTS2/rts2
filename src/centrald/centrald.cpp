@@ -289,6 +289,30 @@ int ConnCentrald::commandClient ()
 		{
 			return master->changeStateSoftOff (login.c_str ());
 		}
+		if (isCommand ("day"))
+		{
+			return master->changeStateDay ();
+		}
+		if (isCommand ("evening"))
+		{
+			return master->changeStateEvening ();
+		}
+		if (isCommand ("dusk"))
+		{
+			return master->changeStateDusk ();
+		}
+		if (isCommand ("night"))
+		{
+			return master->changeStateNight ();
+		}
+		if (isCommand ("dawn"))
+		{
+			return master->changeStateDawn ();
+		}
+		if (isCommand ("morning"))
+		{
+			return master->changeStateMorning ();
+		}
 		if (isCommand (COMMAND_OPEN))
 		{
 			if (!paramEnd ())
