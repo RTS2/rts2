@@ -1,4 +1,4 @@
-/* 
+/*
  * Configuration file read routines.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -220,7 +220,7 @@ int IniParser::parseConfigFile (std::ifstream *configStream, const char *filenam
 								es  = line.end ();
 								while (isspace (*es))
 									es--;
-							}	
+							}
 							val = line.substr (top - line.begin (), es - top);
 						}
 						break;
@@ -382,16 +382,16 @@ int IniParser::getString (const char *section, const char *valueName, std::strin
 	return ret;
 }
 
-const char * IniParser::getStringDefault (const char *section, const char *valueName, const char *defVal)
+std::string IniParser::getStringDefault (const char *section, const char *valueName, const char *defVal)
 {
 	clearVerboseEntry ();
 	IniValue *val = getValue (section, valueName);
 	if (!val)
 	{
-		return defVal;
+		return std::string (defVal);
 	}
 	setVerboseEntry ();
-	return val->getValue ().c_str ();
+	return val->getValue ();
 }
 
 int IniParser::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
@@ -421,7 +421,7 @@ int IniParser::getInteger (const char *section, const char *valueName, int &valu
 	{
 		logStream (MESSAGE_ERROR) << "cannot convert " << valbuf
 			<< " in section [" << section
-			<< "] value '" << valueName 
+			<< "] value '" << valueName
 			<< "' to float number. Please check configuration file." << sendLog;
 		return -1;
 	}
@@ -461,16 +461,16 @@ int IniParser::getFloat (const char *section, const char *valueName, float &valu
 	ret = getString (section, valueName, valbuf);
 	if (ret)
 		return ret;
-#ifdef RTS2_HAVE_STRTOF	
+#ifdef RTS2_HAVE_STRTOF
 	value = strtof (valbuf.c_str (), &retv);
-#else	
+#else
 	value = strtod (valbuf.c_str (), &retv);
-#endif	
+#endif
 	if (*retv != '\0')
 	{
 		logStream (MESSAGE_ERROR) << "cannot convert " << valbuf
 			<< " in section [" << section
-			<< "] value '" << valueName 
+			<< "] value '" << valueName
 			<< "' to float number. Please check configuration file." << sendLog;
 		return -1;
 	}
@@ -515,7 +515,7 @@ int IniParser::getDouble (const char *section, const char *valueName, double &va
 	{
 		logStream (MESSAGE_ERROR) << "cannot convert " << valbuf
 			<< " in section [" << section
-			<< "] value '" << valueName 
+			<< "] value '" << valueName
 			<< "' to float number. Please check configuration file." << sendLog;
 		return -1;
 	}

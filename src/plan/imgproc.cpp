@@ -262,9 +262,9 @@ int ImageProc::reloadConfig ()
 		return ret;
 	image_glob->setValueCharArr (imgglob.c_str ());
 
-	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL);
-	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL);
-	last_trash_jpeg = config->getStringDefault ("imgproc", "last_trash_jpeg", NULL);
+	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL).c_str ();
+	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL).c_str ();
+	last_trash_jpeg = config->getStringDefault ("imgproc", "last_trash_jpeg", NULL).c_str ();
 
 	astrometryTimeout->setValueInteger (config->getAstrometryTimeout ());
 

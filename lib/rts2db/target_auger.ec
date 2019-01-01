@@ -685,22 +685,22 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strcmp (device_name, rts2core::Configuration::instance ()->getStringDefault ("auger", "camera", "C0")))
+	if (!rts2core::Configuration::instance ()->getStringDefault ("auger", "camera", "C0").compare (device_name))
 	{
 		std::ostringstream _os;
-	 	_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "script_preamble", "filter=B")) << " ";
+	 	_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "script_preamble", "filter=B") << " ";
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
 		{
 			if (iter->ra != 0 || iter->dec != 0)
-				_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "mount", "T0")) << ".WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
-			_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "script_main", "E 30")) << " ";
+				_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "mount", "T0") << ".WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
+			_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "script_main", "E 30") << " ";
 		}
-	 	_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "script_end", ""));
+	 	_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "script_end", "");
 		buf = _os.str ();
 		return false;
 	}
 
-	buf = std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "default_script", "sleep 10"));
+	buf = rts2core::Configuration::instance ()->getStringDefault ("auger", "default_script", "sleep 10");
 
 	return false;
 }

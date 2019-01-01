@@ -1,4 +1,4 @@
-/* 
+/*
  * Configuration file read routines.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -58,7 +58,7 @@ class IniValue
 			value = in_value;
 			comment = in_comment;
 		}
-		
+
 		/**
 		 * Check for value name.
 		 *
@@ -220,7 +220,7 @@ class IniParser: public std::vector < IniSection * >
 
 		int getString (const char *section, const char *valueName, std::string & buf, const char* defVal);
 
-		const char* getStringDefault (const char *section, const char *valueName, const char* defVal);
+		std::string getStringDefault (const char *section, const char *valueName, const char* defVal);
 
 		/**
 		 * Return string value as vector of strings. Vector items are separated by space.
