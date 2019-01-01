@@ -20,6 +20,7 @@
 #include "rts2db/sqlerror.h"
 #include "rts2db/target_auger.h"
 
+#include "configuration.h"
 #include "timestamp.h"
 #include "infoval.h"
 #include "rts2fits/image.h"
@@ -684,20 +685,23 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strncmp (device_name, "WF", 2))
+	if (!strcmp (device_name, rts2core::Configuration::instance ()->getStringDefault ("auger", "camera", "C0")))
 	{
 		std::ostringstream _os;
-	 	_os << "filter=B ";
+	 	_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "script_preamble", "filter=B")) << " ";
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
 		{
 			if (iter->ra != 0 || iter->dec != 0)
-				_os << "GM2000.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
-			_os << "E 30 ";
+				_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "mount", "T0")) << ".WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
+			_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "script_main", "E 30")) << " ";
 		}
+	 	_os << std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "script_end", ""));
 		buf = _os.str ();
 		return false;
 	}
-	buf = std::string ("filter=B E 30");
+
+	buf = std::string (rts2core::Configuration::instance ()->getStringDefault ("auger", "default_script", "sleep 10"));
+
 	return false;
 }
 
