@@ -376,7 +376,7 @@ int IniParser::getString (const char *section, const char *valueName, std::strin
 	ret = getString (section, valueName, buf);
 	if (ret)
  	{
-		buf = std::string (defVal);
+		buf = std::string (defVal ? defVal : "");
  	}
  	setVerboseEntry ();
 	return ret;
@@ -384,14 +384,11 @@ int IniParser::getString (const char *section, const char *valueName, std::strin
 
 std::string IniParser::getStringDefault (const char *section, const char *valueName, const char *defVal)
 {
-	clearVerboseEntry ();
-	IniValue *val = getValue (section, valueName);
-	if (!val)
-	{
-		return std::string (defVal);
-	}
-	setVerboseEntry ();
-	return val->getValue ();
+	std::string val;
+
+	getString(section, valueName, val, defVal);
+
+	return val;
 }
 
 int IniParser::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
