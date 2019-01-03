@@ -40,11 +40,6 @@ using namespace rts2image;
 ConnProcess::ConnProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):rts2script::ConnExe (in_master, in_exe, false, in_timeout)
 {
 	astrometryStat = NOT_ASTROMETRY;
-
-#ifdef RTS2_HAVE_LIBJPEG
-	last_good_jpeg = NULL;
-	last_trash_jpeg = NULL;
-#endif
 }
 
 int ConnProcess::init ()
@@ -204,7 +199,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			case NOT_ASTROMETRY:
 			case TRASH:
 #ifdef RTS2_HAVE_LIBJPEG
-				if (last_trash_jpeg && strlen(last_trash_jpeg))
+				if (!last_trash_jpeg.empty ())
 					image->writeAsJPEG (last_trash_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 				astrometryStat = TRASH;
@@ -213,14 +208,14 @@ void ConnImgProcess::connectionError (int last_data_size)
 				break;
 			case GET:
 #ifdef RTS2_HAVE_LIBJPEG
-				if (last_good_jpeg && strlen(last_good_jpeg))
+				if (!last_good_jpeg.empty ())
 					image->writeAsJPEG (last_good_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 				image->setAstroResults (ra, dec, ra_err, dec_err);
 				if (end_event <= 0)
 					image->toArchive ();
 
-				if (ra_err != 0 || dec_err != 0) // TODO: correct using only latest images, not any image!
+				if (ra_err != 0 || dec_err != 0)
 				{
 					// send correction to telescope..
 					telescopeName = image->getMountName ();

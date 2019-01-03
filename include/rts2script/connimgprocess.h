@@ -38,7 +38,7 @@ class ConnProcess:public rts2script::ConnExe
 		virtual int init ();
 
 		astrometry_stat_t getAstrometryStat () { return astrometryStat; }
-	
+
 		double getExposureEnd () { return expDate; };
 
 		/**
@@ -47,8 +47,8 @@ class ConnProcess:public rts2script::ConnExe
 		virtual const char* getProcessArguments () { return "none"; }
 
 #ifdef RTS2_HAVE_LIBJPEG
-		void setLastGoodJpeg (const char *_last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
-		void setLastTrashJpeg (const char *_last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
+		void setLastGoodJpeg (std::string _last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
+		void setLastTrashJpeg (std::string _last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
 #endif
 
 	protected:
@@ -56,8 +56,8 @@ class ConnProcess:public rts2script::ConnExe
 		double expDate;
 
 #ifdef RTS2_HAVE_LIBJPEG
-		const char *last_good_jpeg;
-		const char *last_trash_jpeg;
+		std::string last_good_jpeg;
+		std::string last_trash_jpeg;
 #endif
 };
 
@@ -69,7 +69,7 @@ class ConnProcess:public rts2script::ConnExe
  */
 class ConnImgOnlyProcess:public ConnProcess
 {
-	public:  
+	public:
 		/**
 		 *
 		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed

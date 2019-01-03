@@ -142,9 +142,9 @@ class ImageProc:public rts2core::Device
 		unsigned int globPos;
 		int reprocessingPossible;
 
-		const char *last_processed_jpeg;
-		const char *last_good_jpeg;
-		const char *last_trash_jpeg;
+		std::string last_processed_jpeg;
+		std::string last_good_jpeg;
+		std::string last_trash_jpeg;
 };
 
 };
@@ -158,7 +158,6 @@ ImageProc::ImageProc (int _argc, char **_argv)
 :rts2core::Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #endif
 {
-	last_processed_jpeg = last_good_jpeg = last_trash_jpeg = NULL;
 	runningImage = NULL;
 
 	createValue (applyCorrections, "apply_corrections", "apply corrections from astrometry", false, RTS2_VALUE_WRITABLE);
@@ -262,9 +261,9 @@ int ImageProc::reloadConfig ()
 		return ret;
 	image_glob->setValueCharArr (imgglob.c_str ());
 
-	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL).c_str ();
-	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL).c_str ();
-	last_trash_jpeg = config->getStringDefault ("imgproc", "last_trash_jpeg", NULL).c_str ();
+	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL);
+	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL);
+	last_trash_jpeg = config->getStringDefault ("imgproc", "last_trash_jpeg", NULL);
 
 	astrometryTimeout->setValueInteger (config->getAstrometryTimeout ());
 
