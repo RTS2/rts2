@@ -1,4 +1,4 @@
-/* 
+/*
  * API access for RTS2.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -42,7 +42,7 @@ digraph "JSON API calls handling" {
   "HTTP/JSON library" -> "Client" [label="function return"];
 }
  * @enddot
- * 
+ *
  * @section JSON_API_errors Error handling
  *
  * Calls to existing API points with invalid arguments returns a valid JSON
@@ -295,7 +295,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			const char *cname = params->getString ("cn", "");
 			if (cname[0] == '\0')
 				throw JSONException ("empty camera name");
-			
+
 			rts2script::Script script = rts2script::Script ();
 			script.setTarget (cname, target);
 			script.prettyPrint (os, rts2script::PRINT_JSON);
@@ -612,7 +612,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 					{
 						rts2json::AsyncAPI *aa = new rts2json::AsyncAPI (this, conn, connection, ext);
 						getServer ()->registerAPI (aa);
-		
+
 						conn->queCommand (new rts2core::Command (master, cmd), 0, aa);
 						throw XmlRpc::XmlRpcAsynchronous ();
 					}
@@ -787,7 +787,10 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 		}
 	}
 
-	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << rts2json::JsonDouble (from); 
+	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << rts2json::JsonDouble (from);
+
+	os << ",\"statestring\":\"\"";
+	os << ",\"type\":" << master->getDeviceType();
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)

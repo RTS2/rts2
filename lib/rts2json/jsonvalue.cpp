@@ -209,4 +209,5 @@ void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connecti
 	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << rts2json::JsonDouble (conn->getProgressStart ()) << ",\"send\":" << rts2json::JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << rts2json::JsonDouble (mfrom);
 
 	os << ",\"statestring\":\"" << conn->getStateString(true) << "\"";
+	os << ",\"type\":" << conn->getOtherType();
 }
