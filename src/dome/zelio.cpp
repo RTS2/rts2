@@ -665,6 +665,8 @@ int Zelio::commandAuthorized (rts2core::Connection * conn)
 			int bits = (zelioModel == ZELIO_FRAM) ? ZI_FRAM_Q8 : ZI_ELYA_48V;
 			int ret = setBitsInput (addr, bits, true);
 
+			logStream (MESSAGE_INFO) << "mount switch toggled on/off" << sendLog;
+
 			if (ret == 0)
 			{
 				usleep(USEC_SEC / 2);
@@ -969,6 +971,8 @@ int Zelio::info ()
 
 int Zelio::initHardware ()
 {
+	setIdleInfoInterval (60);
+
 	if (host == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
@@ -1229,9 +1233,16 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			break;
 		case ZELIO_ELYA:
 			if (oldValue == dc12)
+			{
+				logStream (MESSAGE_INFO) << "12V switch turned " << (((rts2core::ValueBool*) newValue)->getValueBool () ? "on" : "off") << sendLog;
+
 				return setBitsInput (ZREG_J2XT1, ZI_ELYA_12V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			}
 			if (oldValue == dc48)
+			{
+				logStream (MESSAGE_INFO) << "48V switch turned " << (((rts2core::ValueBool*) newValue)->getValueBool () ? "on" : "off") << sendLog;
 				return setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			}
 			if (oldValue == mountIsOn)
 				return setBitsInput (ZREG_J1XT1, ZI_ELYA_MOUNT, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			break;
