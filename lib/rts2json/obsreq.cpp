@@ -1,4 +1,4 @@
-/* 
+/*
  * Classes for generating pages with observations by nights.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -86,7 +86,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	std::ostringstream _title;
 	_title << "Images for observation " << obs.getObsId () << " of " << obs.getTargetName ();
 
-	Previewer preview = Previewer (getServer ());
+	Previewer preview = Previewer (getServer (), this);
 
 	printHeader (_os, _title.str ().c_str (), preview.style ());
 
@@ -115,7 +115,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
-	
+
 	printFooter (_os);
 
 	response_type = "text/html";
@@ -131,7 +131,7 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 	rts2db::ImageSetObs images (&obs);
 	images.load ();
 	_os << "[" << std::fixed;
-	
+
 	for (rts2db::ImageSetObs::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
 		if (iter != images.begin ())
@@ -143,7 +143,7 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 	}
 
 	_os << "]";
-	
+
 	returnJSON (_os, response_type, response, response_length);
 }
 

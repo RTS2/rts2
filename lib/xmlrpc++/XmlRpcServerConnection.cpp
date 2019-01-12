@@ -99,7 +99,7 @@ unsigned XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 
 	if (_connectionState == WRITE_RESPONSE)
 		if ( ! writeResponse()) return 0;
-	
+
 	if (_connectionState == WRITE_ASYNC_RESPONSE)
 		if ( ! writeAsyncReponse()) return 0;
 
@@ -134,6 +134,7 @@ bool XmlRpcServerConnection::readHeader()
 	char *lp = 0;				 // Start of content-length value
 	char *kp = 0;				 // Start of connection value
 	char *ap = 0;				 // Start of authorization header
+	char *rbp = 0;				 // Start of X-Request-Base
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
@@ -147,6 +148,8 @@ bool XmlRpcServerConnection::readHeader()
 			kp = cp + 12;
 		else if ((ep - cp > 15) && (strncasecmp (cp, "Authorization: ", 15) == 0))
 			ap = cp + 15;
+		else if ((ep - cp > 16) && (strncasecmp (cp, "X-Request-Base: ", 16) == 0))
+			rbp = cp + 16;
 		else if ((ep - cp >= 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
 		else if ((ep - cp >= 2) && (strncmp(cp, "\n\n", 2) == 0))
@@ -189,6 +192,23 @@ bool XmlRpcServerConnection::readHeader()
 			std::back_insert_iterator<std::string> ins = std::back_inserter(_authorization);
 			decoder.get(t_ap.begin (), t_ap.end (), ins, iostatus);
 
+		}
+	}
+	// X-Request-Base
+	if (rbp != 0)
+	{
+		while (isspace(*rbp))
+			rbp++;
+
+		if (ep - rbp > 0)
+		{
+			char *end = rbp;
+			while (!(isspace (*end) || (*end == '\n') || (*end == '\r')))
+				end++;
+
+			_request_base = _header.substr (rbp - hp, end - rbp);
+
+			XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: X-Request-Base %s", _request_base.c_str());
 		}
 	}
 
@@ -461,7 +481,7 @@ void XmlRpcServerConnection::executeGet()
 			}
 
 			oss << std::endl << "</body></html>";
-			
+
 			response_type = "text/html";
 			_get_response_length = oss.str ().length ();
 			_get_response = new char[_get_response_length];
@@ -484,9 +504,10 @@ void XmlRpcServerConnection::executeGet()
 	else
 	{
 		request->setAuthorization (_authorization);
+		request->setRequestBase (_request_base);
 
 		HttpParams params = HttpParams ();
-	
+
 		try
 		{
 			std::string path = _get.substr (request->getPrefix ().length ()).c_str ();
@@ -497,7 +518,7 @@ void XmlRpcServerConnection::executeGet()
 				params.parse (path.substr (pi + 1));
 				path = path.substr (0, pi);
 			}
-			
+
 			// add params from _request for POST requests
 			if (_connectionState == POST_REQUEST)
 			{
@@ -798,7 +819,7 @@ std::string XmlRpc::printHeaders (int http_code, const char *http_code_string, c
 
 	_os << "HTTP/1.1 " << http_code << " " << http_code_string
 		<< "\r\nDate: " << XmlRpcServerConnection::getHttpDate ()
-		<< "\r\nServer: " << XMLRPC_VERSION 
+		<< "\r\nServer: " << XMLRPC_VERSION
 		<< "\r\nContent-Type: " << response_type << "\r\n";
 	if (response_length > 0)
 		_os << "Content-length: " << response_length;
@@ -817,6 +838,6 @@ std::string XmlRpc::printHeaders (int http_code, const char *http_code_string, c
 	  	_os << "\r\n" << iter->first << ": " << iter->second;
 
 	_os << "\r\n\r\n";
-	
+
 	return _os.str ();
 }

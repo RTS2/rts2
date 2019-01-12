@@ -1,4 +1,4 @@
-/* 
+/*
  * JSON database API calls.
  * Copyright (C) 2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -102,7 +102,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		int label = params->getInteger ("l", -1);
 		if (label == -1)
 			tar_set.loadByName ("%", false, false);
-		else	
+		else
 			tar_set.loadByLabelId (label);
 		jsonTargets (tar_set, os, params);
 	}
@@ -149,7 +149,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		rts2db::Observation obs (obsid);
 		if (obs.load ())
 			throw XmlRpc::JSONException ("Cannot load observation set");
-		obs.loadImages ();	
+		obs.loadImages ();
 		jsonImages (obs.getImageSet (), os, params);
 	}
 	else if (vals[0] == "labels")
@@ -315,7 +315,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			throw XmlRpc::JSONException ("empty target name");
 
 		os << "\"data\":[";
-	
+
 		bool first = true;
 		struct ln_equ_posn pos;
 
@@ -433,18 +433,18 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 				if (info != NULL)
 					tar->setTargetInfo (std::string (info));
 				tar->save (true);
-	
+
 				os << "\"id\":" << tar->getTargetID ();
 				delete tar;
 				break;
-			}	
+			}
 			default:
 			{
 				std::ostringstream _err;
 				_err << "can update only subclass of constant targets, " << t->getTargetType () << " is unknow";
 				throw XmlRpc::JSONException (_err.str ());
-			}	
-		}		
+			}
+		}
 
 	}
 	else if (vals[0] == "change_script")
@@ -523,7 +523,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		obss.loadTarget (tar_id);
 
 		jsonObservations (&obss, os);
-		
+
 	}
 	else if (vals[0] == "lastobs")
 	{
@@ -568,9 +568,9 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		ps.load ();
 
 		os << "\"h\":["
-			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
-			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
+			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
+			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":6},"
@@ -662,12 +662,12 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			ta.load (a_id);
 		}
 
-		os << "\"t3id\":" << ta.t3id 
+		os << "\"t3id\":" << ta.t3id
 			<< ",\"auger_date\":" << rts2json::JsonDouble (ta.auger_date)
 			<< ",\"Eye\":" << ta.Eye
 			<< ",\"Run\":" << ta.Run
 			<< ",\"Event\":" << ta.Event
-			<< ",\"AugerId\":\"" << ta.AugerId 
+			<< ",\"AugerId\":\"" << ta.AugerId
 			<< "\",\"GPSSec\":" << ta.GPSSec
 			<< ",\"GPSNSec\":" << ta.GPSNSec
 			<< ",\"SDId\":" << ta.SDId
@@ -720,7 +720,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			<< ",\"MinAngle\":" << rts2json::JsonDouble (ta.MinAngle)       /// Minimum viewing angle (deg)
 			<< ",\"MaxAngle\":" << rts2json::JsonDouble (ta.MaxAngle)       /// Maximum viewing angle (deg)
 			<< ",\"MeanAngle\":" << rts2json::JsonDouble (ta.MeanAngle)      /// Mean viewing angle (deg)
-	
+
 			<< ",\"NTank\":" << ta.NTank          /// Number of stations in hybrid db_it
 			<< ",\"HottestTank\":" << ta.HottestTank    /// Station used in hybrid-geometry reco
 			<< ",\"AxisDist\":" << rts2json::JsonDouble (ta.AxisDist)       /// Shower axis distance to hottest station (m)
@@ -771,8 +771,8 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << "\"rows\":" << tar_set.size () << ",";
 
 		os << "\"h\":["
-			"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+			"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 			"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
@@ -859,7 +859,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 						cs << ",";
 					cs << "{\"" << cam << "\":[\"" << script_buf << "\"," << d << "," << e << "]}";
 					if (d > md)
-						md = d;  
+						md = d;
 				}
 				catch (rts2core::Error &er)
 				{
@@ -869,9 +869,9 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << "," << md << ",[" << cs.str () << "],";
 
 			tar->getSatisfiedConstraints (JD).printJSON (os);
-			
+
 			os << ",";
-		
+
 			tar->getViolatedConstraints (JD).printJSON (os);
 
 			if (std::isnan (equ.ra) || std::isnan (equ.dec))
@@ -886,7 +886,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 				struct ln_rst_time rst;
 				tar->getRST (&rst, JD, 0);
 
-				os << "," << rts2json::JsonDouble (rst.transit) 
+				os << "," << rts2json::JsonDouble (rst.transit)
 					<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 			}
 		}
@@ -915,7 +915,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 	if (chunked == NULL)
 	{
 		os << "]";
-	}	
+	}
 }
 
 void JSONDBRequest::jsonObservation (rts2db::Observation *obs, std::ostream &os)
@@ -940,7 +940,7 @@ void JSONDBRequest::jsonObservation (rts2db::Observation *obs, std::ostream &os)
 void JSONDBRequest::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 {
 	os << "\"h\":["
-		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
+		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
 		"{\"n\":\"Slew\",\"t\":\"t\",\"c\":1},"
 		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":2},"
 		"{\"n\":\"End\",\"t\":\"tT\",\"c\":3},"

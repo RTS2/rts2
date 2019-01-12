@@ -160,7 +160,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"$(document).ready(function() {\n"
 				"$('#targets').dataTable( {\n"
 					"'bProcessing': true,\n"
-					"'sAjaxSource': " << getServer ()->getPagePrefix () << "'/targets/api?jqapi=1',\n"
+					"'sAjaxSource': " << getRequestBase () << getServer ()->getPagePrefix () << "'/targets/api?jqapi=1',\n"
 					"'bPaginate': false,\n"
 					"'aoColumnDefs': [{\n"
 						"'aTargets' : [1],\n"
@@ -379,7 +379,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 void Targets::printTargetHeader (int tar_id, const char *current, std::ostringstream &_os)
 {
 	std::ostringstream prefix;
-	prefix << getServer ()->getPagePrefix () << "/targets/" << tar_id << "/";
+	prefix << getRequestBase () << getServer ()->getPagePrefix () << "/targets/" << tar_id << "/";
 
 	_os << "<p>";
 
@@ -513,7 +513,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		os.loadTarget (tar->getTargetID ());
 
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/observations/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":1},"
 			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":2},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
@@ -548,7 +548,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		ps.load ();
 
 		_os << "{\"h\":["
-			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":4},"
@@ -889,7 +889,7 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
 	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
 
-	Previewer preview = Previewer (getServer ());
+	Previewer preview = Previewer (getServer (), this);
 
 	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
 

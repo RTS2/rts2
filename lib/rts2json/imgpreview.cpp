@@ -146,14 +146,14 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
     "}\n"
   "}\n"
   "else if (document.forms['download'].elements['act'].value == 'f')\n"
-  "{ window.open('" << getServer ()->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
+  "{ window.open('" << getRequest () -> getRequestBase () << getServer ()->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
   "}\n"
   "else if (document.forms['download'].elements['act'].value == 'b')\n"
-  "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', '_blank');\n"
+  "{ w2 = window.open('" << getRequest () -> getRequestBase () << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', '_blank');\n"
     "w2.focus ();"
   "}\n"
   "else\n"
-  "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', 'Preview');\n"
+  "{ w2 = window.open('" << getRequest () -> getRequestBase () << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', 'Preview');\n"
     "w2.focus ();"
   "}\n"
 "}\n"
@@ -175,7 +175,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
 
 void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, const char *label, float quantiles, int colourVariant)
 {
-	_os << "<form name='download' method='post' action='" << getServer ()->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='b'>New window</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
+	_os << "<form name='download' method='post' action='" << getRequest () -> getRequestBase () << getServer ()->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='b'>New window</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
 	"<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
 	"<form name='label' method='get' action='./'>"
 #ifdef CHANNELS
@@ -214,7 +214,7 @@ void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, in
 
 	if (prevsize > 0)
 		_os << "' width='" << prevsize;
-	_os << "' src='" << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "' title='" << SplitStr (fpath, "/").back() << "'/>" << std::endl;
+	_os << "' src='" << getRequest () -> getRequestBase () << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "' title='" << SplitStr (fpath, "/").back() << "'/>" << std::endl;
 }
 
 void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan, int colourVariant)
@@ -314,7 +314,9 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		pageno = 1;
 
 	std::ostringstream _os;
-	Previewer preview = Previewer (getServer ());
+	Previewer preview = Previewer (getServer (), this);
+
+	print_backtrace();
 
 	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
 
@@ -329,7 +331,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	std::size_t pos = 0;
 	std::size_t prev = 0;
 
-	_os << "<a href='" << getServer ()->getPagePrefix () << "/'>HTTPD</a> : ";
+	_os << "<a href='" << getRequestBase () << getServer ()->getPagePrefix () << "/'>HTTPD</a> : ";
 
 	while (true)
 	{
@@ -339,7 +341,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 		if (pos != std::string::npos)
 		{
-			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path.substr (0, pos + 1) << "'>";
+			_os << "<a href='" << getRequestBase () << getServer ()->getPagePrefix () << getPrefix () << path.substr (0, pos + 1) << "'>";
 			if (pos == 0)
 				_os << "PREVIEW";
 			else
@@ -395,7 +397,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "'>" << fname << "</a> ";
+			_os << "<a href='" << getRequestBase () << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "'>" << fname << "</a> ";
 		}
 	}
 
