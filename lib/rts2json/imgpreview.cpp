@@ -316,8 +316,6 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	std::ostringstream _os;
 	Previewer preview = Previewer (getServer (), this);
 
-	print_backtrace();
-
 	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
 
 	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
