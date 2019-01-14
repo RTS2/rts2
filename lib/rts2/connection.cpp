@@ -529,6 +529,7 @@ std::string Connection::getStateString (bool verbose)
 			if (verbose)
 			{
 				_os << " | " << getValueInteger ("queue_size") << " : "<< getValueInteger ("good_astrom") << " " << getValueInteger ("no_astrom") << " | ";
+				_os << std::fixed << std::setprecision(1) << getValueDouble("free_diskspace")/1024/1024/1024 << " Gb | ";
 			}
 			if (real_state & IMGPROC_RUN)
 				_os << "PROCESS RUNNING";

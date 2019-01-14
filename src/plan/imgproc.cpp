@@ -24,6 +24,7 @@
 #include <glob.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
@@ -134,6 +135,8 @@ class ImageProc:public rts2core::Device
 		rts2core::ValueInteger *nightDarks;
 		rts2core::ValueInteger *nightFlats;
 
+		rts2core::ValueDouble *freeDiskSpace;
+
 		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
 
 		std::string defaultImgProcess;
@@ -202,6 +205,9 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (nightFlats, "night_flats", "number of flat images taken during night", false);
 
 	createValue (image_glob, "image_glob", "glob path for images processed in standy mode", false, RTS2_VALUE_WRITABLE);
+
+	createValue (freeDiskSpace, "free_diskspace", "free disk space on the device where we store files, in bytes", false);
+	freeDiskSpace->setValueDouble (0);
 
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
@@ -357,6 +363,13 @@ int ImageProc::info ()
 {
 	queSize->setValueInteger ((int) imagesQue.size () + numRunning ());
 	sendValueAll (queSize);
+
+	struct statvfs s;
+	statvfs(rts2core::Configuration::instance ()->observatoryBasePath ().c_str (), &s);
+
+	freeDiskSpace->setValueDouble (s.f_bavail*s.f_frsize);
+	sendValueAll (freeDiskSpace);
+
 #ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::info ();
 #else
