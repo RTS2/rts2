@@ -57,6 +57,11 @@
 #define ELYA_BAT_LOW     0x0008
 #define ELYA_LOW_PRESS   0x0010
 
+// Emergency bit (O3) and reset/force (J2) on ELYA model
+#define ELYA_EMERGENCY_B 0x0020
+#define ELYA_EMERGENCY_R 0x0008
+#define ELYA_EMERGENCY_F 0x0010
+
 // bit mask for state register
 #define ZS_SW_AUTO       0x0001
 #define ZS_SW_OPENCLOSE  0x0002
@@ -280,6 +285,7 @@ int Zelio::startOpen ()
 {
 	// check auto state..
 	uint16_t reg;
+	uint16_t regO3;
 	uint16_t reg_J1;
 
 	closeErrorReported = false;
@@ -287,13 +293,15 @@ int Zelio::startOpen ()
 	try
 	{
 		zelioConn->readHoldingRegisters (unitId, ZREG_O4XT1, 1, &reg);
+		zelioConn->readHoldingRegisters (unitId, ZREG_O3XT1, 1, &regO3);
 		zelioConn->readHoldingRegisters (unitId, ZREG_J1XT1, 1, &reg_J1);
 		if (!(reg & ZS_SW_AUTO))
 		{
 			logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
 			return -1;
 		}
-		if (reg & ZS_EMERGENCY_B)
+		if ((reg & ZS_EMERGENCY_B) ||
+			(zelioModel == ZELIO_ELYA && (regO3 & ELYA_EMERGENCY_B)))
 		{
 			logStream (MESSAGE_WARNING) << "emergency button pusshed" << sendLog;
 			return -1;
@@ -669,13 +677,46 @@ int Zelio::commandAuthorized (rts2core::Connection * conn)
 
 			if (ret == 0)
 			{
-				usleep(USEC_SEC / 2);
+				usleep (USEC_SEC / 2);
 
 				ret = setBitsInput (addr, bits, false);
 			}
 
 			return ret == 0 ? 0 : -2;
 		}
+	}
+
+	if (conn->isCommand ("reset_emergency"))
+	{
+			int addr = (zelioModel == ZELIO_ELYA) ? ZREG_J2XT1 : ZREG_J1XT1;
+			int bits = (zelioModel == ZELIO_ELYA) ? ELYA_EMERGENCY_R : ZI_EMMERGENCY_R;
+			int ret = setBitsInput (addr, bits, true);
+
+			logStream (MESSAGE_INFO) << "emergency reset switch toggled on/off" << sendLog;
+
+			if (ret == 0)
+			{
+				usleep (USEC_SEC / 2);
+
+				ret = setBitsInput (addr, bits, false);
+			}
+
+			// For ELYA, let's also toggle off emergency force bit
+			if (zelioModel == ZELIO_ELYA)
+				setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_F, false);
+
+			info ();
+
+			return ret == 0 ? 0 : -2;
+	}
+
+	if (zelioModel == ZELIO_ELYA && conn->isCommand ("emergency"))
+	{
+		setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_F, true);
+		usleep (USEC_SEC / 2);
+		setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_F, false);
+
+		return info ();
 	}
 
 	return Dome::commandAuthorized (conn);
@@ -886,7 +927,11 @@ int Zelio::info ()
 	}
 
 	weather->setValueBool (regs[7] & ZS_WEATHER);
-	emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
+
+	if (zelioModel == ZELIO_ELYA)
+		emergencyButton->setValueBool (regs[6] & ELYA_EMERGENCY_B);
+	else
+		emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
 
 	sendValueAll (weather);
 	sendValueAll (emergencyButton);
@@ -1216,8 +1261,12 @@ void Zelio::createZelioValues ()
 
 int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
-	if (oldValue == emergencyReset)
-	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	if (oldValue == emergencyReset) {
+		if (zelioModel == ZELIO_ELYA)
+			return setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		else
+			return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	}
 	switch (zelioModel)
 	{
 		case ZELIO_BOOTES3:
