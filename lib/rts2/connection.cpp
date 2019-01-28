@@ -335,6 +335,17 @@ std::string Connection::getStateString (bool verbose)
 			{
 				if (getValue ("automode"))
 					_os << (getValueInteger ("automode") ? "AUTO" : "MANUAL") << " ";
+
+				if (getValue ("emergency") && getValueInteger ("emergency"))
+					_os << "EMERGENCY ";
+
+				if (getValue ("low_oil") && getValueInteger ("low_oil"))
+					_os << "OIL ";
+
+				if ((getValue ("battery_fault") && getValueInteger ("battery_fault")) ||
+					(getValue ("on_battery") && getValueInteger ("on_battery")) ||
+					(getValue ("battery_low") && getValueInteger ("battery_low")))
+					_os << "BATTERY ";
 			}
 
 			switch (real_state & DOME_DOME_MASK)
