@@ -1,4 +1,4 @@
-/* 
+/*
  * Driver for Paramount. You need ParaLib to make that work, please ask petr@kubanek.net
  * for details.
  * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
@@ -44,7 +44,7 @@
 
 #define DEC_TICKS_ME		7500000 // ME
 #define DEC_TICKS_MEII		(2.279*7500000) // MEII
-#define DEC_TICKS_MYT		(5109455.55555555555553328) // MYX ?, needs research... 
+#define DEC_TICKS_MYT		(5109455.55555555555553328) // MYX ?, needs research...
 
 // #define TERM_OUT
 // park positions
@@ -245,6 +245,9 @@ class Paramount:public GEM
 		int doPark;
 		int offNotMoving;
 
+		int errorCount;
+		bool isConnected;
+
 		int checkRetAxis (const MKS3Id & axis, int reta);
 		int checkRet ();
 		int updateStatus ();
@@ -294,7 +297,7 @@ using namespace rts2teld;
 char * Paramount::statusStr (CWORD16 status, char *str)
 {
 	int a=0;
-	*str=0; 
+	*str=0;
 
 	if (status & MOTOR_HOMING) a+=sprintf (str, "HOMING ");
 	//  if (status & MOTOR_SERVO) printf ("\033[%dmSRV\033[m ", 30 + color);
@@ -340,7 +343,7 @@ int Paramount::checkRetAxis (const MKS3Id & axis, int reta)
 		case MAIN_BAD_POINT_ADD:	msg = "main bad point add"; break;
 
 		case FLASH_PROGERR:		msg = "flash program error"; break;
-		// case FLASH_ERASEERR:		msg = "flash erase error"; break; 
+		// case FLASH_ERASEERR:		msg = "flash erase error"; break;
 		case FLASH_TIMEOUT:		msg = "flash timeout"; break;
 		case FLASH_CANT_OPEN_FILE:	msg = "flash cannot open file"; break;
 		case FLASH_BAD_FILE:		msg = "flash bad file"; break;
@@ -371,8 +374,8 @@ int Paramount::checkRet ()
 int Paramount::updateStatus ()
 {
 	CWORD16 new_status;
-	char strstat[512];	
-	
+	char strstat[512];
+
 	// logStream (MESSAGE_DEBUG) << "Paramount::updateStatus" << sendLog;
 
 	ret0 = MKS3StatusGet (axis0, &new_status);
@@ -398,13 +401,13 @@ int Paramount::updateStatus ()
 
 	// set / unset HW error
 	if (
-		(statusRa->getValueInteger ()  & MOTOR_ERR ) || 
-		(statusDec->getValueInteger () & MOTOR_ERR ) || 
-		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING) || 
-		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING) || 
-		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) || 
-		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) || 
-		statusRa->getValueInteger ()  == (               MOTOR_INDEXING | MOTOR_SLEWING) || 
+		(statusRa->getValueInteger ()  & MOTOR_ERR ) ||
+		(statusDec->getValueInteger () & MOTOR_ERR ) ||
+		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING) ||
+		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING) ||
+		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) ||
+		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) ||
+		statusRa->getValueInteger ()  == (               MOTOR_INDEXING | MOTOR_SLEWING) ||
 		statusDec->getValueInteger () == (               MOTOR_INDEXING | MOTOR_SLEWING)
 	)
 
@@ -712,7 +715,7 @@ int Paramount::initHardware ()
 
 	// these states are only 3, SLEW, PARK1 and PARK2, so the SLEW is good
 	ostat0=65535; ostat1=65535;
-	moveState = TEL_SLEW; 
+	moveState = TEL_SLEW;
 	canTouch=0;
 	wasTimeout = 0;
 	forceHoming = 0;
@@ -720,6 +723,8 @@ int Paramount::initHardware ()
 	doAbort = 0;
 	doPark = 0;
 	offNotMoving = 1;
+	errorCount = 0;
+	isConnected = true;
 
 #ifdef TERM_OUT
 	fprintf(stdout, "\033[2J"); // clear screen
@@ -744,7 +749,7 @@ int Paramount::initHardware ()
 int Paramount::basicInfo()
 {
 	int ret;
-	
+
 	updateLimits ();
 
 	if (setIndices)
@@ -753,7 +758,7 @@ int Paramount::basicInfo()
 		if (ret)
 			return -1;
 	}
-	
+
 	CWORD16 pMajor, pMinor, pBuild;
 	logStream (MESSAGE_DEBUG) << "MKS3VersionGet axis0" << sendLog;
 	ret = MKS3VersionGet (axis0, &pMajor, &pMinor, &pBuild);
@@ -880,6 +885,8 @@ void Paramount::updateTrack ()
 {
 	double JD;
 	struct ln_equ_posn corr_pos;
+	struct ln_hrz_posn hrz;
+
 	return;
 
 	gettimeofday (&track_next, NULL);
@@ -930,10 +937,10 @@ double Paramount::getUsec()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	
+
 	return (double)tv.tv_sec+(double)tv.tv_usec/(double)1000000.;
-} 
-	
+}
+
 int Paramount::doPara()
 {
 	CWORD16 stat0,stat1;
@@ -945,11 +952,25 @@ int Paramount::doPara()
 	{
 
 	// There are cases we should not touch the mount until some time is elapsed
-	if (canTouch > usec) 
+	if (canTouch > usec)
 		{
 //		logStream (MESSAGE_DEBUG) << "not touching" << sendLog;
 		return 0;
-		}		
+		}
+
+	if (!isConnected)
+	{
+		int ret = MKS3Init (device_name);
+		if (ret == 0) {
+			logStream (MESSAGE_INFO) << "Re-connected to mount" << sendLog;
+			isConnected = true;
+		}
+		else
+		{
+			canTouch = getUsec() + 10.0;
+			return 0;
+		}
+	}
 
 	// ask for basic status
 	ret0 = MKS3StatusGet (axis0, &stat0);
@@ -958,37 +979,52 @@ int Paramount::doPara()
 	// If something seems wrong with the mount, set up time to have a look again and return
 	if (ret0 || ret1)
 	{
-		logStream (MESSAGE_DEBUG) << "StatusGet returns non-zero, will wait, ret0=" << 
+		logStream (MESSAGE_DEBUG) << "StatusGet returns non-zero, will wait, ret0=" <<
 			ret0 << " ret1=" << ret1 << sendLog;
+
 		checkRet();
+
+		if (errorCount > 2) {
+			logStream (MESSAGE_INFO) << "Re-connecting to mount..." << sendLog;
+			MKS3Free ();
+
+			isConnected = false;
+
+			return doPara ();
+		}
+
 		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
 		canTouch = getUsec()+1.0;
 		wasTimeout = 1;
+		errorCount++;
+
 		return 0;
 	}
+
+	errorCount = 0;
 
 #ifdef TERM_OUT
 	static int progresscnt=0;
 
 	fprintf(stdout, "\033[2;1H%c", ".oOo"[progresscnt]);
-	progresscnt=(progresscnt+1)%4; 
+	progresscnt=(progresscnt+1)%4;
 
-	fprintf(stdout, "\033[2;4Hstatus0: ret0=0x%04x (%s) stat0=0x%04x (%s)          \n", 
+	fprintf(stdout, "\033[2;4Hstatus0: ret0=0x%04x (%s) stat0=0x%04x (%s)          \n",
 		ret0, ret0?"err.":"-OK-",  stat0, statusStr(stat0,strstat));
-	fprintf(stdout, "\033[3;4Hstatus1: ret1=0x%04x (%s) stat1=0x%04x (%s)          \n\n", 
+	fprintf(stdout, "\033[3;4Hstatus1: ret1=0x%04x (%s) stat1=0x%04x (%s)          \n\n",
 		ret1, ret1?"err.":"-OK-",  stat1, statusStr(stat1,strstat));
 	fflush(stdout);
 #endif
 	// This floods the log so we write it only if change...
-	if( (ostat0 != stat0) || (ostat1!=stat1) )	
+	if( (ostat0 != stat0) || (ostat1!=stat1) )
 		logStream (MESSAGE_DEBUG) << "MKS3StatusGet "
-			<< "ret0=" << ret0 << "[" << (ret0?"err.":"-OK-") << "] " 
+			<< "ret0=" << ret0 << "[" << (ret0?"err.":"-OK-") << "] "
 			<< "stat=" << stat0 << "[" << statusStr(stat0, strstat) << "] "
 			<< "ret1=" << ret1 << "[" << (ret1?"err.":"-OK-") << "] "
-			<< "status=" << stat1 << "[" << statusStr(stat1, strstat) << "]" 
+			<< "status=" << stat1 << "[" << statusStr(stat1, strstat) << "]"
 			<< sendLog;
 	ostat1=stat1; ostat0=stat0;
-	
+
 	statusRa->setValueInteger (stat0);
 	statusDec->setValueInteger (stat1);
 
@@ -996,7 +1032,7 @@ int Paramount::doPara()
 	// even if the mount appears after a timeout, do not touch it for another 10s
 	if ( wasTimeout )
 	{
-		logStream (MESSAGE_DEBUG) << "Now StatusGet gets a reply, will wait another 10s" 
+		logStream (MESSAGE_DEBUG) << "Now StatusGet gets a reply, will wait another 10s"
 			<< sendLog;
 
 		// I may do a real sleep10 in this place and do a proper initHw here
@@ -1019,7 +1055,7 @@ int Paramount::doPara()
 	// if the motors are homing we should wait for them to finish and do nothing
 	if (stat0 & MOTOR_HOMING || stat1 & MOTOR_HOMING)
 		{
-		/*logStream (MESSAGE_DEBUG) 
+		/*logStream (MESSAGE_DEBUG)
 			<< ((stat0 & MOTOR_HOMING) ? "Axis0 is still homing":"Axis0 is homed" )
 			<< ((stat0 & MOTOR_HOMING) ? "Axis1 is still homing":"Axis1 is homed" )
 			<< sendLog;*/
@@ -1035,24 +1071,24 @@ int Paramount::doPara()
 			logStream (MESSAGE_DEBUG) << "Homing Axis0" << sendLog;
 			ret0 = MKS3Home (axis0, 0);
 			}
-	
+
 		if (forceHoming || (!(stat1 & MOTOR_HOMED)) )
 			{
 			if(stat1 & MOTOR_OFF) ret1 = MKS3MotorOn (axis1);
 			logStream (MESSAGE_DEBUG) << "Homing Axis1" << sendLog;
 			ret0 = MKS3Home (axis1, 0);
 			}
-	
+
 		forceHoming=0;
 
 		// the mount is going to be homing for a while no reason to stay here
-		return 0;	
+		return 0;
 	}
 
 	// this is slew+stop, I do not yet know how would I do it precisely
 	if(doPark) {
 		offNotMoving=1;
-		// Ask Slew to the parking pos	
+		// Ask Slew to the parking pos
 		// set target=ln_ra-dec(parkpos_altaz)
 		// doSlew=1;
 		doPark=0;
@@ -1067,11 +1103,11 @@ int Paramount::doPara()
 		//if(stat1 & MOTOR_SLEWING) // will have to abort the move
 
 		// if the slew is possible: (homed, not slewing, not indexing, not joysticking...)
-		if( (stat0 & MOTOR_HOMED) &&  (!(stat0 & MOTOR_HOMING)) 
-			&&  (!(stat0 & MOTOR_INDEXING)) &&  (!(stat0 & MOTOR_SLEWING)) 
-			&&  (!(stat0 & MOTOR_JOYSTICKING)) 
+		if( (stat0 & MOTOR_HOMED) &&  (!(stat0 & MOTOR_HOMING))
+			&&  (!(stat0 & MOTOR_INDEXING)) &&  (!(stat0 & MOTOR_SLEWING))
+			&&  (!(stat0 & MOTOR_JOYSTICKING))
 			&&  (stat1 & MOTOR_HOMED) &&  (!(stat1 & MOTOR_HOMING))
-			&&  (!(stat1 & MOTOR_INDEXING)) &&  (!(stat1 & MOTOR_SLEWING)) 
+			&&  (!(stat1 & MOTOR_INDEXING)) &&  (!(stat1 & MOTOR_SLEWING))
 			&&  (!(stat1 & MOTOR_JOYSTICKING)) )
 		{
 			CWORD32 ac = encoderRa->getValueLong ();
@@ -1087,13 +1123,14 @@ int Paramount::doPara()
 #endif
 
 			struct ln_equ_posn tar;
+			struct ln_hrz_posn hrz;
 
 			// Switch the motor on if necessary
 			if(stat0 & MOTOR_OFF) ret0 = MKS3MotorOn (axis0);
 			if(stat1 & MOTOR_OFF) ret1 = MKS3MotorOn (axis1);
-			
+
 			// issue the actual move
-			ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
+			ret = calculateTarget (utc1, utc2, &tar, &hrz, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
                                 return -1;
 
@@ -1143,10 +1180,10 @@ int Paramount::doPara()
 		}
 
 		// if the slew is not possible because the mount is already slewing:
-		if( (stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED) 
+		if( (stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED)
 				&&  (!(stat0 & MOTOR_HOMING)) && (!(stat1 & MOTOR_HOMING))
-				&&  (!(stat0 & MOTOR_INDEXING)) && (!(stat1 & MOTOR_INDEXING)) 
-				&&  (!(stat0 & MOTOR_JOYSTICKING)) && (!(stat1 & MOTOR_JOYSTICKING)) 
+				&&  (!(stat0 & MOTOR_INDEXING)) && (!(stat1 & MOTOR_INDEXING))
+				&&  (!(stat0 & MOTOR_JOYSTICKING)) && (!(stat1 & MOTOR_JOYSTICKING))
 				&&  ( ((stat0 & MOTOR_SLEWING)) ||  ((stat1 & MOTOR_SLEWING)) )
 		  )
 		{
@@ -1156,13 +1193,13 @@ int Paramount::doPara()
 	}
 
 	// kill the move
-	if(doAbort && (stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED) 
+	if(doAbort && (stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED)
 			&&  (!(stat0 & MOTOR_HOMING)) && (!(stat1 & MOTOR_HOMING))
-			&&  (!(stat0 & MOTOR_INDEXING)) && (!(stat1 & MOTOR_INDEXING)) 
-			&&  (!(stat0 & MOTOR_JOYSTICKING)) && (!(stat1 & MOTOR_JOYSTICKING)) 
+			&&  (!(stat0 & MOTOR_INDEXING)) && (!(stat1 & MOTOR_INDEXING))
+			&&  (!(stat0 & MOTOR_JOYSTICKING)) && (!(stat1 & MOTOR_JOYSTICKING))
 			&&  ( ((stat0 & MOTOR_SLEWING)) ||  ((stat1 & MOTOR_SLEWING)) )
 	  )
-	{	
+	{
 		logStream (MESSAGE_DEBUG) << "Aborting move" << sendLog;
 		if (stat0 & MOTOR_SLEWING ) ret0 = MKS3PosAbort (axis0);
 		if (stat1 & MOTOR_SLEWING ) ret1 = MKS3PosAbort (axis1);
@@ -1172,18 +1209,18 @@ int Paramount::doPara()
 
 		doAbort=0;
 		continue; // do not exit, run doPara again
-	} 
+	}
 
 	// switch off the motors if not being used
-	if( offNotMoving && (stat0 & MOTOR_HOMED) &&  (!(stat0 & MOTOR_HOMING)) 
+	if( offNotMoving && (stat0 & MOTOR_HOMED) &&  (!(stat0 & MOTOR_HOMING))
 			&&  (!(stat0 & MOTOR_INDEXING)) &&  (!(stat0 & MOTOR_JOYSTICKING))
-			&&  (!(stat0 & MOTOR_SLEWING)) &&  (!(stat0 & MOTOR_OFF)) 
+			&&  (!(stat0 & MOTOR_SLEWING)) &&  (!(stat0 & MOTOR_OFF))
 	  )
 		MKS3MotorOff (axis0);
 
-	if( offNotMoving && (stat1 & MOTOR_HOMED) &&  (!(stat1 & MOTOR_HOMING)) 
+	if( offNotMoving && (stat1 & MOTOR_HOMED) &&  (!(stat1 & MOTOR_HOMING))
 		&&  (!(stat1 & MOTOR_INDEXING)) &&  (!(stat1 & MOTOR_JOYSTICKING))
-		&&  (!(stat1 & MOTOR_SLEWING)) &&  (!(stat1 & MOTOR_OFF)) 
+		&&  (!(stat1 & MOTOR_SLEWING)) &&  (!(stat1 & MOTOR_OFF))
 		)
 		MKS3MotorOff (axis1);
 
@@ -1201,7 +1238,7 @@ int Paramount::idle ()
 int Paramount::doInfo ()
 {
 //	this should update non-critical info "for monitor", and otherwise do nothing
-	
+
 	int32_t ac = 0, dc = 0;
 	int ret;
 	CWORD16 new_status;
@@ -1209,7 +1246,7 @@ int Paramount::doInfo ()
 	// status should have been done recently (//doPara)
 	motorRa->setValueBool (!(statusRa->getValueInteger () & MOTOR_OFF));
 	motorDec->setValueBool (!(statusDec->getValueInteger () & MOTOR_OFF));
-	
+
 	// motor status..
 	ret0 = MKS3MotorStatusGet (axis0, &new_status);
 	//logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
@@ -1299,7 +1336,7 @@ int Paramount::isMoving ()
 {
 	doPara();
 
-	if ( (statusRa->getValueInteger () & MOTOR_SLEWING) 
+	if ( (statusRa->getValueInteger () & MOTOR_SLEWING)
 		|| (statusDec->getValueInteger () & MOTOR_SLEWING))
 		return USEC_SEC / 10;
 
@@ -1310,8 +1347,8 @@ int Paramount::stopMove ()
 {
 	// there may be an unfinished slew request
 	doSlew=0;
-	
-	// in any case 
+
+	// in any case
 	doAbort=1;
 
 	doPara();
@@ -1334,7 +1371,7 @@ int Paramount::isParking ()
 	doPara();
 	if ((statusRa->getValueInteger () & MOTOR_HOMING) || (statusDec->getValueInteger () & MOTOR_HOMING))
 		return USEC_SEC / 10;
-	
+
 	return -2;
 }
 
