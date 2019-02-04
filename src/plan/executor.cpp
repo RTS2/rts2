@@ -452,6 +452,7 @@ void Executor::postEvent (rts2core::Event * event)
 			}
 			else
 			{
+				maskState (EXEC_STATE_MASK, EXEC_IDLE);
 				if (scriptCount->getValueInteger () == 0)
 					switchTarget ();
 			}
@@ -1218,6 +1219,33 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		image.openFile (imgn, false, true);
 		postEvent (new rts2core::Event (EVENT_WRITE_ONLY_IMAGE, (void *) &image));
 		image.saveImage ();
+		return 0;
+	}
+	else if (conn->isCommand ("correction_info"))
+	{
+		char *telescope_name;
+		int corr_mark, corr_img, corr_obs;
+		int imgId, obsId;
+		double ra_err, dec_err, pos_err;
+
+		if (conn->paramNextString (&telescope_name)
+			|| conn->paramNextInteger (&corr_mark) || conn->paramNextInteger (&corr_img) || conn->paramNextInteger (&corr_obs)
+			|| conn->paramNextInteger (&imgId) || conn->paramNextInteger (&obsId)
+			|| conn->paramNextDouble (&ra_err) || conn->paramNextDouble (&dec_err) || conn->paramNextDouble (&pos_err)
+			|| !conn->paramEnd ())
+			return -2;
+
+		// We should not correct if we are not inside an observing sequence
+		if ((getState () & EXEC_STATE_MASK) != EXEC_MOVE &&
+			(getState () & EXEC_STATE_MASK) != EXEC_OBSERVE &&
+			(getState () & EXEC_STATE_MASK) != EXEC_ACQUIRE)
+			return DEVDEM_E_IGNORE;
+
+		rts2core::Connection *telConn = findName (telescope_name);
+
+		if (telConn)
+			telConn->queCommand (new rts2core::CommandCorrect (this, corr_mark, corr_img, corr_obs, imgId, obsId, ra_err, dec_err, pos_err), BOP_TEL_MOVE|BOP_EXPOSURE);
+
 		return 0;
 	}
 	return rts2db::DeviceDb::commandAuthorized (conn);

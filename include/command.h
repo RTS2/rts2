@@ -239,6 +239,7 @@ class Command
 	public:
 		Command (Block * _owner);
 		Command (Block * _owner, const char *_text);
+		Command (Block * _owner, std::ostringstream &_os);
 		Command (Command * _command);
 		Command (Command & _command);
 		virtual ~ Command (void);

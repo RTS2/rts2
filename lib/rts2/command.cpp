@@ -42,6 +42,15 @@ Command::Command (Block * _owner, const char *_text)
 	originator = NULL;
 }
 
+Command::Command (Block * _owner, std::ostringstream &_os)
+{
+	owner = _owner;
+	text = NULL;
+	setCommand (_os);
+	bopMask = 0;
+	originator = NULL;
+}
+
 Command::Command (Command * _command)
 {
 	owner = _command->owner;

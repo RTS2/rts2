@@ -217,22 +217,20 @@ void ConnImgProcess::connectionError (int last_data_size)
 
 				if (ra_err != 0 || dec_err != 0)
 				{
-					// send correction to telescope..
+					// send correction information to executor, to be sent to telescope when it is safe
 					telescopeName = image->getMountName ();
 					try
 					{
 						image->getValue ("MOVE_NUM", corr_mark);
 						image->getValue ("CORR_IMG", corr_img);
 						image->getValue ("CORR_OBS", corr_obs);
+
 						if (telescopeName)
 						{
-							rts2core::Connection *telConn;
-							telConn = master->findName (telescopeName);
+							rts2core::Connection *execConn = master->getOpenConnection (DEVICE_TYPE_EXECUTOR);
+							rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_corrections");
 
-							rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");
-
-							// correction error should be in degrees
-							if (telConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
+							if (execConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
 							{
 								struct ln_equ_posn pos1, pos2;
 								pos1.ra = ra;
@@ -243,7 +241,13 @@ void ConnImgProcess::connectionError (int last_data_size)
 
 								double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-								telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, corr_obs, image->getImgId (), image->getObsId (), ra_err, dec_err, posErr));
+								std::ostringstream _os;
+								_os << "correction_info " << telescopeName << " "
+									<< corr_mark << " " << corr_img << " " << corr_obs << " "
+									<< image->getImgId () << " " << image->getObsId () << " "
+									<< ra_err << " " << dec_err << " " << posErr;
+
+								execConn->queCommand (new rts2core::Command (master, _os));
 							}
 						}
 					}
