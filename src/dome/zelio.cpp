@@ -928,6 +928,8 @@ int Zelio::info ()
 
 	weather->setValueBool (regs[7] & ZS_WEATHER);
 
+	bool oldemergency = emergencyButton->getValueBool();
+
 	if (zelioModel == ZELIO_ELYA)
 		emergencyButton->setValueBool (regs[6] & ELYA_EMERGENCY_B);
 	else
@@ -935,6 +937,9 @@ int Zelio::info ()
 
 	sendValueAll (weather);
 	sendValueAll (emergencyButton);
+
+	if (emergencyButton->getValueBool () != oldemergency)
+		logStream (MESSAGE_INFO) << "Emergency is " << (emergencyButton->getValueBool () ? "on" : "off") << sendLog;
 
 	switch (zelioModel)
 	{
@@ -1262,6 +1267,8 @@ void Zelio::createZelioValues ()
 int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == emergencyReset) {
+		logStream (MESSAGE_INFO) << "Emergency reset switch turned " << (((rts2core::ValueBool*) newValue)->getValueBool () ? "on" : "off") << sendLog;
+
 		if (zelioModel == ZELIO_ELYA)
 			return setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 		else
