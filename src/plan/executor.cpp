@@ -463,7 +463,8 @@ void Executor::postEvent (rts2core::Event * event)
 				postEvent (new rts2core::Event (EVENT_CLEAR_WAIT));
 				break;
 			}
-			postEvent (new rts2core::Event (EVENT_OBSERVE));
+			if (currentTarget)
+				postEvent (new rts2core::Event (EVENT_OBSERVE));
 			break;
 		case EVENT_CORRECTING_OK:
 			if (waitState)
@@ -473,7 +474,8 @@ void Executor::postEvent (rts2core::Event * event)
 			else
 			{
 				// we aren't waiting, let's observe target again..
-				postEvent (new rts2core::Event (EVENT_OBSERVE));
+				if (currentTarget)
+					postEvent (new rts2core::Event (EVENT_OBSERVE));
 			}
 			break;
 		case EVENT_MOVE_FAILED:
@@ -1244,7 +1246,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		rts2core::Connection *telConn = findName (telescope_name);
 
 		if (telConn)
-			telConn->queCommand (new rts2core::CommandCorrect (this, corr_mark, corr_img, corr_obs, imgId, obsId, ra_err, dec_err, pos_err), BOP_TEL_MOVE|BOP_EXPOSURE);
+			telConn->queCommand (new rts2core::CommandCorrect (this, corr_mark, corr_img, corr_obs, imgId, obsId, ra_err, dec_err, pos_err));
 
 		return 0;
 	}

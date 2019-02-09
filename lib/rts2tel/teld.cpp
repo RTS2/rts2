@@ -1475,7 +1475,11 @@ void Telescope::checkMoves ()
 			}
 			else
 			{
-				maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished without error");
+				if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()))
+					// We still have corrections to apply, let's do not reset the blocking yet
+					startResyncMove (NULL, (woffsRaDec->wasChanged () ? 1 : 0) | (wcorrRaDec->wasChanged () ? 2 : 0));
+				else
+					maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished without error");
 			}
 
 			if (move_connection)
