@@ -47,6 +47,7 @@ QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, do
 
 QueuedTarget::QueuedTarget (unsigned int _queue_id, unsigned int _qid, struct ln_lnlat_posn *observer, double obs_altitude):QueueEntry (_qid, _queue_id)
 {
+	hard = false;
 	load ();
 	target = createTarget (tar_id, observer, obs_altitude);
 }
