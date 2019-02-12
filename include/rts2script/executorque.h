@@ -62,12 +62,13 @@ class QueuedTarget:public rts2db::QueueEntry
 		{
 			target = qt.target;
 			unobservable_reported = qt.unobservable_reported;
-		}
+			hard = qt.hard;		}
 
 		QueuedTarget (const QueuedTarget &qt, rts2db::Target *_target):rts2db::QueueEntry (qt)
 		{
 			target = _target;
 			unobservable_reported = false;
+			hard = qt.hard;
 		}
 
 		~QueuedTarget () {}
@@ -85,7 +86,7 @@ class QueuedTarget:public rts2db::QueueEntry
 };
 
 /**
- * Queue of QueuedTarget entries. Abstarct class, provides generic method to 
+ * Queue of QueuedTarget entries. Abstarct class, provides generic method to
  * filter already observed/expired targets,..
  *
  * Parent of ExecutorQueue and SimulQueueTargets.
@@ -97,7 +98,7 @@ class QueuedTarget:public rts2db::QueueEntry
  */
 class TargetQueue:public std::list <QueuedTarget>
 {
-	public:  
+	public:
 		TargetQueue (rts2db::DeviceDb *_master, struct ln_lnlat_posn **_observer, double _altitude):std::list <QueuedTarget> ()
 		{
 			observer = _observer;
@@ -199,7 +200,7 @@ class TargetQueue:public std::list <QueuedTarget>
 
 		/**
 		 * Remove observation request which expired. Expired request are:
-		 *  - in FIFO mode, all request before 
+		 *  - in FIFO mode, all request before
 		 *     - request with set start_time or end_time, which expired (is in past)
 		 *  - any request with end time in past
 		 *  - if remove_after_execution is true, request with started observations
@@ -237,7 +238,7 @@ enum first_ordering_t
  * Executor queue. Used to freely create queue inside executor
  * for queue execution. Allow users to define rules how the queue
  * should be used, provides method to support basic queue operations.
- * 
+ *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
 class ExecutorQueue:public TargetQueue
@@ -277,7 +278,7 @@ class ExecutorQueue:public TargetQueue
 		 * Do not delete pointer to this target, as it is used somewhere else.
 		 */
 		void setCurrentTarget (rts2db::Target *ct) { currentTarget = ct; }
-		
+
 		void clearNext ();
 
 		/**
@@ -285,13 +286,13 @@ class ExecutorQueue:public TargetQueue
 		 * is in future, object is below horizon,..), can return failure even if queue is not empty.
 		 *
 		 * @param next_time returns start time of the first observation in the queue, if it is in future.
-		 * 
+		 *
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
 		int selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length, bool removeObserved = true);
 
 		/**
-		 * Simulate selection of next observation from the queue. Adjust sq list if 
+		 * Simulate selection of next observation from the queue. Adjust sq list if
 		 * observation is selected and will not be repeated.
 		 */
 		int selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end, struct ln_equ_posn *currentp, struct ln_equ_posn *nextp);

@@ -93,7 +93,7 @@ bool sortByMeridianPriority::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 		tar1->getAltAz (&hr1, JD, observer);
 		tar2->getAltAz (&hr2, JD, observer);
 		return hr1.alt > hr2.alt;
-	}	
+	}
 	if (tar1->getTargetPriority () == tar2->getTargetPriority ())
 		return sortWestEast::doSort (tar1, tar2);
 	else
@@ -221,7 +221,7 @@ void TargetQueue::sortQueue (double now)
 			break;
 		case QUEUE_OUT_OF_LIMITS:
 			sortOutOfLimits (now_JD);
-			break;	
+			break;
 	}
 }
 
@@ -232,7 +232,7 @@ bool TargetQueue::filter (double now, double maxLength, bool removeObserved, dou
 	// don't filter for visibility
 	if (getBlockUntilVisible () == true)
 		return true;
-	
+
 	bool ret = false;
 	std::list <QueuedTarget> skipped;
 	filterUnobservable (now, maxLength, skipped, removeObserved);
@@ -257,7 +257,7 @@ void TargetQueue::load (int queue_id)
 
 	for (std::list <unsigned int>::iterator iter = qids.begin (); iter != qids.end (); iter++)
 		push_back (QueuedTarget (queue_id, *iter, *observer, obs_altitude));
-	
+
 	updateVals ();
 }
 
@@ -266,7 +266,7 @@ const TargetQueue::iterator TargetQueue::findTarget (rts2db::Target *tar)
 	for (TargetQueue::iterator iter = begin (); iter != end (); iter++)
 	{
 		if (iter->target == tar)
-			return iter;  
+			return iter;
 	}
 	return end ();
 }
@@ -276,7 +276,7 @@ const TargetQueue::iterator TargetQueue::findTarget (int tar_id)
 	for (TargetQueue::iterator iter = begin (); iter != end (); iter++)
 	{
 		if (iter->target->getTargetID () == tar_id)
-			return iter;  
+			return iter;
 	}
 	return end ();
 }
@@ -298,7 +298,7 @@ void TargetQueue::orderByTargetList (std::list <rts2db::Target *> tl)
 
 void TargetQueue::sortWestEastMeridian (double jd)
 {
-	std::list < rts2db::Target *> preparedTargets;  
+	std::list < rts2db::Target *> preparedTargets;
 	std::list < rts2db::Target *> orderedTargets;
 	for (TargetQueue::iterator ti = begin (); ti != end (); ti++)
 	{
@@ -313,7 +313,7 @@ void TargetQueue::sortWestEastMeridian (double jd)
 
 		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
 		{
-		  	// std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd, *observer) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+		  	// std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd, *observer) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl;
 			// skip target if it's not above horizon
 			ExecutorQueue::iterator qi = findTarget (*iter);
 			double tjd = jd;
@@ -323,18 +323,18 @@ void TargetQueue::sortWestEastMeridian (double jd)
 				continue;
 			}
 
-			jd = tjd;	
+			jd = tjd;
 			if ((*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
-				break;  
+				break;
 		}
 		// If such target does not exists, select front..
 		if (iter == preparedTargets.end ())
 		{
-			// std::cout << "end reached, takes from beginning" << std::endl;  
+			// std::cout << "end reached, takes from beginning" << std::endl;
 			iter = preparedTargets.begin ();
 		}
 
-		jd += getMaximalDuration (*iter) / 86400.0;  
+		jd += getMaximalDuration (*iter) / 86400.0;
 		orderedTargets.push_back ((*iter));
 		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
 		preparedTargets.erase (iter);
@@ -349,7 +349,7 @@ void TargetQueue::sortWestEastMeridian (double jd)
 
 void TargetQueue::sortOutOfLimits (double jd)
 {
-	std::list < rts2db::Target *> preparedTargets;  
+	std::list < rts2db::Target *> preparedTargets;
 	std::list < rts2db::Target *> orderedTargets;
 	for (TargetQueue::iterator ti = begin (); ti != end (); ti++)
 	{
@@ -366,7 +366,7 @@ void TargetQueue::sortOutOfLimits (double jd)
 
 		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
 		{
-		  	std::cout << "sort out of limits " << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd, *observer) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+		  	std::cout << "sort out of limits " << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd, *observer) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl;
 			// skip target if it's not above horizon
 			ExecutorQueue::iterator qi = findTarget (*iter);
 			double tjd = jd;
@@ -376,18 +376,18 @@ void TargetQueue::sortOutOfLimits (double jd)
 				continue;
 			}
 
-			jd = tjd;	
+			jd = tjd;
 			if ((*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
-				break;  
+				break;
 		}
 		// If such target does not exists, select front..
 		if (iter == preparedTargets.end ())
 		{
-			// std::cout << "end reached, takes from beginning" << std::endl;  
+			// std::cout << "end reached, takes from beginning" << std::endl;
 			iter = preparedTargets.begin ();
 		}
 
-		jd += getMaximalDuration (*iter) / 86400.0;  
+		jd += getMaximalDuration (*iter) / 86400.0;
 		orderedTargets.push_back ((*iter));
 		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
 		preparedTargets.erase (iter);
@@ -405,7 +405,7 @@ void TargetQueue::filterExpired (double now)
 	if (empty ())
 		return;
 	TargetQueue::iterator iter = begin ();
-	// first: in FIFO, remove any requests which are before request with start or end time in the past 
+	// first: in FIFO, remove any requests which are before request with start or end time in the past
 	switch (getQueueType ())
 	{
 		case QUEUE_FIFO:
@@ -432,7 +432,7 @@ void TargetQueue::filterExpired (double now)
 			iter = removeEntry (iter, REMOVED_TIMES_EXPIRED);
 		else if (iter->target->observationStarted () && getRemoveAfterExecution () == true)
 		  	iter = removeEntry (iter, REMOVED_STARTED);
-		else  
+		else
 			iter++;
 	}
 }
@@ -474,7 +474,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 				// if target will fit into available time, and target isAbove..
 				if (((getRemoveAfterExecution () == false && removeObserved == false) || tl < maxLength) && isAboveHorizon (*iter, tjd))
 					return;
-			}	
+			}
 
 			if (getSkipBelowHorizon () || shift_circular)
 			{
@@ -667,7 +667,7 @@ int ExecutorQueue::removeIndex (int index)
 	ExecutorQueue::iterator iter = findIndex (index);
 	if (iter == end ())
 		return -1;
-	
+
 	if (iter->target != currentTarget)
 		delete iter->target;
 	else
@@ -722,7 +722,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 		now = to;
 	}
 	// if everything fails, add target to the end
-	addTarget (nt, t_start, t_end, rep_n, rep_separation, plan_id, hard);
+	addTarget (nt, t_start, t_end, -1, rep_n, rep_separation, plan_id, hard);
 	updateVals ();
 	return 0;
 }
@@ -762,7 +762,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 			else
 			{
 				// calculate target script length..
-				// the code will go there even if top long targets were not removed, making sure 
+				// the code will go there even if top long targets were not removed, making sure
 				// it will still ignore too long targets
 				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras, NULL, front().target->observationStarted () ? 1 : 0);
 				if (tl < next_length || checkTargetLength->getValueBool () == false)
@@ -835,7 +835,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 			{
 				e_end = from + md;
 			}
-			// otherwise, put end to either time_end, 
+			// otherwise, put end to either time_end,
 			else
 			{
 				if (!std::isnan (sq.front ().t_end))
