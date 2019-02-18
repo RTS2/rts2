@@ -733,7 +733,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				{
 					if (iter != ((HttpD *) getMasterApp ())->getMessages ().begin ())
 						os << ",";
-					os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
+					os << "[" << iter->getMessageTime () << ",\"" << rts2json::JsonString (iter->getMessageOName ()) << "\"," << iter->getType () << ",\"" << rts2json::JsonString (iter->getMessageString ()) << "\"]";
 				}
 				os << "]";
 			}
