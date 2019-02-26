@@ -1012,6 +1012,7 @@ int Executor::switchTarget ()
 				doSwitch ();
 				break;
 			case SERVERD_DUSK | SERVERD_STANDBY:
+			case SERVERD_NIGHT | SERVERD_STANDBY:
 			case SERVERD_DAWN | SERVERD_STANDBY:
 				if (!currentTarget && getActiveQueue ()->size () != 0 && getActiveQueue ()->front ().target->getTargetID () == 1)
 				{
