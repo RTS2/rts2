@@ -147,6 +147,8 @@ class AzCam3:public rts2camd::Camera
 		rts2core::ValueLong *parShiftFocusSteps;
 		rts2core::ValueLong *parShiftDetShifts;
 		rts2core::ValueFloat *parShiftExposureTime;
+		rts2core::ValueString *obsID;
+		rts2core::ValueString *groupID;
 
 		char rbuf[200];
 
@@ -155,6 +157,7 @@ class AzCam3:public rts2camd::Camera
 		int callCommand (const char *cmd, double p1);
 		int callCommand (const char *cmd, const char *p1);
 		int callCommand (const char *cmd, double p1, const char *p2, const char *p3);
+		int callCommandNoRts2(const char *);
 		int callExposure (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
 		int callShiftExposure( );
@@ -206,6 +209,8 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 	createValue (parShiftFocusSteps, "SHIFT_FO", "Number of steps to move in focus during shift focus", false, RTS2_VALUE_WRITABLE);
 	createValue (parShiftDetShifts, "SHIFT_PX", "Number of pixels to shift during shift focus", false, RTS2_VALUE_WRITABLE);
 	createValue (parShiftExposureTime, "SHIFT_EX", "Time in seconds of each exposure during shift focus. ", false, RTS2_VALUE_WRITABLE);
+	createValue (obsID, "ObservationID", "Observation id for ARTN categorization ", false, RTS2_VALUE_WRITABLE);
+	createValue (groupID, "GroupID", "Group id for ARTN categorization ", false, RTS2_VALUE_WRITABLE);
 
 	//handy defaults
 	parShiftFocus->setValueBool(false);
@@ -276,18 +281,24 @@ int AzCam3::initHardware()
 	{
 		commandConn->setDebug ();
 	}
-
+	
 	int ret = callCommand ("abort\r\n");
 	if (ret)
 		return ret;
 
 	callCommand ("readout_abort\r\n");
-
+	callCommandNoRts2 ("reset\r\n");
 	initCameraChip (101, 101, 0, 0);
 	//Default binning should be in the config. 
 	addBinning2D(3, 3);
 
 	return initChips ();
+}
+
+int AzCam3::callCommandNoRts2 (const char *cmd)
+{
+	int ret = commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20, false);
+	return ret;;
 }
 
 int AzCam3::callCommand (const char *cmd)
@@ -331,6 +342,7 @@ int AzCam3::callCommand (const char *cmd, double p1, const char *p2, const char 
 {
 	char buf[200];
 	snprintf (buf, 200, "%s %f '%s' '%s' \r\n", cmd, p1, p2, p3);
+	logStream(MESSAGE_ERROR) << "call exposure buf is " << buf << sendLog;
 	return callCommand (buf);
 }
 
@@ -500,8 +512,9 @@ int AzCam3::startExposure()
 
 int AzCam3::stopExposure ()
 {
+	logStream (MESSAGE_INFO) << "stopExposure called" << sendLog;
 	callCommand ("abort\r\n");
-	callCommand ("controller.readout_abort\r\n");
+	//callCommand ("controller.readout_abort\r\n");
 
 	return Camera::stopExposure ();
 }
