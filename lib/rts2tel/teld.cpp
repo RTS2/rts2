@@ -2241,7 +2241,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	// if some value is waiting to be applied..
-	else if (wcorrRaDec->wasChanged ())
+	if (wcorrRaDec->wasChanged ())
 	{
 		corrRaDec->incValueRaDec (wcorrRaDec->getRa (), wcorrRaDec->getDec ());
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
