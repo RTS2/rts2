@@ -123,6 +123,7 @@ int Camera::box (int _x, int _y, int _width, int _height, rts2core::ValueRectang
 	if (retv)
 		retv->setInts (_x, _y, _width, _height);
 	sendValueAll (chipUsedReadout);
+
 	return 0;
 }
 
@@ -327,31 +328,9 @@ void Camera::startImageData (rts2core::Connection * conn)
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	if (currentImageTransfer == SHARED)
-	{
-		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
-	}
-	else
-	{
-		focusingHeader = fhd;
-	}
+	struct imghdr *header = NULL;
 
-	focusingHeader->data_type = htons (getDataType ());
-	focusingHeader->naxes = 2;
-	focusingHeader->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
-	focusingHeader->sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
-	focusingHeader->binnings[0] = htons (binningVertical ());
-	focusingHeader->binnings[1] = htons (binningHorizontal ());
-	focusingHeader->x = htons (chipUsedReadout->getXInt ());
-	focusingHeader->y = htons (chipUsedReadout->getYInt ());
-	focusingHeader->filter = htons (getLastFilterNum ());
-	// light - dark images
-	if (expType)
-		focusingHeader->shutter = htons (expType->getValueInteger ());
-	else
-		focusingHeader->shutter = 0;
-
-	focusingHeader->channel = htons (pchan);
+	fhd->channel = htons (pchan);
 
 	sum->setValueDouble (0);
 	average->setValueDouble (0);
@@ -362,11 +341,13 @@ int Camera::sendFirstLine (int chan, int pchan)
 	switch (currentImageTransfer)
 	{
 		case SHARED:
+			header = (struct imghdr*) (sharedData->getChannelData (chan));
+			memcpy (header, fhd, sizeof(imghdr));
 			sharedData->dataWritten (chan, sizeof (imghdr));
 			break;
 		case TCPIP:
 			if (exposureConn)
-				return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
+				return exposureConn->sendBinaryData (currentImageData, chan, (char *) fhd, sizeof (imghdr));
 			break;
 		case FITS:
 			break;
@@ -688,7 +669,6 @@ int Camera::killAll (bool callScriptEnds)
 		iter->moving->setValueBool (false);
 		sendValueAll (iter->moving);
 	}
-
 
 	if (exposureConn && currentImageData >= 0)
 	{
@@ -1625,6 +1605,7 @@ int Camera::camStartExposure (bool careBlock)
 	// check if we aren't blocked
 	// we can allow this test as camStartExposure is called only after quedExpNumber was decreased
 	bool fm = filterMoving ();
+
 	if (careBlock == true
 		&& (!expType || expType->getValueInteger () == 0)
 		&& (
@@ -1686,12 +1667,6 @@ int Camera::camStartExposureWithoutCheck ()
 	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
 	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
 
-	if (expType)
-	{
-		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : (exposure->getValueFloat () > 0 ? 1 : 2));
-		sendValueAll (imageType);
-	}
-
 	if (needReload->getValueBool ())
 	{
 		Binning2D *bin = (Binning2D *) binning->getData ();
@@ -1699,13 +1674,43 @@ int Camera::camStartExposureWithoutCheck ()
 		needReload->setValueBool (false);
 	}
 
+	// Fill the image header while we have all the actual values used to start exposure
+	fhd->data_type = htons (getDataType ());
+	fhd->naxes = 2;
+	fhd->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
+	fhd->sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
+	fhd->binnings[0] = htons (binningVertical ());
+	fhd->binnings[1] = htons (binningHorizontal ());
+	fhd->x = htons (chipUsedReadout->getXInt ());
+	fhd->y = htons (chipUsedReadout->getYInt ());
+	fhd->filter = htons (getFilterNum ());
+
+	// Cache frame size in pixels and bytes so that the readout may use these actual values, and not
+	// the ones at readout start (as it may be after current script end + reset of parameters)
+	lastExposurePixels = getUsedHeightBinned () * getUsedWidthBinned ();
+	lastExposureBytes = chipByteSize ();
+
+	if (expType)
+	{
+		fhd->shutter = htons (expType->getValueInteger ());
+		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : (exposure->getValueFloat () > 0 ? 1 : 2));
+		sendValueAll (imageType);
+	}
+	else
+		fhd->shutter = 0;
+
 	sepX->clear ();
 	sepY->clear ();
 	sepFluxes->clear ();
 
+	maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure is about to start", NAN, NAN, exposureConn);
+
 	ret = startExposure ();
 	if (!(ret == 0 || ret == 1))
+	{
+		maskState (BOP_TEL_MOVE, 0, "exposure did not start", NAN, NAN, exposureConn);
 		return ret;
+	}
 
 	double now = getNow ();
 
@@ -1779,11 +1784,6 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue,
 	{
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
 	}
-
-	// Cache frame size in pixels and bytes so that the readout may use these actual values, and not
-	// the ones at readout start (as it may be after current script end + reset of parameters)
-	lastExposurePixels = getUsedHeightBinned () * getUsedWidthBinned ();
-	lastExposureBytes = chipByteSize ();
 
 	return ret;
 }
