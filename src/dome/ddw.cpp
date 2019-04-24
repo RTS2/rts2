@@ -80,7 +80,7 @@ class DDW:public Cupola
 		rts2core::ValueInteger *shutter;
 		rts2core::ValueInteger *dticks;
 
-		void setAzimuthTicks(int adaz) { setCurrentAz(getTargetAzFromDomeAz(359*(double)(adaz)/(double)(dticks->getValueInteger())), true); }
+		//void setAzimuthTicks(int adaz) { setCurrentAz(getTargetAzFromDomeAz(359*(double)(adaz)/(double)(dticks->getValueInteger())), true); }
 
 		long AzDomeOffsetCoeff[2][3];
 		
