@@ -80,7 +80,7 @@ class DDW:public Cupola
 		rts2core::ValueInteger *shutter;
 		rts2core::ValueInteger *dticks;
 
-		//void setAzimuthTicks(int adaz) { setCurrentAz(getTargetAzFromDomeAz(359*(double)(adaz)/(double)(dticks->getValueInteger())), true); }
+		void setAzimuthTicks(int adaz) { setCurrentAz(getTargetAzFromDomeAz(359*(double)(adaz)/(double)(dticks->getValueInteger())), true); }
 
 		long AzDomeOffsetCoeff[2][3];
 		
@@ -112,7 +112,6 @@ DDW::DDW (int argc, char **argv):Cupola (argc, argv)
 	AzDomeOffsetCoeff[2][1] = 8.247;
 	AzDomeOffsetCoeff[2][2] = -4.908;
 	AzDomeOffsetCoeff[2][3] = 20.234;
-	
 }
 
 DDW::~DDW ()
@@ -448,7 +447,7 @@ int DDW::parseInfo (bool V)
 	}
 
 	
-	//logStream(MESSAGE_WARNING) << "shutter state " << _shutter << sendLog;
+	logStream(MESSAGE_WARNING) << "shutter state " << _shutter << sendLog;
 	
 	shutter->setValueInteger(_shutter);
 
@@ -487,15 +486,22 @@ long DDW::inProgress (bool opening)
 		case 'S':
 		    return 100;
 		case 'T':
+		{
 			return 100;
+			break;
+		}
 		case 'O':
+		{
 			if (cmdInProgress == OPENING)
 				return 100;
 			break;
+		}
 		case 'C':
+		{
 			if (cmdInProgress == CLOSING)
 				return 100;
 			break;
+		}
 		case 'P':
 		{
 		    char pos[5];
@@ -503,6 +509,7 @@ long DDW::inProgress (bool opening)
 				return -1;
 			setAzimuthTicks(atoi(pos));
 			return 100;
+			break;
 		}
 		case 'Z':
 		{
@@ -512,12 +519,14 @@ long DDW::inProgress (bool opening)
 			z->setValueInteger(atoi(zbuf));
 			sendValueAll(z);
 			return 100;
+			break;
 		}
 		case 'V':
 		{
 			cmdInProgress = IDLE;
 			parseInfo (false);
 			return -2;
+			break;
 		}
 	}
 		
