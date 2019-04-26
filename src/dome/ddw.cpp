@@ -143,19 +143,13 @@ int DDW::initHardware ()
 
 	info();
 
-	sconn->flushPortIO();
-
-	info();
-
-	sconn->flushPortIO();
-
-	info();
-
 	return 0;
 }
 
 int DDW::info ()
 {
+	//logStream(MESSAGE_WARNING) << "in info with cmdInProgress " << cmdInProgress << sendLog;
+	
 	if (cmdInProgress != IDLE)
 		return 0;
 
@@ -447,7 +441,7 @@ int DDW::parseInfo (bool V)
 	}
 
 	
-	logStream(MESSAGE_WARNING) << "shutter state " << _shutter << sendLog;
+	//logStream(MESSAGE_WARNING) << "shutter state " << _shutter << sendLog;
 	
 	shutter->setValueInteger(_shutter);
 
@@ -486,22 +480,15 @@ long DDW::inProgress (bool opening)
 		case 'S':
 		    return 100;
 		case 'T':
-		{
 			return 100;
-			break;
-		}
 		case 'O':
-		{
 			if (cmdInProgress == OPENING)
 				return 100;
 			break;
-		}
 		case 'C':
-		{
 			if (cmdInProgress == CLOSING)
 				return 100;
 			break;
-		}
 		case 'P':
 		{
 		    char pos[5];
@@ -509,7 +496,6 @@ long DDW::inProgress (bool opening)
 				return -1;
 			setAzimuthTicks(atoi(pos));
 			return 100;
-			break;
 		}
 		case 'Z':
 		{
@@ -519,14 +505,12 @@ long DDW::inProgress (bool opening)
 			z->setValueInteger(atoi(zbuf));
 			sendValueAll(z);
 			return 100;
-			break;
 		}
 		case 'V':
 		{
 			cmdInProgress = IDLE;
 			parseInfo (false);
 			return -2;
-			break;
 		}
 	}
 		
