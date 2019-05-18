@@ -880,9 +880,8 @@ void Image::writeMetaData (struct imghdr *im_h)
 			return;
 		}
 
-		filter_i = ntohs (im_h->filter);
+		setFilterNum(ntohs (im_h->filter));
 
-		setValue ("CAM_FILT", filter_i, "filter used for image");
 		setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (0 - opened, 1 - closed)");
 		// dark images don't need to wait till imgprocess will pick them up for reprocessing
 		switch (ntohs (im_h->shutter))
@@ -1840,6 +1839,12 @@ void Image::setFilter (const char *in_filter)
 	strcpy (filter, in_filter);
 	if (writeRTS2Values)
 		setValue ("FILTER", filter, "camera filter as string");
+}
+
+void Image::setFilterNum (int filnum)
+{
+	filter_i = filnum;
+	setValue ("CAM_FILT", filter_i, "filter used for image");
 }
 
 void Image::computeStatistics (size_t _from, size_t _dataSize)

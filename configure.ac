@@ -64,7 +64,7 @@ AC_LANG_CPLUSPLUS
 
 CFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g"
+CXXFLAGS="-Wall -Wshadow -g -std=c++11"
 AC_SUBST(CXXFLAGS)
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";

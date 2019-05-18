@@ -35,17 +35,35 @@ class ngDome:public Cupola
 		//rts2core::ValueInteger * mcount;
 		//rts2core::ValueInteger *moveCountTop;
 		rts2core::ConnTCSNG * domeconn;
+		rts2core::ValueBool *opened;
+		rts2core::ValueBool *closed;
+		rts2core::ValueString *domeStatus;
 		HostString *host;
 		const char *obsid;
 		const char *cfgFile;
+		const char *devname;
 
 		
 	protected:
-		virtual int initHardware ()
+		virtual int init()
 		{
-			domeconn = new rts2core::ConnTCSNG (this, host->getHostname (), host->getPort (), obsid, "UDOME");
-			return ngDome::initHardware ();
+			host = new HostString ("10.30.3.68", "5750");
+			//Hard code obsid and devname bdecase not all options are processed before this is called
+			domeconn = new rts2core::ConnTCSNG (this, host->getHostname(), host->getPort(), "BIG61", "UDOME");
+			opened->setValueBool(true);
+
+			domeconn->setDebug(false);
+
+			if (domeconn->getDebug())
+			{
+				logStream(MESSAGE_INFO) << host->getHostname()<< " : " << host->getPort() << " ," << obsid << " ," << devname << sendLog;
+			}
+
+			return Dome::init();
 		}
+
+
+
 		virtual int processOption (int in_opt)
 		{
 			switch (in_opt)
@@ -57,12 +75,29 @@ class ngDome:public Cupola
 					host = new HostString (optarg, "5750");
 					break;
 				case 'n':
+					devname = optarg;
+
+					break;
+				case 'o':
 					obsid = optarg;
 					break;
+
 				default:
-					return ngDome::processOption (in_opt);
+					return Dome::processOption (in_opt);
 			}
 			return 0;
+		}
+
+
+		virtual int setValue(rts2core::Value *oldValue, rts2core::Value *newValue)
+		{
+			//logStream(MESSAGE_ERROR) << "changing value!!!!!" << sendLog;
+			if(oldValue == domeStatus)
+			{
+				domeStatus->setValueString("DOME FUCKING STATUS");
+				sendValueAll(domeStatus);
+			}
+			return Cupola::setValue(oldValue, newValue);
 		}
 		virtual int moveStart ()
 		{
@@ -87,10 +122,11 @@ class ngDome:public Cupola
 
 		virtual int startOpen ()
 		{
-			if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
-				return 0;
-
+			//if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
+				//return 0;
 			domeconn->command("OPEN");
+
+			//domeconn->command("OPEN");
 			//mcount->setValueInteger (0);
 			//sendValueAll (mcount);
 			
@@ -99,12 +135,34 @@ class ngDome:public Cupola
 
 		virtual long isOpened ()
 		{
-			if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
-				return 0;
-			std::string domestate = domeconn->request("STATE");
-			if (domestate == "OPENED")
-				return true;
-			return false;
+			std::string resp;
+			try
+			{
+				resp = domeconn->request("STATE");
+				resp = strip(resp);
+				logStream(MESSAGE_ERROR) << "resp is " << resp << sendLog;
+				domeStatus->setValueString( resp );
+			}
+			catch(rts2core::ConnTimeoutError)
+			{
+				logStream(MESSAGE_ERROR) << "Timeout error Could not communicate with Upper Dome" << sendLog;
+				domeStatus->setValueString("Timeout ERROR");
+				resp = "Timeout ERROR";
+				throw;
+			}
+			catch(rts2core::Error)
+			{
+
+				logStream(MESSAGE_ERROR) << "Error Could not communicate with Upper Dome" << sendLog;
+				domeStatus->setValueString("ERROR");
+				resp = "ERROR";
+				throw;
+			}
+
+			sendValueAll(domeStatus);
+			if ( domeStatus->getValueString() == "OPENED")
+				return -2;
+			return USEC_SEC;
 		}
 
 		virtual int endOpen ()
@@ -114,19 +172,39 @@ class ngDome:public Cupola
 
 		virtual int startClose ()
 		{
-			if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
-				return 0;
 			
+			domeconn->command("CLOSE");
 			return 0;
 		}
 
 		virtual long isClosed ()
 		{
-			if ((getState () & DOME_DOME_MASK) == DOME_OPENED)
-				return 0;
-		 	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
+			std::string resp;
+			try
+			{
+				resp = domeconn->request("STATE");
+				resp = strip(resp);
+			}
+			catch(rts2core::ConnTimeoutError)
+			{
+				 logStream(MESSAGE_ERROR) << "Timeout error Could not communicate with Upper Dome" << sendLog;
+				 return -1;
+			}
+
+
+			if (resp == "CLOSED")
 				return -2;
-			return isMoving ();
+
+			else if(resp == "OPENED")
+				return USEC_SEC;
+			else if(resp == "MOVING")
+				return USEC_SEC;
+			else
+			{
+				logStream(MESSAGE_ERROR) << "Did not understand upper dome resp: "<< resp << sendLog;
+				return -1;
+			}
+
 		}
 
 		virtual int endClose ()
@@ -143,22 +221,36 @@ class ngDome:public Cupola
 			domeconn = NULL;
 			host = NULL;
 			obsid = NULL;
-			addOption ('t', NULL, 1, "TCS NG hostname[:port]");      
+			addOption ('t', NULL, 1, "TCS NG hostname[:port]");
 			addOption ('n', NULL, 1, "TCS NG telescope device name");
+			addOption ('o', NULL, 1, "TCS NG observatory id");
+			createValue (domeStatus, "slit_status", "State of the dome slit", true, RTS2_VALUE_WRITABLE);
+			createValue (opened, "isOpen", "Is the slit open?", false);
+			createValue (closed, "isClosed", "Is the slit closed?", false);
 
 			
 		}
-
 		virtual int initValues ()
 		{
 			setCurrentAz (0);
-			return Cupola::initValues ();
+			return Cupola::initValues();
+
 		}
 
 		virtual double getSlitWidth (double alt)
 		{
 			return 1;
 		}
+
+		std::string strip(std::string str)
+		{
+			while( str[str.length()-1] == '\r' ||  str[str.length()-1] == '\n')
+			{
+				str=str.erase(str.length()-1, 1);
+			}
+			return str;
+		}
+
 };
 
 }

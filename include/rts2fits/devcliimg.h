@@ -53,7 +53,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 
 		virtual void newDataConn (int data_conn);
 		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data) { allImageDataReceived (data_conn, data, true); }
-		virtual void fitsData (const char *fn);
+		virtual void fitsData (const char *fn, int filter_num);
 		virtual Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Image * image);
 

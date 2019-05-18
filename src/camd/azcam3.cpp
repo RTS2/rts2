@@ -147,6 +147,8 @@ class AzCam3:public rts2camd::Camera
 		rts2core::ValueLong *parShiftFocusSteps;
 		rts2core::ValueLong *parShiftDetShifts;
 		rts2core::ValueFloat *parShiftExposureTime;
+		rts2core::ValueString *obsID;
+		rts2core::ValueString *groupID;
 
 		char rbuf[200];
 
@@ -155,6 +157,7 @@ class AzCam3:public rts2camd::Camera
 		int callCommand (const char *cmd, double p1);
 		int callCommand (const char *cmd, const char *p1);
 		int callCommand (const char *cmd, double p1, const char *p2, const char *p3);
+		int callCommandNoRts2(const char *);
 		int callExposure (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
 		int callShiftExposure( );
@@ -206,6 +209,9 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 	createValue (parShiftFocusSteps, "SHIFT_FO", "Number of steps to move in focus during shift focus", false, RTS2_VALUE_WRITABLE);
 	createValue (parShiftDetShifts, "SHIFT_PX", "Number of pixels to shift during shift focus", false, RTS2_VALUE_WRITABLE);
 	createValue (parShiftExposureTime, "SHIFT_EX", "Time in seconds of each exposure during shift focus. ", false, RTS2_VALUE_WRITABLE);
+	createValue (obsID, "ObservationID", "Observation id for ARTN categorization ", false, RTS2_VALUE_WRITABLE);
+	createValue (groupID, "GroupID", "Group id for ARTN categorization ", false, RTS2_VALUE_WRITABLE);
+
 
 	//handy defaults
 	parShiftFocus->setValueBool(false);
@@ -282,7 +288,7 @@ int AzCam3::initHardware()
 		return ret;
 
 	callCommand ("readout_abort\r\n");
-
+	callCommandNoRts2 ("reset\r\n");
 	initCameraChip (101, 101, 0, 0);
 	//Default binning should be in the config. 
 	addBinning2D(3, 3);
@@ -290,13 +296,19 @@ int AzCam3::initHardware()
 	return initChips ();
 }
 
+int AzCam3::callCommandNoRts2 (const char *cmd)
+{
+	int ret = commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20, false);
+	return ret;;
+}
+
 int AzCam3::callCommand (const char *cmd)
 {
 	// end character \r, 20 second wtime
 	// AzCam now uses rts2. syntax for our commands
 	// 8/28/2018
-	char rts2cmd[50];
-	sprintf(rts2cmd, "rts2.%s", cmd );
+	char rts2cmd[100];
+	snprintf(rts2cmd, 100, "rts2.%s", cmd );
 	int ret = commandConn->writeRead (rts2cmd, strlen(rts2cmd), rbuf, 200, '\r', 20, false);
 	if (ret >= 0)
 	{
@@ -331,6 +343,7 @@ int AzCam3::callCommand (const char *cmd, double p1, const char *p2, const char 
 {
 	char buf[200];
 	snprintf (buf, 200, "%s %f '%s' '%s' \r\n", cmd, p1, p2, p3);
+//logStream(MESSAGE_ERROR) << "call exposure buf is " << buf << sendLog;
 	return callCommand (buf);
 }
 
@@ -372,7 +385,7 @@ int AzCam3::callShiftExposure (  )
 
 	logStream (MESSAGE_INFO) << "Shift Exposure called. " << sendLog;
 	char buf[200];
-	snprintf (buf, 200, "focus.set_pars %f %ld %ld %ld \r\n", 
+	snprintf (buf, 200, "focuser_set_pars %f %ld %ld %ld \r\n", 
 		parShiftExposureTime->getValueFloat(), 
 		parShiftNexposures->getValueLong(), 
 		parShiftFocusSteps->getValueLong(), 
@@ -381,8 +394,6 @@ int AzCam3::callShiftExposure (  )
 
 	try
 	{
-		
-		logStream (MESSAGE_INFO) << "Sending focus.run right ... now " << sendLog;
 		commandConn->sendData ("focus.run\r\n");
 		return 0;
 	}
@@ -483,8 +494,6 @@ int AzCam3::startExposure()
 	if (ret)
 		return ret;
 
-	const char *imgType[3] = {"object", "dark", "zero"};
-
 	if( parShiftFocus->getValueBool() )
 	{
 		callShiftExposure( );
@@ -492,7 +501,7 @@ int AzCam3::startExposure()
 	}
 	else
 	{
-		ret = callCommand ( "expose", getExposure(), imgType[getExpType ()], objectName->getValue() );
+		ret = callCommand ( "expose", getExposure(), imageType->getSelName() , objectName->getValue() );
 	}
 
 	if ( ret )
@@ -504,8 +513,10 @@ int AzCam3::startExposure()
 
 int AzCam3::stopExposure ()
 {
+	logStream (MESSAGE_INFO) << "stopExposure called" << sendLog;
 	callCommand ("abort\r\n");
-	callCommand ("controller.readout_abort\r\n");
+	//callCommand ("controller.readout_abort\r\n");
+
 	return Camera::stopExposure ();
 }
 
@@ -513,24 +524,23 @@ long AzCam3::isExposing ()
 {
 
 
-	logStream (MESSAGE_ERROR) << "isExposing called"<<sendLog;
+	//logStream (MESSAGE_ERROR) << "isExposing called"<<sendLog;
 	try
 	{
-		if ( !parShiftFocus->getValueBool())
+		if ( false ) //parShiftFocus->getValueBool())
 		{
-			logStream (MESSAGE_ERROR) << "isExposing called parshift"<<sendLog;
 			exposureRemaining->setValueFloat (getDouble ("timeleft\r\n"));
 			sendValueAll (exposureRemaining);
 			if (exposureRemaining->getValueFloat () > 0)
 				return exposureRemaining->getValueFloat () * USEC_SEC;
-		// else exposureRemaining is 0..or negative in case of AzCam bug..
-		long camExp = Camera::isExposing ();
+ 		// else exposureRemaining is 0..or negative in case of AzCam bug..
+			long camExp = Camera::isExposing ();
+
 			if (camExp > USEC_SEC)
 				return camExp;
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "isExposing called normal"<<sendLog;
 			if( dataConn->imgWasRecvd() )
 			{
 				
@@ -539,7 +549,6 @@ long AzCam3::isExposing ()
 			else
 			{
 
-				logStream (MESSAGE_ERROR) << "datasize " << dataConn->getDataSize() << " recvs: "<< dataConn->getRecvs()<<sendLog;
 				//check again in a second
 				return USEC_SEC;
 			}
@@ -568,17 +577,17 @@ int AzCam3::doReadout ()
 			{
 				if (!(getState () & CAM_SHIFT))
 				{
-					if (!parShiftFocus->getValueBool())
+					if (!parShiftFocus->getValueBool()) // normal exposure
 					{
 						pixelsRemaining->setValueLong (getLong ("pixels_remaining\r\n"));
 
 
 						sendValueAll (pixelsRemaining);
 						
-						logStream (MESSAGE_ERROR) << "pixels remaining:"<< pixelsRemaining->getValueLong() <<sendLog;
+						//logStream (MESSAGE_ERROR) << "pixels remaining:"<< pixelsRemaining->getValueLong() <<sendLog;
 					}
 					else
-					{
+					{//Shift detector charge for focus expsoure.
 						removeConnection (dataConn);
 						dataConn = NULL;
 				                fitsDataTransfer ("/tmp/m.fits");
@@ -639,10 +648,7 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	if (ret)
 		return ret;
 
-	
-	//ret = callCommand ("exposure.expose1", getExposure(), imgType[getExpType ()], objectName->getValue());
-	//ret = callCommand("focus.run\r\n");
-	commandConn->sendData("focus.run\r\n");
+	commandConn->sendData("rts2.focuser_run\r\n");
 
 	if (ret)
 		return ret;

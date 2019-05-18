@@ -445,6 +445,8 @@ class Image:public FitsFile
 
 		int getFilterNum () { return filter_i; }
 
+		void setFilterNum (int filnum);
+
 		void computeStatistics (size_t _from = 0, size_t _dataSize = 0);
 
 		double getAverage () { return average; }
