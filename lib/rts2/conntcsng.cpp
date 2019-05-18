@@ -20,12 +20,15 @@
 
 #include "connection/tcsng.h"
 #include "connection/tcp.h"
+#include <string>
+
 using namespace rts2core;
 
 ConnTCSNG::ConnTCSNG (rts2core::Block *_master, const char *_hostname, int _port, const char *_obsID, const char *_subID) : ConnTCP (_master, _hostname, _port)
 {
 	obsID = _obsID;
 	subID = _subID;
+	reqCount = 0;
 	debug = false;
 	
 }
@@ -77,12 +80,12 @@ double ConnTCSNG::getSexadecimalHours (const char *req)
 {
 	const char *ret = request (req);
 	if (strlen (ret) < 6)
-		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+		throw rts2core::Error (std::string("reply to sexadecimal request must be at least 6 characters long. req:") + req + " ret:" + ret);
 
 	int h,m;
 	double sec;
 	if (sscanf (ret, "%2d%2d%lf", &h, &m, &sec) != 3)
-		throw rts2core::Error ("cannot parse sexadecimal reply");
+		throw rts2core::Error (std::string("cannot parse sexadecimal reply: ") + req + " ret:" + ret);
 	return 15 * (h + m / 60.0 + sec / 3600.0);
 }
 
@@ -90,12 +93,12 @@ double ConnTCSNG::getSexadecimalTime (const char *req)
 {
 	const char *ret = request (req);
 	if (strlen (ret) < 6)
-		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+		throw rts2core::Error (std::string("reply to sexadecimal request must be at least 6 characters long. req:") + req + " ret:" + ret);
 
 	int h,m;
 	double sec;
 	if (sscanf (ret, "%d:%d:%lf", &h, &m, &sec) != 3)
-		throw rts2core::Error ("cannot parse sexadecimal reply");
+		throw rts2core::Error (std::string("cannot parse sexadecimal reply: ") + req + " ret:" + ret);
 	return 15 * (h + m / 60.0 + sec / 3600.0);
 }
 
@@ -103,12 +106,12 @@ double ConnTCSNG::getSexadecimalAngle (const char *req)
 {
 	const char *ret = request (req);
 	if (strlen (ret) < 6)
-		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+		throw rts2core::Error (std::string("reply to sexadecimal request must be at least 6 characters long. req:") + req + " ret:" + ret);
 
 	int h,m;
 	double sec;
 	if (sscanf (ret, "%3d%2d%lf", &h, &m, &sec) != 3)
-		throw rts2core::Error ("cannot parse sexadecimal reply");
+		throw rts2core::Error (std::string("cannot parse sexadecimal reply: ") + req + " ret:" + ret);
 	return h + m / 60.0 + sec / 3600.0;
 }
 
