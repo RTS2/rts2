@@ -212,6 +212,7 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 	createValue (obsID, "ObservationID", "Observation id for ARTN categorization ", false, RTS2_VALUE_WRITABLE);
 	createValue (groupID, "GroupID", "Group id for ARTN categorization ", false, RTS2_VALUE_WRITABLE);
 
+
 	//handy defaults
 	parShiftFocus->setValueBool(false);
 	parShiftNexposures->setValueLong( 7 );
@@ -281,7 +282,7 @@ int AzCam3::initHardware()
 	{
 		commandConn->setDebug ();
 	}
-	
+
 	int ret = callCommand ("abort\r\n");
 	if (ret)
 		return ret;
@@ -342,7 +343,7 @@ int AzCam3::callCommand (const char *cmd, double p1, const char *p2, const char 
 {
 	char buf[200];
 	snprintf (buf, 200, "%s %f '%s' '%s' \r\n", cmd, p1, p2, p3);
-	logStream(MESSAGE_ERROR) << "call exposure buf is " << buf << sendLog;
+//logStream(MESSAGE_ERROR) << "call exposure buf is " << buf << sendLog;
 	return callCommand (buf);
 }
 
@@ -532,9 +533,9 @@ long AzCam3::isExposing ()
 			sendValueAll (exposureRemaining);
 			if (exposureRemaining->getValueFloat () > 0)
 				return exposureRemaining->getValueFloat () * USEC_SEC;
-
-			// else exposureRemaining is 0..or negative in case of AzCam bug..
+ 		// else exposureRemaining is 0..or negative in case of AzCam bug..
 			long camExp = Camera::isExposing ();
+
 			if (camExp > USEC_SEC)
 				return camExp;
 		}
@@ -548,7 +549,6 @@ long AzCam3::isExposing ()
 			else
 			{
 
-				//logStream (MESSAGE_ERROR) << "datasize " << dataConn->getDataSize() << " recvs: "<< dataConn->getRecvs()<<sendLog;
 				//check again in a second
 				return USEC_SEC;
 			}

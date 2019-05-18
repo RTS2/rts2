@@ -26,6 +26,7 @@ NComWin::NComWin ():NWindow (11, LINES - 24, COLS - 12, 3, 0)
 {
 	comwin = newpad (1, 300);
 	statuspad = newpad (2, 300);
+	historyPos = 0;
 }
 
 NComWin::~NComWin (void)

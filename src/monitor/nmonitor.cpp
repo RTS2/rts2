@@ -110,25 +110,6 @@ void NMonitor::sendCommand ()
 	}
 }
 
-class sortConnName
-{
-	public:
-		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
-};
-
-class sortConnType
-{
-	public:
-		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const
-		{
-			// Sort by device type, then by name
-			if (con1->getOtherType () != con2->getOtherType ())
-				return (con1->getOtherType () - con2->getOtherType ()) < 0;
-			else
-				return strcmp (con1->getName (), con2->getName ()) < 0;
-		}
-};
-
 void NMonitor::refreshConnections ()
 {
 	orderedConn.clear ();

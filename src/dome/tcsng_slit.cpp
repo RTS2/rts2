@@ -234,6 +234,7 @@ class ngDome:public Cupola
 		{
 			setCurrentAz (0);
 			return Cupola::initValues();
+
 		}
 
 		virtual double getSlitWidth (double alt)

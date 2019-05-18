@@ -22,6 +22,10 @@
 
 #define EVENT_DEADBUT    RTS2_LOCAL_EVENT + 1350
 
+// Default values for timeouts
+#define DEFAULT_DEADMAN_TIMEOUT_S      60
+#define DEFAULT_COOLDOWN_LOCKOUT_S     1200    // Heat dissipation
+
 // Zelio registers
 
 #define ZREG_J1XT1       16
@@ -91,6 +95,7 @@
 
 #define ZI_ELYA_48V      0x0002
 #define ZI_ELYA_12V      0x0004
+#define ZI_ELYA_MOUNT    0x0800 //set when the mount is believed on, used by Zelio logic
 
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
@@ -101,6 +106,8 @@
 #define OPT_QA_NAME                OPT_LOCAL + 504
 #define OPT_NO_POWER               OPT_LOCAL + 505
 #define OPT_DONT_RESTART_OPENING   OPT_LOCAL + 506
+#define OPT_DEAD_TIMEOUT           OPT_LOCAL + 507
+#define OPT_COOLDOWN               OPT_LOCAL + 508
 
 namespace rts2dome
 {
@@ -163,6 +170,7 @@ class Zelio:public Dome
 		rts2core::ValueString *zelioModelString;
 
 		rts2core::ValueInteger *deadTimeout;
+		rts2core::ValueInteger *cooldownSecs;
 		rts2core::ValueIntegerMinMax *domeTimeout;
 
 		rts2core::ValueBool *rain;
@@ -215,6 +223,7 @@ class Zelio:public Dome
 		// ELYA values
 		rts2core::ValueBool *dc12;
 		rts2core::ValueBool *dc48;
+		rts2core::ValueBool *mountIsOn;
 
 		rts2core::ValueBool *lowOil;
 		rts2core::ValueBool *batteryFault;
@@ -600,7 +609,7 @@ int Zelio::startClose ()
 	 	return -1;
 	}
 	// 20 minutes timeout..
-	setWeatherTimeout (1200, "closed, timeout for opening (to allow dissipate motor heat)");
+	setWeatherTimeout (cooldownSecs->getValueInteger (), "closed, timeout for opening (to allow dissipate motor heat)");
 	return 0;
 }
 
@@ -648,17 +657,19 @@ int Zelio::endClose ()
 
 int Zelio::commandAuthorized (rts2core::Connection * conn)
 {
-	if (zelioModel == ZELIO_ELYA)
+	if (zelioModel == ZELIO_ELYA || zelioModel == ZELIO_FRAM)
 	{
-		if (conn->isCommand ("toggle48") || conn->isCommand ("toggle_mount"))
+		if (conn->isCommand ("toggle48") || conn->isCommand ("toggle_q8") || conn->isCommand ("toggle_mount"))
 		{
-			int ret = setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, true);
+			int addr = (zelioModel == ZELIO_FRAM) ? ZREG_J1XT1 : ZREG_J2XT1;
+			int bits = (zelioModel == ZELIO_FRAM) ? ZI_FRAM_Q8 : ZI_ELYA_48V;
+			int ret = setBitsInput (addr, bits, true);
 
 			if (ret == 0)
 			{
 				usleep(USEC_SEC / 2);
 
-				ret = setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, false);
+				ret = setBitsInput (addr, bits, false);
 			}
 
 			return ret == 0 ? 0 : -2;
@@ -692,6 +703,12 @@ int Zelio::processOption (int in_opt)
 			break;
 		case OPT_DONT_RESTART_OPENING:
 			restartDuringOpening = false;
+			break;
+		case OPT_DEAD_TIMEOUT:
+			deadTimeout->setValueCharArr (optarg);
+			break;
+		case OPT_COOLDOWN:
+			cooldownSecs->setValueCharArr (optarg);
 			break;
 		default:
 			return Dome::processOption (in_opt);
@@ -736,7 +753,10 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
 	createValue (deadTimeout, "dead_timeout", "[s] timeout for dead man button", false, RTS2_VALUE_WRITABLE);
-	deadTimeout->setValueInteger (60);
+	deadTimeout->setValueInteger (DEFAULT_DEADMAN_TIMEOUT_S);
+
+	createValue (cooldownSecs, "cooldown", "[s] min. interval between closing and opening dome", false, RTS2_VALUE_WRITABLE);
+	cooldownSecs->setValueInteger (DEFAULT_COOLDOWN_LOCKOUT_S);
 
 	createValue (domeTimeout, "dome_timeout", "[s] dome timeout", false, RTS2_VALUE_WRITABLE);
 	domeTimeout->setValueInteger (-1);
@@ -780,6 +800,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	dc12 = NULL;
 	dc48 = NULL;
+	mountIsOn = NULL;
 	lowOil = NULL;
 	batteryFault = NULL;
 	onBattery = NULL;
@@ -795,6 +816,9 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	addOption (OPT_QA_NAME, "QA-name", 1, "name of the QA switch");
 
 	addOption (OPT_DONT_RESTART_OPENING, "dont-restart-opening", 0, "do not restart connection if it breaks during opening");
+
+	addOption (OPT_DEAD_TIMEOUT, "dead-timeout", 1, "timeout for dead man button");
+	addOption (OPT_COOLDOWN, "cooldown", 1, "min. interval [s] between closing and opening the dome.");
 }
 
 Zelio::~Zelio (void)
@@ -928,6 +952,16 @@ int Zelio::info ()
 
 		sendValueAll (dc12);
 		sendValueAll (dc48);
+	}
+
+	if (zelioModel == ZELIO_FRAM)
+	{
+		// Guess initial state of voltage switches
+		Q8->setValueBool (regs[0] & ZI_FRAM_Q8);
+		Q9->setValueBool (regs[0] & ZI_FRAM_Q9);
+
+		sendValueAll (Q8);
+		sendValueAll (Q9);
 	}
 
 	return Dome::info ();
@@ -1128,13 +1162,19 @@ void Zelio::createZelioValues ()
 		createValue (humidity, "humidity", "Humidity sensor raw output", false);
 	}
 
+	if (zelioModel == ZELIO_ELYA || zelioModel == ZELIO_FRAM)
+	{
+		createValue (mountIsOn, "mount_is_on", "Mount Is On flag for Zelio dome safeguards", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		mountIsOn->setValueBool(false);
+	}
+
 	switch (zelioModel)
 	{
-		case ZELIO_FRAM:
 		case ZELIO_BOOTES3:
-			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE);
-			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
-			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE);
+			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		case ZELIO_FRAM:
+			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			break;
 		case ZELIO_ELYA:
 			createValue (dc12, "12VDC", "12V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
@@ -1176,20 +1216,24 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	switch (zelioModel)
 	{
-		case ZELIO_FRAM:
 		case ZELIO_BOOTES3:
+			if (oldValue == QA)
+				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		case ZELIO_FRAM:
 			if (oldValue == Q8)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			if (oldValue == Q9)
 				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-			if (oldValue == QA)
-				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == mountIsOn)
+				return setBitsInput (ZREG_J1XT1, ZI_ELYA_MOUNT, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			break;
 		case ZELIO_ELYA:
 			if (oldValue == dc12)
 				return setBitsInput (ZREG_J2XT1, ZI_ELYA_12V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			if (oldValue == dc48)
 				return setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == mountIsOn)
+				return setBitsInput (ZREG_J1XT1, ZI_ELYA_MOUNT, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 			break;
 		default:
 			if (oldValue == Q9)

@@ -113,6 +113,8 @@ class TCSNG:public Telescope
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
 
+
+
 		rts2core::ValueInteger *reqcount;
 };
 
