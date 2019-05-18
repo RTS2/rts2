@@ -23,6 +23,8 @@
 #include "configuration.h"
 #include "connection/tcsng.h"
 
+#include <cmath>
+
 using namespace rts2teld;
 
 /*moveState: 0=>Not moving no move called, 
@@ -91,6 +93,7 @@ class TCSNG:public Telescope
 		HostString *host;
 		const char *cfgFile;
 		const char *ngname;
+		double waitMove;
 
 		rts2core::ValueBool *systemEnable;
 		rts2core::ValueBool *domeAuto;
@@ -100,6 +103,7 @@ class TCSNG:public Telescope
 		rts2core::ValueDouble *domeAz;
 		rts2core::ValueSelection *tcsngmoveState;
 		rts2core::ValueInteger *motionState;
+		rts2core::ValueDouble *settle_time;
 
 		rts2core::ValueString *tle_l1;
 		rts2core::ValueString *tle_l2;
@@ -108,9 +112,6 @@ class TCSNG:public Telescope
 		rts2core::ValueBool *tle_freeze;
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
-		rts2core::ValueDouble *tle_refresh;
-
-
 
 		rts2core::ValueInteger *reqcount;
 };
@@ -167,6 +168,9 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv, true, true)
 	tcsngmoveState->setValueInteger (0);
 
 	createValue (motionState, "motion", "TCSNG motion variable", false, RTS2_DT_HEX);
+
+	createValue (settle_time, "settle_time", "time when telescope shall be on position before ending the move", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	settle_time->setValueDouble (0.5);
 
 	createValue (reqcount, "tcsng_req_count", "TCSNG request counter", false);
 	reqcount->setValueInteger (TCSNG_NO_MOVE_CALLED);
@@ -288,6 +292,8 @@ int TCSNG::startResync ()
 	struct ln_equ_posn tar;
 	getTarget (&tar);
 
+	waitMove = NAN;
+
 	char cmd[200];
 	ngconn->command("CANCEL");
 	snprintf (cmd, 200, "NEXTPOS %s %s 2000 0 0", deg2hours (tar.ra), deg2dec (tar.dec));
@@ -301,6 +307,8 @@ int TCSNG::startResync ()
 int TCSNG::startMoveFixed (double tar_az, double tar_alt)
 {
 	char cmd[200];
+
+	waitMove = NAN;
 	snprintf (cmd, 200, "ELAZ %lf %lf", tar_alt, tar_az);
 
 	ngconn->command (cmd);
@@ -309,6 +317,7 @@ int TCSNG::startMoveFixed (double tar_az, double tar_alt)
 
 int TCSNG::stopMove ()
 {
+	waitMove = NAN;
 	ngconn->command ("CANCEL");
 	tcsngmoveState->setValueInteger (TCSNG_NO_MOVE_CALLED);
 	return 0;
@@ -316,6 +325,7 @@ int TCSNG::stopMove ()
 
 int TCSNG::startPark ()
 {
+	waitMove = NAN;
 	ngconn->command ("MOVSTOW");
 	tcsngmoveState->setValueInteger (TCSNG_MOVE_CALLED);
 	return 0;
@@ -345,10 +355,30 @@ int TCSNG::isMoving ()
 			break;
 		case TCSNG_MOVING:
 			if ((mot & TCSNG_RA_AZ) || (mot & TCSNG_DEC_AL) || (mot & TCSNG_DOME))
+			{
+				if (!std::isnan(waitMove))
+				{
+					logStream(MESSAGE_WARNING) << "telescope moved during settle time" << sendLog;
+					waitMove = NAN;
+				}
 				return USEC_SEC / 100;
-			tcsngmoveState->setValueInteger (TCSNG_NO_MOVE_CALLED);
-			return -2;
-			break;
+			}
+			// check the counter..
+			if (std::isnan(waitMove))
+			{
+				if (std::isnan (settle_time->getValueDouble()) || settle_time->getValueDouble() <= 0)
+					return -2;
+				logStream(MESSAGE_INFO) << "starting settle period " << TimeDiff(settle_time->getValueDouble()) << sendLog;
+				waitMove = getNow() + settle_time->getValueDouble();
+				return USEC_SEC / 100;
+			}
+			if (waitMove < getNow())
+			{
+				waitMove = NAN;
+				tcsngmoveState->setValueInteger (TCSNG_NO_MOVE_CALLED);
+				return -2;
+			}
+			return USEC_SEC / 100;
 	}
 	return -1;
 }
