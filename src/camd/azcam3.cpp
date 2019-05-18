@@ -306,8 +306,8 @@ int AzCam3::callCommand (const char *cmd)
 	// end character \r, 20 second wtime
 	// AzCam now uses rts2. syntax for our commands
 	// 8/28/2018
-	char rts2cmd[50];
-	snprintf(rts2cmd, 50, "rts2.%s", cmd );
+	char rts2cmd[100];
+	snprintf(rts2cmd, 100, "rts2.%s", cmd );
 	int ret = commandConn->writeRead (rts2cmd, strlen(rts2cmd), rbuf, 200, '\r', 20, false);
 	if (ret >= 0)
 	{

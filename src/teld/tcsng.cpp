@@ -281,6 +281,9 @@ int TCSNG::info ()
 	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "info " << er << sendLog;
+		delete ngconn;
+		sleep(1);
+		ngconn = new rts2core::ConnTCSNG (this, host->getHostname (), host->getPort (), ngname, "TCS");
 		return -1;
 	}
 
