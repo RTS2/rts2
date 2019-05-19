@@ -468,9 +468,6 @@ void DevClientCameraImage::fitsData (const char *fn, int filter_num)
 	{
 		img->openFile (fn, true, false);
 
-		if (filter_num >= 0)
-			img->setFilterNum (filter_num);
-
 		if (actualImage == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "FITS data received without exposure start, file " << fn << " kept at its location" << sendLog;
@@ -485,6 +482,8 @@ void DevClientCameraImage::fitsData (const char *fn, int filter_num)
 		img->copyImage (abs.c_str ());
 		img->closeFile ();
 		img->openFile (abs.c_str (), false, false);
+		if (filter_num >= 0)
+			img->setFilterNum (filter_num);
 		img->loadChannels ();
 		img->computeStatistics (0, 0);
 
