@@ -98,8 +98,15 @@ void NMonitor::sendCommand ()
 		comWindow->printCommand (command);
 
 		if (value) {
+			char op = *value;
+
+			if (value > cmd_top && (*(value - 1) == '-' || *(value - 1) == '+'))
+			{
+				op = *(value - 1);
+				*(value - 1) = '\0';
+			}
 			*value = '\0';
-			oldCommand = new rts2core::CommandChangeValue (this, cmd_top, '=', std::string(value + 1));
+			oldCommand = new rts2core::CommandChangeValue (this, cmd_top, op, std::string(value + 1));
 		} else
 			oldCommand = new rts2core::Command (this, cmd_top);
 
