@@ -51,8 +51,8 @@ class IndiClient(PyIndi.BaseClient):
             cmonitor = p.getSwitch()
         print("New property ", p.getName(), " for device ",
               p.getDeviceName())
-        if self.device is not None and p.getName() == "CONNECTION" and
-        p.getDeviceName() == self.device.getDeviceName():
+        if (self.device is not None and p.getName() == "CONNECTION" and
+            p.getDeviceName() == self.device.getDeviceName()):
             print("Got property CONNECTION for FLI CFW!")
             # connect to device
             self.connectDevice(self.device.getDeviceName())
