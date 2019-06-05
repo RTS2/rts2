@@ -29,7 +29,8 @@
  * (create indififo with: mkfifo /tmp/indififo) 
  * 
  * for some reason, this driver also requires an independent client to 
- * be actively connected to the indiserver (e.g., kstars or a python script)
+ * be actively connected to the indiserver:
+ *   > python fliindi_client.py
  *
  * known bugs:
  * - filter slot seems to jump to slot 2 (start counting at 0) randomly
