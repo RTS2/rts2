@@ -513,7 +513,7 @@ START_TEST(test_mean2apparent)
 	altazTestNutation->applyCorrections (&pos, utc1, utc2, &hrz, false);
 
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (pos.ra, 155.2880397611, 10e-7);
+	ck_assert_dbl_eq (pos.ra, 155.4611044336, 10e-7);
 	ck_assert_dbl_eq (pos.dec, 9.8789411273, 10e-7);
 #else
 	ck_assert_dbl_eq (pos.ra, 155.4611594137, 10e-7);

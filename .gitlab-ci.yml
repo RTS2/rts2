@@ -1,0 +1,13 @@
+image: pkubanek/rts2
+
+build:
+  stage: build
+  script:
+    - ./autogen.sh
+    - ./configure
+    - make
+
+test:
+  stage: test
+  script:
+    - make check
