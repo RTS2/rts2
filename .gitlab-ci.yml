@@ -1,8 +1,8 @@
 image: pkubanek/rts2
 
 stages:
-  -build
-  -test
+  - build
+  - test
 
 build:
   stage: build
