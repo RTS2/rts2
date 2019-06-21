@@ -2362,7 +2362,20 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 	}
 
-	// all checks done, give proper info and set TEL_ state and BOP
+	// all checks done, let's set BOP state and try to move
+	maskState (BOP_EXPOSURE, BOP_EXPOSURE, "movement is about to start");
+
+	ret = startResync ();
+	if (ret)
+	{
+		useParkFlipping = false;
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
+		return ret;
+	}
+
+	// now we may set the movement state and log it
 	if (correction)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
@@ -2381,7 +2394,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 
 		logStream (MESSAGE_INFO) << cortype << " to " << syncTo << " from " << syncFrom << " distances " << c_ra << " " << c_dec << sendLog;
-
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
 	}
 	else
@@ -2397,17 +2409,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		logStream (INFO_MOUNT_SLEW_START | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << pos.ra << " " << pos.dec << " " << hrz.az << " " << hrz.alt << " " << hrztar.az << " " << hrztar.alt << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | TEL_MASK_TRACK | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 		flip_move_start = telFlip->getValueInteger ();
-	}
-
-	// everything is OK and prepared, let's move!
-	ret = startResync ();
-	if (ret)
-	{
-		useParkFlipping = false;
-		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
-		if (conn)
-			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
-		return ret;
 	}
 
 	targetStarted->setNow ();
