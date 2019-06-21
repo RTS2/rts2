@@ -177,7 +177,7 @@ int LX200::initHardware ()
 	char rbuf[100];
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
-	if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+	if (serConn->writeRead ("#:Gr#", 5, rbuf, 19, '#') < 0)
 		return -1;
 
 	if (rbuf[7] == '\0' || rbuf[7] == '#')
@@ -188,7 +188,7 @@ int LX200::initHardware ()
 		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
 
-		if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+		if (serConn->writeRead ("#:Gr#", 5, rbuf, 19, '#') < 0)
 			return -1;
 		if (rbuf[7] == '\0' || rbuf[7] == '#')
 		{
@@ -447,7 +447,8 @@ int LX200::startResync ()
 	if (hasAstroPhysicsExtensions)
 		serConn->writePort (":PO#", 4);
 
-	tel_slew_to (getTargetRa (), getTargetDec ());
+	if (tel_slew_to (getTargetRa (), getTargetDec ()) < 0)
+		return -1;
 
 	set_move_timeout (100);
 	return 0;
@@ -578,9 +579,11 @@ int LX200::isParking ()
 		char rbuf[100];
 		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
 			return -1;
-		else if (rbuf[0] == '5' || rbuf[0] == '1')
+		else if (rbuf[0] == '5')
 			return -2;
 		else if (rbuf[0] == '9' && rbuf[1] == '9')
+			return -1;
+		else if (rbuf[0] == '1')
 			return -1;
 		else
 			return USEC_SEC;
