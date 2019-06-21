@@ -100,7 +100,7 @@ ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEn
 ConnFork::~ConnFork ()
 {
 	if (childPid > 0)
-		kill (-childPid, SIGINT);
+		kill (-childPid, SIGTERM);
 	if (sockerr > 0)
 		close (sockerr);
 	if (sockwrite > 0)
