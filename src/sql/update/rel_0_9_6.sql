@@ -27,6 +27,8 @@ ALTER TABLE images ALTER COLUMN img_date TYPE timestamp with time zone;
 ALTER TABLE queues_targets ALTER COLUMN time_start TYPE timestamp with time zone;
 ALTER TABLE queues_targets ALTER COLUMN time_end TYPE timestamp with time zone;
 
+ALTER TABLE message ALTER COLUMN message_time TYPE timestamp with time zone;
+
 -- BB tables
 ALTER TABLE observatory_schedules ALTER COLUMN created TYPE timestamp with time zone;
 ALTER TABLE observatory_schedules ALTER COLUMN last_update TYPE timestamp with time zone;
