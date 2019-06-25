@@ -287,14 +287,19 @@ template < typename T > int Script::nextCommand (T & device, Command ** new_comm
 
 	while (1)
 	{
-		if (el_iter == end ())
+		if (el_iter == end ()) {
 			// command not found, end of script,..
+			device.queCommand (new CommandChangeValue (device.getMaster (), "scriptPosition", '=', 0));
+			device.queCommand (new CommandChangeValue (device.getMaster (), "scriptLen", '=', 0));
+
 			return NEXT_COMMAND_END_SCRIPT;
+		}
+
 		currElement = *el_iter;
 		ret = currElement->nextCommand (&device, new_command, new_device);
+
 		// send info about currently executed script element..
 		device.queCommand (new CommandChangeValue (device.getMaster (), "scriptPosition", '=', currElement->getStartPos ()));
-
 		device.queCommand (new CommandChangeValue (device.getMaster (), "scriptLen", '=', currElement->getLen ()));
 
 		if (ret != NEXT_COMMAND_NEXT)
