@@ -51,6 +51,7 @@
 #define OPT_COMMENTS          OPT_LOCAL + 421
 #define OPT_HISTORIES         OPT_LOCAL + 422
 #define OPT_RTS2_COOLING      OPT_LOCAL + 423
+#define OPT_DATASEC           OPT_LOCAL + 424
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -380,6 +381,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	coolingOnOff = NULL;
 
 	detsize = NULL;
+	datasec = NULL;
 	chan1offset = NULL;
 	chan2offset = NULL;
 
@@ -569,6 +571,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	addOption (OPT_TRIMS_END, "trimend", 1, "trimmed (good data) XY ends on unbinned chip - x1:y1,..");
 	addOption (OPT_CHANNELS_STARTS, "chanstarts", 1, "channel starts - X1:Y1,:..");
 	addOption (OPT_CHANNELS_DELTAS, "chandeltas", 1, "channel deltas - DX1:DY1,..");
+	addOption (OPT_DATASEC, "datasec", 1, "good data section - X:Y:W:H");
 }
 
 Camera::~Camera ()
@@ -884,6 +887,16 @@ int Camera::processOption (int in_opt)
 				if (detsize->setValueCharArr (optarg))
 				{
 					std::cerr << "cannot parse --detsize argument: " << optarg << ", exiting." << std::endl;
+					return -1;
+				}
+			}
+			break;
+		case OPT_DATASEC:
+			{
+				createValue (datasec, "DATASEC", "[x w y h] good data section", false, RTS2_VALUE_INTEGER);
+				if (datasec->setValueCharArr (optarg))
+				{
+					std::cerr << "cannot parse --datasec argument: " << optarg << ", exiting." << std::endl;
 					return -1;
 				}
 			}

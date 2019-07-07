@@ -1,4 +1,4 @@
-/* 
+/*
  * Client which produces images.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -183,7 +183,7 @@ void DevClientCameraImage::cameraMetadata (Image *image)
 	image->setTemplate (fitsTemplate);
 
 	image->setExposureLength (exposureTime);
-	
+
 	image->setCameraName (getName ());
 	image->setInstrument (instrume.c_str ());
 	image->setTelescope (telescop.c_str ());
@@ -292,6 +292,7 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 
 		// detector coordinates,..
 		rts2core::ValueRectangle *detsize = getRectangle ("DETSIZE");
+		rts2core::ValueRectangle *datasec = getRectangle ("DATASEC");
 
 		rts2core::DoubleArray *chan1_offsets = getDoubleArray ("CHAN1_OFFSETS");
 		rts2core::DoubleArray *chan2_offsets = getDoubleArray ("CHAN2_OFFSETS");
@@ -432,6 +433,16 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 				ci->image->setValue ("DTV2", 0, "detector transformation vector");
 				ci->image->setValue ("DTM1_1", 1, "detector transformation matrix");
 				ci->image->setValue ("DTM2_2", 1, "detector transformation matrix");
+			}
+
+			if (datasec)
+			{
+				int x1 = fmax (0, (datasec->getXInt () - x) / bin1);
+				int y1 = fmax (0, (datasec->getYInt () - y) / bin2);
+				int x2 = fmin ((datasec->getXInt () + datasec->getWidth ()->getValueInteger () - x)/ bin1, w);
+				int y2 = fmin ((datasec->getYInt () + datasec->getHeight ()->getValueInteger () - y) / bin2, h);
+
+				ci->image->setValueRectange ("DATASEC", x1 + 1, x2, y1 + 1, y2, "good data section");
 			}
 		}
 
@@ -603,7 +614,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 		actualImage = new CameraImage (image, getNow (), prematurelyReceived);
 
 		prematurelyReceived.clear ();
-		
+
 		actualImage->image->writePrimaryHeader (getName ());
 		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 	}
@@ -662,7 +673,7 @@ void DevClientCameraImage::writeToFitsTransfer (Image *img)
 	cameraMetadata (img);
 
 	prematurelyReceived.clear ();
-		
+
 	img->writePrimaryHeader (getName ());
 
 	img->writeConn (getConnection (), EXPOSURE_START);

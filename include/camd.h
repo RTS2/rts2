@@ -598,6 +598,9 @@ class Camera:public rts2core::ScriptDevice
 		// Detector size - for DETSIZE keyword
 		rts2core::ValueRectangle *detsize;
 
+		// Good data section - for DATASEC keyword
+		rts2core::ValueRectangle *datasec;
+
 		// Channel X offsets
 		rts2core::DoubleArray *chan1offset;
 		// Channel Y offsets

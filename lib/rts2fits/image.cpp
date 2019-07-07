@@ -1137,34 +1137,96 @@ void Image::getHistogram (long *histogram, long nbins)
 	}
 }
 
-void Image::getChannelHistogram (int chan, long *histogram, long nbins)
+void Image::getChannelHistogram (int chan, long *histogram, long nbins, long *npixels)
 {
 	memset (histogram, 0, nbins * sizeof(int));
 	int bins;
 	if (channels.size () == 0)
 		loadChannels ();
 
+	int width = channels[chan]->getWidth ();
+	int height = channels[chan]->getHeight ();
+
+	int x1 = 1;
+	int x2 = width;
+	int y1 = 1;
+	int y2 = height;
+
+	int i;
+	int N = 0;
+
+	// Use DATASEC keyword, if any, to compute the histogram of good image part only
+	try
+	{
+		char tmp[128];
+		getValue ("DATASEC", tmp, 128, NULL, true);
+
+		std::string datasec (tmp);
+		for (i = 0; i < datasec.length (); i++)
+			if (datasec[i] == '[' || datasec[i] == ']' || datasec[i] == ':' || datasec[i] == ',')
+				datasec[i] = ' ';
+
+		std::vector<std::string> split = SplitStr (datasec, " ");
+
+		if (split.size () == 4)
+		{
+			x1 = std::stoi (split[0]);
+			x2 = std::stoi (split[1]);
+			y1 = std::stoi (split[2]);
+			y2 = std::stoi (split[3]);
+		}
+	}
+	catch (rts2core::Error &er)
+	{
+	}
+
 	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
 			bins = 65536 / nbins;
-			for (uint16_t *d = (uint16_t *)(channels[chan]->getData ()); d < ((uint16_t *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
 			{
-				histogram[*d / bins]++;
+				uint16_t *data = (uint16_t *)(channels[chan]->getData ());
+
+				for (i = 0; i < channels[chan]->getNPixels (); i++)
+				{
+					int y = i / width;
+					int x = i - y * width;
+
+					if (x + 1 >= x1 && x + 1 <= x2 &&
+						y + 1 >= y1 && y + 1 <= y2)
+					{
+						histogram[data[i] / bins] ++;
+						N += 1;
+					}
+				}
 			}
 			break;
 		case RTS2_DATA_FLOAT:
 			bins = 65536 / nbins;
-			for (float *d = (float *)(channels[chan]->getData ()); d < ((float *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
 			{
-				histogram[((uint16_t)*d) / bins]++;
+				float *data = (float *)(channels[chan]->getData ());
+
+				for (i = 0; i < channels[chan]->getNPixels (); i++)
+				{
+					int y = i / width;
+					int x = i - y * width;
+
+					if (x + 1 >= x1 && x + 1 <= x2 &&
+						y + 1 >= y1 && y + 1 <= y2)
+					{
+						histogram[(uint16_t)data[i] / bins] ++;
+						N += 1;
+					}
+				}
 			}
 			break;
 		default:
 			break;
 	}
-}
 
+	if (npixels)
+		*npixels = N;
+}
 
 template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y)
 {
@@ -1409,15 +1471,14 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer
 template <typename dt> void Image::getChannelQuantiles (int chan, dt minval, dt mval, float quantiles, dt * low_ptr, dt * high_ptr)
 {
 	long hist[65536];
-	getChannelHistogram (chan, hist, 65536);
+	long s = getChannelNPixels (chan);
+	getChannelHistogram (chan, hist, 65536, &s);
 
 	long psum = 0;
 	dt low = minval;
 	dt high = minval;
 
 	uint32_t i;
-
-	long s = getChannelNPixels (chan);
 
 	// find quantiles
 	for (i = 0; (dt) i < mval; i++)

@@ -282,8 +282,9 @@ class Image:public FitsFile
 		 * @param chan      channel number
 		 * @param histogram array for calculated histogram
 		 * @param nbins     number of histogram bins
+		 * @param npixels   number of good pixels
 		 */
-		void getChannelHistogram (int chan, long *histogram, long nbins);
+		void getChannelHistogram (int chan, long *histogram, long nbins, long *npixels);
 
 
 		template <typename bt, typename dt> void getChannelGrayscaleByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y);
