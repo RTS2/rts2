@@ -353,6 +353,8 @@ int ConnFork::init ()
 		}
 	}
 
+	std::string home = getenv ("HOME");
+
 	// do everything that will be needed to done before forking
 	beforeFork ();
 	childPid = fork ();
@@ -394,6 +396,9 @@ int ConnFork::init ()
 	close (0);
 	close (1);
 	close (2);
+
+	if (!home.empty ())
+		setenv ("HOME", home.c_str (), 1);
 
 	if (sockwrite == -2)
 	{
