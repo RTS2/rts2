@@ -353,7 +353,10 @@ int ConnFork::init ()
 		}
 	}
 
-	std::string home = getenv ("HOME");
+	char *home = getenv ("HOME");
+	// FIXME: this is a quite crude workaround that should probably be done in some other way?
+	if ((!home || !*home) && (getuid () == 0))
+		home = "/root"; // Fallback for starting from root environments not providing HOME, e.g. systemd
 
 	// do everything that will be needed to done before forking
 	beforeFork ();
@@ -397,8 +400,9 @@ int ConnFork::init ()
 	close (1);
 	close (2);
 
-	if (!home.empty ())
-		setenv ("HOME", home.c_str (), 1);
+	// Better set HOME variable as some scripts (e.g. AstroPy based ones) expect it to be set
+	if (home && *home)
+		setenv ("HOME", home, 1);
 
 	if (sockwrite == -2)
 	{
