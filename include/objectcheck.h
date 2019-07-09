@@ -49,9 +49,28 @@ class ObjectCheck
 {
 
 	public:
-		ObjectCheck (const char *horizon_file);
+		ObjectCheck ();
 
 		~ObjectCheck ();
+
+		/**
+		 * Loads horizon file
+		 */
+		int loadHorizon (const char *horizon_file);
+
+		/**
+		 * Returns ignore state.
+		 */
+		bool getIgnore()
+		{
+			return ignoreHorizon;
+		}
+
+		void setIgnore(bool set = true)
+		{
+			ignoreHorizon = set;
+		}
+
 		/**
 		 * Check, if that target can be observerd (is above horizon).
 		 *
@@ -85,8 +104,8 @@ class ObjectCheck
 
 		horizon_t horizon;
 
-		int load_horizon (const char *horizon_file);
-
 		double getHorizonHeightAz (double az, horizon_t::iterator iter1, horizon_t::iterator iter2);
+
+		bool ignoreHorizon;
 };
 #endif							 /* ! __RTS2__OBJECTCHECK__ */

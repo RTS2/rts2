@@ -619,9 +619,6 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 int GEM::checkTrajectory (double JD, int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip)
 {
 	// nothing to check
-	if (hardHorizon == NULL)
-		return 0;
-
 	int32_t t_a = ac;
 	int32_t t_d = dc;
 
@@ -699,7 +696,7 @@ int GEM::checkTrajectory (double JD, int32_t ac, int32_t dc, int32_t &at, int32_
 		if (soft_hit == true || ignore_soft_beginning == true)
 		{
 			// if we really cannot go further
-			if (hardHorizon->is_good (&hrz) == 0)
+			if (hardHorizon.is_good (&hrz) == 0)
 			{
 				// even at hard hit on first step, let's see if it can move out of limits
 				if (c == 0) 
@@ -740,7 +737,7 @@ int GEM::checkTrajectory (double JD, int32_t ac, int32_t dc, int32_t &at, int32_
 		if (soft_hit == false && hard_beginning == false)
 		{
 			// check soft margins..
-			if (hardHorizon->is_good_with_margin (&hrz, alt_margin, az_margin) == 0)
+			if (hardHorizon.is_good_with_margin (&hrz, alt_margin, az_margin) == 0)
 			{
 				if (ignore_soft_beginning == false)
 				{

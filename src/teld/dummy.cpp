@@ -191,7 +191,7 @@ int Dummy::startResync ()
 	setTarget (tar.ra, tar.dec);
 	setTelTarget (tar.ra, tar.dec);
 
-	if (hrz.alt < 0)
+	if (hrz.alt < 0 && !getIgnoreHorizon ())
 	{
 		logStream (MESSAGE_ERROR) << "cannot move to negative altitude (" << hrz.alt << ")" << sendLog;
 		return -1;

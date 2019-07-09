@@ -196,10 +196,7 @@ class Telescope:public rts2core::Device
 		 */
 		int isGood (struct ln_hrz_posn *hrz)
 		{
-			if (hardHorizon)
-				return hardHorizon->is_good (hrz);
-			else
-				return -1;
+			return hardHorizon.is_good (hrz);
 		}
 
 		void setModel (rts2telmodel::TelModel *_model) { model = _model; calModel->setValueBool (model != NULL); }
@@ -998,7 +995,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Hard horizon. Use it to check if telescope coordinates are within limits.
 		 */
-		ObjectCheck *hardHorizon;
+		ObjectCheck hardHorizon;
 
 		/**
 		 * Telescope parking position.
@@ -1087,6 +1084,11 @@ class Telescope:public rts2core::Device
 		 */
 		virtual void changeIdleMovingTracking () {};
 
+		/**
+		 * @return true if horizon shall be ignored 
+		 */
+		bool getIgnoreHorizon () { return ignoreHorizon->getValueBool (); }
+
 	private:
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
@@ -1096,6 +1098,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDoubleStat *trackingFrequency;
 		rts2core::ValueInteger *trackingFSize;
 		rts2core::ValueFloat *trackingWarning;
+		rts2core::ValueBool *ignoreHorizon;
 		double lastTrackingRun;
 
 		/**
@@ -1408,7 +1411,7 @@ class Telescope:public rts2core::Device
 		void setOri (double obj_ra, double obj_dec, double epoch = 2000.0, double pmRa = 0, double pmDec = 0);
 		bool useOEpoch;
 
-		void resetMpecTLE ();
+		void resetMpecTLE (bool _ignoreHorizon = false);
 
 		double nextCupSync;
 		double lastTrackLog;
@@ -1418,6 +1421,8 @@ class Telescope:public rts2core::Device
 		const char *dut1fn;
 
 		int requestDUT1 ();
+
+		void setIgnoreHorizon (bool newIgnore);
 };
 
 };

@@ -183,6 +183,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		trackingWarning->setValueFloat (1);
 		trackingFSize->setValueInteger (20);
 
+		createValue (ignoreHorizon, "ignore_horizon", "allow telescope to move below horizon", false);
+		ignoreHorizon->setValueBool (true);
+
 		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true, RTS2_DT_DEGREES);
 	}
 	else
@@ -406,7 +409,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	standbyPark->setValueInteger (0);
 
 	horizonFile = NULL;
-	hardHorizon = NULL;
 
 	wcs_multi = '!';
 
@@ -1387,7 +1389,8 @@ int Telescope::init ()
 
 	if (horizonFile)
 	{
-		hardHorizon = new ObjectCheck (horizonFile);
+		if (hardHorizon.loadHorizon (horizonFile))
+			return -1;
 	}
 
 	return 0;
@@ -2027,22 +2030,19 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 	}
 
 	// check if we aren't bellow hard horizon - if yes, stop tracking..
-	if (hardHorizon)
+	struct ln_hrz_posn hrpos;
+	hrpos.alt = telAltAz->getAlt ();
+	hrpos.az = telAltAz->getAz ();
+	if (!hardHorizon.is_good (&hrpos))
 	{
-		struct ln_hrz_posn hrpos;
-		hrpos.alt = telAltAz->getAlt ();
-		hrpos.az = telAltAz->getAz ();
-		if (!hardHorizon->is_good (&hrpos))
-		{
-			int ret = abortMoveTracking ();
-			if (ret <= 0)
-				logStream (MESSAGE_ERROR) << "info retrieved below horizon position, stop move. alt az: " << hrpos.alt << " " << hrpos.az << sendLog;
-		}
-		else
-		{
-			// we are at good position, above horizon
-			telescopeAboveHorizon ();
-		}
+		int ret = abortMoveTracking ();
+		if (ret <= 0)
+			logStream (MESSAGE_ERROR) << "info retrieved below horizon position, stop move. alt az: " << hrpos.alt << " " << hrpos.az << sendLog;
+	}
+	else
+	{
+		// we are at good position, above horizon
+		telescopeAboveHorizon ();
 	}
 
 	return rts2core::Device::info ();
@@ -2322,21 +2322,18 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 	}
 
-	if (hardHorizon)
+	if (!hardHorizon.is_good (&hrztar))
 	{
-		if (!hardHorizon->is_good (&hrztar))
-		{
-			useParkFlipping = false;
-			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrztar) << sendLog;
-			setOri (NAN, NAN);
-			objRaDec->setValueRaDec (NAN, NAN);
-			telTargetRaDec->setValueRaDec (NAN, NAN);
-			stopMove ();
-			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
-			if (conn)
-				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
-			return -1;
-		}
+		useParkFlipping = false;
+		logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrztar) << sendLog;
+		setOri (NAN, NAN);
+		objRaDec->setValueRaDec (NAN, NAN);
+		telTargetRaDec->setValueRaDec (NAN, NAN);
+		stopMove ();
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
+		return -1;
 	}
 
 	//check if decupperlimit option exists -if yes, apply declination constraints
@@ -2703,12 +2700,12 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		return peek (obj_ra, obj_dec) == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
-	else if (conn->isCommand (COMMAND_TELD_ALTAZ))
+	else if (conn->isCommand (COMMAND_TELD_ALTAZ) || conn->isCommand(COMMAND_TELD_ALTAZ_NC))
 	{
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
-		resetMpecTLE ();
+		resetMpecTLE (conn->isCommand (COMMAND_TELD_ALTAZ_NC));
 		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking while in AltAz");
 		return moveAltAz () == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
@@ -2949,11 +2946,13 @@ void Telescope::setOri (double obj_ra, double obj_dec, double epoch, double pmRa
 	pmRaDec->setValueRaDec (pmRa, pmDec);
 }
 
-void Telescope::resetMpecTLE ()
+void Telescope::resetMpecTLE (bool _ignoreHorizon)
 {
 	mpec->setValueString ("");
 	tle_l1->setValueString ("");
 	tle_l2->setValueString ("");
+
+	setIgnoreHorizon (_ignoreHorizon);
 }
 
 void Telescope::updateDUT1 ()
@@ -3000,4 +2999,11 @@ int Telescope::requestDUT1 ()
 	}
 	logStream (MESSAGE_INFO) << "update DUT1 file from the internet" << sendLog;
 	return DEVDEM_OK;
+}
+
+void Telescope::setIgnoreHorizon (bool newIgnore)
+{
+	hardHorizon.setIgnore (newIgnore);
+	ignoreHorizon->setValueBool (newIgnore);
+	sendValueAll (ignoreHorizon);
 }

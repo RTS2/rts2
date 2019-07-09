@@ -103,9 +103,18 @@ int HorizonApp::doProcessing ()
 	hrz.alt = 0;
 
 	if (!horizonFile)
+	{
 		checker = rts2core::Configuration::instance ()->getObjectChecker ();
+	}
 	else
-		checker = new ObjectCheck (horizonFile);
+	{
+		checker = new ObjectCheck ();
+		if (checker->loadHorizon(horizonFile))
+		{
+			std::cerr << "Cannot load horizon file " << horizonFile << std::endl;
+			return -1;
+		}
+	}
 
 	if (op & OP_DUMP)
 	{

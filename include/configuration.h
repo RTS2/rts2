@@ -56,7 +56,6 @@ class Configuration:public IniParser
 		Configuration (bool defaultSection = false);
 
 		/**
-		 * Deletes object checker.
 		 */
 		virtual ~ Configuration (void);
 
@@ -384,7 +383,7 @@ class Configuration:public IniParser
 		float utOffset;
 		double observatoryAltitude;
 		bool storeSexadecimals;
-		ObjectCheck *checker;
+		ObjectCheck checker;
 		int astrometryTimeout;
 		double minFlatHeigh;
 		double calibrationAirmassDistance;

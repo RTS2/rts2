@@ -95,6 +95,11 @@
 #define COMMAND_TELD_ALTAZ      "altaz"
 
 /**
+ * Move telescope to altaz, unset horizon check.
+ */
+#define COMMAND_TELD_ALTAZ_NC   "nc_altaz"
+
+/**
  * Move to MPEC one line element position. @ingroup RTS2Command
  */
 #define COMMAND_TELD_MOVE_MPEC  "move_mpec"
