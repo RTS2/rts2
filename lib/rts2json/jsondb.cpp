@@ -525,6 +525,65 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		jsonObservations (&obss, os);
 
 	}
+	else if (vals[0] == "obytime")
+	{
+		rts2db::ObservationSet obss = rts2db::ObservationSet ();
+		rts2db::MessageSet msgs = rts2db::MessageSet ();
+		time_t t_start = params->getInteger ("t_start", -1);
+		time_t t_end = params->getInteger ("t_end", -1);
+		const char *night = params->getString ("night", NULL);
+		int messageMask = params->getInteger ("msg_mask", MESSAGE_REPORTIT);
+
+		// Logic is the same as in rts2-nightreport, e.g. given night or night of last observations,
+		if (night)
+		{
+			struct ln_date *tm_night = new struct ln_date;
+			parseDate (night, tm_night);
+			Rts2Night tnight (tm_night, rts2core::Configuration::instance ()->getObserver ());
+			t_start = *(tnight.getFrom ());
+			t_end = *(tnight.getTo ());
+		}
+		else if (t_start < 0 && t_end < 0)
+		{
+			int lastobs = rts2db::lastObservationId ();
+
+			if (lastobs > -1)
+			{
+				rts2db::Observation obs (lastobs);
+				obs.load ();
+				time_t ts = obs.getObsStart ();
+				ts = rts2core::Configuration::instance ()->getNight (ts);
+				Rts2Night tnight (ln_get_julian_from_timet (&ts), rts2core::Configuration::instance ()->getObserver ());
+				t_start = *(tnight.getFrom ());
+				t_end = *(tnight.getTo ());
+			}
+		}
+
+		obss.loadTime (&t_start, &t_end);
+		msgs.load (t_start, t_end, messageMask);
+
+		jsonObservations (&obss, os);
+
+		os << ",\"messages\":{";
+		os << "\"h\":["
+			"{\"n\":\"Time\",\"t\":\"t\",\"c\":0},"
+			"{\"n\":\"Component\",\"t\":\"s\",\"c\":1},"
+			"{\"n\":\"Type\",\"t\":\"n\",\"c\":2},"
+			"{\"n\":\"Text\",\"t\":\"s\",\"c\":3}],"
+			"\"d\":[";
+
+		for (rts2db::MessageSet::iterator iter = msgs.begin (); iter != msgs.end (); iter++)
+		{
+			if (iter != msgs.begin ())
+				os << ",";
+			os << "[" << iter->getMessageTime () << ",\"" << JsonString (iter->getMessageOName ()) << "\"," << iter->getType () << ",\"" << JsonString (iter->getMessageString ()) << "\"]";
+		}
+		os << "]";
+		os << "}";
+
+
+		os << ",\"time_from\":" << t_start << ",\"time_to\":" << t_end;
+	}
 	else if (vals[0] == "lastobs")
 	{
 		rts2db::Observation obs;
@@ -945,22 +1004,33 @@ void JSONDBRequest::jsonObservations (rts2db::ObservationSet *obss, std::ostream
 		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":2},"
 		"{\"n\":\"End\",\"t\":\"tT\",\"c\":3},"
 		"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":4},"
-		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":5}"
+		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":5},"
+		"{\"n\":\"Target ID\",\"t\":\"a\",\"c\":6,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\"},"
+		"{\"n\":\"Target Name\",\"t\":\"a\",\"c\":7},"
+		"{\"n\":\"RA\",\"t\":\"r\",\"c\":8},"
+		"{\"n\":\"Dec\",\"t\":\"d\",\"c\":9}"
 		"],\"d\":[";
 
 	os << std::fixed;
 
 	for (rts2db::ObservationSet::iterator iter = obss->begin (); iter != obss->end (); iter++)
 	{
+		struct ln_equ_posn equ;
+		iter->getTarget ()->getPosition (&equ);
+
 		if (iter != obss->begin ())
 			os << ",";
 		os << "[" << iter->getObsId () << ","
-			<< rts2json::JsonDouble(iter->getObsSlew ()) << ","
-			<< rts2json::JsonDouble(iter->getObsStart ()) << ","
-			<< rts2json::JsonDouble(iter->getObsEnd ()) << ","
-			<< iter->getNumberOfImages () << ","
-			<< iter->getNumberOfGoodImages ()
-			<< "]";
+		   << rts2json::JsonDouble(iter->getObsSlew ()) << ","
+		   << rts2json::JsonDouble(iter->getObsStart ()) << ","
+		   << rts2json::JsonDouble(iter->getObsEnd ()) << ","
+		   << iter->getNumberOfImages () << ","
+		   << iter->getNumberOfGoodImages () << ","
+		   << iter->getTarget ()->getTargetID () << ","
+		   << "\"" << rts2json::JsonString (iter->getTarget ()->getTargetName ()) << "\","
+		   << rts2json::JsonDouble (equ.ra) << ","
+		   << rts2json::JsonDouble (equ.dec)
+		   << "]";
 	}
 
 	os << "]";
