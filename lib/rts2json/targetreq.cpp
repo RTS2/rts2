@@ -870,7 +870,7 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 	std::ostringstream _os;
 
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
+	int pagesiz = params->getInteger ("s", 400);
 
 	if (pageno <= 0)
 		pageno = 1;

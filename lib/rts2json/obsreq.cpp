@@ -63,7 +63,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 		throw XmlRpc::XmlRpcException ("Cannot load observation");
 
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
+	int pagesiz = params->getInteger ("s", 400);
 
 	if (pageno <= 0)
 		pageno = 1;

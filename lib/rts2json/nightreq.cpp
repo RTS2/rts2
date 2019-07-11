@@ -128,7 +128,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	printHeader (_os, title.str ().c_str ());
 
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
+	int pagesiz = params->getInteger ("s", 400);
 
 	if (pageno <= 0)
 		pageno = 1;
