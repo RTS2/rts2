@@ -909,6 +909,14 @@ void Executor::clearNextTargets ()
 	sendValueAll (next_id);
 	sendValueAll (next_name);
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
+
+	// switch auto loop back to default value
+	if (autoLoop->getValueBool () != defaultAutoLoop->getValueBool ())
+	{
+		logStream (MESSAGE_INFO) << "resetting auto_loop back to " << defaultAutoLoop->getValueBool () << sendLog;
+		autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
+		sendValueAll (autoLoop);
+	}
 }
 
 void Executor::doSwitch ()
@@ -937,6 +945,7 @@ void Executor::doSwitch ()
 		currentTarget = NULL;
 		current_plan_id->setValueInteger (-1);
 	}
+
 	if (getActiveQueue ()->size () != 0)
 	{
 		// go to post-process
@@ -952,9 +961,6 @@ void Executor::doSwitch ()
 				processTarget (currentTarget);
 				currentTarget = getActiveQueue ()->front ().target;
 			}
-			// switch auto loop back to true
-			autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
-			sendValueAll (autoLoop);
 		}
 		else
 		{

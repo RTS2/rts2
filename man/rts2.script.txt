@@ -227,6 +227,10 @@ tarboost {seconds} {bonus}::
     can be changed by linkman:rts2-target[1] command executed with -b
     and -t options.
 
+loopdisable::
+    Disable looping of current obbservation. After the observation end, auto_loop
+    variable in executor will be re-set to default_auto_loop value.
+
 Communication with executable
 -----------------------------
     If you use *exe* command in scripting, the script should communicate with

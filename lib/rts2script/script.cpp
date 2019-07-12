@@ -665,13 +665,17 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new ElementTempDisable (this, target, distime);
 	}
-	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
+	else if (!strcmp (commandStart, COMMAND_TARGET_BOOST))
 	{
 		int seconds;
 		int bonus;
 		if (getNextParamInteger (&seconds) || getNextParamInteger (&bonus))
 			return NULL;
 		return new ElementTarBoost (this, target, seconds, bonus);
+	}
+	else if (!strcmp (commandStart, COMMAND_LOOP_DISABLE))
+	{
+		return new ElementLoopDisable (this);
 	}
 	else if (!strcmp (commandStart, COMMAND_HEX))
 	{

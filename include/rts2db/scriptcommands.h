@@ -1,4 +1,4 @@
-/* 
+/*
  * Commands which can be used in scripts
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -71,4 +71,7 @@
 #define COMMAND_TARGET_DISABLE  "tardisable"
 #define COMMAND_TAR_TEMP_DISAB  "tempdisable"
 #define COMMAND_TARGET_BOOST    "tarboost"
+
+#define COMMAND_LOOP_DISABLE    "loopdisable"
+
 #endif							 /* !__RTS2_SCRIPTCOMMANDS__ */

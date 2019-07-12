@@ -516,5 +516,17 @@ class ElementCommand:public Element
 };
 
 
+class ElementLoopDisable:public Element
+{
+	public:
+		ElementLoopDisable (Script * in_script):Element (in_script) {}
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "disable looping"; }
+		virtual void printXml (std::ostream &os) { os << "  <loopdisable>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_LOOP_DISABLE; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_LOOP_DISABLE << "\""; };
+};
+
 }
 #endif							 /* !__RTS2_SCRIPTELEMENT__ */

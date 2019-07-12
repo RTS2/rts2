@@ -589,3 +589,15 @@ void ElementCommand::printJson (std::ostream &os)
 	}
 	os << "]";
 }
+
+int ElementLoopDisable::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	Value *val = script->getMaster ()->getValue (".", "auto_loop");
+
+	if (val) {
+		logStream (MESSAGE_INFO) << "disabling auto_loop for current observation due to loopdisable command" << sendLog;
+		((rts2core::ValueBool *)val)->setValueBool (false);
+	}
+
+	return NEXT_COMMAND_NEXT;
+}
