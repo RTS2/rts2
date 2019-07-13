@@ -1,4 +1,4 @@
-/* 
+/*
  * dome driver skeleton.
  * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -124,7 +124,7 @@ int Dome::domeOpenStart ()
 
 	if (startOpen ())
 	{
-	  	logStream (MESSAGE_ERROR) << "opening of the dome failed" << sendLog;
+	  	logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "opening of the dome failed" << sendLog;
 		return -1;
 	}
 
@@ -254,7 +254,7 @@ int Dome::checkOpening ()
 			else
 			{
 				maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSED | DEVICE_BLOCK_OPEN, "dome closed");
-				logStream (MESSAGE_INFO) << "dome closed" << sendLog;
+				logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "dome closed" << sendLog;
 			}
 		}
 	}
@@ -275,7 +275,7 @@ int Dome::idle ()
 			setMasterOn ();
 		}
 	}
-	else 
+	else
 	{
 		int ret;
 		ret = closeDomeWeather ();
