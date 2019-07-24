@@ -946,6 +946,15 @@ void Executor::doSwitch ()
 		current_plan_id->setValueInteger (-1);
 	}
 
+	// switch auto loop back to default value
+	// FIXME: the same code as in clearNextTargets, probably refactor it to some function?..
+	if (autoLoop->getValueBool () != defaultAutoLoop->getValueBool ())
+	{
+		logStream (MESSAGE_INFO) << "resetting auto_loop back to " << defaultAutoLoop->getValueBool () << sendLog;
+		autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
+		sendValueAll (autoLoop);
+	}
+
 	if (getActiveQueue ()->size () != 0)
 	{
 		// go to post-process
