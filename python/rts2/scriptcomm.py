@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # RTS2 script communication
 # (C) 2009,2010 Petr Kubanek <petr@kubanek.net>
@@ -107,12 +107,22 @@ class Rts2Comm:
 		else:
 			print('G {0} {1}'.format(device,value))
 		sys.stdout.flush()
-		return self.readline()
+
+		value = self.readline()
+		if value == 'ERR':
+			return None
+		else:
+			return value
 
 	def getOwnValue(self, value):
 		print('get_own {0}'.format(value))
 		sys.stdout.flush()
-		return self.readline()
+
+		value = self.readline()
+		if value == 'ERR':
+			return None
+		else:
+			return value
 
 	def getLoopCount(self):
 		print('loopcount')
@@ -128,10 +138,15 @@ class Rts2Comm:
 
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
-		return float(self.getValue(value,device).split(" ")[0])
+		value = self.getValue(value,device)
+		if value is None:
+			return None
+		return float(value.split(" ")[0])
 
 	def getValueInteger(self,value,device = None):
 		val = self.getValue(value,device)
+		if value is None:
+			return None
 		if val[0:2] == "0x":
 			vals = val.split()[0:2]
 			if len(vals[0]) > 2:
@@ -147,7 +162,7 @@ class Rts2Comm:
 		else:
 			print("V {0} {1} += {2}".format(device,name,new_value))
 		sys.stdout.flush()
-	
+
 	def incrementValueType(self,device,name,new_value):
 		print("VT {0} {1} += {2}".format(device,name,new_value))
 		sys.stdout.flush()
@@ -184,6 +199,11 @@ class Rts2Comm:
 		print("target_tempdisable {0}".format(ti))
 		sys.stdout.flush()
 
+	def loopDisable(self):
+		"""Temporarily disable looping in executor."""
+		print("loop_disable")
+		sys.stdout.flush()
+
 	def endScript(self):
 		"""Ask controlling process to end the current script."""
 		print("end_script")
@@ -194,7 +214,7 @@ class Rts2Comm:
 		print('S {0}'.format(device))
 		sys.stdout.flush()
 		return int(self.readline())
-	
+
 	def waitIdle(self,device,timeout):
 		"""Wait for idle state (with timeout)"""
 		print('waitidle {0} {1}'.format(device,timeout))
@@ -262,7 +282,7 @@ class Rts2Comm:
 	def radec(self,ra,dec):
 		print("radec {0} {1}".format(ra,dec))
 		sys.stdout.flush()
-	
+
 	def newObs(self,ra,dec):
 		print("newobs {0} {1}".format(ra,dec))
 		sys.stdout.flush()
@@ -290,7 +310,7 @@ class Rts2Comm:
 		print("move",imagename, pattern)
 		sys.stdout.flush()
 		return self.readline()
-	
+
 	def toFlat(self,imagename):
 		return self.__imageAction("flat",imagename)
 
@@ -304,12 +324,12 @@ class Rts2Comm:
 	def toTrash(self,imagename):
 		"""Move image at path to trash. Return new image path."""
 		return self.__imageAction("trash",imagename)
-	
+
 	def delete(self,imagename):
 		"""Delete image from disk."""
 		print("delete",imagename)
 		sys.stdout.flush()
-	
+
 	def process(self,imagename):
 		"""Put image to image processor queue."""
 		print("process",imagename)
@@ -344,7 +364,7 @@ class Rts2Comm:
 		"""Add to device integer writable variable."""
 		print("integer_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
-	
+
 	def stringValue(self,name,desc,value):
 		"""Add to device string value."""
 		print("string",name,'"{0}"'.format(desc),value)
@@ -397,12 +417,12 @@ class Rts2Comm:
 		print("stat_add",name,'"{0}"'.format(desc),num,value)
 		sys.stdout.flush()
 
-	def log(self,level, text):
+	def log(self,level, *text):
 		if self.__log_device:
-			text = self.getRunDevice() + ' ' + text
-		print("log",level,text)
+			text = (self.getRunDevice(),) + text
+		print("log",level,*text)
 		sys.stdout.flush()
-	
+
 	def isEvening(self):
 		"""Returns true if is evening - sun is on West"""
 		sun_az = self.getValueFloat('sun_az','centrald')

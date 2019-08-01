@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+#
+# Script for experimenting with different autofocusing algorithms
+#
+# You will need following python packages: numpy astropy sep
+
+from __future__ import print_function
+
+import sys, posixpath, glob
+
+from rts2.focusestimator import FocusEstimator
+
+if __name__ == '__main__':
+	from optparse import OptionParser
+
+	parser = OptionParser(usage='usage: %prog [options] arg')
+	parser.add_option('-e', '--exposure', help='Exposure', action='store', dest='exposure', type='float', default=1)
+	parser.add_option('-s', '--step', help='Step', action='store', dest='step', type='float', default=10)
+	parser.add_option('-n', '--nsteps', help='Number of steps', action='store', dest='nsteps', type='int', default=20)
+	parser.add_option('-f', '--focuser', help='Focuser to use', action='store', dest='focuser', type='string', default='F0')
+	parser.add_option('-d', '--dir', help='Process already acquired data from given directory', action='store', dest='dir', type='string', default=None)
+	parser.add_option('-v', '--verbose', help='Verbose output', action='store_true', dest='verbose', default=False)
+	(options,args) = parser.parse_args()
+
+	if options.dir:
+		# Offline mode
+		files = sorted(glob.glob(posixpath.join(options.dir, '*.fits')))
+		estimator = FocusEstimator(files, verbose=options.verbose)
+
+		print('Best focus is at %g' % estimator.getBestFocus())
+
+	else:
+		# RTS2 script mode
+		from rts2 import scriptcomm
+
+		comm = scriptcomm.Rts2Comm()
+
+		comm.loopDisable()
+
+		# Try to use some values from the camera variables
+		focuser = comm.getValue('focuser') or options.focuser
+		exptime = comm.getValueFloat('AF_exptime', focuser) or options.exposure
+		step = comm.getValueFloat('AF_step', focuser) or options.step
+		nsteps = comm.getValueFloat('AF_attempts', focuser) or options.nsteps
+
+		comm.log('I', 'focusing run on %s, %d steps x %d pts with %g exposure' % (focuser, nsteps, step, exptime))
+
+		comm.setValue('exposure', exptime)
+		comm.setValue('SHUTTER', 'LIGHT')
+
+		delta = 0
+		for niter in [0,1]:
+			toff = -0.5 * step * nsteps + delta
+			comm.setValue('FOC_TOFF', toff, focuser)
+
+			def beforeFn():
+				# Will be run after exposure and before readout
+				comm.setValue('FOC_TOFF', toff + step, focuser)
+
+			files = [] # Should we try to re-use files from previous iteration?..
+
+			# Acquire the measurements and collect image filenames
+			for _ in range(nsteps):
+				filename = comm.exposure(beforeFn, '%b/focusing/%N/%o/%f')
+				comm.log('I', '%d : %g : %s' % (_, toff, filename))
+				if filename:
+					files.append(filename)
+
+				toff += step
+
+			# Process acquired filenames and estimate best focus
+			estimator = FocusEstimator(files, verbose=options.verbose, print_fn=lambda *args: comm.log('I',*args))
+			bestPos = estimator.getBestFocus()
+			comm.log('I', 'best focus is %g, refinement %s' % (bestPos, 'needed' if estimator.shouldRefine else 'not needed'))
+
+			if estimator.shouldRefine:
+				delta = bestPos - comm.getValueFloat('FOC_DEF', focuser)
+				comm.log('I', 'Adjusting focusing position by %g' % delta)
+			else:
+				comm.log('I', 'Applying this value to FOC_DEF')
+				comm.setValue('FOC_DEF', bestPos, focuser)
+				break
+
+		if estimator.shouldRefine:
+			comm.log('E', 'Focusing unsuccessful')
