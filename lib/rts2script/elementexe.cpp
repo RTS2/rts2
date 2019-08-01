@@ -20,6 +20,7 @@
 #include "elementexe.h"
 #include "rts2script/execcli.h"
 #include "rts2script/script.h"
+#include "daemon.h"
 
 #define DEBUG_EXE
 
@@ -437,6 +438,16 @@ void ConnExecute::processCommand (char *cmd)
 		now += ti;
 		masterElement->getTarget ()->setNextObservable (&now);
 		masterElement->getTarget ()->save (true);
+	}
+	else if (!strcmp (cmd, "loop_disable"))
+	{
+		Value *val = getMaster ()->getValue (".", "auto_loop");
+
+		if (val) {
+			logStream (MESSAGE_INFO) << "disabling auto_loop for current observation due to loopdisable command" << sendLog;
+			((rts2core::ValueBool *)val)->setValueBool (false);
+			((rts2core::Daemon *)getMaster ())->sendValueAll (val);
+		}
 	}
 	else if (!strcmp (cmd, "loopcount"))
 	{
