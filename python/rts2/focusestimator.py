@@ -30,6 +30,20 @@ import sep
 
 from scipy.interpolate import UnivariateSpline
 
+# Cropping of overscans if any
+def parse_det(string):
+    x0,x1,y0,y1 = [int(_)-1 for _ in sum([_.split(':') for _ in string[1:-1].split(',')], [])]
+
+    return x0,x1,y0,y1
+
+def crop_overscans(image, header):
+	if not header.get('DATASEC'):
+		return image
+
+	x1,x2,y1,y2 = parse_det(header.get('DATASEC'))
+
+	return np.ascontiguousarray(image[y1:y2+1, x1:x2+1])
+
 # Smoothing kernel to improve the detection of objects
 def make_kernel(r0=1.0):
 	x,y = np.mgrid[np.floor(-3.0*r0):np.ceil(3.0*r0+1), np.floor(-3.0*r0):np.ceil(3.0*r0+1)]
@@ -67,7 +81,7 @@ def get_objects_fwhm(image, mask=None, r0=0.5, thresh=2.0, minnthresh=2, minarea
 
 class FocusEstimator:
 	"""Processing sequences of focusing data to derive optimal focus position"""
-	def __init__(self, files=None, verbose=True, print_fn=None):
+	def __init__(self, files=None, verbose=True, print_fn=print):
 		self._verbose = verbose
 		self._print_fn = print_fn
 
@@ -77,6 +91,8 @@ class FocusEstimator:
 			self.processFiles(files)
 
 	def init(self):
+		self.images = []
+		self.headers = []
 		self.filenames = []
 		self.focpos = []
 
@@ -86,6 +102,7 @@ class FocusEstimator:
 		self.valFFT = []
 
 		self.shouldRefine = False
+		self.fitFailed = False
 		self.bestPos = None
 
 	def log(self, *args):
@@ -122,6 +139,8 @@ class FocusEstimator:
 			if ccdname is not None and header.get('CCD_NAME') != ccdname:
 				continue
 
+			image = crop_overscans(image, header)
+
 			pos = header.get(focpos_key)
 
 			if len(self.focpos) > 0 and self.focpos[-1] > pos:
@@ -149,6 +168,8 @@ class FocusEstimator:
 			if verbose:
 				self.log('%d: %g %g %g %g' % (pos, value_FWHM, value_NumStars, value_Std, value_FFT))
 
+			self.images.append(image)
+			self.headers.append(dict(header))
 			self.filenames.append(filename)
 			self.focpos.append(pos)
 
@@ -159,15 +180,19 @@ class FocusEstimator:
 
 		self.log('Acquired %d focusing points from %d files' % (len(self.focpos), len(files)))
 
-		self.filenames, self.focpos, self.valFWHM, self.valNumStars, self.valStd, self.valFFT = [np.array(_) for _ in self.filenames, self.focpos, self.valFWHM, self.valNumStars, self.valStd, self.valFFT]
+		# Convert everything to NumPy arrays for convenience
+		self.images, self.headers, self.filenames, self.focpos, self.valFWHM, self.valNumStars, self.valStd, self.valFFT = [np.array(_) for _ in self.images, self.headers, self.filenames, self.focpos, self.valFWHM, self.valNumStars, self.valStd, self.valFFT]
 
 	def getBestFocus(self, estimator='nstars', fitter='spline'):
-		"""Analyze the focus quality estimations and get the best value"""
+		"""
+		Analyze the focus quality estimations and get the best value.
+		"""
 		if not len(self.focpos):
 			self.log('Not enough points for focus estimation')
 			return None
 
 		self.shouldRefine = False
+		self.fitFailed = False
 
 		bestPos = None
 
@@ -179,6 +204,9 @@ class FocusEstimator:
 			val = self.valStd
 		else:
 			val = self.valFFT
+
+		self.estimator = estimator
+		self.fitter = fitter
 
 		# Peak position in raw data
 		midx = np.where(val == np.max(val))[0][0]
@@ -196,7 +224,7 @@ class FocusEstimator:
 
 		else:
 			# Smoothing spline maximum
-			spl = UnivariateSpline(self.focpos, (1.0*val - np.min(val))/(np.max(val) - np.min(val)), s=0.001)
+			spl = UnivariateSpline(self.focpos, (1.0*val - np.min(val))/(np.max(val) - np.min(val)), s=0.01)
 			x = np.linspace(np.min(self.focpos), np.max(self.focpos), 500)
 			y = spl(x)
 
