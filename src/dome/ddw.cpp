@@ -81,8 +81,7 @@ class DDW:public Cupola
 		rts2core::ValueInteger *dticks;
 
 		void setAzimuthTicks(int adaz) { setCurrentAz(getTargetAzFromDomeAz(359*(double)(adaz)/(double)(dticks->getValueInteger())), true); }
-
-		long AzDomeOffsetCoeff[2][3];
+	
 		
 };
 
@@ -104,14 +103,7 @@ DDW::DDW (int argc, char **argv):Cupola (argc, argv)
 
 	createValue(dticks, "dticks", "number of azimuth ticks", false);
 
-	// Azimuth Dome offset coefficients derived for Lowell TiMo
-	// using offset(az) = [1]*sin(az+[2])+[3]
-	AzDomeOffsetCoeff[1][1] = 4.2772;
-	AzDomeOffsetCoeff[1][2] = -21.510;
-	AzDomeOffsetCoeff[1][3] = 11.053;	
-	AzDomeOffsetCoeff[2][1] = 8.247;
-	AzDomeOffsetCoeff[2][2] = -4.908;
-	AzDomeOffsetCoeff[2][3] = 20.234;
+
 }
 
 DDW::~DDW ()
