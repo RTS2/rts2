@@ -51,6 +51,13 @@ class Planewave:public Telescope
 		virtual int isParking();
 		virtual int endPark();
 
+		virtual int setTracking(int track, bool addTrackingTimer=false, bool send=true);
+		virtual void startTracking();
+		virtual void stopTracking();
+
+	protected:
+		virtual int processOption(int in_opt);
+
 		virtual int setTracking(int, bool, bool);
 	   
 	private:
@@ -114,6 +121,79 @@ Planewave::~Planewave(void)
 	endPark();
 }
 
+size_t PlaneWave::curl_parser(void *contents, size_t size, size_t nmemb, std::string *s)
+{
+	size_t newlength = size*nmemb;
+
+	try 
+	{
+		s->append((char*)contents, newlength);
+	}
+	catch(std::bad_alloc &e)
+	{
+		return 0;
+	}
+
+	return newlength;
+
+}
+
+int  PlaneWave::mountstatus_parser(std::string s)
+{
+	float ra_j2000_h;
+	
+	// strip off lines unrelated to mount
+	unsigned first = s.find("mount");
+	unsigned last = s.find("focuser");
+	std::string sCleaned = s.substr(first, last-first);
+
+	// replace strings with integers where applicable
+	size_t pos = 0;
+    while ((pos = sCleaned.find("true", pos)) != std::string::npos)
+	{
+         sCleaned.replace(pos, 4, "1");
+         pos += 1;
+	}
+	pos = 0;
+    while ((pos = sCleaned.find("false", pos)) != std::string::npos)
+	{
+         sCleaned.replace(pos, 5, "0");
+         pos += 1;
+	}
+
+	sscanf(sCleaned.c_str(), "mount.is_connected=%d\nmount.geometry=%f\n"
+	        "mount.ra_apparent_hours=%f\nmount.dec_apparent_degs=%f\n"
+		"mount.ra_j2000_hours=%f\nmount.dec_j2000_degs=%f\n"
+		"mount.azimuth_degs=%f\nmount.altitude_degs=%f\n"
+		"mount.is_slewing=%d\nmount.is_tracking=%d\n"
+		"mount.field_angle_here_degs=%f\n"
+		"mount.field_angle_at_target_degs=%f\n"
+		"mount.field_angle_rate_at_target_degs_per_sec=%f\n"
+		"mount.path_angle_at_target_degs=%f\n"
+		"mount.path_angle_rate_at_target_degs_per_sec=%f\n"
+		"mount.axis0.is_enabled=%d\nmount.axis0.rms_error_arcsec=%f\n"
+		"mount.axis0.dist_to_target_arcsec=%f\n"
+		"mount.axis0.servo_error_arcsec=%f\nmount.axis0.position_degs=%f\n"
+		"mount.axis1.is_enabled=%d\nmount.axis1.rms_error_arcsec=%f\n"
+		"mount.axis1.dist_to_target_arcsec=%f\n"
+		"mount.axis1.servo_error_arcsec=%f\nmount.axis1.position_degs=%f\n"
+		"mount.model.filename=%s\n"
+		"mount.model.num_points_total=%f\n"
+		"mount.model.num_points_enabled=%f\nmount.model.rms_error_arcsec=%f",
+		&is_connected, &geometry, &ra_apparent_h, &dec_apparent_d, &ra_j2000_h, 
+		&dec_j2000_d, &azimuth, &altitude, &is_slewing, &is_tracking, &field_angle_local, 
+		&field_angle_target, &field_anglerate, &path_angle_target, &path_anglerate, 
+		&axis0_is_enabled, &axis0_rms_error_arcsec, &axis0_dist_to_target_arcsec, 
+		&axis0_err, &axis0_position, &axis1_is_enabled, &axis1_rms_error_arcsec, 
+		&axis1_dist_to_target_arcsec, &axis1_err, &axis1_position, pointmodel_used, 
+		&model_numpoints_total, &model_numpoints_enabled, &model_rms_error);
+
+	// convert ra from hours to degs
+	ra_j2000_d = floor(ra_j2000_h)*15+(ra_j2000_h-floor(ra_j2000_h))*15;
+	
+	return 0;
+
+}
 
 int Planewave::initValues()
 {
@@ -195,6 +275,41 @@ int Planewave::init()
 	
 	// now, the telescope is ready for operations
 
+	// enable el axis
+	ret = send_command("mount/enable?axis=1");
+    usleep(USEC_SEC * 1);
+	info();
+	if (axis1_is_enabled != 1)
+	{
+		logStream (MESSAGE_ERROR) << "could not enable axis 1" <<
+			sendLog;	
+		return -1;
+	}
+	logStream (MESSAGE_INFO) << "el axis enabled" << sendLog;	
+
+	// home telescope
+	ret = send_command("mount/find_home");
+    usleep(USEC_SEC * 20);
+	logStream (MESSAGE_INFO) << "homing telescope" << sendLog;	
+
+	// load pointing model
+	char cmdbuffer[120];
+	sprintf(cmdbuffer, "mount/model/load?filename=%s", pointmodel_filename);
+	ret = send_command(cmdbuffer);
+	logStream (MESSAGE_INFO) << "loading pointing model" << sendLog;	
+
+	// send telescope to park position
+	startPark();
+	while (1)
+	{
+		if (isParking() == -2)
+			break;
+		usleep(USEC_SEC);
+	}
+	logStream (MESSAGE_INFO) << "mount is in park position" << sendLog;
+	
+	// now, the telescope is ready for operations
+	
 	return 0;
 }
 
