@@ -494,6 +494,34 @@ void ConnSerial::setDSR ()
 #endif
 }
 
+
+void ConnSerial::switchRTS()
+{
+    int ret;
+	// get current state of control signals
+    ioctl(sock, TIOCMGET, &ret);
+
+	if (ret & TIOCM_RTS)
+	{
+		//printf("TIOCM_RTS is currently not set\n");
+		ret &= ~TIOCM_RTS;
+	}
+	else
+	{
+		//printf("TIOCM_RTS is currently set\n");
+		ret |= TIOCM_RTS;
+	}
+		
+	//ret &= ~TIOCM_RTS;
+	ioctl(sock, TIOCMSET, &ret);
+
+	// if (ret & TIOCM_RTS)
+	// 	printf("TIOCM_RTS is now not set\n");
+	// else
+	// 	printf("TIOCM_RTS is now set\n");
+}
+
+
 std::string ConnSerial::getModemBits ()
 {
 	int flags;
