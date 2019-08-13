@@ -99,6 +99,10 @@ int DeviceDb::initDB (const char *conn_name)
 	}
 
 	if (connectString && strlen(connectString) == 0)
+	{
+		logStream (MESSAGE_WARNING) << "starting without DB" << sendLog;
+		return 0;
+	}
 
 	if (rts2db::connectToDb (connectString, conn_name))
 		return -1;
@@ -137,11 +141,6 @@ int rts2db::connectToDb (char *connectString, const char *conn_name)
 
 	if (connectString)
 	{
-		if (strlen(connectString) == 0)
-		{
-			logStream (MESSAGE_WARNING) << "starting without DB" << sendLog;
-			return 0;
-		}
 		c_db = connectString;
 	}
 	else
