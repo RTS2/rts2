@@ -19,6 +19,7 @@
 
 #include "rts2db/sqlerror.h"
 #include "rts2db/target_auger.h"
+#include "rts2db/devicedb.h"
 
 #include "configuration.h"
 #include "timestamp.h"
@@ -186,6 +187,9 @@ TargetAuger::~TargetAuger (void)
 
 void TargetAuger::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id;
 	double d_auger_date;
@@ -255,6 +259,9 @@ void TargetAuger::getPosition (struct ln_equ_posn *pos, double JD)
 
 void TargetAuger::load (int auger_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id = auger_id;
 	double d_auger_date;
@@ -586,6 +593,9 @@ void TargetAuger::load (int auger_id)
 
 void TargetAuger::loadByOid (int _obs_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_obs_id = _obs_id;
 	int db_auger_t3id;
@@ -718,6 +728,9 @@ float TargetAuger::getBonus (double JD)
 
 moveType TargetAuger::afterSlewProcessed ()
 {
+	if (checkDbConnection ())
+		return OBS_MOVE_FAILED;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
 		int d_auger_t3id = t3id;

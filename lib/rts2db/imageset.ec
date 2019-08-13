@@ -1,4 +1,4 @@
-/* 
+/*
  * Set of images.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -21,6 +21,7 @@
 
 #include "rts2db/imageset.h"
 #include "rts2db/observation.h"
+#include "rts2db/devicedb.h"
 #include "rts2fits/dbfilters.h"
 
 #include <sstream>
@@ -45,6 +46,9 @@ ImageSet::~ImageSet (void)
 
 int ImageSet::load (std::string in_where)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	char *stmp_c;
 
@@ -79,7 +83,7 @@ int ImageSet::load (std::string in_where)
 	EXEC SQL END DECLARE SECTION;
 
 	std::ostringstream _os;
-	
+
 	_os << "SELECT "
 		"tar_id,"
 		"img_id,"

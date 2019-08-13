@@ -21,6 +21,7 @@
 
 #include "configuration.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2sched;
 
@@ -44,6 +45,9 @@ Ticket::Ticket (int _schedTicketId, rts2db::Target *_target, int _accountId, uns
 
 void Ticket::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_schedticket_id;
 		int d_tar_id;

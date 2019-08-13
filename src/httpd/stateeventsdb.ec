@@ -1,4 +1,4 @@
-/* 
+/*
  * State changes databse infrastructure.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -20,6 +20,7 @@
 #include "httpd.h"
 
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 EXEC SQL include sqlca;
 
@@ -27,6 +28,9 @@ using namespace rts2xmlrpc;
 
 void StateChangeRecord::run (HttpD *_master, rts2core::Connection *_conn, double validTime)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = dbValueId;
 	VARCHAR db_device_name[25];
@@ -62,7 +66,7 @@ void StateChangeRecord::run (HttpD *_master, rts2core::Connection *_conn, double
 			}
 		}
 	}
-	
+
 	db_value = _conn->getState () & getChangeMask ();
 	EXEC SQL INSERT INTO records_state
 	VALUES

@@ -24,6 +24,7 @@
 
 #include "rts2script/script.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include <libnova/libnova.h>
 
@@ -180,6 +181,9 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 // enable targets which become observable
 void Selector::checkTargetObservability ()
 {
+	if (rts2db::checkDbConnection ())
+		return;
+
 	EXEC SQL
 		UPDATE
 			targets
@@ -193,6 +197,9 @@ void Selector::checkTargetObservability ()
 // drop old priorities..
 void Selector::checkTargetBonus ()
 {
+	if (rts2db::checkDbConnection ())
+		return;
+
 	EXEC SQL
 		UPDATE
 			targets
@@ -207,6 +214,9 @@ void Selector::checkTargetBonus ()
 
 void Selector::findNewTargets ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int consider_tar_id;
 	char consider_type_id;

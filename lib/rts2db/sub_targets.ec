@@ -1,4 +1,4 @@
-/* 
+/*
  * Various targets classes.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -26,6 +26,7 @@
 #include "rts2db/plan.h"
 #include "rts2db/target.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include <iomanip>
 #include <sstream>
@@ -56,6 +57,9 @@ ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in
 
 void ConstTarget::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_ra;
 	double d_dec;
@@ -110,6 +114,9 @@ void ConstTarget::load ()
 
 int ConstTarget::saveWithID (bool overwrite, int tar_id)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_tar_ra;
 	double d_tar_dec;
@@ -176,6 +183,9 @@ int ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 
 int ConstTarget::selectedAsGood ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = target_id;
 		double d_tar_ra;
@@ -224,7 +234,7 @@ void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 	_os
-		<< InfoVal <LibnovaDegArcMin> ("PROPER MOTION RA", LibnovaDegArcMin (proper_motion.ra)) 
+		<< InfoVal <LibnovaDegArcMin> ("PROPER MOTION RA", LibnovaDegArcMin (proper_motion.ra))
 		<< InfoVal <LibnovaDegArcMin> ("PROPER MOTION DEC", LibnovaDegArcMin (proper_motion.dec));
 }
 
@@ -308,6 +318,9 @@ bool FlatTarget::getScript (const char *deviceName, std::string &buf)
 // will refer to that id, not to generic flat target_id
 void FlatTarget::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_tar_ra;
 		double d_tar_dec;
@@ -424,6 +437,9 @@ CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_ob
 // for frames with astrometry which contains targeted airmass
 void CalibrationTarget::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_airmass_start;
 	double d_airmass_end;
@@ -693,6 +709,9 @@ ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in
 
 void ModelTarget::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getTargetID ();
 	float d_alt_start;
@@ -773,6 +792,9 @@ ModelTarget::~ModelTarget (void)
 
 int ModelTarget::writeStep ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = getTargetID ();
 		int d_step = step;
@@ -860,6 +882,9 @@ int ModelTarget::beforeMove ()
 
 moveType ModelTarget::afterSlewProcessed ()
 {
+	if (checkDbConnection ())
+		return OBS_MOVE_FAILED;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id;
 	int d_step = step;
@@ -942,7 +967,7 @@ float OportunityTarget::getBonus (double JD)
 	// do not observe if already observed between 1h and 3h from now
 	if (lastObs > 3600 && lastObs < (3 * 3600))
 		retBonus -= log (lastObs / 3600) * 50;
-	// do not observe if observed during last 24 h 
+	// do not observe if observed during last 24 h
 	else if (lastObs < 86400)
 		retBonus -= log (3) * 50;
 	// do not observe if too close to moon
@@ -997,6 +1022,9 @@ TargetSwiftFOV::~TargetSwiftFOV (void)
 
 void TargetSwiftFOV::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	struct ln_hrz_posn testHrz;
 	struct ln_equ_posn testEqu;
 	double JD = ln_get_julian_from_sys ();
@@ -1124,6 +1152,9 @@ int TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 
 moveType TargetSwiftFOV::afterSlewProcessed ()
 {
+	if (checkDbConnection ())
+		return OBS_MOVE_FAILED;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
 		int d_swift_id = swiftId;
@@ -1201,6 +1232,9 @@ int TargetSwiftFOV::beforeMove ()
 
 float TargetSwiftFOV::getBonus (double JD)
 {
+	if (checkDbConnection ())
+		return 0;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = target_id;
 		double d_bonus;
@@ -1290,6 +1324,9 @@ TargetIntegralFOV::~TargetIntegralFOV (void)
 
 void TargetIntegralFOV::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	struct ln_hrz_posn testHrz;
 	struct ln_equ_posn testEqu;
 	double JD = ln_get_julian_from_sys ();
@@ -1379,6 +1416,9 @@ int TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizo
 
 moveType TargetIntegralFOV::afterSlewProcessed ()
 {
+	if (checkDbConnection ())
+		return OBS_MOVE_FAILED;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
 		int d_integral_id = integralId;
@@ -1445,6 +1485,9 @@ int TargetIntegralFOV::beforeMove ()
 
 float TargetIntegralFOV::getBonus (double JD)
 {
+	if (checkDbConnection ())
+		return 0;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = target_id;
 		double d_bonus;
@@ -1605,6 +1648,9 @@ TargetPlan::~TargetPlan (void)
 // refresh next time..
 void TargetPlan::refreshNext ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_next_plan_id;
 		long db_next_plan_start;
@@ -1673,6 +1719,9 @@ void TargetPlan::load ()
 
 void TargetPlan::load (double JD)
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_cur_plan_id;
 	double db_cur_plan_start;

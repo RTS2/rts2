@@ -1,4 +1,4 @@
-/* 
+/*
  * GCN socket connection.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -22,6 +22,7 @@
 
 #include "connection/fork.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -280,6 +281,9 @@ int ConnGrb::pr_swift_with_radec ()
 
 int ConnGrb::pr_swift_without_radec ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	// those messages have only sence, when they set grb_is_grb flag to false
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_grb_id;
@@ -428,6 +432,9 @@ int ConnGrb::pr_fermi_sc ()
 
 int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float merit)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_swift_ra = swiftLastRa;
 		double d_swift_dec = swiftLastDec;
@@ -477,6 +484,9 @@ int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 
 int ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_integral_ra = ra;
 		double d_integral_dec = dec;
@@ -679,6 +689,9 @@ float ConnGrb::getInstrumentErrorBox (int grb_type)
 
 int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly, bool enabled)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id;
 	int d_grb_id = grb_id;
@@ -704,11 +717,11 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 	int grb_isnew = 0;
 
-	if ((master->getRecordNotVisible () == false) && 
+	if ((master->getRecordNotVisible () == false) &&
 		((master->observer->lat > 0 && grb_dec < (master->observer->lat - 90 ))
 		 || (master->observer->lat < 0 && grb_dec > (master->observer->lat + 90 ))
 	        )
-	)	
+	)
 	{
 		logStream (MESSAGE_INFO) << "not recording GRB at " << LibnovaRaDec (grb_ra, grb_dec) << ", as it is never visible from current location (latitude " << master->observer->lat << ")" << sendLog;
 		return 0;
@@ -727,8 +740,8 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 		ln_get_object_next_rst_horizon (night.getJDFrom (), master->observer, &pos, master->getMinGrbAltitute (), &rst);
 
-		if (!((night.getJDFrom () < rst.set && night.getJDTo () > rst.set) || 
-			(night.getJDFrom () < rst.rise && night.getJDTo () > rst.rise) || 
+		if (!((night.getJDFrom () < rst.set && night.getJDTo () > rst.set) ||
+			(night.getJDFrom () < rst.rise && night.getJDTo () > rst.rise) ||
 			(night.getJDFrom () < rst.transit && night.getJDTo () > rst.transit)))
 		{
 			logStream (MESSAGE_INFO) << "not recording GRB at " << LibnovaRaDec (grb_ra, grb_dec) << " as it is not durring current night above minimal altitude " << LibnovaDeg90 (master->getMinGrbAltitute ()) << sendLog;
@@ -788,7 +801,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		// insert part..we do care about HETE burst without coordinates
 		if (d_grb_ra < -300 && d_grb_dec < -300)
 		{
-			
+
 			logStream (MESSAGE_DEBUG) << "ConnGrb::addGcnPoint HETE GRB without coords? ra="
 				<< d_grb_ra << " dec=" << d_grb_dec << sendLog;
 			EXEC SQL ROLLBACK;
@@ -889,7 +902,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				<< d_tar_id
 				<< " grb_id: " << d_grb_id
 				<< " grb_seqn: " << d_grb_seqn
-				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec) 
+				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec)
 				<< " grb errorbox: " << d_grb_errorbox
 				<< sendLog;
 			EXEC SQL COMMIT;
@@ -1118,6 +1131,9 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 int ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_grb_id = grb_id;
 		int d_grb_seqn = grb_seqn;
@@ -1517,7 +1533,7 @@ int ConnGrb::receive (rts2core::Block *block)
 			{
 				lbuf[i] = ntohl (nbuf[i]);
 			}
-	
+
 			/* Immediately echo back the packet so GCN can monitor:
 			 * (1) the actual receipt by the site, and
 			 * (2) the roundtrip travel times.
@@ -1529,7 +1545,7 @@ int ConnGrb::receive (rts2core::Block *block)
 			}
 			t = gmtime (&last_packet.tv_sec);
 			here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec + last_packet.tv_usec / USEC_SEC;
-	
+
 			// switch based on packet content
 			switch (lbuf[PKT_TYPE])
 			{

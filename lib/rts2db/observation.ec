@@ -1,4 +1,4 @@
-/* 
+/*
  * Observation entry.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -21,6 +21,7 @@
 #include "rts2db/sqlerror.h"
 #include "rts2db/target.h"
 #include "rts2db/taruser.h"
+#include "rts2db/devicedb.h"
 
 #include "libnova_cpp.h"
 #include "timestamp.h"
@@ -84,6 +85,9 @@ Observation::~Observation (void)
 
 int Observation::load ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
 	VARCHAR db_tar_name[150];
@@ -189,6 +193,9 @@ int Observation::load ()
 
 int Observation::loadLastObservation ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_obs_id;
 	EXEC SQL END DECLARE SECTION;
@@ -199,7 +206,7 @@ int Observation::loadLastObservation ()
 
 	if (sqlca.sqlcode)
 		return -1;
-	
+
 	obs_id = db_obs_id;
 	return load();
 }
@@ -220,6 +227,9 @@ int Observation::loadImages ()
 
 int Observation::loadCounts ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
 		long db_count_date;
@@ -269,6 +279,9 @@ int Observation::loadCounts ()
 
 void Observation::startSlew (struct ln_equ_posn * coords, struct ln_hrz_posn * hrz)
 {
+	if (checkDbConnection ())
+		throw SqlError ("cannot update observation slew positions");
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
 	double d_obs_ra = coords->ra;
@@ -290,7 +303,7 @@ void Observation::startSlew (struct ln_equ_posn * coords, struct ln_hrz_posn * h
 		obs_az = :d_obs_az
 	WHERE
 		obs_id = :d_obs_id;
-	
+
 	if (sqlca.sqlcode != 0)
 	{
 		throw SqlError ("cannot update observation slew positions");
@@ -300,6 +313,9 @@ void Observation::startSlew (struct ln_equ_posn * coords, struct ln_hrz_posn * h
 
 void Observation::startObservation ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
 	EXEC SQL END DECLARE SECTION;
@@ -319,6 +335,9 @@ void Observation::startObservation ()
 
 void Observation::endObservation (int _obs_state)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
 	int d_obs_state = obs_state;
@@ -454,6 +473,9 @@ double Observation::altitudeMerit (double _start, double _end)
 
 int Observation::getUnprocessedCount ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = getObsId ();
 		int db_count = 0;
@@ -614,6 +636,9 @@ double Observation::getObsTime ()
 
 void Observation::maskState (int newBits)
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
 		int db_newBits = newBits;
@@ -637,6 +662,9 @@ void Observation::maskState (int newBits)
 
 void Observation::unmaskState (int newBits)
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
 		int db_newBits = ~newBits;
