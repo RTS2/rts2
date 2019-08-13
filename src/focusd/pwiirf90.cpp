@@ -197,8 +197,6 @@ int PWIIRF90::setFan(int fancmd)
 		return -1;
 	}
 
-	// switch RTS bit to receive results
-
 	// read reply
 	if (sconn->readPort((char*)returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
@@ -617,6 +615,7 @@ int PWIIRF90::GotoPos2(long targetTicks)
 								  << sendLog;
 		return -1;
 	}
+
 	
 	// // debug only
 	// ss.str(std::string());
@@ -748,6 +747,8 @@ int PWIIRF90::IsGotoDone()
 		return -1;
 	}
 }
+
+
 
 
 // send focus to given position
