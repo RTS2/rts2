@@ -355,13 +355,31 @@ int LX200::tel_set_rate (char new_rate)
 int LX200::tel_slew_to (double ra, double dec)
 {
 	char retstr;
+	int iter = 0;
 
 	normalizeRaDec (ra, dec);
 
-	if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
-		return -1;
-	if (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
-		return -1;
+	while (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Wrong or absent reply from the mount on sending coordinates, iteration " << iter << sendLog;
+
+		if (iter > 2)
+			return -1;
+
+		iter += 1;
+	}
+
+	iter = 0;
+	while (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Wrong or absent reply from the mount on initiating the movement, iteration " << iter << sendLog;
+
+		if (iter > 2)
+			return -1;
+
+		iter += 1;
+	}
+
 	if (retstr == '0')
 		return 0;
 	else
