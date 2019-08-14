@@ -719,8 +719,6 @@ int Target::endObservation (int in_next_id, rts2core::Block *master)
 
 int Target::endObservation (int in_next_id)
 {
-	std::cout << "Target::endObservation" << std::endl;
-
 	if (isContinues () == 1 && in_next_id == getTargetID ())
 		return 1;
 	if (getObsId () > 0)
