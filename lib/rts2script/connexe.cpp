@@ -20,6 +20,7 @@
 #include "rts2script/connexe.h"
 #include "command.h"
 #include "daemon.h"
+#include "device.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,20 +46,6 @@ ConnExe::~ConnExe ()
 	}
 }
 
-int32_t typeFromString (const char *dt_string)
-{
-	if (dt_string == NULL)
-		return 0;
-	static const char *types [0xb] = {"DT_RA", "DT_DEC", "DT_DEGREES", "DT_DEG_DIST", "DT_PERCENTS", "DT_ROTANG", "DT_HEX", "DT_BYTESIZE", "DT_KMG", "DT_INTERVAL", "DT_ONOFF"};
-	const char** vn = types;
-	for (int32_t i = 0; i < 0xb; i++, vn++)
-	{
-		if (!strcasecmp (*vn, dt_string))
-			return i << 16;
-	}
-	throw rts2core::Error (std::string ("invalid data type ") + dt_string);
-}
-
 void ConnExe::testWritableVariable (const char *cmd, int32_t vflags, rts2core::Value *v)
 {
 	if (vflags & RTS2_VALUE_WRITABLE)
@@ -68,7 +55,7 @@ void ConnExe::testWritableVariable (const char *cmd, int32_t vflags, rts2core::V
 	}
 	else if (v->isWritable ())
 	{
-		logStream (MESSAGE_WARNING) << "updating writable double variable " << v->getName () << " with " << cmd << " command" << sendLog;
+		logStream (MESSAGE_WARNING) << "updating writable variable " << v->getName () << " with " << cmd << " command" << sendLog;
 	}
 }
 
@@ -78,13 +65,26 @@ bool isValueCommand (const char *cmd, const char *expected, int32_t &flags)
 	int el = strlen (expected);
 	if (!strncasecmp (cmd, expected, el))
 	{
-		if ((cmd[el] == '\0'))
+		const char *pos = cmd + el;
+
+		if (*pos == '\0')
 			return true;
-		if (!(strcasecmp (cmd + el, "_w")))
+		else if (*pos == '_')
 		{
-			flags = RTS2_VALUE_WRITABLE;
-			return true;
+			do
+			{
+				pos ++;
+
+				if (*pos == 'w')
+					flags |= RTS2_VALUE_WRITABLE;
+				if (*pos == 'f')
+					flags |= RTS2_VALUE_FITS;
+				if (*pos == 't')
+					flags |= RTS2_VALUE_SCRIPTTEMPORARY;
+			}
+			while (*pos != '\0');
 		}
+		return true;
 	}
 	return false;
 }
@@ -321,7 +321,7 @@ void ConnExe::processCommand (char *cmd)
 		else
 		{
 			rts2core::ValueDouble *vd;
-			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false, vflags | typeFromString (rts2_type));
+			((rts2core::Daemon *) master)->createValue (vd, vname, desc, vflags & RTS2_VALUE_FITS, vflags | rts2core::typeFromString (rts2_type));
 			vd->setValueDouble (val);
 			master->updateMetaInformations (vd);
 		}
@@ -346,7 +346,7 @@ void ConnExe::processCommand (char *cmd)
 		else
 		{
 			rts2core::ValueTime *vd;
-			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false, vflags | typeFromString (rts2_type));
+			((rts2core::Daemon *) master)->createValue (vd, vname, desc, vflags & RTS2_VALUE_FITS, vflags | rts2core::typeFromString (rts2_type));
 			vd->setValueDouble (val);
 			master->updateMetaInformations (vd);
 		}
@@ -370,7 +370,7 @@ void ConnExe::processCommand (char *cmd)
 		else
 		{
 			rts2core::ValueInteger *vi;
-			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags);
+			((rts2core::Daemon *) master)->createValue (vi, vname, desc, vflags & RTS2_VALUE_FITS, vflags);
 			vi->setValueInteger (val);
 			master->updateMetaInformations (vi);
 		}
@@ -394,7 +394,7 @@ void ConnExe::processCommand (char *cmd)
 		else
 		{
 			rts2core::ValueString *vi;
-			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags);
+			((rts2core::Daemon *) master)->createValue (vi, vname, desc, vflags & RTS2_VALUE_FITS, vflags);
 			vi->setValueCharArr (val);
 			master->updateMetaInformations (vi);
 		}
@@ -419,9 +419,9 @@ void ConnExe::processCommand (char *cmd)
 		{
 			rts2core::ValueBool *vi;
 			if (!strcasecmp (cmd, "bool"))
-				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags);
+				((rts2core::Daemon *) master)->createValue (vi, vname, desc, vflags & RTS2_VALUE_FITS, vflags);
 			else
-				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags | RTS2_DT_ONOFF);
+				((rts2core::Daemon *) master)->createValue (vi, vname, desc, vflags & RTS2_VALUE_FITS, vflags | RTS2_DT_ONOFF);
 			vi->setValueCharArr (val);
 			master->updateMetaInformations (vi);
 		}
@@ -442,29 +442,9 @@ void ConnExe::processCommand (char *cmd)
 		}
 		else
 		{
-			((rts2core::Daemon *) master)->createValue (vad, vname, desc, false, vflags);
+			((rts2core::Daemon *) master)->createValue (vad, vname, desc, vflags & RTS2_VALUE_FITS, vflags);
 			master->updateMetaInformations (vad);
 		}
-		while (!paramEnd ())
-		{
-			double vd;
-			if (paramNextDouble (&vd))
-				throw rts2core::Error ("invalid double value");
-			vad->addValue (vd);
-		}
-		((rts2core::Daemon *) master)->sendValueAll (vad);
-	}
-	else if (!strcasecmp (cmd, "double_array_add"))
-	{
-		if (paramNextString (&vname))
-			throw rts2core::Error ("missing variable name or description");
-		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
-		if (v == NULL)
-			throw rts2core::Error (std::string ("variable with name ") + vname + "does not exists");
-
-		if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
-			throw rts2core::Error (std::string ("value is not double array") + vname);
-		rts2core::DoubleArray *vad = (rts2core::DoubleArray *) v;
 		while (!paramEnd ())
 		{
 			double vd;
@@ -490,43 +470,12 @@ void ConnExe::processCommand (char *cmd)
 		}
 		else
 		{
-			((rts2core::Daemon *) master)->createValue (vds, vname, desc, false, vflags);
+			((rts2core::Daemon *) master)->createValue (vds, vname, desc, vflags & RTS2_VALUE_FITS, vflags);
 			master->updateMetaInformations (vds);
 		}
 		int num;
 		if (paramNextInteger (&num))
 			throw rts2core::Error ("missing integer count");
-		while (!paramEnd ())
-		{
-			double vd;
-			if (paramNextDouble (&vd))
-				throw rts2core::Error ("invalid double value");
-			vds->addValue (vd, num);
-		}
-		vds->calculate ();
-		((rts2core::Daemon *) master)->sendValueAll (vds);
-	}
-	else if (!strcasecmp (cmd, "stat_add"))
-	{
-		if (paramNextString (&vname) || paramNextString (&desc))
-			throw rts2core::Error ("missing variable name or description");
-		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
-		rts2core::ValueDoubleStat *vds;
-		if (v)
-		{
-			if (v->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
-				throw rts2core::Error (std::string ("value is not double stat") + vname);
-			testWritableVariable (cmd, vflags, v);
-			vds = (rts2core::ValueDoubleStat *) v;
-		}
-		else
-		{
-			((rts2core::Daemon *) master)->createValue (vds, vname, desc, false, vflags);
-			master->updateMetaInformations (vds);
-		}
-		int num;
-		if (paramNextInteger (&num))
-			throw rts2core::Error ("invalid maximal number of values");
 		while (!paramEnd ())
 		{
 			double vd;
@@ -566,6 +515,12 @@ void ConnExe::processCommand (char *cmd)
 	else if (!strcasecmp (cmd, "wait_randevous"))
 	{
 
+	}
+	else if (!strcasecmp (cmd, "value_create") || !strcasecmp (cmd, "value_delete") || !strcasecmp(cmd, "value_add") || !strcasecmp (cmd, "double_array_add") || !strcasecmp (cmd, "stat_add"))
+	{
+		// Forward the commands directly to the device running the script
+		((rts2core::Device *) master)->commandAuthorized (this);
+		return;
 	}
 	else
 	{

@@ -335,6 +335,43 @@ class Rts2Comm:
 		print("process",imagename)
 		sys.stdout.flush()
 
+	def valueCreate(self, name, value=None, device=None, desc='created from script', type="string", writable=False, fits=False, temporary=False, rts2_type=None):
+		"""Add to device new value of given type with given flags"""
+		chunks = ['value_create', type, name, '"' + desc.replace('"', '\\"') + '"']
+
+		if value is not None:
+			if type == 'string':
+				chunks.append('"' + str(value).replace('"', '\\"') + '"')
+			else:
+				chunks.append(str(value))
+
+		if writable:
+			chunks.append('writable')
+
+		if fits:
+			chunks.append('fits')
+
+		if temporary:
+			chunks.append('temporary')
+
+		if rts2_type:
+			chunks.append(rts2_type)
+
+		if device is not None and device != '.':
+			chunks.insert(0, 'C ' + device)
+
+		print(" ".join(chunks))
+
+		sys.stdout.flush()
+
+	def valueDelete(self, name, device=None):
+		if device is not None and device != '.':
+			print("C", device, "value_delete", name)
+		else:
+			print("value_delete", name)
+
+		sys.stdout.flush()
+
 	def doubleValue(self,name,desc,value,rts2_type=None):
 		"""Add to device double value."""
 		print("double",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else '')
@@ -408,13 +445,28 @@ class Rts2Comm:
 		print("double_array_w",name,'"{0}"'.format(desc),' '.join(map(str,values)))
 		sys.stdout.flush()
 
-	def doubleArrayAdd(self,name,values):
-		print("double_array_add",name,' '.join(map(str,values)))
+	def valueAdd(self, name, values, device=None):
+		"""Add new double to existing double array or statistical double value."""
+		if device and device != '.':
+			print("C", device, "value_add", name, ' '.join(map(str, values)))
+		else:
+			print("value_add", name,' '.join(map(str, values)))
 		sys.stdout.flush()
 
-	def statAdd(self, name, desc, num, value):
-		"""Add to statistics boolean value."""
-		print("stat_add",name,'"{0}"'.format(desc),num,value)
+	def doubleArrayAdd(self, name, values, device=None):
+		"""Add new double to existing double array value."""
+		if device and device != '.':
+			print("C", device, "double_array_add", name, ' '.join(map(str, values)))
+		else:
+			print("double_array_add", name,' '.join(map(str, values)))
+		sys.stdout.flush()
+
+	def statAdd(self, name, desc, maxsize, values, device=None):
+		"""Add new double to existing statistical double value."""
+		if device and device != '.':
+			print("C", device, "stat_add", name, maxsize, ' '.join(map(str, values)))
+		else:
+			print("C", device, "stat_add", name, maxsize, ' '.join(map(str, values)))
 		sys.stdout.flush()
 
 	def log(self,level, *text):

@@ -74,6 +74,8 @@
 #define PROTO_METAINFO         "E"
 /** The command is metainformation about selection variable. Empty selection means clear selection list. @ingroup RTS2Protocol */
 #define PROTO_SELMETAINFO      "F"
+/** The command informs that variable is deleted. @ingroup RTS2Protocol */
+#define PROTO_DELETE           "Z"
 
 /** The command defines binary channel. @ingroup RTS2Protocol */
 #define PROTO_BINARY           "C"

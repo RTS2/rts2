@@ -194,6 +194,7 @@ class Daemon:public Block
 		 * Send new value over the wire to all connections.
 		 */
 		void sendValueAll (Value * value);
+		void sendValueDeleteAll (Value * value);
 
 		/**
 		 * Send progress to newly created connections.
@@ -488,6 +489,9 @@ class Daemon:public Block
 		{
 			return old_value->queValueChange (fakeState);
 		}
+
+		int deleteValue (const char *);
+		void deleteTemporaryValues ();
 
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);

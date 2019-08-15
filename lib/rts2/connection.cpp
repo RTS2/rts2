@@ -877,6 +877,26 @@ void Connection::processLine ()
 			ret = metaInfo (m_type, std::string (m_name), std::string (m_descr));
 		}
 	}
+	else if (isCommand (PROTO_DELETE))
+	{
+		char *m_name;
+		if (paramNextString (&m_name) || !paramEnd ())
+		{
+		 	ret = -2;
+		}
+		else
+		{
+			rts2core::Value *value = values.getValue (m_name);
+
+			if (value)
+			{
+				values.removeValue (m_name);
+				ret = -1;
+			}
+			else
+				ret = -2;
+		}
+	}
 	else if (isCommand (PROTO_VALUE))
 	{
 		char *m_name;
