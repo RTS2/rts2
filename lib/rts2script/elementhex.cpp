@@ -156,3 +156,43 @@ ElementFxF::ElementFxF (Script * in_script, char new_device[DEVICE_NAME_SIZE], d
 ElementFxF::~ElementFxF (void)
 {
 }
+
+void ElementSpiral::constructPath ()
+{
+	int N = 0;
+	int dx[4] = {0, 1, 0, -1};
+	int dy[4] = {1, 0, -1, 0};
+	int dir = 0;
+	int step = 0;
+	int nsteps = 1;
+
+	do
+	{
+		std::cout << "spiral " << N << ": " << dx[dir] << " " << dy[dir] << " " << dir << " " << step << " " << nsteps << std::endl;
+
+		path.addRaDec (dx[dir], dy[dir]);
+		step += 1;
+
+		if (step >= nsteps)
+		{
+			step = 0;
+			dir = (dir + 1) % 4;
+
+			if (dir == 0 || dir == 2)
+				nsteps += 1;
+		}
+
+		N += 1;
+	} while (N < length);
+
+	path.endPath ();
+}
+
+ElementSpiral::ElementSpiral (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size, int in_length):ElementHex (in_script, new_device, in_ra_size, in_dec_size)
+{
+	length = in_length;
+}
+
+ElementSpiral::~ElementSpiral (void)
+{
+}

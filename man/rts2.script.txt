@@ -118,6 +118,13 @@ fxf {ra_diff} {dec_diff} [block]::
 
     {ra_diff} and {dec_diff} are in degrees.
 
+fxf {ra_diff} {dec_diff} {length} [block]::
+    Change mount position in an outward spiral pattern after
+    finishing [block] and execute [block] again. This will produce
+    {length} images, which are aligned on a spiral path.
+
+    {ra_diff} and {dec_diff} are in degrees.
+
 BIN {binning}::
     Change both vertical and horizontal binning. Will be
     dropped in favour of value (*binning*) operation.

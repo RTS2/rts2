@@ -62,6 +62,8 @@
 #define COMMAND_HEX             "hex"
 // 5x5 pattern
 #define COMMAND_FXF             "fxf"
+// spiral pattern
+#define COMMAND_SPIRAL          "spiral"
 
 // signal handling..
 #define COMMAND_SEND_SIGNAL     "SS"

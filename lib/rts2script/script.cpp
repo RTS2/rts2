@@ -683,13 +683,12 @@ Element *Script::parseBuf (Rts2Target * target)
 		double dec_size;
 		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
 			return NULL;
-		ElementHex *hexEl;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		hexEl = new ElementHex (this, new_device, ra_size, dec_size);
+		ElementHex *hexEl = new ElementHex (this, new_device, ra_size, dec_size);
 		parseBlock (hexEl, target);
 		return hexEl;
 	}
@@ -699,15 +698,30 @@ Element *Script::parseBuf (Rts2Target * target)
 		double dec_size;
 		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
 			return NULL;
-		ElementFxF *ffEl;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
+		ElementFxF *ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
 		parseBlock (ffEl, target);
 		return ffEl;
+	}
+	else if (!strcmp (commandStart, COMMAND_SPIRAL))
+	{
+		double ra_size;
+		double dec_size;
+		int length;
+		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size) || getNextParamInteger (&length))
+			return NULL;
+		// test for block start..
+		el = nextElement ();
+		// error, return NULL
+		if (*el != '{')
+			return NULL;
+		ElementSpiral *spiralEl = new ElementSpiral (this, new_device, ra_size, dec_size, length);
+		parseBlock (spiralEl, target);
+		return spiralEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_EXE))
 	{
