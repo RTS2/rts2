@@ -989,6 +989,9 @@ void Executor::doSwitch ()
 
 int Executor::switchTarget ()
 {
+	// Remove script temporary values from executor
+	deleteTemporaryValues ();
+
 	if (enabled->getValueBool () == false)
 	{
 		clearNextTargets ();
