@@ -168,8 +168,6 @@ void ElementSpiral::constructPath ()
 
 	do
 	{
-		std::cout << "spiral " << N << ": " << dx[dir] << " " << dy[dir] << " " << dir << " " << step << " " << nsteps << std::endl;
-
 		path.addRaDec (dx[dir], dy[dir]);
 		step += 1;
 
