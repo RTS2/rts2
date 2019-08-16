@@ -589,6 +589,8 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 
 	Image *image = NULL;
 
+	logStream (MESSAGE_DEBUG) << "start of camera " << connection->getName () << " exposure" << sendLog;
+
 	// don't create image if it is not expected
 	if (expectImage == false)
 	{

@@ -399,11 +399,6 @@ int Image::createImage (bool _overwrite)
 	// add history
 	writeHistory ("Created with RTS2 version " RTS2_VERSION " build on " __DATE__ " " __TIME__ ".");
 
-	if (isMemImage ())
-		logStream (MESSAGE_DEBUG) << "creating in-memory image" << sendLog;
-	else
-		logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
-
 	flags = IMAGE_SAVE;
 	return 0;
 }
