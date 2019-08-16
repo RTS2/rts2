@@ -274,6 +274,18 @@ void ConnImgProcess::connectionError (int last_data_size)
 			else
 				master->postEvent (new rts2core::Event (EVENT_NOT_ASTROMETRY, (void *) image));
 		}
+
+#ifdef RTS2_HAVE_PGSQL
+		// Check whether it was the last image of the observation
+		int obsId = image->getObsId ();
+		rts2db::Observation *obs = new rts2db::Observation (obsId);
+
+		if (obs->checkUnprocessedImages (master) == 0)
+			master->postEvent (new rts2core::Event (EVENT_ALL_PROCESSED, (void *) &obsId));
+
+		delete obs;
+#endif
+
 		delete image;
 	}
 	catch (rts2core::Error &er)
@@ -340,61 +352,33 @@ void ConnImgOnlyProcess::checkAstrometry ()
 
 ConnObsProcess::ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
+	astrometryStat = OBS;
+
 #ifdef RTS2_HAVE_PGSQL
 	obsId = in_obsId;
+
+	addArg (obsId);
+
 	obs = new rts2db::Observation (obsId);
 	if (obs->load ())
 	{
-		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
-		obs = NULL;
+		logStream (MESSAGE_ERROR) << "ConnObsProcess::ConnObsProcess cannot load obs " << obsId << sendLog;
+		addArg (-1);
+		addArg ('-');
 	}
-
-	fillIn (&obsIdCh, obsId);
-	fillIn (&obsTarIdCh, obs->getTargetId ());
-	fillIn (&obsTarTypeCh, obs->getTargetType ());
+	else
+	{
+		logStream (MESSAGE_DEBUG) << "ConnObsProcess::ConnObsProcess loaded obs " << obsId << sendLog;
+		addArg (obs->getTargetId ());
+		addArg (obs->getTargetType ());
+	}
 
 	delete obs;
 #endif
 }
 
-int ConnObsProcess::newProcess ()
-{
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "ConnObsProcess::newProcess exe: " <<
-		exePath << " obsid: " << obsId << " pid: " << getpid () << sendLog;
-	#endif
-
-	if (exePath)
-	{
-		execl (exePath, exePath, obsIdCh, obsTarIdCh, obsTarTypeCh,
-			(char *) NULL);
-		// if we get there, it's error in execl
-		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess: " <<
-			strerror (errno) << sendLog;
-	}
-	return -2;
-}
-
 void ConnObsProcess::processLine ()
 {
 	// no error
-	return;
-}
-
-ConnDarkProcess::ConnDarkProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
-{
-}
-
-void ConnDarkProcess::processLine ()
-{
-	return;
-}
-
-ConnFlatProcess::ConnFlatProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
-{
-}
-
-void ConnFlatProcess::processLine ()
-{
 	return;
 }

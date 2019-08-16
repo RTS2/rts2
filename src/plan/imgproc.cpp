@@ -116,6 +116,7 @@ class ImageProc:public rts2core::Device
 
 		rts2core::ValueInteger *darkImages;
 		rts2core::ValueInteger *flatImages;
+		rts2core::ValueInteger *numObs;
 
 		rts2core::ValueString *processedImage;
 		rts2core::ValueInteger *queSize;
@@ -182,6 +183,8 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	darkImages->setValueInteger (0);
 	createValue (flatImages, "flat_images", "number of flats", false);
 	flatImages->setValueInteger (0);
+	createValue (numObs, "num_observations", "number of observations", false);
+	numObs->setValueInteger (0);
 
 	createValue (processedImage, "processed_image", "image being processed at the moment", false);
 
@@ -314,12 +317,10 @@ int ImageProc::init ()
 
 void ImageProc::postEvent (rts2core::Event * event)
 {
-	int obsId;
 	switch (event->getType ())
 	{
 		case EVENT_ALL_PROCESSED:
-			obsId = *((int *) event->getArg ());
-			queObs (obsId);
+			queObs (*(int *)(event->getArg ()));
 			break;
 	}
 #ifdef RTS2_HAVE_PGSQL
@@ -511,6 +512,10 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 				nightDarks->inc ();
 				sendValueAll (darkImages);
 				sendValueAll (nightDarks);
+				break;
+			case OBS:
+				numObs->inc ();
+				sendValueAll (numObs);
 				break;
 			default:
 				logStream (MESSAGE_ERROR) << "wrong image state: " << rImage->getAstrometryStat () << sendLog;

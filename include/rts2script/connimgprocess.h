@@ -28,7 +28,7 @@
 namespace rts2plan
 {
 
-typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
+typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT, OBS } astrometry_stat_t;
 
 class ConnProcess:public rts2script::ConnExe
 {
@@ -142,32 +142,11 @@ class ConnObsProcess:public ConnProcess
 
 		virtual const char* getProcessArguments () { return obs == NULL ? "unknown" : obs->getTargetName ().c_str (); }
 
-		virtual int newProcess ();
 		virtual void processLine ();
 
 	private:
 		int obsId;
 		rts2db::Observation *obs;
-
-		char *obsIdCh;
-		char *obsTarIdCh;
-		char *obsTarTypeCh;
-};
-
-class ConnDarkProcess:public ConnProcess
-{
-	public:
-		ConnDarkProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
-
-		virtual void processLine ();
-};
-
-class ConnFlatProcess:public ConnProcess
-{
-	public:
-		ConnFlatProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
-
-		virtual void processLine ();
 };
 
 };
