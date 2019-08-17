@@ -58,6 +58,13 @@ DT_KMG             = "DT_KMG"
 DT_INTERVAL        = "DT_INTERVAL"
 DT_ONOFF           = "DT_ONOFF"
 
+def quote_if_string(value):
+	"""Return quoted string if value is string, or just the value itself"""
+	if isinstance(value, basestring):
+		return '"' + value + '"'
+	else:
+		return value
+
 class Rts2Exception(Exception):
 	"""Thrown on exceptions on communicated over stdin/stdout connection."""
 	def __init__(self,message):
@@ -72,6 +79,7 @@ class Rts2Comm:
 	def __init__(self, log_device = True):
 		self.exception_re = re.compile('([!&]) (\S.*)')
 		self.__run_device = None
+		self.__exec_device = None
 		self.__log_device = log_device
 
 	def sendCommand(self,command,device = None):
@@ -104,6 +112,8 @@ class Rts2Comm:
 		"""Returns given value."""
 		if device is None:
 			print('? {0}'.format(value))
+		elif (device == self.getExecDevice()):
+			return self.getOwnValue(value)
 		else:
 			print('G {0} {1}'.format(device,value))
 		sys.stdout.flush()
@@ -136,6 +146,13 @@ class Rts2Comm:
 			self.__run_device = self.readline()
 		return self.__run_device
 
+	def getExecDevice(self):
+		if self.__exec_device is None:
+			print('exec_device')
+			sys.stdout.flush()
+			self.__exec_device = self.readline()
+		return self.__exec_device
+
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
 		value = self.getValue(value,device)
@@ -156,31 +173,33 @@ class Rts2Comm:
 		else:
 			return int(val.split(" ")[0])
 
-	def incrementValue(self,name,new_value,device = None):
+	def incrementValue(self, name, new_value, device = None):
 		if (device is None):
-			print("value {0} += {1}".format(name,new_value))
+			print("value {0} += {1}".format(name, quote_if_string(new_value)))
 		else:
-			print("V {0} {1} += {2}".format(device,name,new_value))
+			print("V {0} {1} += {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
-	def incrementValueType(self,device,name,new_value):
-		print("VT {0} {1} += {2}".format(device,name,new_value))
+	def incrementValueType(self, device, name, new_value):
+		print("VT {0} {1} += {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
 	def setValue(self, name, new_value, device = None):
 		if (device is None):
-			print("value {0} = {1}".format(name,new_value))
+			print("value {0} = {1}".format(name, quote_if_string(new_value)))
+		elif (device == self.getExecDevice()):
+			self.setOwnValue(name, new_value)
 		else:
-			print("V {0} {1} = {2}".format(device,name,new_value))
+			print("V {0} {1} = {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
 	def setOwnValue(self, name, new_value):
 		print('set_own {0} {1}'.format(name, new_value))
 		sys.stdout.flush()
 
-	def setValueByType(self,device,name,new_value):
+	def setValueByType(self, device, name, new_value):
 		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
-		print("VT {0} {1} = {2}".format(device,name,new_value))
+		print("VT {0} {1} = {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
 	def getDeviceByType(self,device):

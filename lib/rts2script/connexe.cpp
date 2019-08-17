@@ -281,6 +281,10 @@ void ConnExe::processCommand (char *cmd)
 	{
 		writeToProcess ("processing");
 	}
+	else if (!strcmp (cmd, "exec_device"))
+	{
+		writeToProcess (((rts2core::Device *) master)->getDeviceName ());
+	}
 	// register temporar entry directory. Path without /tmp should be specified.
 	else if (!strcasecmp (cmd, "tempentry"))
 	{
