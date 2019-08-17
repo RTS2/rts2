@@ -395,6 +395,13 @@ int LX200::tel_slew_to (double ra, double dec)
 		}
 		else
 			logStream (MESSAGE_ERROR) << "Mount slew error" << sendLog;
+
+		// It seems on error 10micron stops the tracking, so let's re-start it
+		if (hasAstroPhysicsExtensions)
+			return serConn->writePort (":RT2#", 5);
+		else
+			return serConn->writePort (":TQ#", 4);
+
 	}
 	return -1;
 }
