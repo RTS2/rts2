@@ -440,7 +440,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	imageType->addSelVal ("zero");
 	imageType->addSelVal ("flat");
 
-	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
+	createValue (objectName, "OBJECT", "target object name", false, RTS2_VALUE_WRITABLE);
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");

@@ -578,7 +578,7 @@ class Camera:public rts2core::ScriptDevice
 
 		// image type - IRAF keyword. FLAT, DARK or OBJECT
 		rts2core::ValueSelection *imageType;
-		// current object
+		// current object, kept here for backward compatibiluty only (as AzCam driver uses it)
 		rts2core::ValueString *objectName;
 		// which channels are off (and which are on)
 		rts2core::BoolArray *channels;

@@ -139,6 +139,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueInteger *current_obsid;
 		rts2core::ValueTime *current_obsstart;
 
+		rts2core::ValueString *objectName;
 		rts2core::ValueString *pi;
 		rts2core::ValueString *program;
 
@@ -188,7 +189,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (acqusitionFailed, "acqusition_failed", "number of acqusitions which failed", false);
 	acqusitionFailed->setValueInteger (0);
 
-	createValue (next_night, "next_night", "true if next target is the first target in given night");
+	createValue (next_night, "next_night", "true if next target is the first target in given night", false);
 	next_night->setValueBool (false);
 
 	createValue (current_id, "current", "ID of current target", false);
@@ -200,6 +201,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (current_obsid, "obsid", "ID of observation", false);
 	createValue (current_obsstart, "observation_start", "time when the current observation started", false);
 
+	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
 	createValue (pi, "PI", "project investigator of the target", true, RTS2_VALUE_WRITABLE);
 	createValue (program, "PROGRAM", "target program name", true, RTS2_VALUE_WRITABLE);
 
@@ -213,7 +215,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (next_name, "next_name", "name of next target", false);
 	createValue (next_plan_id, "next_plan_id", "next plan ID", false);
 
-	createValue (activeQueue, "queue", "selected queueu", true, RTS2_VALUE_WRITABLE);
+	createValue (activeQueue, "queue", "selected queue", false, RTS2_VALUE_WRITABLE);
 	createQueue ("next");
 
 	createValue (img_id, "img_id", "ID of current image", false);
@@ -507,6 +509,49 @@ void Executor::postEvent (rts2core::Event * event)
 		case EVENT_GET_ACQUIRE_STATE:
 			*((int *) event->getArg ()) =
 				(currentTarget) ? currentTarget->getAcquired () : -2;
+			break;
+		case EVENT_WRITE_TO_IMAGE:
+		case EVENT_WRITE_ONLY_IMAGE:
+		case EVENT_WRITE_TO_IMAGE_ENDS:
+			{
+				// Write self values to image
+				rts2image::CameraImage *ci = (rts2image::CameraImage *) event->getArg ();
+				rts2image::Image *image = ci->image;
+				CondValueVector::iterator iter;
+
+				for (iter = getValuesBegin (); iter != getValuesEnd (); iter++)
+				{
+					rts2core::Value *value = (*iter)->getValue ();
+
+					if (value->getWriteToFits ())
+					{
+						if (event->getType () == EVENT_WRITE_TO_IMAGE ||
+							event->getType () == EVENT_WRITE_ONLY_IMAGE)
+						{
+							if (value->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
+								image->writeConnValue (NULL, value);
+							value->resetValueChanged ();
+						}
+						else if (event->getType () == EVENT_WRITE_TO_IMAGE_ENDS)
+						{
+							if (value->writeWhenChanged ())
+								image->recordChange (NULL, value);
+						}
+					}
+				}
+
+				break;
+			}
+		case EVENT_SET_TARGET:
+		case EVENT_SET_TARGET_NOT_CLEAR:
+		case EVENT_SET_TARGET_KILL:
+		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
+			objectName->setValueString (currentTarget->getTargetName ());
+			pi->setValueString(currentTarget->getPIName ());
+			program->setValueString (currentTarget->getProgramName ());
+			sendValueAll (objectName);
+			sendValueAll (pi);
+			sendValueAll (program);
 			break;
 	}
 	rts2db::DeviceDb::postEvent (event);

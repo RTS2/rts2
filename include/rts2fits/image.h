@@ -656,6 +656,16 @@ class Image:public FitsFile
 		void writeConn (rts2core::Connection * conn, imageWriteWhich_t which = EXPOSURE_START);
 
 		/**
+		 * Writes one value to image
+		 */
+		void writeConnValue (rts2core::Connection *conn, rts2core::Value *val);
+
+		/**
+		 * Records value change to image, if needed
+		 */
+		void recordChange (rts2core::Connection *conn, rts2core::Value *val);
+
+		/**
 		 * Sets image errors.
 		 */
 		void setErrors (double i_r, double i_d, double i_e)
@@ -808,12 +818,6 @@ class Image:public FitsFile
 		void prepareArrayData (const std::string name, rts2core::Connection *conn, rts2core::Value *val);
 
 		void writeConnArray (TableData *tableData);
-
-		// writes one value to image
-		void writeConnValue (rts2core::Connection *conn, rts2core::Value *val);
-
-		// record value changes
-		void recordChange (rts2core::Connection *conn, rts2core::Value *val);
 };
 
 }

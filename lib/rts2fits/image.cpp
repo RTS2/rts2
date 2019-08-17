@@ -2494,12 +2494,15 @@ void Image::prepareArrayData (const std::string sname, rts2core::Connection *con
 
 	if (ai == arrayGroups.end ())
 	{
-		rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
-		if (infoTime)
+		if (conn)
 		{
-			TableData *td = new TableData (name, infoTime->getValueDouble ());
-			td->push_back (getColumnData (name, val));
-			arrayGroups[val->getWriteGroup ()] = td;
+			rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
+			if (infoTime)
+			{
+				TableData *td = new TableData (name, infoTime->getValueDouble ());
+				td->push_back (getColumnData (name, val));
+				arrayGroups[val->getWriteGroup ()] = td;
+			}
 		}
 	}
 	else
@@ -2529,7 +2532,7 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 
 	// array groups to write. First they are created, then they are written at the end
 
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
+	if (conn && (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY))
 	{
 		name = std::string (conn->getName ()) + "." + val->getName ();
 	}
@@ -2608,7 +2611,7 @@ void Image::recordChange (rts2core::Connection * conn, rts2core::Value * val)
 {
 	char *name;
 	// construct name
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
+	if (conn && (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ()))
 	{
 		name = new char[strlen (conn->getName ()) + strlen (val->getName ().c_str ()) + 10];
 		strcpy (name, conn->getName ());
