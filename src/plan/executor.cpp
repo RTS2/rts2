@@ -288,6 +288,8 @@ int Executor::init ()
 
 	addConnection (notifyConn);
 
+	setIdleInfoInterval(1);
+
 	return ret;
 }
 
