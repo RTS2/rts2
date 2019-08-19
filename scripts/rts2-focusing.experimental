@@ -60,7 +60,7 @@ def send_email(message, to='karpov.sv@gmail.com', sender='focuser@localhost', su
 	s.sendmail(sender, to, msg.as_string())
 	s.quit()
 
-def plotResults(estimator, bestpos=None, dirname=None, oldPos=None):
+def plotResults(estimator, bestpos=None, dirname=None, oldPos=None, spline=False):
 	"""Plot the results of the fit into some files. Returns the list of files."""
 	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 	from matplotlib.figure import Figure
@@ -98,13 +98,41 @@ def plotResults(estimator, bestpos=None, dirname=None, oldPos=None):
 
 	filenames.append(filename)
 
+	# Plot 100x100 pix centers of nearest sample images
+	filename = posixpath.join(dirname, 'center_%s.png' % estimator.headers[0]['CCD_NAME'])
+	fig = Figure(facecolor='white', dpi=72, figsize=(20,4), tight_layout=True)
+
+	for di in [-2,-1,0,1,2]:
+	    if pos+di >= 0 and pos+di < len(estimator.filenames):
+		image = estimator.images[pos+di]
+		bg = sep.Background(image)
+		image1 = image - bg.back()
+
+		ax = fig.add_subplot(1,5,di+3)
+
+		vmin,vmax = np.percentile(image1, [0.5, 99.7])
+		ax.imshow(image1, interpolation='nearest', vmin=vmin, vmax=vmax, cmap='hot')
+		ax.set_xlim(0.5*image1.shape[1]-50, 0.5*image1.shape[1]+50)
+		ax.set_ylim(0.5*image1.shape[0]-50, 0.5*image1.shape[0]+50)
+
+		if di == 0:
+		    ax.set_title("focus %g best %g" % (estimator.focpos[pos+di], bestpos))
+		else:
+		    ax.set_title("focus %g" % estimator.focpos[pos+di])
+		ax.axis('off')
+
+	canvas = FigureCanvas(fig)
+	canvas.print_png(filename, bbox_inches='tight')
+
+	filenames.append(filename)
+
 	# Plot all estimators with marked best position
 	filename = posixpath.join(dirname, 'estimators_%s.png' % estimator.headers[0]['CCD_NAME'])
 
-	fig = Figure(facecolor='white', dpi=72, figsize=(8,10), tight_layout=True)
+	fig = Figure(facecolor='white', dpi=72, figsize=(8,12), tight_layout=True)
 	color = 'red' if estimator.shouldRefine else 'green'
 
-	def plotit(ax, x, y, fmt='o-', spline=True):
+	def plotit(ax, x, y, fmt='o-', spline=spline):
 		ax.plot(x, y, fmt)
 
 		ax.autoscale(False)
@@ -119,20 +147,28 @@ def plotResults(estimator, bestpos=None, dirname=None, oldPos=None):
 
 		ax.axvline(bestpos, color=color, ls='--')
 
-	ax = fig.add_subplot(411)
+	ax = fig.add_subplot(611)
 	ax0 = ax
 	plotit(ax, estimator.focpos, estimator.valFWHM)
 	ax.set_title('%s: %s - FWHM' % (dirname, estimator.headers[0]['CCD_NAME']))
 
-	ax = fig.add_subplot(412, sharex=ax0)
+	ax = fig.add_subplot(612, sharex=ax0)
 	plotit(ax, estimator.focpos, estimator.valNumStars)
 	ax.set_title('%s: %s - Number of Stars' % (dirname, estimator.headers[0]['CCD_NAME']))
 
-	ax = fig.add_subplot(413, sharex=ax0)
+	ax = fig.add_subplot(613, sharex=ax0)
+	plotit(ax, estimator.focpos, estimator.valSeqFWHM)
+	ax.set_title('%s: %s - Sequence FWHM' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(614, sharex=ax0)
+	plotit(ax, estimator.focpos, estimator.valSeqNumStars)
+	ax.set_title('%s: %s - Sequence Number of Stars' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(615, sharex=ax0)
 	plotit(ax, estimator.focpos, estimator.valStd)
 	ax.set_title('%s: %s - Std Dev' % (dirname, estimator.headers[0]['CCD_NAME']))
 
-	ax = fig.add_subplot(414, sharex=ax)
+	ax = fig.add_subplot(616, sharex=ax)
 	plotit(ax, estimator.focpos, estimator.valFFT)
 	ax.set_title('%s: %s - FFT' % (dirname, estimator.headers[0]['CCD_NAME']))
 
@@ -153,18 +189,29 @@ if __name__ == '__main__':
 	parser.add_option('-f', '--focuser', help='Focuser to use', action='store', dest='focuser', type='string', default='F0')
 	parser.add_option('-d', '--dir', help='Process already acquired data from given directory', action='store', dest='dir', type='string', default=None)
 	parser.add_option('-v', '--verbose', help='Verbose output', action='store_true', dest='verbose', default=False)
+	parser.add_option('-r', '--refine', help='Initiate refinement focusing run if necessary', action='store_true', dest='refine', default=False)
 	parser.add_option('-p', '--plot', help='Plot diagnostic images', action='store_true', dest='plot', default=False)
 	parser.add_option('-m', '--mail', help='Email for sending the diagnostic message', action='append', dest='mail', type='string', default=[])
+	parser.add_option('--r0', help='Smoothing kernel radius for object detection', action='store', dest='r0', type='float', default=0.5)
+	parser.add_option('--thresh', help='Detection threshold', action='store', dest='thresh', type='float', default=2.0)
+	parser.add_option('--minnthresh', help='Minimum amount of pixels above threshold', action='store', dest='minnthresh', type='float', default=2)
+	parser.add_option('--minarea', help='Minimum area of object', action='store', dest='minarea', type='float', default=5)
+	parser.add_option('--relfluxradius', help='Relative radius of total flux circle, in FWHM units', action='store', dest='relfluxradius', type='float', default=3.0)
 	(options,args) = parser.parse_args()
 
 	if options.dir:
 		# Offline mode
 		files = sorted(glob.glob(posixpath.join(options.dir, '*.fits')))
-		estimator = FocusEstimator(verbose=options.verbose)
+		estimator = FocusEstimator(verbose=options.verbose, r0=options.r0, thresh=options.thresh, minnthresh=options.minnthresh, minarea=options.minarea, relfluxradius=options.relfluxradius)
 		estimator.processFiles(files, verbose=True)
 		bestPos = estimator.getBestFocus()
 
-		print('Best focus is at %g' % bestPos)
+		if estimator.fitFailed:
+			print('Focus fitting failed')
+		elif estimator.shouldRefine:
+			print('Next focus is at %gm additional refinement is needed' % bestPos)
+		else:
+			print('Best focus is at %g' % bestPos)
 
 	else:
 		# RTS2 script mode
@@ -173,6 +220,8 @@ if __name__ == '__main__':
 		comm = scriptcomm.Rts2Comm()
 
 		comm.loopDisable()
+
+		log = ""
 
 		# Try to use some values from the camera variables
 		focuser = comm.getValue('focuser') or options.focuser
@@ -206,13 +255,16 @@ if __name__ == '__main__':
 				toff += step
 
 			# Process acquired filenames and estimate best focus
-			estimator = FocusEstimator(files, verbose=options.verbose, print_fn=lambda *args: comm.log('I',*args))
+			estimator = FocusEstimator(files, verbose=options.verbose, print_fn=lambda *args: comm.log('I',*args), r0=options.r0, thresh=options.thresh, minnthresh=options.minnthresh, minarea=options.minarea, relfluxradius=options.relfluxradius)
 			bestPos = estimator.getBestFocus()
 			comm.log('I', 'best focus is %g, refinement %s' % (bestPos, 'needed' if estimator.shouldRefine else 'not needed'))
 
-			if estimator.shouldRefine:
+			if estimator.shouldRefine and options.refine:
 				delta = bestPos - comm.getValueFloat('FOC_DEF', focuser)
 				comm.log('I', 'Adjusting focusing position by %g' % delta)
+			if estimator.shouldRefine:
+				comm.log('I', 'Refinement is necessary but is disabled')
+				break
 			elif estimator.fitFailed:
 				comm.log('I', 'Fit failed')
 				break
