@@ -55,7 +55,7 @@ def make_kernel(r0=1.0):
 	return image
 
 # Simple SEP-based objects detection tailored towards FWHM/HFD estimation
-def get_objects_fwhm(image, mask=None, r0=0.5, thresh=2.0, minnthresh=2, minarea=5, relfluxradius=3.0, return_image=False):
+def get_objects_fwhm(image, mask=None, r0=0.5, thresh=5.0, minnthresh=2, minarea=5, relfluxradius=3.0, return_image=False):
 	if mask is None:
 		mask = np.zeros_like(image, dtype=np.bool)
 
@@ -96,7 +96,7 @@ def get_objects_fwhm(image, mask=None, r0=0.5, thresh=2.0, minnthresh=2, minarea
 
 class FocusEstimator:
 	"""Processing sequences of focusing data to derive optimal focus position"""
-	def __init__(self, files=None, verbose=True, print_fn=print, r0=0.5, thresh=2.0, minnthresh=2, minarea=5, relfluxradius=3.0):
+	def __init__(self, files=None, verbose=True, print_fn=print, r0=0.5, thresh=5.0, minnthresh=2, minarea=5, relfluxradius=3.0):
 		self._verbose = verbose
 		self._print_fn = print_fn
 
