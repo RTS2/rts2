@@ -188,6 +188,7 @@ if __name__ == '__main__':
 	parser.add_option('-n', '--nsteps', help='Number of steps', action='store', dest='nsteps', type='int', default=20)
 	parser.add_option('-f', '--focuser', help='Focuser to use', action='store', dest='focuser', type='string', default='F0')
 	parser.add_option('-d', '--dir', help='Process already acquired data from given directory', action='store', dest='dir', type='string', default=None)
+	parser.add_option('-c', '--camera', help='Process data for given camera only', action='store', dest='camera', type='string', default=None)
 	parser.add_option('-v', '--verbose', help='Verbose output', action='store_true', dest='verbose', default=False)
 	parser.add_option('-r', '--refine', help='Initiate refinement focusing run if necessary', action='store_true', dest='refine', default=False)
 	parser.add_option('-p', '--plot', help='Plot diagnostic images', action='store_true', dest='plot', default=False)
@@ -203,7 +204,7 @@ if __name__ == '__main__':
 		# Offline mode
 		files = sorted(glob.glob(posixpath.join(options.dir, '*.fits')))
 		estimator = FocusEstimator(verbose=options.verbose, r0=options.r0, thresh=options.thresh, minnthresh=options.minnthresh, minarea=options.minarea, relfluxradius=options.relfluxradius)
-		estimator.processFiles(files, verbose=True)
+		estimator.processFiles(files, ccdname=options.camera, verbose=True)
 		bestPos = estimator.getBestFocus()
 
 		if estimator.fitFailed:

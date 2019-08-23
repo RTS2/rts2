@@ -299,6 +299,7 @@ class FocusEstimator:
 		self.estimator = 'Sequence FWHM'
 		self.fitter = fitter
 		bestPos = self.headers[0].get('FOC_DEF')
+		self.bestPos = bestPos
 
 		if not len(self.valSeqNumStars) or np.max(self.valSeqNumStars) == 0:
 			self.fitFailed = True
@@ -312,7 +313,7 @@ class FocusEstimator:
 		posSpan = np.max(self.focpos) - np.min(self.focpos) # Total span of focusing interval
 
 		if bestPos > np.min(self.focpos) + 0.1*posSpan and bestPos < np.max(self.focpos) - 0.1*posSpan:
-			thresh = max(1, np.quantile(self.valSeqNumStars, 1.0-5./len(self.focpos))-1)
+			thresh = max(1, np.percentile(self.valSeqNumStars, 100.0*(1.0-5./len(self.focpos)))-1)
 			self.log('Threshold for sequence number of stars', thresh)
 
 			idx = np.where(self.valSeqNumStars >= thresh)[0]
