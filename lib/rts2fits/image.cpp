@@ -118,9 +118,10 @@ void Image::initData ()
 }
 
 
-Image::Image ():FitsFile ()
+Image::Image (bool _writeConnection, bool _writeRTS2Values):FitsFile ()
 {
 	initData ();
+	setWriteConnection (_writeConnection, _writeRTS2Values);
 	flags = IMAGE_KEEP_DATA;
 }
 
@@ -1755,11 +1756,13 @@ int Image::saveImage ()
 
 int Image::deleteImage ()
 {
-	int ret;
+	int ret = 0;
 	fits_close_file (getFitsFile (), &fits_status);
 	setFitsFile (NULL);
 	flags &= ~IMAGE_SAVE;
-	ret = unlink (getFileName ());
+	const char *fn = getFileName();
+	if (fn)
+		ret = unlink (fn);
 	return ret;
 }
 

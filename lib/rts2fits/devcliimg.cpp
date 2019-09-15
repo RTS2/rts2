@@ -461,7 +461,7 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 
 void DevClientCameraImage::fitsData (const char *fn, int filter_num)
 {
-	Image *img = new Image ();
+	Image *img = new Image (writeConnection, writeRTS2Values);
 	rts2core::DataChannels *data = NULL;
 
 	try

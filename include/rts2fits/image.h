@@ -116,7 +116,7 @@ class Image:public FitsFile
 		int sexResultNum;
 
 		// memory-only image..
-		Image ();
+		Image (bool _writeConnection = true, bool _writeRTS2Values = true);
 		// copy constructor
 		Image (Image * in_image);
 		// memory-only with exposure time
