@@ -439,6 +439,9 @@ void Executor::postEvent (rts2core::Event * event)
 				{
 					logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED with observations not started" << sendLog;
 					maskState (EXEC_STATE_MASK, EXEC_IDLE);
+					// FIXME: crude workaround for fixing an unwelcome loop of this target due to not removing it in filterExpired
+					currentTarget->startObservation ();
+
 					switchTarget ();
 				}
 				// scriptCount is not 0, but we hit continues target..
