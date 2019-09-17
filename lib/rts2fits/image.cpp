@@ -1175,6 +1175,8 @@ void Image::getChannelHistogram (int chan, long *histogram, long nbins, long *np
 	{
 	}
 
+	int npix = channels[chan]->getNPixels ();
+
 	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
@@ -1182,7 +1184,7 @@ void Image::getChannelHistogram (int chan, long *histogram, long nbins, long *np
 			{
 				uint16_t *data = (uint16_t *)(channels[chan]->getData ());
 
-				for (i = 0; i < channels[chan]->getNPixels (); i++)
+				for (i = 0; i < npix; i++)
 				{
 					int y = i / width;
 					int x = i - y * width;
@@ -1201,7 +1203,7 @@ void Image::getChannelHistogram (int chan, long *histogram, long nbins, long *np
 			{
 				float *data = (float *)(channels[chan]->getData ());
 
-				for (i = 0; i < channels[chan]->getNPixels (); i++)
+				for (i = 0; i < npix; i++)
 				{
 					int y = i / width;
 					int x = i - y * width;

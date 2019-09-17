@@ -247,6 +247,7 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 
 	cacheMaxAge (CACHE_MAX_STATIC);
 
+	mimage->quality(40);
 	mimage->write (&blob, "JPEG");
 	response_length = blob.length();
 	response = new char[response_length];
@@ -287,7 +288,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		Magick::Image *mimage = image.getMagickImage (NULL, quantiles, chan, colourVariant);
 		if (prevsize > 0)
 		{
-			mimage->zoom (Magick::Geometry (prevsize, prevsize));
+			mimage->scale (Magick::Geometry (prevsize, prevsize));
 			image.writeLabel (mimage, 0, mimage->size ().height (), 10, label);
 		}
 		else
