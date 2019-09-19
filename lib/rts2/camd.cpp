@@ -2119,6 +2119,10 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return camBox (conn, x, y, w, h);
 	}
+	else if (conn->isCommand ("full"))
+	{
+		return camBox (conn, -1, -1, -1, -1);
+	}
 	else if (conn->isCommand ("center"))
 	{
 		int w, h;
