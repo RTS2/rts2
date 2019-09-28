@@ -237,17 +237,17 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	image.openFile (path.c_str (), true, false);
 	Blob blob;
 
-	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
+	const char * label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
 
-	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
-	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
+	float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
+	int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
+	int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
 
 	Magick::Image *mimage = image.getMagickImage (label, quantiles, chan, colourVariant);
 
 	cacheMaxAge (CACHE_MAX_STATIC);
 
-	mimage->quality(40);
+	mimage->quality(((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quality")->getValueInteger ());
 	mimage->write (&blob, "JPEG");
 	response_length = blob.length();
 	response = new char[response_length];
@@ -259,19 +259,19 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// size of previews
-	int prevsize = params->getInteger ("ps", 128);
+	int prevsize = params->getInteger ("ps", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_size")->getValueInteger ());
 	// image type
 	// const char *t = params->getString ("t", "p");
 
-	const char *label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
+	const char *label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
 
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
-	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
-	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
+	float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
+	int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
+	int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
@@ -309,7 +309,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 	// get page number and size of page
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 400);
+	int pagesiz = params->getInteger ("s", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_pagesize")->getValueInteger ());
 
 	if (pageno <= 0)
 		pageno = 1;

@@ -21,8 +21,6 @@
 #include "httpreq.h"
 #include "httpserver.h"
 
-#define DEFAULT_QUANTILES    0.005
-#define DEFAULT_COLOURVARIANT    0
 // number of channels in image
 #define CHANNELS             4
 

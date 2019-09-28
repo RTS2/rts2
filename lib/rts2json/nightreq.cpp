@@ -137,15 +137,15 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	int ie = istart + pagesiz;
 	int in = 0;
 
-	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
+	int prevsize = params->getInteger ("ps", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_size")->getValueInteger ());
+	const char * label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
-	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
-	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
+	float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
+	int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
+	int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
 
 	time_t from;
 	int64_t duration;
