@@ -639,7 +639,7 @@ int ImageProc::doImage (const char *_path)
 
 int ImageProc::queObs (int obsId)
 {
-	if (access (defaultObsProcess.c_str (), X_OK))
+	if (access (defaultObsProcess.c_str (), X_OK) == 0)
 	{
 		ConnObsProcess *newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, astrometryTimeout->getValueInteger ());
 		return que (newObsConn);

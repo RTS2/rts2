@@ -1177,7 +1177,7 @@ int Connection::receive (Block *block)
 	// connections market for deletion
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if ((sock >= 0) && (block->getPollEvents (sock) & (POLLIN | POLLPRI)))
+	if ((sock >= 0) && (block->getPollEvents (sock) & (POLLIN | POLLPRI | POLLHUP)))
 	{
 		if (isConnState (CONN_CONNECTING))
 		{

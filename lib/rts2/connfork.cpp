@@ -149,6 +149,8 @@ void ConnFork::processLine ()
 
 int ConnFork::add (Block *block)
 {
+	if (sock > 0)
+		block->addPollFD (sock, POLLIN | POLLPRI | POLLHUP);
 	if (sockerr > 0)
 		block->addPollFD (sockerr, POLLIN | POLLPRI | POLLHUP);
 	if (input.length () > 0)
@@ -163,7 +165,7 @@ int ConnFork::add (Block *block)
 			block->addPollFD (sockwrite, POLLOUT);
 		}
 	}
-	return ConnNoSend::add (block);
+	return 0;
 }
 
 int ConnFork::receive (Block *block)
