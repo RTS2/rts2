@@ -47,6 +47,7 @@ class ConnProcess:public rts2script::ConnExe
 		virtual const char* getProcessArguments () { return "none"; }
 
 #ifdef RTS2_HAVE_LIBJPEG
+		void setLastProcessedJpeg (std::string _last_processed_jpeg) { last_processed_jpeg = _last_processed_jpeg; }
 		void setLastGoodJpeg (std::string _last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
 		void setLastTrashJpeg (std::string _last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
 #endif
@@ -56,6 +57,7 @@ class ConnProcess:public rts2script::ConnExe
 		double expDate;
 
 #ifdef RTS2_HAVE_LIBJPEG
+		std::string last_processed_jpeg;
 		std::string last_good_jpeg;
 		std::string last_trash_jpeg;
 #endif
@@ -125,6 +127,7 @@ class ConnImgProcess:public ConnImgOnlyProcess
 		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
 		 */
 		ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
+		virtual int init ();
 
 		virtual int newProcess ();
 

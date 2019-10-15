@@ -149,6 +149,29 @@ ConnImgProcess::ConnImgProcess (rts2core::Block *_master, const char *_exe, cons
 	end_event = _end_event;
 }
 
+int ConnImgProcess::init ()
+{
+#ifdef RTS2_HAVE_LIBJPEG
+	try
+	{
+		Image image;
+
+		image.openFile (imgPath.c_str (), true, false);
+
+		if (!last_processed_jpeg.empty ())
+		{
+			image.writeAsJPEG (last_processed_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
+		}
+	}
+	catch (rts2core::Error &e)
+	{
+	}
+#endif
+
+	return ConnImgOnlyProcess::init ();
+}
+
+
 int ConnImgProcess::newProcess ()
 {
 	if (astrometryStat == DARK)

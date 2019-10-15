@@ -345,14 +345,19 @@ int ImageProc::getFreeSlot ()
 
 int ImageProc::idle ()
 {
-	std::list < ConnProcess * >::iterator img_iter;
-	if (int free_slot = getFreeSlot () >= 0 && imagesQue.size () != 0)
+	if (imagesQue.size () != 0)
 	{
-		img_iter = imagesQue.begin ();
-		ConnProcess *newImage = *img_iter;
-		imagesQue.erase (img_iter);
-		changeRunning (newImage, free_slot);
+		int free_slot = getFreeSlot ();
+
+		if (free_slot >= 0)
+		{
+			std::list < ConnProcess * >::iterator img_iter = imagesQue.begin ();
+			ConnProcess *newImage = *img_iter;
+			imagesQue.erase (img_iter);
+			changeRunning (newImage, free_slot);
+		}
 	}
+
 #ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::idle ();
 #else
@@ -551,6 +556,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 {
 	int ret;
+
 	if (runningImage[slot])
 	{
 		if (sendStop)
@@ -565,9 +571,14 @@ void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 			return;
 		}
 	}
+
 	runningImage[slot] = newImage;
 	runningImage[slot]->setConnectionDebug (getDebug ());
+#ifdef RTS2_HAVE_LIBJPEG
+		runningImage[slot]->setLastProcessedJpeg (last_processed_jpeg);
+#endif
 	ret = runningImage[slot]->init ();
+
 	if (ret < 0)
 	{
 		deleteConnection (runningImage[slot]);
@@ -628,9 +639,13 @@ int ImageProc::doImage (const char *_path)
 
 int ImageProc::queObs (int obsId)
 {
-	ConnObsProcess *newObsConn;
-	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, astrometryTimeout->getValueInteger ());
-	return que (newObsConn);
+	if (access (defaultObsProcess.c_str (), X_OK))
+	{
+		ConnObsProcess *newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, astrometryTimeout->getValueInteger ());
+		return que (newObsConn);
+	}
+	else
+		return 0;
 }
 
 int ImageProc::queNextFromGlob ()
