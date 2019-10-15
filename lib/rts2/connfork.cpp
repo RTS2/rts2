@@ -185,8 +185,7 @@ int ConnFork::receive (Block *block)
 			{
 				close (sockerr);
 				sockerr = -1;
-				connectionError (0);
-				return -1;
+				return 0;
 			}
 			else
 			{
@@ -243,6 +242,7 @@ void ConnFork::connectionError (int last_data_size)
 		logStream (MESSAGE_DEBUG) << "ConnFork::connectionError reported EAGAIN - that should not happen, ignoring it " << getpid () << sendLog;
 		return;
 	}
+
 	Connection::connectionError (last_data_size);
 }
 
@@ -408,12 +408,16 @@ int ConnFork::init ()
 	{
 		close (filedeswrite[1]);
 		dup2 (filedeswrite[0], 0);
+		close (filedeswrite[0]);
 	}
 
 	close (filedes[0]);
 	dup2 (filedes[1], 1);
+	close (filedes[1]);
+
 	close (filedeserr[0]);
 	dup2 (filedeserr[1], 2);
+	close (filedeserr[1]);
 
 	// if required, pass environemnt values about connections..
 	if (fillConnEnvVars)
