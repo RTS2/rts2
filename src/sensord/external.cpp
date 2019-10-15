@@ -20,6 +20,8 @@
 
 #include "sensord.h"
 
+#define WEATHER_TIMEOUT	300		// seconds a bad weather state will be kept alive
+
 namespace rts2sensord
 {
 
@@ -42,16 +44,12 @@ class External:public SensorWeather
 			createValue (wrHumidity, "humidity", "humidity as set by external script", true, RTS2_VALUE_WRITABLE);
 			createValue (wrPressure, "pressure", "pressure as set by external script", true, RTS2_VALUE_WRITABLE);
 
-			goodWeather->setValueBool (false);
+			goodWeather->setValueBool (true);
 			wrRain->setValueBool (false);
 			wrTemperature->setValueDouble (0.0);
 			wrWind->setValueDouble (0.0);
 			wrHumidity->setValueDouble (0.0);
 			wrPressure->setValueDouble (0.0);
-
-			setWeatherState (goodWeather->getValueBool (), "weather state set from goodWeather value");
-
-			maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
 		}
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * newValue)
@@ -59,18 +57,19 @@ class External:public SensorWeather
 			updateTime->setValueInteger (getNow ());
 			sendValueAll (updateTime);
 
-			if (old_value == goodWeather)
-			{
-				setWeatherState (((rts2core::ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
-			}
-
 			return SensorWeather::setValue (old_value, newValue);
 		}
 
 	protected:
 		virtual bool isGoodWeather ()
 			{
-				return goodWeather->getValueBool ();
+				if (!goodWeather->getValueBool ())
+				{
+					setWeatherTimeout (WEATHER_TIMEOUT, "good_weather is false");
+					return false;
+				}
+
+				return SensorWeather::isGoodWeather ();
 			}
 	private:
 		rts2core::ValueTime *updateTime;
