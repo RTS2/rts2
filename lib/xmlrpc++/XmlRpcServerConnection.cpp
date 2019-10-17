@@ -368,6 +368,8 @@ bool XmlRpcServerConnection::handleGet()
 		{
 			_connectionState = WRITE_ASYNC_RESPONSE;
 			_server->setSourceEvents(this, XmlRpcDispatch::WritableEvent);
+
+			return true; // Continue serving the data asynchronously
 		}
 	}
 
