@@ -232,28 +232,85 @@ using namespace Magick;
 
 void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
-	response_type = "image/jpeg";
-	rts2image::Image image;
-	image.openFile (path.c_str (), true, false);
-	Blob blob;
+	// Check file extension for supported file types
+	if (path.find (".") != std::string::npos)
+	{
+		std::string ext = path.substr (path.rfind (".") + 1);
+		std::transform (ext.begin (), ext.end (), ext.begin (), ::toupper);
+		bool should_serve = false;
 
-	const char * label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
+		if (ext == std::string ("FITS") ||
+			ext == std::string ("FTS") ||
+			ext == std::string ("FIT"))
+		{
+			response_type = "image/jpeg";
+			rts2image::Image image;
+			image.openFile (path.c_str (), true, false);
+			Blob blob;
 
-	float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
-	int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
-	int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
+			const char * label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
 
-	Magick::Image *mimage = image.getMagickImage (label, quantiles, chan, colourVariant);
+			float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
+			int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
+			int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
 
-	cacheMaxAge (CACHE_MAX_STATIC);
+			Magick::Image *mimage = image.getMagickImage (label, quantiles, chan, colourVariant);
 
-	mimage->quality(((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quality")->getValueInteger ());
-	mimage->write (&blob, "JPEG");
-	response_length = blob.length();
-	response = new char[response_length];
-	memcpy (response, blob.data(), response_length);
+			cacheMaxAge (CACHE_MAX_STATIC);
 
-	delete mimage;
+			mimage->quality (((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quality")->getValueInteger ());
+			mimage->write (&blob, "JPEG");
+			response_length = blob.length ();
+			response = new char[response_length];
+			memcpy (response, blob.data (), response_length);
+
+			delete mimage;
+			return;
+		}
+		else if (ext == std::string ("JPG") ||
+				 ext == std::string ("JPEG"))
+		{
+			response_type = "image/jpeg";
+			should_serve = true;
+		}
+		else if (ext == std::string ("PNG"))
+		{
+			response_type = "image/png";
+			should_serve = true;
+		}
+		else if (ext == std::string ("GIF"))
+		{
+			response_type = "image/gif";
+			should_serve = true;
+		}
+
+		if (should_serve)
+		{
+			int f = open (path.c_str (), O_RDONLY);
+			if (f == -1)
+			{
+				throw XmlRpc::XmlRpcException ("Cannot open file");
+			}
+			struct stat st;
+			if (fstat (f, &st) == -1)
+				throw XmlRpc::XmlRpcException ("Cannot get file properties");
+
+			response_length = st.st_size;
+			response = new char[response_length];
+			ssize_t ret;
+			ret = read (f, response, response_length);
+			if (ret != (ssize_t) response_length)
+			{
+				delete[] response;
+				throw XmlRpc::XmlRpcException ("Cannot read data");
+			}
+			close (f);
+
+			return;
+		}
+	}
+
+	throw XmlRpc::XmlRpcException ("Unsupported file type");
 }
 
 void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -276,35 +333,101 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
 
-	// if it is a fits file..
-	if (path.length () > 6 && (path.substr (path.length () - 5)) == std::string (".fits"))
+	// Check file extension for supported file types
+	if (path.find (".") != std::string::npos)
 	{
-		response_type = "image/jpeg";
+		std::string ext = path.substr (path.rfind (".") + 1);
+		std::transform (ext.begin (), ext.end (), ext.begin (), ::toupper);
 
-		rts2image::Image image;
-		image.openFile (absPath, true, false);
-		Blob blob;
-
-		Magick::Image *mimage = image.getMagickImage (NULL, quantiles, chan, colourVariant);
-		if (prevsize > 0)
+		if (ext == std::string ("FITS") ||
+			ext == std::string ("FTS") ||
+			ext == std::string ("FIT"))
 		{
-			mimage->scale (Magick::Geometry (prevsize, prevsize));
-			image.writeLabel (mimage, 0, mimage->size ().height (), 10, label);
+			response_type = "image/jpeg";
+
+			rts2image::Image image;
+			image.openFile (absPath, true, false);
+			Blob blob;
+
+			Magick::Image *mimage = image.getMagickImage (NULL, quantiles, chan, colourVariant);
+			if (prevsize > 0)
+			{
+				mimage->scale (Magick::Geometry (prevsize, prevsize));
+				image.writeLabel (mimage, 0, mimage->size ().height (), 10, label);
+			}
+			else
+			{
+				image.writeLabel (mimage, 1, mimage->rows () - 2, 10, label);
+			}
+
+			cacheMaxAge (CACHE_MAX_STATIC);
+
+			mimage->write (&blob, "JPEG");
+			response_length = blob.length ();
+			response = new char[response_length];
+			memcpy (response, blob.data (), response_length);
+
+			delete mimage;
+			return;
 		}
-		else
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
+		else if (ext == std::string ("JPG") ||
+			ext == std::string ("JPEG") ||
+			ext == std::string ("PNG") ||
+			ext == std::string ("GIF"))
 		{
-			image.writeLabel (mimage, 1, mimage->rows () - 2, 10, label);
+			Magick::Image mimage;
+			Blob blob;
+
+			response_type = "image/jpeg";
+
+			try
+			{
+				mimage.read (path);
+
+				if (prevsize > 0)
+				{
+					// Dedicated hard-coded label to mark the previews of 'normal' images
+					std::string imglabel = ext + " " + std::to_string (mimage.size ().width ()) + " x " + std::to_string (mimage.size ().height ());
+
+					if (!strlen (label))
+						// Special way to disable preview label by providing an empty lb argument
+						imglabel.clear ();
+
+					mimage.scale (Magick::Geometry (prevsize, prevsize));
+
+					int x = 0;
+					int y = mimage.size ().height ();
+					int fs = 12;
+
+					std::cout << x << " " << y << std::endl;
+
+					if (!imglabel.empty ())
+					{
+						mimage.fontPointsize (fs);
+						mimage.fillColor (Magick::Color (0, 0, 0, MaxRGB / 2));
+						mimage.draw (Magick::DrawableRectangle (x, y - fs - 4, mimage.size (). width () - x - 2, y));
+
+						mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+						mimage.draw (Magick::DrawableText (x + 2, y - 3, imglabel));
+					}
+				}
+
+				cacheMaxAge (CACHE_MAX_STATIC);
+
+				mimage.write (&blob, "JPEG");
+				response_length = blob.length ();
+				response = new char[response_length];
+				memcpy (response, blob.data (), response_length);
+
+				return;
+			}
+			catch (Magick::Exception &ex)
+			{
+				return;
+			}
+#endif
 		}
-
-		cacheMaxAge (CACHE_MAX_STATIC);
-
-		mimage->write (&blob, "JPEG");
-		response_length = blob.length();
-		response = new char[response_length];
-		memcpy (response, blob.data(), response_length);
-
-		delete mimage;
-		return;
 	}
 
 	// get page number and size of page
@@ -317,7 +440,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	std::ostringstream _os;
 	Previewer preview = Previewer (getServer (), this);
 
-	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
+	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style () );
 
 	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
 
@@ -406,12 +529,25 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	int ie = is + pagesiz;
 	int in = 0;
 
-
 	for (i = 0; i < n; i++)
 	{
-		char *fname = namelist[i]->d_name;
-		if (strstr (fname + strlen (fname) - 6, ".fits") == NULL)
+		std::string fname = std::string (namelist[i]->d_name);
+
+		if (fname.rfind (".") == std::string::npos)
 			continue;
+
+		std::string ext = fname.substr (fname.rfind (".") + 1);
+		std::transform (ext.begin (), ext.end (), ext.begin (), ::toupper);
+
+		if (ext != std::string ("FITS") &&
+			ext != std::string ("FTS") &&
+			ext != std::string ("FIT") &&
+			ext != std::string ("JPG") &&
+			ext != std::string ("JPEG") &&
+			ext != std::string ("PNG") &&
+			ext != std::string ("GIF"))
+			continue;
+
 		in++;
 		if (in <= is || in > ie)
 			continue;
@@ -446,26 +582,64 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
-	response_type = "image/fits";
-	int f = open (path.c_str (), O_RDONLY);
-	if (f == -1)
+	// Check file extension for supported file types
+	if (path.find (".") != std::string::npos)
 	{
-		throw XmlRpc::XmlRpcException ("Cannot open file");
-	}
-	struct stat st;
-	if (fstat (f, &st) == -1)
-		throw XmlRpc::XmlRpcException ("Cannot get file properties");
+		std::string ext = path.substr (path.rfind (".") + 1);
+		std::transform (ext.begin (), ext.end (), ext.begin (), ::toupper);
+		bool should_serve = false;
 
-	response_length = st.st_size;
-	response = new char[response_length];
-	ssize_t ret;
-	ret = read (f, response, response_length);
-	if (ret != (ssize_t) response_length)
-	{
-		delete[] response;
-		throw XmlRpc::XmlRpcException ("Cannot read data");
+		if (ext == std::string ("FITS") ||
+			ext == std::string ("FTS") ||
+			ext == std::string ("FIT"))
+		{
+			response_type = "image/fits";
+			should_serve = true;
+		}
+		else if (ext == std::string ("JPG") ||
+				 ext == std::string ("JPEG"))
+		{
+			response_type = "image/jpeg";
+			should_serve = true;
+		}
+		else if (ext == std::string ("PNG"))
+		{
+			response_type = "image/png";
+			should_serve = true;
+		}
+		else if (ext == std::string ("GIF"))
+		{
+			response_type = "image/gif";
+			should_serve = true;
+		}
+
+		if (should_serve)
+		{
+			int f = open (path.c_str (), O_RDONLY);
+			if (f == -1)
+			{
+				throw XmlRpc::XmlRpcException ("Cannot open file");
+			}
+			struct stat st;
+			if (fstat (f, &st) == -1)
+				throw XmlRpc::XmlRpcException ("Cannot get file properties");
+
+			response_length = st.st_size;
+			response = new char[response_length];
+			ssize_t ret;
+			ret = read (f, response, response_length);
+			if (ret != (ssize_t) response_length)
+			{
+				delete[] response;
+				throw XmlRpc::XmlRpcException ("Cannot read data");
+			}
+			close (f);
+
+			return;
+		}
 	}
-	close (f);
+
+	throw XmlRpc::XmlRpcException ("Unsupported file type");
 }
 
 void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
