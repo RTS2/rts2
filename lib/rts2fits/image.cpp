@@ -1722,7 +1722,7 @@ void Image::writeLabel (Magick::Image *mimage, int x, int y, unsigned int fs, co
 	mimage->draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
 }
 
-void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
+std::string Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
 {
 	std::string new_filename = expandPath (expand_str);
 
@@ -1749,6 +1749,8 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 		delete image;
 		throw ex;
 	}
+
+	return new_filename;
 }
 
 void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles, int chan, int colourVariant)

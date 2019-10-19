@@ -355,7 +355,7 @@ class Image:public FitsFile
 		 *
 		 * @throw Exception
 		 */
-		void writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
+		std::string writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
 
 		/**
 		 * Store image to blob, which can be used to get data etc..

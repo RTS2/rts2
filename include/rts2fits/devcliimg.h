@@ -133,6 +133,14 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		// template for headers.
 		rts2core::IniParser *fitsTemplate;
 
+#ifdef RTS2_HAVE_LIBJPEG
+		// Some parameters for image previews
+		std::string previewPath;
+		double previewZoom;
+		double previewQuantiles;
+		int previewColor;
+#endif // RTS2_HAVE_LIBJPEG
+
 	private:
 		// queue for images needed to be checked for metadata arrival
 		std::vector <Image *> checkImages;

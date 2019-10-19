@@ -29,6 +29,10 @@
 #include "rts2script/execclidb.h"
 #include "rts2devcliphot.h"
 
+#ifdef RTS2_HAVE_LIBJPEG
+#include <Magick++.h>
+#endif // RTS2_HAVE_LIBJPEG
+
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
 #define OPT_DONT_DARK     OPT_LOCAL + 101
 #define OPT_DISABLE_AUTO  OPT_LOCAL + 102
@@ -287,6 +291,10 @@ int Executor::init ()
 		return ret;
 
 	addConnection (notifyConn);
+
+#ifdef RTS2_HAVE_LIBJPEG
+	Magick::InitializeMagick (".");
+#endif /* RTS2_HAVE_LIBJPEG */
 
 	setIdleInfoInterval(1);
 

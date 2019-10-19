@@ -73,6 +73,13 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 		}
 	}
 
+#ifdef RTS2_HAVE_LIBJPEG
+	config->getString (connection->getName (), "preview_path", previewPath);
+	config->getDouble (connection->getName (), "preview_zoom", previewZoom, 1.0);
+	config->getDouble (connection->getName (), "preview_quantiles", previewQuantiles, 0.005);
+	config->getInteger (connection->getName (), "preview_color", previewColor, 0);
+#endif // RTS2_HAVE_LIBJPEG
+
 	actualImage = NULL;
 
 	expNum = 0;
@@ -547,6 +554,25 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 			// save us to the disk..
 			ci->image->saveImage ();
 		}
+
+#ifdef RTS2_HAVE_LIBJPEG
+		// Save image preview if requested
+		try
+		{
+			if (!previewPath.empty ())
+			{
+				std::string preview = ci->image->writeAsJPEG (previewPath, previewZoom, "%Y-%m-%d %H:%M:%S @OBJECT", previewQuantiles, -1, previewColor);
+
+				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_preview_image", '=', preview));
+				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_preview_time", '=', getNow ()));
+			}
+		}
+		catch (rts2core::Error &ex)
+		{
+			logStream (MESSAGE_WARNING) << "Cannot save preview image for " << ci->image->getAbsoluteFileName () << " : " << ex << sendLog;
+		}
+#endif // RTS2_HAVE_LIBJPEG
+
 		// do basic processing
 		imageProceRes res = processImage (ci->image);
 		if (res == IMAGE_KEEP_COPY)

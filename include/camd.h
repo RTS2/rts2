@@ -1043,6 +1043,8 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::Connection *exposureConn;
 
 		rts2core::ValueString *lastImagePath;
+		rts2core::ValueString *lastPreviewImagePath;
+		rts2core::ValueTime *lastPreviewImageTime;
 
 		// shared memory identifier
 		int sharedMemNum;

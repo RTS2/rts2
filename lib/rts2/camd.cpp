@@ -529,6 +529,10 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	exposure->setValueDouble (1);
 
 	createValue (lastImagePath, "last_image", "path to the last image", false, RTS2_VALUE_WRITABLE);
+#ifdef RTS2_HAVE_LIBJPEG
+	createValue (lastPreviewImagePath, "last_preview_image", "path to the last preview image", false, RTS2_VALUE_WRITABLE);
+	createValue (lastPreviewImageTime, "last_preview_time", "time of the last preview image", false, RTS2_VALUE_WRITABLE);
+#endif // RTS2_HAVE_LIBJPEG
 
 	sendOkInExposure = false;
 
@@ -1825,7 +1829,7 @@ int Camera::readoutStart ()
 	int ret;
 	for (int i = 0; i < (dataChannels ? dataChannels->getValueInteger () : 1); i++)
 	{
-		ret = sendFirstLine (i, getPhysicalChannel (i + 1));
+		ret = sendFirstLine (i, getPhysicalChannel (i));
 		if (ret)
 			return ret;
 	}
