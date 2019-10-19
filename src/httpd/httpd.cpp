@@ -921,6 +921,10 @@ int HttpD::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 void HttpD::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerState * new_state)
 {
+	if (new_state->getOldValue () & DEVICE_NOT_READY)
+		// Device just appeared, we should not consider it as a state change
+		return;
+
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
 	for (StateCommands::iterator iter = events.stateCommands.begin (); iter != events.stateCommands.end (); iter++)
