@@ -678,6 +678,30 @@ int ExecutorQueue::removeIndex (int index)
 	return 0;
 }
 
+int ExecutorQueue::moveIndex (int index, int newindex)
+{
+	ExecutorQueue::iterator iter = findIndex (index);
+	if (iter == end ())
+		return -1;
+
+	ExecutorQueue::iterator newiter;
+
+	if (newindex > index)
+		newiter = findIndex (newindex + 1);
+	else
+		newiter = findIndex (newindex);
+
+	// if (newiter == end ())
+	// 	return -1;
+
+	splice (newiter, *this, iter);
+	// iter->remove();
+	// insert(newiter, *iter);
+
+	updateVals ();
+	return 0;
+}
+
 int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start, double t_end, int rep_n, float rep_separation, int plan_id, bool hard)
 {
 	// find entry in queue to put target

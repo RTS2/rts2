@@ -270,6 +270,11 @@ class ExecutorQueue:public TargetQueue
 		int removeIndex (int index);
 
 		/**
+		 * Move entry with given index to the new place inside the queue.
+		 */
+		int moveIndex (int index, int newindex);
+
+		/**
 		 * Add target to the first possible position.
 		 */
 		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = NAN, double t_end = NAN, int rep_n = -1, float rep_separation = NAN, int plan_id = -1, bool hard = false);
