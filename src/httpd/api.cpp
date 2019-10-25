@@ -722,6 +722,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			}
 			else if (vals[0] == "msgqueue")
 			{
+				double from = params->getDouble ("from", 0);
+				bool first = true;
+
 				os << std::fixed << "\"h\":["
 					"{\"n\":\"Time\",\"t\":\"t\",\"c\":0},"
 					"{\"n\":\"Component\",\"t\":\"s\",\"c\":1},"
@@ -731,8 +734,15 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 
 				for (std::deque <Message>::iterator iter = ((HttpD *) getMasterApp ())->getMessages ().begin (); iter != ((HttpD *) getMasterApp ())->getMessages ().end (); iter++)
 				{
-					if (iter != ((HttpD *) getMasterApp ())->getMessages ().begin ())
+					// return only messages after requested moment
+					if (iter->getMessageTime () <= from)
+						continue;
+
+					if (first)
+						first = false;
+					else
 						os << ",";
+
 					os << "[" << iter->getMessageTime () << ",\"" << rts2json::JsonString (iter->getMessageOName ()) << "\"," << iter->getType () << ",\"" << rts2json::JsonString (iter->getMessageString ()) << "\"]";
 				}
 				os << "]";
