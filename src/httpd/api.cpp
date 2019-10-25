@@ -257,7 +257,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw JSONException ("cannot find device with given name");
-			rts2core::Value * rts2v = master->getValue (device, variable);
+			rts2core::Value * rts2v = conn->getValue (variable);
 			if (rts2v == NULL)
 				throw JSONException ("cannot find variable");
 			if (rts2v->getValueBaseType () != RTS2_VALUE_SELECTION)
@@ -386,7 +386,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 						conn = master->getOpenConnection (device);
 					if (conn == NULL)
 						throw JSONException ("cannot find device with given name");
-					rts2core::Value * rts2v = master->getValue (device, variable);
+					rts2core::Value * rts2v = conn->getValue (variable);
 					if (rts2v == NULL)
 						throw JSONException ("cannot find variable");
 					if (async)
@@ -474,7 +474,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 								conn = master->getOpenConnection (devn.c_str ());
 							if (conn == NULL)
 								throw JSONException ("cannot find device with name " + devn);
-							rts2core::Value * rts2v = master->getValue (devn.c_str (), vn.c_str ());
+							rts2core::Value * rts2v = conn->getValue (vn.c_str ());
 							if (rts2v == NULL)
 								throw JSONException ("cannot find variable with name " + vn);
 							if (async == 0)
