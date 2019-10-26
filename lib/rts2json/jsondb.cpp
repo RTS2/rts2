@@ -61,6 +61,13 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		tar_set.load ();
 		jsonTargets (tar_set, os, params);
 	}
+	// returns all selectable targets in database
+	else if (vals[0] == "tslist")
+	{
+		rts2db::TargetSetSelectable tar_set;
+		tar_set.load ();
+		jsonTargets (tar_set, os, params);
+	}
 	// returns target information specified by target name
 	else if (vals[0] == "tbyname")
 	{
@@ -816,6 +823,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom, XmlRpc::XmlRpcServerConnection * chunked)
 {
 	bool extended = params->getInteger ("e", false);
+	bool bonus = params->getInteger ("b", false);
 	bool withpm = params->getInteger ("propm", false);
 	time_t from = params->getInteger ("from", getNow ());
 	int c = 5;
@@ -865,6 +873,11 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << ",{\"n\":\"Proper motion RA\",\"t\":\"d\",\"c\":" << (c) << "},"
 			"{\"n\":\"Proper motion DEC\",\"t\":\"d\",\"c\":" << (c + 1) << "}";
 			c += 2;
+		}
+		if (bonus)
+		{
+			os << ",{\"n\":\"Bonus\",\"t\":\"d\",\"c\":" << (c) << "}";
+			c++;
 		}
 
 		if (chunked)
@@ -964,6 +977,9 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 
 			os << "," << rts2json::JsonDouble (pm.ra) << "," << rts2json::JsonDouble (pm.dec);
 		}
+		if (bonus)
+			os << ',' << rts2json::JsonDouble (tar->getBonus (JD));
+
 		os << "]";
 		if (chunked)
 		{
