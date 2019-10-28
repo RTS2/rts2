@@ -412,20 +412,24 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			case TYPE_LANDOLT:
 			{
 				rts2db::ConstTarget *tar = (rts2db::ConstTarget *) t;
-				const char *tn = params->getString ("tn", "");
-				double ra = params->getDouble ("ra", -1000);
-				double dec = params->getDouble ("dec", -1000);
-				double pm_ra = params->getDouble ("pm_ra", NAN);
-				double pm_dec = params->getDouble ("pm_dec", NAN);
-				bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
-				const char *info = params->getString ("info", NULL);
 
-				if (strlen (tn) > 0)
-					tar->setTargetName (tn);
-				if (ra > -1000 && dec > -1000)
-					tar->setPosition (ra, dec);
-				if (!(std::isnan (pm_ra) && std::isnan (pm_dec)))
+				if (params->hasParam ("tn"))
 				{
+					const char *tn = params->getString ("tn", "");
+					tar->setTargetName (tn);
+				}
+
+				if (params->hasParam ("ra") && params->hasParam ("dec"))
+				{
+					double ra = params->getDouble ("ra", -1000);
+					double dec = params->getDouble ("dec", -1000);
+					tar->setPosition (ra, dec);
+				}
+
+				if (params->hasParam ("pm_ra") && params->hasParam ("pm_dec"))
+				{
+					double pm_ra = params->getDouble ("pm_ra", NAN);
+					double pm_dec = params->getDouble ("pm_dec", NAN);
 					switch (tar->getTargetType ())
 					{
 						case TYPE_CALIBRATION:
@@ -436,9 +440,29 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 							throw XmlRpc::JSONException ("only calibration and oportunity targets can have proper motion");
 					}
 				}
-				tar->setTargetEnabled (enabled, true);
-				if (info != NULL)
+
+				if (params->hasParam ("enabled"))
+				{
+					bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
+					tar->setTargetEnabled (enabled, true);
+				}
+
+				if (params->hasParam ("next_observable"))
+				{
+					time_t next = params->getInteger ("next_observable", 0);
+
+					if (next)
+						tar->setNextObservable (&next);
+					else
+						tar->setNextObservable ((time_t *)NULL);
+				}
+
+				if (params->hasParam ("info"))
+				{
+					const char *info = params->getString ("info", NULL);
 					tar->setTargetInfo (std::string (info));
+				}
+
 				tar->save (true);
 
 				os << "\"id\":" << tar->getTargetID ();
@@ -876,8 +900,9 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		}
 		if (bonus)
 		{
-			os << ",{\"n\":\"Bonus\",\"t\":\"d\",\"c\":" << (c) << "}";
-			c++;
+			os << ",{\"n\":\"Bonus\",\"t\":\"d\",\"c\":" << (c) << "},"
+			"{\"n\":\"Next observable\",\"t\":\"t\",\"c\":" << (c + 1) << "}";
+			c += 2;
 		}
 
 		if (chunked)
@@ -978,7 +1003,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << "," << rts2json::JsonDouble (pm.ra) << "," << rts2json::JsonDouble (pm.dec);
 		}
 		if (bonus)
-			os << ',' << rts2json::JsonDouble (tar->getBonus (JD));
+			os << "," << rts2json::JsonDouble (tar->getBonus (JD)) << "," << rts2json::JsonDouble (tar->getNextObservable ());
 
 		os << "]";
 		if (chunked)
