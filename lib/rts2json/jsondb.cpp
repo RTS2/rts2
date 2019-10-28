@@ -457,6 +457,13 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 						tar->setNextObservable ((time_t *)NULL);
 				}
 
+				if (params->hasParam ("priority"))
+				{
+					double priority = params->getInteger ("priority", 0);
+
+					tar->setTargetPriority (priority);
+				}
+
 				if (params->hasParam ("info"))
 				{
 					const char *info = params->getString ("info", NULL);
@@ -901,8 +908,9 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		if (bonus)
 		{
 			os << ",{\"n\":\"Bonus\",\"t\":\"d\",\"c\":" << (c) << "},"
-			"{\"n\":\"Next observable\",\"t\":\"t\",\"c\":" << (c + 1) << "}";
-			c += 2;
+			"{\"n\":\"Priority\",\"t\":\"d\",\"c\":" << (c + 1) << "},"
+			"{\"n\":\"Next observable\",\"t\":\"t\",\"c\":" << (c + 2) << "}";
+			c += 3;
 		}
 
 		if (chunked)
@@ -1003,7 +1011,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << "," << rts2json::JsonDouble (pm.ra) << "," << rts2json::JsonDouble (pm.dec);
 		}
 		if (bonus)
-			os << "," << rts2json::JsonDouble (tar->getBonus (JD)) << "," << rts2json::JsonDouble (tar->getNextObservable ());
+			os << "," << rts2json::JsonDouble (tar->getBonus (JD)) << "," << rts2json::JsonDouble (tar->getTargetPriority ()) << "," << rts2json::JsonDouble (tar->getNextObservable ());
 
 		os << "]";
 		if (chunked)
