@@ -360,26 +360,52 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 	else if (vals[0] == "create_target")
 	{
 		const char *tn = params->getString ("tn", "");
-		double ra = params->getDouble ("ra", NAN);
-		double dec = params->getDouble ("dec", NAN);
-		const char *type = params->getString ("type", "O");
-		const char *info = params->getString ("info", "");
 		const char *comment = params->getString ("comment", "");
 
 		if (strlen (tn) == 0)
 			throw XmlRpc::JSONException ("empty target name");
-		if (strlen (type) != 1)
-			throw XmlRpc::JSONException ("invalid target type");
 
-		rts2db::ConstTarget nt;
-		nt.setTargetName (tn);
-		nt.setPosition (ra, dec);
-		nt.setTargetInfo (std::string (info));
-		nt.setTargetComment (comment);
-		nt.setTargetType (type[0]);
-		nt.save (false);
+		rts2db::Target *target = NULL;
 
-		os << "\"id\":" << nt.getTargetID ();
+		if (params->hasParam ("ts"))
+		{
+			const char *tar_name = params->getString ("ts", "");
+			if (tar_name[0] == '\0')
+				throw XmlRpc::JSONException ("empty ts parameter");
+
+			target = createTargetByString (tar_name, getServer ()->getDebug ());
+
+			if (target == NULL)
+				throw XmlRpc::JSONException ("cannot parse target");
+		}
+		else
+		{
+			double ra = params->getDouble ("ra", NAN);
+			double dec = params->getDouble ("dec", NAN);
+			const char *info = params->getString ("info", "");
+			const char *type = params->getString ("type", "O");
+
+			if (strlen (type) != 1)
+				throw XmlRpc::JSONException ("invalid target type");
+
+			target = new rts2db::ConstTarget ();
+
+			((rts2db::ConstTarget *)target)->setPosition (ra, dec);
+			target->setTargetInfo (std::string (info));
+			target->setTargetType (type[0]);
+		}
+
+		target->setTargetName (tn);
+		target->setTargetComment (comment);
+
+		if (params->hasParam ("id"))
+			target->saveWithID (false, params->getInteger ("id", -1));
+		else
+			target->save (false);
+
+		os << "\"id\":" << target->getTargetID ();
+
+		delete (target);
 	}
 	else if (vals[0] == "create_tle_target")
 	{
