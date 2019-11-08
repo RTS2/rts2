@@ -118,9 +118,10 @@ void Image::initData ()
 }
 
 
-Image::Image ():FitsFile ()
+Image::Image (bool _writeConnection, bool _writeRTS2Values):FitsFile ()
 {
 	initData ();
+	setWriteConnection (_writeConnection, _writeRTS2Values);
 	flags = IMAGE_KEEP_DATA;
 }
 
@@ -431,12 +432,39 @@ void Image::getHeaders ()
 		getValue ("CTIME", tv.tv_sec, true);
 		getValue ("USEC", tv.tv_usec, true);
 	}
-	catch (rts2core::Error )
+	catch (rts2core::Error)
 	{
-		char daobs[100];
-		getValue ("DATE-OBS", daobs, 100, NULL, verbose);
-		parseDate (daobs, &tv.tv_sec, true);
-		tv.tv_usec = 0;
+		try
+		{
+			char daobs[100];
+			tv.tv_usec = 0;
+			getValue ("DATE-OBS", daobs, 100, NULL, true);
+			bool onlyDate = false;
+			parseDate (daobs, &tv.tv_sec, true, &onlyDate);
+			if (onlyDate)
+			{
+				// try to find UT time..
+				getValue ("UTC-OBS", daobs, 100, NULL, true);
+				int hh, mm;
+				float ss;
+				if (sscanf (daobs, "%d:%d:%f", &hh, &mm, &ss) == 3)
+				{
+					int s = floor (ss);
+					tv.tv_sec += hh * 3600 + mm * 60 + s;
+					tv.tv_usec = (ss - s) * USEC_SEC;
+				}
+				else
+				{
+					logStream (MESSAGE_WARNING) << "image " << getFileName () << " invalid UTC-OBS " << daobs << ", using local time" << sendLog;
+					gettimeofday (&tv, NULL);
+				}
+			}
+		}
+		catch (rts2core::Error er)
+		{
+			logStream (MESSAGE_WARNING) << "cannot get time from image " << getFileName () << ", using current time" << sendLog;
+			gettimeofday (&tv, NULL);
+		}
 	}
 	setExposureStart (&tv);
 	// if EXPTIM fails..
@@ -683,6 +711,7 @@ int Image::copyImage (const char *copy_filename)
 	int ret = saveImage ();
 	if (ret)
 		return ret;
+
 	ret = mkpath (copy_filename, 0777);
 	if (ret)
 		return ret;
@@ -880,9 +909,8 @@ void Image::writeMetaData (struct imghdr *im_h)
 			return;
 		}
 
-		filter_i = ntohs (im_h->filter);
+		setFilterNum(ntohs (im_h->filter));
 
-		setValue ("CAM_FILT", filter_i, "filter used for image");
 		setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (0 - opened, 1 - closed)");
 		// dark images don't need to wait till imgprocess will pick them up for reprocessing
 		switch (ntohs (im_h->shutter))
@@ -1728,11 +1756,13 @@ int Image::saveImage ()
 
 int Image::deleteImage ()
 {
-	int ret;
+	int ret = 0;
 	fits_close_file (getFitsFile (), &fits_status);
 	setFitsFile (NULL);
 	flags &= ~IMAGE_SAVE;
-	ret = unlink (getFileName ());
+	const char *fn = getFileName();
+	if (fn)
+		ret = unlink (fn);
 	return ret;
 }
 
@@ -1840,6 +1870,12 @@ void Image::setFilter (const char *in_filter)
 	strcpy (filter, in_filter);
 	if (writeRTS2Values)
 		setValue ("FILTER", filter, "camera filter as string");
+}
+
+void Image::setFilterNum (int filnum)
+{
+	filter_i = filnum;
+	setValue ("CAM_FILT", filter_i, "filter used for image");
 }
 
 void Image::computeStatistics (size_t _from, size_t _dataSize)

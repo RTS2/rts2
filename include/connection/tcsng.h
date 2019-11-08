@@ -51,6 +51,8 @@ class ConnTCSNG:public ConnTCP
 		double getSexadecimalHours (const char *req);
 		double getSexadecimalTime (const char *req);
 		double getSexadecimalAngle (const char *req);
+		void setDebug(bool debug_state){debug=debug_state;};
+		bool getDebug(){return debug;};
 
 		int getInteger (const char *req);
 
@@ -63,6 +65,7 @@ class ConnTCSNG:public ConnTCP
 		char ngbuf[NGMAXSIZE];
 
 		int reqCount;
+		bool debug;
 };
 
 }

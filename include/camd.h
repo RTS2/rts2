@@ -451,14 +451,8 @@ class Camera:public rts2core::ScriptDevice
 
 		int sendReadoutData (char *data, size_t dataSize, int chan = 0);
 
-		int fitsDataTransfer (const char *fn)
-		{
-			if (exposureConn)
-				return exposureConn->fitsDataTransfer (fn);
-			logStream (MESSAGE_WARNING) << "fits data without exposure connection, no data will be received" << sendLog;
-			return 0;
-		}
-
+		int fitsDataTransfer (const char *fn);
+		
 		/**
 		 * Return number of bytes which are left from the image.
 		 *

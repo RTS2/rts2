@@ -320,7 +320,7 @@ void NMonitor::menuPerform (int code)
 			break;
 		case MENU_ABOUT:
 			messageBox ("   rts2-mon " RTS2_PACKAGE_VERSION "\n"
-"  (C) Petr Kubanek <petr@kubanek.net>");
+"  \u00a9 Petr Kub\u00e1nek <petr@rts2.org>");
 			break;
 		case MENU_MANUAL:
 			showHelp ();
@@ -489,7 +489,8 @@ int NMonitor::repaint ()
 	{
 		changeListConnection ();
 	}
-	daemonWindow->draw ();
+	if (daemonWindow)
+		daemonWindow->draw ();
 	msgwindow->draw ();
 	statusWindow->draw ();
 	comWindow->draw ();

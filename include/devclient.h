@@ -69,8 +69,9 @@ class DevClient:public Object
 		 * Data written to FITS file on the disk are available for processing.
 		 *
 		 * @param fn full path to the file holding exposure data
+		 * @param filter_num last filter number (>=0)
 		 */
-		virtual void fitsData (const char *fn) {}
+		virtual void fitsData (const char *fn, int filter_num) {}
 
 		virtual void stateChanged (ServerState * state);
 

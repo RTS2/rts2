@@ -55,6 +55,7 @@ def sort_data(doc):
     
     return mydict
 
+
 def search(search_term):
     votable = get_data(search_term)
     target = sort_data(votable)
@@ -83,9 +84,7 @@ class create_parser:
         self.args.append(arg)
 
 
-    
-
-def main():
+if __name__ == '__main__':
     cp = create_parser() # negative decs wreak havoc
     parser = argparse.ArgumentParser(description='Add new targets to the RTS2 database')
     parser.add_argument("--search", nargs=1, dest="search_term", help="Search term for Simbad database.")
@@ -99,8 +98,3 @@ def main():
     elif args.obj:
         
         create( *cp.args )
-
-
-        
-main()
-

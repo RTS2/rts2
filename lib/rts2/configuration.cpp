@@ -67,7 +67,7 @@ int Configuration::getSpecialValues ()
 
 	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 
-	checker = new ObjectCheck (horizon_file.c_str ());
+	checker.loadHorizon (horizon_file.c_str ());
 	astrometryTimeout = getIntegerDefault ("imgproc", "astrometry_timeout", 3600);
 	calibrationAirmassDistance = getDoubleDefault ("calibration", "airmass_distance", 0.1);
 	calibrationLunarDist = getDoubleDefault ("calibration", "lunar_dist", 20);
@@ -94,7 +94,6 @@ Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 	observer.lat = 0;
 	observer.lng = 0;
 	storeSexadecimals = false;
-	checker = NULL;
 	// default to 120 seconds
 	astrometryTimeout = 120;
 	targetConstraintsWithName = false;
@@ -104,7 +103,6 @@ Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 
 Configuration::~Configuration (void)
 {
-	delete checker;
 }
 
 Configuration * Configuration::instance ()
@@ -121,7 +119,7 @@ struct ln_lnlat_posn * Configuration::getObserver ()
 
 ObjectCheck * Configuration::getObjectChecker ()
 {
-	return checker;
+	return &checker;
 }
 
 int Configuration::getDeviceMinFlux (const char *device, double &minFlux)

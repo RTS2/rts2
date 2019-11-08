@@ -35,15 +35,13 @@
 
 using namespace rts2core;
 
-ObjectCheck::ObjectCheck (const char *horizon_file)
+ObjectCheck::ObjectCheck () : 
+	horType(HA_DEC), ignoreHorizon(true)
 {
-	horType = HA_DEC;
-	load_horizon (horizon_file);
 }
 
 ObjectCheck::~ObjectCheck (void)
 {
-	horizon.clear ();
 }
 
 bool RAcomp (HorizonEntry hor1, HorizonEntry hor2)
@@ -51,7 +49,7 @@ bool RAcomp (HorizonEntry hor1, HorizonEntry hor2)
 	return hor1.hrz.az < hor2.hrz.az;
 }
 
-int ObjectCheck::load_horizon (const char *horizon_file)
+int ObjectCheck::loadHorizon (const char *horizon_file)
 {
 	std::ifstream inf;
 
@@ -62,6 +60,8 @@ int ObjectCheck::load_horizon (const char *horizon_file)
 	if (!strcmp (horizon_file, "-"))
 		return 0;
 
+	setIgnore (false);
+
 	inf.open (horizon_file);
 
 	struct ln_lnlat_posn *observer = Configuration::instance ()->getObserver ();
@@ -71,6 +71,8 @@ int ObjectCheck::load_horizon (const char *horizon_file)
 		std::cerr << "cannot open horizon file '" << horizon_file << "'" << std::endl;
 		return -1;
 	}
+
+	horizon.clear ();
 
 	while (!inf.eof ())
 	{
@@ -162,11 +164,17 @@ int ObjectCheck::load_horizon (const char *horizon_file)
 
 int ObjectCheck::is_good (const struct ln_hrz_posn *hrz, int hardness)
 {
+	if (getIgnore ())
+		return true;
+
 	return hrz->alt > getHorizonHeight (hrz, hardness);
 }
 
 int ObjectCheck::is_good_with_margin (struct ln_hrz_posn *hrz, double alt_margin, double az_margin, int hardness)
 {
+	if (getIgnore ())
+		return true;
+
 	// check margin one..
 	hrz->alt = hrz->alt - alt_margin;
 	if (hrz->alt > 90)
@@ -198,7 +206,7 @@ double ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1, ho
 double ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
 {
 	if (horizon.size () == 0)
-		return 0;
+		return -2;
 
 	horizon_t::iterator iter = horizon.begin ();
 

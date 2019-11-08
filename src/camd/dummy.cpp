@@ -556,7 +556,7 @@ void Dummy::generateImage (size_t pixelsize, int chan)
 	if (genType->getValueInteger () == 6)
 	{
 		// Sensible number of stars for a stellar field
-		astar_num->setValueInteger (getUsedWidthBinned () * getUsedHeightBinned () / 300 / astarX->getValueDouble () / astarY->getValueDouble ());
+		astar_num->setValueInteger (std::min(getUsedWidthBinned () * getUsedHeightBinned () / 300 / astarX->getValueDouble () / astarY->getValueDouble (), 100.0));
 
 		// Fix random seed so the field is the same every run
 		srandom (0);
@@ -726,10 +726,10 @@ template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
 				double aay = y - (*astar_Yp)[j];
 
 				double r = hypot (aax, aay);
-				double flux = pow (1.0 + j, -magSlope); // Distribution of relative fluxes
 
 				if (r < xmax)
 				{
+					double flux = pow (1.0 + j, -magSlope); // Distribution of relative fluxes
 					*data += 3.0 * flux * aamp->getValueDouble () * moffat (r, r0, sx, beta) / moffat_norm;
 				}
 			}

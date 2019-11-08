@@ -164,6 +164,8 @@ class FLATStest(unittest.TestCase):
         self.__check_lines(
             flatS, poll, 
             [
+                'log I CXX IMG name is /tmp/flat1.fits',
+                'command info',
                 '? average'
             ],
             '45000'
@@ -171,6 +173,7 @@ class FLATStest(unittest.TestCase):
         self.__check_lines(
             flatS, poll, 
             [
+                'log I CXX avrg = 45000.0',
                 'delete /tmp/flat1.fits',
                 'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0'
                 ' filter i next exptime 5 ret bright',
@@ -217,6 +220,8 @@ class FLATStest(unittest.TestCase):
         self.__check_lines(
             flatS, poll, 
             [
+                'log I CXX IMG name is /tmp/flat1.fits',
+                'command info',
                 '? average'
             ],
             '45000'
@@ -224,6 +229,7 @@ class FLATStest(unittest.TestCase):
         self.__check_lines(
             flatS, poll, 
             [
+                'log I CXX avrg = 45000.0',
                 'delete /tmp/flat1.fits',
                 'log I CXX run ratio 2.03479056992 avrg 45000.0 ngood 0 ' 
                 'filter [\'i\', \'A\'] next exptime 5 ret bright',

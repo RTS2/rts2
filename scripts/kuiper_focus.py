@@ -3,12 +3,12 @@ from rts2 import  scriptcomm
 
 class Focusing (scriptcomm.Rts2Comm):	
     
-    def __init__(self, exptime=30, step=10, attempts=10 ):
+    def __init__(self,exptime = 2,step=1,attempts=20 ):
         scriptcomm.Rts2Comm.__init__(self)
-        self.exptime = exptime
+        self.exptime = 2 # 60 # 10
         self.focuser = self.getValue('focuser')
-        self.step = step
-        self.attempts = attempts
+        self.step = 10 # 0.2
+        self.attempts = 1 #30 # 20
 
         # if |offset| is above this value, try linear fit
         self.linear_fit = self.step * self.attempts / 2.0

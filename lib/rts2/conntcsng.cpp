@@ -19,6 +19,8 @@
  */
 
 #include "connection/tcsng.h"
+#include "connection/tcp.h"
+#include <string>
 
 using namespace rts2core;
 
@@ -26,18 +28,26 @@ ConnTCSNG::ConnTCSNG (rts2core::Block *_master, const char *_hostname, int _port
 {
 	obsID = _obsID;
 	subID = _subID;
+	reqCount = 0;
+	debug = false;
+	
 }
 
 const char * ConnTCSNG::runCommand (const char *cmd, const char *req)
 {
 	char wbuf[200];
-	size_t wlen = snprintf (wbuf, 200, "%s %s %d %s %s\n", obsID, subID, reqCount, cmd, req);
-
+	size_t wlen = snprintf (wbuf, 200, "%s %s %d %s %s\n", obsID, subID, reqCount+1, cmd, req);
 	init (reqCount == 0);
+
+
+	if(debug)
+		logStream(MESSAGE_INFO) << "Sending: " << wbuf << sendLog;
 
 	sendData (wbuf, wlen, false);
 	receiveTillEnd (ngbuf, NGMAXSIZE, 3);
-
+	
+	if(debug)
+		logStream(MESSAGE_INFO) << "Recieved: " << ngbuf << sendLog;
 	close (sock);
 	sock = -1;
 
@@ -45,7 +55,7 @@ const char * ConnTCSNG::runCommand (const char *cmd, const char *req)
 
 	if (strncmp (wbuf, ngbuf, wlen) != 0)
 	{
-		throw rts2core::Error ("invalid reply");
+		//throw rts2core::Error ("invalid reply");
 	}
 
 	while (isspace (wbuf[wlen]) && wbuf[wlen] != '\0')
@@ -70,12 +80,12 @@ double ConnTCSNG::getSexadecimalHours (const char *req)
 {
 	const char *ret = request (req);
 	if (strlen (ret) < 6)
-		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+		throw rts2core::Error (std::string("reply to sexadecimal request must be at least 6 characters long. req:") + req + " ret:" + ret);
 
 	int h,m;
 	double sec;
 	if (sscanf (ret, "%2d%2d%lf", &h, &m, &sec) != 3)
-		throw rts2core::Error ("cannot parse sexadecimal reply");
+		throw rts2core::Error (std::string("cannot parse sexadecimal reply: ") + req + " ret:" + ret);
 	return 15 * (h + m / 60.0 + sec / 3600.0);
 }
 
@@ -83,12 +93,12 @@ double ConnTCSNG::getSexadecimalTime (const char *req)
 {
 	const char *ret = request (req);
 	if (strlen (ret) < 6)
-		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+		throw rts2core::Error (std::string("reply to sexadecimal request must be at least 6 characters long. req:") + req + " ret:" + ret);
 
 	int h,m;
 	double sec;
 	if (sscanf (ret, "%d:%d:%lf", &h, &m, &sec) != 3)
-		throw rts2core::Error ("cannot parse sexadecimal reply");
+		throw rts2core::Error (std::string("cannot parse sexadecimal reply: ") + req + " ret:" + ret);
 	return 15 * (h + m / 60.0 + sec / 3600.0);
 }
 
@@ -96,12 +106,12 @@ double ConnTCSNG::getSexadecimalAngle (const char *req)
 {
 	const char *ret = request (req);
 	if (strlen (ret) < 6)
-		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+		throw rts2core::Error (std::string("reply to sexadecimal request must be at least 6 characters long. req:") + req + " ret:" + ret);
 
 	int h,m;
 	double sec;
 	if (sscanf (ret, "%3d%2d%lf", &h, &m, &sec) != 3)
-		throw rts2core::Error ("cannot parse sexadecimal reply");
+		throw rts2core::Error (std::string("cannot parse sexadecimal reply: ") + req + " ret:" + ret);
 	return h + m / 60.0 + sec / 3600.0;
 }
 

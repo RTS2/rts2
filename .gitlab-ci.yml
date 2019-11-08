@@ -1,0 +1,20 @@
+image: pkubanek/rts2
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - ./autogen.sh
+    - ./configure
+    - make
+
+test:
+  stage: test
+  script:
+    - apt install -y check
+    - ./autogen.sh
+    - ./configure
+    - make check || (cat ./test-suite.log; false)

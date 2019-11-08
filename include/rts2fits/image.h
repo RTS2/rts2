@@ -116,7 +116,7 @@ class Image:public FitsFile
 		int sexResultNum;
 
 		// memory-only image..
-		Image ();
+		Image (bool _writeConnection = true, bool _writeRTS2Values = true);
 		// copy constructor
 		Image (Image * in_image);
 		// memory-only with exposure time
@@ -444,6 +444,8 @@ class Image:public FitsFile
 		void setFilter (const char *in_filter);
 
 		int getFilterNum () { return filter_i; }
+
+		void setFilterNum (int filnum);
 
 		void computeStatistics (size_t _from = 0, size_t _dataSize = 0);
 

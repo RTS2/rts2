@@ -148,7 +148,7 @@ class AltAzTest(unittest.TestCase):
 				'tn':0,
 				'te':12.73,
 				'npae':-72.51,
-				'npoa':-12.72,
+				'npoa':-12.50,
 				'ie':-47.55,
 				'tf':-3.19,
 				'el_cos_el_1_0':1,

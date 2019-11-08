@@ -114,6 +114,7 @@ src/ucac5/ucac5-*
 checks/*.log
 stamp-h1
 test-driver
+**/.*pyc
 rts2-init
 scripts/rts2-start
 scripts/rts2-stop

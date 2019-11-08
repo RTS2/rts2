@@ -222,9 +222,9 @@ void DevClientCameraImage::fits2DataChannels (Image *img, rts2core::DataChannels
 void DevClientCameraImage::writeFilter (Image *img)
 {
 	int camFilter = img->getFilterNum ();
-	char imageFilter[5];
-	strncpy (imageFilter, getConnection()->getValueSelection ("filter", camFilter), 4);
-	imageFilter[4] = '\0';
+	char imageFilter[25];
+	memset (imageFilter, 0, 25);
+	strncpy (imageFilter, getConnection()->getValueSelection ("filter", camFilter), 25);
 	img->setFilter (imageFilter);
 }
 
@@ -459,9 +459,9 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 	}
 }
 
-void DevClientCameraImage::fitsData (const char *fn)
+void DevClientCameraImage::fitsData (const char *fn, int filter_num)
 {
-	Image *img = new Image ();
+	Image *img = new Image (writeConnection, writeRTS2Values);
 	rts2core::DataChannels *data = NULL;
 
 	try
@@ -482,6 +482,8 @@ void DevClientCameraImage::fitsData (const char *fn)
 		img->copyImage (abs.c_str ());
 		img->closeFile ();
 		img->openFile (abs.c_str (), false, false);
+		if (filter_num >= 0)
+			img->setFilterNum (filter_num);
 		img->loadChannels ();
 		img->computeStatistics (0, 0);
 
