@@ -242,7 +242,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
 	modelRaDec->setValueRaDec (0, 0);
 
-	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - virtual coordinates feeded to TCS", false);
+	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - virtual coordinates fed to TCS", false);
 
 	wcs_crval1 = wcs_crval2 = NULL;
 
@@ -2148,10 +2148,8 @@ int Telescope::endMove ()
 	if (targetDistanceStat != NULL)
 		targetDistanceStat->clearStat ();
 	startTracking ();
-	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
-	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
-	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());
 
+	// this leads to 'moved to .... requested ... target ...' in logs
 	logStream (INFO_MOUNT_SLEW_END | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << tarRaDec->getRa () << " " << tarRaDec->getDec () << " " << telTargetRaDec->getRa () << " " << telTargetRaDec->getDec () << sendLog;
 	changeIdleMovingTracking ();
 	return 0;
@@ -2278,11 +2276,13 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
 
-	// calculate target after corrections from astrometry
-	applyCorrRaDec (&pos, false, false);
-	// now we have target position, which can be feeded to telescope
+	// now we have target position, which can be fed to telescope (but still without astrometry-feedback corrections and model!)
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
 
+	// calculate target after corrections from astrometry
+	applyCorrRaDec (&pos, false, false);
+	// set telTargetRaDec (i.e. tel_target) - must be set here for mounts, which use RA/DEC coordinates and don't integrate modelling (e.g. lx200)
+	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
 
 	moveInfoCount = 0;
@@ -2330,7 +2330,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrztar) << sendLog;
 			setOri (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
-			telTargetRaDec->setValueRaDec (NAN, NAN);
+			tarRaDec->setValueRaDec (NAN, NAN);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
 			if (conn)
@@ -2349,7 +2349,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			logStream (MESSAGE_ERROR) << "target declination is outside of allowed values, is " << pos.dec << " limit is " << decUpperLimit->getValueFloat () << sendLog;
 			setOri (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
-			telTargetRaDec->setValueRaDec (NAN, NAN);
+			tarRaDec->setValueRaDec (NAN, NAN);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
 			if (conn)

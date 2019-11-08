@@ -66,8 +66,8 @@ namespace rts2teld
  *   - <b>ORIRA, ORIDEC</b> contains original, J2000 coordinates. Those are usually entered by observing program (rts2-executor).
  *   - <b>OFFSRA, OFFSDEC</b> contains offsets applied to ORI coordinates.
  *   - <b>OBJRA,OBJDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.
- *   - <b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in MORA and MODEC
- *   - <b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed totelescope. Telescope coordinates are then calculated as TARRA-CORR_RA, TAR_DEC - CORR_DEC
+ *   - <b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do NOT contain modelling (which is stored in MORA and MODEC) and corrections from astrometry (stored in CORR_RA, CORR_DEC).
+ *   - <b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed to telescope. Telescope coordinates are then calculated as TARRA - CORR_RA, TARDEC - CORR_DEC
  *   - <b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA - MORA, TARDEC - CORR_DEC - MODEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.
  *   - <b>MORA,MODEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).
  *
@@ -368,7 +368,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Apply model for RA/DEC position pos, for specified flip and JD.
 		 * All resulting coordinates also includes corrRaDec corection.
-		 * If writeValue is set to true, changes tel_target (telTargetRA) variable, including model computation and corrRaDec.
+		 * If writeValue is set to true, changes tel_target (telTargetRaDec) variable, including model computation and corrRaDec.
 		 * Also sets MO_RTS2 (modelRaDec) variable, mirroring (only) computed model difference.
 		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
 		 *
@@ -381,7 +381,7 @@ class Telescope:public rts2core::Device
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
-		 * Sets MO_RTS2 (modelRaDec) and tel_target (telTargetRA) variables, also includes applyCorrRaDec if applyCorr parameter set to true.
+		 * Sets MO_RTS2 (modelRaDec) and tel_target (telTargetRaDec) variables, also includes applyCorrRaDec if applyCorr parameter set to true.
 		 */
 		void applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr);
 
@@ -577,6 +577,7 @@ class Telescope:public rts2core::Device
 		 * Return target position. This is equal to ORI[RA|DEC] +
 		 * OFFS[RA|DEC] + any transformations required for mount
 		 * operation.
+		 * Still without astrometry-feedback correction and/or model!
 		 *
 		 * @param out_tar Target position
 		 */
@@ -1228,7 +1229,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *modelRaDec;
 
 		/**
-		 * Telescope target coordinates, corrected (precessed, aberated, refracted) with modelling offset.
+		 * Telescope target coordinates, corrected (precessed, aberated, refracted) with modelling offset and astrometry-feedback corrections.
 		 */
 		rts2core::ValueRaDec *telTargetRaDec;
 
