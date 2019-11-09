@@ -2,12 +2,12 @@ Instructions to install FLI devices
 ===================================
 
 For FLI (Finger Lake Instruments inc.) devices, you will need FLI drivers. You
-can get them from RTS2 SVN. RTS2 svn packages are patched for few know problems
+can get them from RTS2 GitHUb. RTS2 GitHub packages are patched for few know problems
 in official FLI SDK and provides FLIGetSerialNum function.
 
-To get SVN version, run:
+To get GitHUb version, run:
 
-user@host:~$ svn co https://svn.code.sf.net/p/rts-2/code/fliusb
+user@host:~$ git clone https://github.com/RTS2/fliusb
 
 After that, run:
 
