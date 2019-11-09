@@ -1333,7 +1333,7 @@ int Trencin::startPark ()
 
 		// calculate parking ra dec
 		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
-		return moveAltAz ();
+		return moveAltAz () ? -1 : 1;
 
 	}
 	catch (rts2core::Error &er)

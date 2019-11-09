@@ -427,8 +427,7 @@ int Hlohovec::startPark ()
 	{
 		parking = true;
 		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
-		int ret = moveAltAz ();
-		return ret;
+		return moveAltAz () ? -1 : 1;
 	}
 	else
 		return -1;

@@ -963,7 +963,7 @@ int Sitech::startPark ()
 		return 0;
 	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
-	return moveAltAz ();
+	return moveAltAz () ? -1 : 1;
 }
 
 void Sitech::internalTracking (double sec_step, float speed_factor)

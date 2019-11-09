@@ -2495,8 +2495,12 @@ int Telescope::startPark (rts2core::Connection * conn)
 	  	logStream (MESSAGE_INFO) << "parking telescope" << sendLog;
 		if (ret == 0)
 		{
-			offsRaDec->resetValueChanged ();
-			corrRaDec->resetValueChanged ();
+			tarRaDec->setValueRaDec (NAN, NAN);
+			tarRaDec->resetValueChanged ();
+			telTargetRaDec->setValueRaDec (NAN, NAN);
+			telTargetRaDec->resetValueChanged ();
+			oriRaDec->setValueRaDec (NAN, NAN);
+			oriRaDec->resetValueChanged ();
 		}
 
 		incMoveNum ();

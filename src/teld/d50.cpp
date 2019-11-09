@@ -689,7 +689,7 @@ int D50::startPark ()
 #endif
 		if (calMod)
 			 modelOn ();
-                return ret;
+                return ret ? -1 : 1;
         }
         else
                 return -1;

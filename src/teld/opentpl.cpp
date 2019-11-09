@@ -1337,7 +1337,7 @@ int OpenTPL::startPark ()
 	}
 	time (&timeout);
 	timeout += 300;
-	return 0;
+	return 1;
 }
 
 int OpenTPL::moveCheck (bool park)
