@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # RADEC parser.
 # (C) 2013 Petr Kubanek <petr@kubanek.net>

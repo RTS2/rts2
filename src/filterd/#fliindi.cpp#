@@ -55,7 +55,7 @@ class FLIINDI: public Filterd
 		virtual ~FLIINDI(void);
 	protected:
 		virtual int processOption(int in_opt);
-		virtual int initHardware();
+		virtual int init();
 		virtual int initValues();
 		
 		virtual void changeMasterState(rts2_status_t old_state,
@@ -80,7 +80,7 @@ using namespace rts2filterd;
 
 FLIINDI::FLIINDI(int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 {
-	// INDI setup
+    // INDI setup
 	strcpy(indiserver, "127.0.0.1");
 	indiport = 7624;
 	strcpy(indidevice, "FLI CFW");
@@ -131,13 +131,15 @@ int FLIINDI::processOption(int in_opt)
 }
 
 
-int FLIINDI::initHardware()
+int FLIINDI::init()
 {
+	logStream (MESSAGE_ERROR) << "stuff! " << sendLog;	
+
 	rts2openINDIServer(indiserver, indiport);
 	
 	logStream (MESSAGE_DEBUG) << "INDI connection established to " <<
 		indiserver <<" on port " << indiport << sendLog;
-
+	
 	return 0;
 }
 
@@ -146,6 +148,8 @@ int FLIINDI::initValues()
 {
 	pthread_t thread_0;
 
+	
+	
 	/* adopted from indibridge.cpp, not sure if necessary
     // This first call is necessary to receive further updates from the INDI server
 	SearchDef *getINDI=NULL;
@@ -167,25 +171,34 @@ int FLIINDI::initValues()
 	logStream (MESSAGE_DEBUG) << "here3" << sendLog;	
 	*/
 
-	// --------------------------------- new stuff
-	// SearchDef *getINDI=NULL;
-	// int getINDIn=0;
-	// float slot;
+	// ------------------------------------------
 
-	// logStream (MESSAGE_DEBUG) << "here1" << sendLog;
+	SearchDef *getINDI=NULL;
+	int getINDIn=0 ;
+	float slot;
+
+	/* property information available from:
+       https://indilib.org/develop/developer-manual/101-standard-properties.html#h6-filter-wheels
+
+	   python script to explore properties available here:
+       https://sourceforge.net/p/pyindi-client/code/HEAD/tree/trunk/pip/pyindi-client/examples/testindiclient.py
+	*/
 
     // rts2getINDI(indidevice, "defNumberVector", "FILTER_SLOT",
 	// 			"FILTER_SLOT_VALUE",
-	// 			&getINDIn, &getINDI);
-	
-	// logStream (MESSAGE_DEBUG) << "here2" << sendLog;
-	
+	// 			&getINDIn, &getINDI) ;
+
+	// // extract slot value as float
+	// sscanf(getINDI[0].gev[0].gv, "%f", &slot);
+
+	// logStream (MESSAGE_DEBUG) << "slot " << slot << sendLog;	
+
 	// rts2free_getINDIproperty(getINDI, getINDIn);
 
-	// logStream (MESSAGE_DEBUG) << "here3" << sendLog;	
-	// -----------------------------------------------
+	// --------------------------------------
+
 	
-	pthread_create(&thread_0, NULL, rts2listenINDIthread, indidevice);
+	//pthread_create(&thread_0, NULL, rts2listenINDIthread, indidevice);
 	return Filterd::initValues();
 }
 
@@ -216,7 +229,7 @@ int FLIINDI::getFilterNum (void)
 	*/
     rts2getINDI(indidevice, "defNumberVector", "FILTER_SLOT",
 				"FILTER_SLOT_VALUE",
-				&getINDIn, &getINDI);
+				&getINDIn, &getINDI) ;
 
 	// extract slot value as float
 	sscanf(getINDI[0].gev[0].gv, "%f", &slot);

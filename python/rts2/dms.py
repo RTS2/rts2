@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # DMS parse.
 # (C) 2011 Petr Kubanek, Insiitute of Physics <kubanek@fzu.cz>

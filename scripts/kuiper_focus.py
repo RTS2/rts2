@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from rts2 import  scriptcomm
 
 class Focusing (scriptcomm.Rts2Comm):	

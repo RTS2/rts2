@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Autofocosing routines.
 #
@@ -44,7 +44,7 @@ try:
 except Exception as ex:
 	pass
 
-from pylab import *
+from matplotlib.pyplot import *
 from scipy import *
 from scipy import optimize
 import numpy

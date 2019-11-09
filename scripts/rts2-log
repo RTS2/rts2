@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #   Log viewer, analyser
 #   (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
