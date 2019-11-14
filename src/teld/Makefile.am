@@ -8,9 +8,9 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-apgto-pk rts2-teld-lx200test rts2-teld-nexstar \
 	rts2-teld-lx200gps rts2-teld-lx200focgps rts2-teld-meade rts2-teld-indi \
 	rts2-teld-sitech-gem rts2-teld-sitech-altaz \
-	rts2-teld-irait rts2-teld-tcsng
+	rts2-teld-irait rts2-teld-tcsng rts2-teld-planewave
 
-LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
+LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@ 
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
@@ -52,6 +52,10 @@ rts2_teld_apgto_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collisio
 
 rts2_teld_apgto_pk_SOURCES = apgto_pk.cpp
 rts2_teld_apgto_pk_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
+
+rts2_teld_planewave_SOURCES = planewave.cpp
+#rts2_teld_planewave_LDADD = -L/usr/lib/x86_64-linuvx-gnu/v -lcurl ${LDADD}
+rts2_teld_planewave_LDADD = -lcurl ${LDADD}
 
 if !SUNCYGMAC
 bin_PROGRAMS += rts2-teld-d50
