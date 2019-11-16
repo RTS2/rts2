@@ -559,7 +559,9 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		// Save image preview if requested
 		try
 		{
-			if (!previewPath.empty ())
+			if (!previewPath.empty () &&
+				// Extremely hackish way to distinguish between running in Executor and ScriptExec
+				getMaster ()->getPort () > 0)
 			{
 				std::string preview = ci->image->writeAsJPEG (previewPath, previewZoom, "%Y-%m-%d %H:%M:%S @OBJECT", previewQuantiles, -1, previewColor);
 
@@ -570,6 +572,10 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		catch (rts2core::Error &ex)
 		{
 			logStream (MESSAGE_WARNING) << "Cannot save preview image for " << ci->image->getAbsoluteFileName () << " : " << ex << sendLog;
+		}
+		catch (Magick::Exception &ex)
+		{
+			logStream (MESSAGE_WARNING) << "Cannot save preview image for " << ci->image->getAbsoluteFileName () << sendLog;
 		}
 #endif // RTS2_HAVE_LIBJPEG
 
