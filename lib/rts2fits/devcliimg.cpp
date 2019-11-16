@@ -563,7 +563,7 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 				// Extremely hackish way to distinguish between running in Executor and ScriptExec
 				getMaster ()->getPort () > 0)
 			{
-				std::string preview = ci->image->writeAsJPEG (previewPath, previewZoom, "%Y-%m-%d %H:%M:%S @OBJECT", previewQuantiles, -1, previewColor);
+				std::string preview = ci->image->writeAsJPEG (previewPath, previewZoom, "%Y-%m-%d %H:%M:%S @FILTER @EXPOSURE @OBJECT", previewQuantiles, -1, previewColor);
 
 				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_preview_image", '=', preview));
 				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_preview_time", '=', getNow ()));
