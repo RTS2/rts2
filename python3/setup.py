@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="RTS2",
-    version="0.0.1",
+    version="0.0.2",
     author="Petr Kubánek",
     author_email="petr@rts2.org",
     description="RTS2 Python scripts",
