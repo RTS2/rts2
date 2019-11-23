@@ -924,28 +924,40 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal 3 - no tracking, including derotators
+		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal 3 - tracking, excluding derotators
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @param send		 if true, set rts2value and send in to all connections
+		 * @param stopMsg	set message for "no tracking" case; if NULL, omit setting of state to NOTRACK
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 
-		void startTracking (bool check = false);
+		/**
+		 * Starts telescope tracking, either physically as a consequence of finished movement (following
+		 * the actual state of tracking variable) or also logically, i.e. setting tracking variable
+		 * to defaultTracking value, when it is in zero (no tracking) state and parameter check is set to true.
+		 *
+		 * @param check		if true, check if tracking variable is set to tracking (else set it to defaultTracking).
+		 * @return 0 on success, -1 on error
+		 */
+		int startTracking (bool check = false);
+
+		/**
+		 * Stops telescope tracking.
+		 *
+		 * @param stopMsg	set message; if NULL, omit setting of state to NOTRACK
+		 * @return 0 on success, -1 on error
+		 */
+		int stopTracking (const char *stopMsg = "tracking stopped");
 
 		/**
 		 * Returns if tracking is requested.
 		 *
-		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking 3 - no tracking, including derotators stop
+		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking 3 - tracking, excluding derotators
 		 */
 		int trackingRequested () { return tracking->getValueInteger (); }
 
 		bool isTracking () { return (getState () & TEL_MASK_TRACK) == TEL_TRACKING; }
-
-		/**
-		 * Stops tracking. Calls stopMove and set tracking state to NOTRACK.
-		 */
-		void stopTracking (const char *msg = "tracking stopped");
 
 		int trackingNum;
 
@@ -953,7 +965,7 @@ class Telescope:public rts2core::Device
 		 * Called to run tracking. It is up to driver implementation
 		 * to send updated position to telescope driver.
 		 *
-		 * If tracking timer shall not be called agin, call setTracking (false).
+		 * If tracking timer should not be called again, call setTracking (false).
 		 * Run every trackingInterval seconds.
 		 *
 		 * @see setTracking
@@ -1095,7 +1107,20 @@ class Telescope:public rts2core::Device
 		int moveInfoCount;
 		int moveInfoMax;
 
+		/**
+		 * Reflects actual desired tracking state (taken into account also during slew etc).
+		 * Values: 0 - no tracking, 1 - on object, 2 - sidereal 3 - tracking, excluding derotators.
+		 * It's being changed automatically (to 0 during stop/park, to *defaultTracking as a consequence
+		 * of specific MOVE commands) or direcly by startTracking () / stopTracking () / setTracking ().
+		 */
 		rts2core::ValueSelection *tracking;
+
+		/**
+		 * Default value for setting the *tracking selection, when tracking is going to start without determining
+		 * the specific tracking type. Setting this value to 0 disables tracking as a consequence of MOVE commands.
+		 */
+		rts2core::ValueSelection *defaultTracking;
+
 		rts2core::ValueDoubleStat *trackingFrequency;
 		rts2core::ValueInteger *trackingFSize;
 		rts2core::ValueFloat *trackingWarning;

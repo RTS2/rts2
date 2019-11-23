@@ -82,7 +82,7 @@ class Hlohovec:public GEM
 		virtual int endPark ();
 
 		virtual void setDiffTrack (double dra, double ddec);
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 
 		virtual int updateLimits ();
 
@@ -323,7 +323,7 @@ int Hlohovec::startResync ()
 int Hlohovec::isMoving ()
 {
 	callAutosave ();
-	if (((getState () & TEL_MASK_TRACK) == TEL_TRACKING) && raDrive->isInPositionMode ())
+	if ((trackingRequested () != 0) && raDrive->isInPositionMode ())
 	{
 		if (raDrive->isMovingPosition ())
 		{
@@ -356,7 +356,7 @@ int Hlohovec::isMoving ()
 			raDrive->setTargetSpeed (TRACK_SPEED);
 		}
 	}
-	if ((isTracking () && raDrive->isInPositionMode ()) || (isTracking () && raDrive->isMoving ()) || decDrive->isMoving ())
+	if (((trackingRequested () != 0) && raDrive->isInPositionMode ()) || ((trackingRequested () == 0) && raDrive->isMoving ()) || decDrive->isMoving ())
 		return 0;
 	return -2;
 }
@@ -459,10 +459,10 @@ void Hlohovec::setDiffTrack (double dra, double ddec)
 	}
 }
 
-int Hlohovec::setTracking (int track, bool addTrackingTimer, bool send)
+int Hlohovec::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	raDrive->setTargetSpeed (track > 0 ? TRACK_SPEED : 0, false);
-        return GEM::setTracking (track, addTrackingTimer, send);
+        return GEM::setTracking (track, addTrackingTimer, send, stopMsg);
 }
 
 int Hlohovec::updateLimits ()

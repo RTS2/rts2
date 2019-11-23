@@ -83,7 +83,7 @@ class Gemini:public TelLX200
 		int correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec);
 		virtual int saveModel ();
 		virtual int loadModel ();
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 		int stopWorm ();
 		int startWorm ();
 		virtual int resetMount ();
@@ -1982,7 +1982,7 @@ extern int Gemini::loadModel ()
 }
 
 
-int Gemini::setTracking (int track, bool addTrackingTimer, bool send)
+int Gemini::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	int ret;
 
@@ -1994,7 +1994,7 @@ int Gemini::setTracking (int track, bool addTrackingTimer, bool send)
 	if (ret)
 		return ret;
 
-	return TelLX200::setTracking (track, addTrackingTimer, send);
+	return TelLX200::setTracking (track, addTrackingTimer, send, stopMsg);
 }
 
 

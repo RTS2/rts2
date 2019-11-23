@@ -168,12 +168,21 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	if (hasTracking)
 	{
-		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE);
+		createValue (tracking, "TRACKING", "telescope's actual tracking type", true, RTS2_VALUE_WRITABLE);
 		tracking->addSelVal ("off");
 		tracking->addSelVal ("on");
 		tracking->addSelVal ("sidereal");
 		if (hasDerotators)
-			tracking->addSelVal ("off derotators");
+			tracking->addSelVal ("off derotators");		// normal tracking, excluding derotators (for service purposes etc)
+
+		createValue (defaultTracking, "default_tracking", "telescope's default tracking type", false, RTS2_VALUE_WRITABLE);
+		defaultTracking->addSelVal ("off");
+		defaultTracking->addSelVal ("on");
+		defaultTracking->addSelVal ("sidereal");
+		if (hasDerotators)
+			defaultTracking->addSelVal ("off derotators");
+		defaultTracking->setValueInteger (1);
+
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
@@ -1607,8 +1616,8 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	{
 		blockMove->setValueBool (true);
 		sendValueAll (blockMove);
-		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking blocked");
-		stopMove ();
+		stopTracking ("tracking blocked");
+		stopMove ();	// must be here explicitly (but it's already in stopTracking () for most cases)
 		logStream (MESSAGE_WARNING) << "stoped movement of the delescope, triggered by STOP_MASK change" << sendLog;
 	}
 	// enable movement when stop state was cleared
@@ -1704,14 +1713,14 @@ double Telescope::estimateTargetTime ()
 	return getTargetDistance () / 2.0;
 }
 
-int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
+int Telescope::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	if (tracking != NULL)
 	{
 		tracking->setValueInteger (track);
 		// make sure we will not run two timers
 		deleteTimers (EVENT_TRACKING_TIMER);
-		if (track == 1 || track == 2)
+		if (track == 1 || track == 2 || track == 3)
 		{
 			maskState (TEL_MASK_TRACK, TEL_TRACKING, "tracking started");
 			if (addTrackingTimer == true)
@@ -1722,7 +1731,10 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 		}
 		else
 		{
-			stopTracking ();
+			lastTrackingRun = NAN;
+			stopMove ();
+			if (stopMsg != NULL)
+				maskState (TEL_MASK_TRACK, TEL_NOTRACK, stopMsg);
 		}
 		if (send == true)
 			sendValueAll (tracking);
@@ -1730,25 +1742,22 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 	return 0;
 }
 
-void Telescope::startTracking (bool check)
+int Telescope::startTracking (bool check)
 {
 	if (tracking == NULL)
-		return;
+		return 0;
 
 	if (check && tracking->getValueInteger () == 0)
 	{
-		tracking->setValueInteger (1);
-		sendValueAll (tracking);
+		tracking->setValueInteger (defaultTracking->getValueInteger ());
 	}
 	trackingFrequency->clearStat ();
-	setTracking (tracking->getValueInteger (), true);
+	return setTracking (tracking->getValueInteger (), true);
 }
 
-void Telescope::stopTracking (const char *msg)
+int Telescope::stopTracking (const char *stopMsg)
 {
-	lastTrackingRun = NAN;
-	stopMove ();
-	maskState (TEL_MASK_TRACK, TEL_NOTRACK, msg);
+	return setTracking (0, false, true, stopMsg);
 }
 
 void Telescope::runTracking ()
@@ -2051,8 +2060,6 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 int Telescope::scriptEnds ()
 {
 	woffsRaDec->setValueRaDec (0, 0);
-	if (tracking)
-		tracking->setValueInteger (1);
 
 	tle_freeze->setValueBool (false);
 
@@ -2330,6 +2337,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		objRaDec->setValueRaDec (NAN, NAN);
 		tarRaDec->setValueRaDec (NAN, NAN);
 		stopMove ();
+		stopTracking (NULL);
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
@@ -2348,6 +2356,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			objRaDec->setValueRaDec (NAN, NAN);
 			tarRaDec->setValueRaDec (NAN, NAN);
 			stopMove ();
+			stopTracking (NULL);
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "declination limit violated");
@@ -2397,6 +2406,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (ret)
 	{
 		useParkFlipping = false;
+		stopTracking (NULL);
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
@@ -2605,7 +2615,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+			stopTracking ("stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_MOVE_PM))
@@ -2619,7 +2629,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+			stopTracking ("stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_MOVE_EPOCH))
@@ -2634,7 +2644,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+			stopTracking ("stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_MOVE_EPOCH_PM))
@@ -2651,7 +2661,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+			stopTracking ("stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_HADEC))
@@ -2676,7 +2686,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+			stopTracking ("stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_MOVE_MPEC))
@@ -2695,7 +2705,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+			stopTracking ("stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_PEEK))
@@ -2710,7 +2720,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE (conn->isCommand (COMMAND_TELD_ALTAZ_NC));
-		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking while in AltAz");
+		stopTracking ("stop tracking while in AltAz");
 		return moveAltAz () == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
 	else if (conn->isCommand ("resync"))
@@ -2832,7 +2842,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
-		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped");
+		stopTracking ("tracking stopped");
 		return stopMove ();
 	}
 	else if (conn->isCommand ("change"))
@@ -2870,8 +2880,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
-		stopMove ();
-		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped by worm_stop command");
+		stopTracking ("tracking stopped by worm_stop command");
 		return 0;
 	}
 	else if (conn->isCommand ("worm_start"))
@@ -2884,9 +2893,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		}
 		else
 		{
-			if (tracking != NULL && tracking->getValueInteger () == 0)
-				tracking->setValueInteger (1);
-			ret = setTracking (tracking->getValueInteger (), true);
+			ret = startTracking (true);
 		}
 
 		if (ret == -1)

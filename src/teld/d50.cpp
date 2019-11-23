@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#define DEBUG_EXTRA
+//#define DEBUG_EXTRA
 
 #include "connection/tgdrive.h"
 #include "connection/remotes.h"
@@ -475,7 +475,7 @@ int D50::runD50 ()
 	logStream (MESSAGE_DEBUG) << "****** D50:runD50 ()" << sendLog;
 	if (!(getState () & TEL_MOVING))
 	{
-		if ((isTracking () == false) && raDrive->isInStepperMode ())
+		if ((trackingRequested () == 0) && raDrive->isInStepperMode ())
 		{
 			logStream (MESSAGE_DEBUG) << "****** runD50 () - setting tracking to off - DS mode" << sendLog;
                         raDrive->setTargetSpeed ( 0, true );
@@ -547,8 +547,8 @@ int D50::isMoving ()
 {
 	logStream (MESSAGE_DEBUG) << "****** isMoving ()" << sendLog;
         //callAutosave ();
-	logStream (MESSAGE_DEBUG) << "------ isMoving: getState=" << getState () << ", tracking=" << isTracking () << ", parking=" << parking << ", raDrive->isMoving=" << raDrive->isMoving () << ", raDrive->isInPositionMode=" << raDrive->isInPositionMode () << ", decDrive->isMoving=" << decDrive->isMoving () << sendLog;
-        if (isTracking () && raDrive->isInPositionMode ())
+	logStream (MESSAGE_DEBUG) << "------ isMoving: getState=" << getState () << ", tracking=" << trackingRequested () << ", parking=" << parking << ", raDrive->isMoving=" << raDrive->isMoving () << ", raDrive->isInPositionMode=" << raDrive->isInPositionMode () << ", decDrive->isMoving=" << decDrive->isMoving () << sendLog;
+        if ((trackingRequested () != 0) && raDrive->isInPositionMode ())
         {
                 if (raDrive->isMovingPosition ())
                 {
@@ -576,7 +576,7 @@ int D50::isMoving ()
                         //raDrive->info ();
                 }
         }
-        if ((isTracking () && raDrive->isInPositionMode ()) || (!isTracking () && raDrive->isMoving ()) || decDrive->isMoving ())
+        if (((trackingRequested () != 0) && raDrive->isInPositionMode ()) || ((trackingRequested () == 0) && raDrive->isMoving ()) || decDrive->isMoving ())
 		return USEC_SEC / 10;
         return -2;
 }

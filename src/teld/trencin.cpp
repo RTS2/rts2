@@ -77,7 +77,7 @@ class Trencin:public Fork
 
 		virtual void valueChanged (rts2core::Value *changed_value);
 
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 		// start worm drive on given unit
 		int startWorm ();
 		int stopWorm ();
@@ -265,7 +265,7 @@ void Trencin::tel_write_dec (char command, int32_t value)
 	tel_write (trencinConnDec, command, value);
 }
 
-int Trencin::setTracking (int track, bool addTrackingTimer, bool send)
+int Trencin::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	int ret;
 
@@ -282,7 +282,7 @@ int Trencin::setTracking (int track, bool addTrackingTimer, bool send)
 	if (ret)
 		return ret;
 
-	return Telescope::setTracking (track, addTrackingTimer, send);
+	return Telescope::setTracking (track, addTrackingTimer, send, stopMsg);
 }
 
 int Trencin::startWorm ()
