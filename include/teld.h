@@ -1059,6 +1059,7 @@ class Telescope:public rts2core::Device
 		double getDiffTrackAz () { return diffTrackAltAz->getAz (); }
 		double getDiffTrackAlt () { return diffTrackAltAz->getAlt (); }
 
+		bool getBlockMove () { return blockMove->getValueBool (); }
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 

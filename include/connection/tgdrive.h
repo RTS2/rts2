@@ -205,8 +205,11 @@ class TGDrive: public rts2core::ConnSerial
 		void setTargetSpeed (int32_t dspeed, bool changeMode = true);
 		void setMaxSpeed (double speed);
 
+		void setPositionKp (float newPositionKp);
 
 		int32_t getPosition () { return aPos->getValueInteger (); }
+		int32_t getPositionAct ();
+		int32_t getPositionTarget ();
 
 		bool isInSpeedMode () { return tgaMode->getValueInteger () == TGA_MODE_DS; }
 		bool isInPositionMode () { return tgaMode->getValueInteger () == TGA_MODE_PA; }
@@ -222,6 +225,8 @@ class TGDrive: public rts2core::ConnSerial
 		bool checkStopPlain ();
 
 		void reset ();
+		void sleep ();
+		void wakeup ();
 
 		/**
 		 * Read word (2 bytes) from interface.
@@ -273,6 +278,8 @@ class TGDrive: public rts2core::ConnSerial
 		void writeMsg (char op, int16_t address, char *data, int len);
 
 		void readStatus ();
+
+		rts2core::Device *_masterDev;
 
 		rts2core::ValueInteger *dPos;
 		rts2core::ValueInteger *aPos;

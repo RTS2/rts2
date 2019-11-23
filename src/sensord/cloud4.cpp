@@ -105,7 +105,7 @@ int Cloud4::readSensor (bool update)
 {
 	int ret;
 	char buf[128];
-	ret = mrakConn->writeRead (heater->getValueBool () ? "h" : "s", 1, buf, 50, '\r');
+	ret = mrakConn->writeRead (heater->getValueBool () ? "h" : "s", 1, buf, 80, '\r');
 	if (ret < 0)
 		return ret;
 	buf[ret] = '\0';
