@@ -150,14 +150,19 @@ void GXCCD::postEvent (rts2core::Event *event)
 					tempTarget->setValueFloat (tempSet->getValueFloat ());
 				sendValueAll (tempTarget);
 
-				res = gxccd_set_temperature (camera, tempTarget->getValueFloat ());
-				if (res)
+				for (int iter = 0; iter < 3; iter ++)
 				{
-					gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
-					logStream (MESSAGE_ERROR) << "cannot set target temperature: " << gx_err << sendLog;
+					res = gxccd_set_temperature (camera, tempTarget->getValueFloat ());
+					if (res)
+					{
+						gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+						logStream (MESSAGE_ERROR) << "cannot set target temperature on iter " << iter << " : " << gx_err << sendLog;
 
-					if (res == -1)
-						reinitCamera ();
+						if (res == -1)
+							reinitCamera ();
+					}
+					else
+						break;
 				}
 
 				addTimer (60, event);
@@ -400,16 +405,23 @@ int GXCCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 int GXCCD::setCoolTemp (float new_temp)
 {
 	float val;
-	int ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
-	if (ret)
+
+	for (int iter = 0; iter < 3; iter ++)
 	{
-		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
-		logStream (MESSAGE_ERROR) << "cannot retrieve chip temperature, cannot start cooling: " << gx_err << sendLog;
+		int ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
+		if (ret)
+		{
+			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+			logStream (MESSAGE_ERROR) << "cannot retrieve chip temperature, cannot start cooling: " << gx_err << sendLog;
 
-		if (ret == -1)
-			reinitCamera ();
+			if (iter == 2)
+				return -1;
 
-		return -1;
+			if (ret == -1 && reinitCamera ())
+				return -1;
+		}
+		else
+			break;
 	}
 	deleteTimers (EVENT_TE_RAMP);
 	tempTarget->setValueFloat (val);
@@ -428,21 +440,35 @@ int GXCCD::setFilterNum (int new_filter, const char *fn)
 	if (fn != NULL)
 		return Camera::setFilterNum (new_filter, fn);
 	logStream (MESSAGE_INFO) << "moving filter from #" << camFilterVal->getValueInteger () << " (" << camFilterVal->getSelName () << ")" << " to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << sendLog;
-	double last_filter_move = getNow ();
-	int ret = gxccd_set_filter (camera, new_filter) ? -1 : 0;
-	last_filter_move = getNow () - last_filter_move;
-	if (ret == 0)
+
+	int iter;
+	int ret = 0;
+
+	for (iter = 0; iter < 3; iter ++)
 	{
-		logStream (MESSAGE_INFO) << "filter moved to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << " in " << std::setprecision (3) << last_filter_move << "s" << sendLog;
+		double last_filter_move = getNow ();
+		ret = gxccd_set_filter (camera, new_filter) ? -1 : 0;
+		last_filter_move = getNow () - last_filter_move;
+		if (ret == 0)
+		{
+			logStream (MESSAGE_INFO) << "filter moved to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << " in " << std::setprecision (3) << last_filter_move << "s" << sendLog;
+			break;
+		}
+		else
+		{
+			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+			logStream (MESSAGE_INFO) << "filter movement error on iter " << iter << " : " << gx_err << sendLog;
+			filterFailed->inc ();
+			valueError (filterFailed);
+			sendValueAll (filterFailed);
+
+			if (ret == -1)
+				reinitCamera ();
+		}
+
+		usleep (USEC_SEC);
 	}
-	else
-	{
-		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
-		logStream (MESSAGE_INFO) << "filter movement error " << gx_err << sendLog;
-		filterFailed->inc ();
-		valueError (filterFailed);
-		sendValueAll (filterFailed);
-	}
+
 	checkQueuedExposures ();
 	return ret;
 }
@@ -451,24 +477,39 @@ int GXCCD::startExposure ()
 {
 	int ret;
 
-	ret = gxccd_set_read_mode (camera, mode->getValueInteger ());
-	if (ret)
+	for (int iter = 0; iter < 3; iter ++)
 	{
-		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
-		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_read_mode " << gx_err << sendLog;
-		if (ret == -1)
-			reinitCamera ();
-		return -1;
-	}
+		bool reinit = false;
 
-	ret = gxccd_set_binning (camera, binningHorizontal (), binningVertical ());
-	if (ret)
-	{
-		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
-		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_binning " << gx_err << sendLog;
-		if (ret == -1)
-			reinitCamera ();
-		return -1;
+		ret = gxccd_set_read_mode (camera, mode->getValueInteger ());
+		if (ret)
+		{
+			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+			logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_read_mode on iter " << iter << " : " << ret << " " << gx_err << sendLog;
+
+			if (ret)
+				reinit = true;
+		}
+		else
+		{
+			ret = gxccd_set_binning (camera, binningHorizontal (), binningVertical ());
+			if (ret)
+			{
+				gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+				logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_binning on iter " << iter << " : " << ret << " " << gx_err << sendLog;
+
+				if (ret)
+					reinit = true;
+			}
+			else
+				break;
+		}
+
+		if (ret && iter == 2)
+			return -1;
+
+		if (reinit && reinitCamera ())
+			return -1;
 	}
 
 	// The GXCCD library expects pre-binned region coordinates and size
@@ -562,8 +603,6 @@ int GXCCD::reinitCamera ()
 	float val;
 	bool quiet = false;
 
-	raiseHWError ();
-
 	if (camera)
 	{
 		logStream (MESSAGE_WARNING) << "reinitializing camera" << sendLog;
@@ -576,6 +615,7 @@ int GXCCD::reinitCamera ()
 	if (camera == NULL) {
 		if (!quiet)
 			logStream (MESSAGE_ERROR) << "reinitialization failed: " << gx_err << sendLog;
+		raiseHWError ();
 		return -1;
 	}
 
@@ -586,6 +626,7 @@ int GXCCD::reinitCamera ()
 		{
 			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
 			logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set fan: " << gx_err << sendLog;
+			raiseHWError ();
 			return -1;
 		}
 	}
@@ -597,6 +638,7 @@ int GXCCD::reinitCamera ()
 		{
 			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
 			logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set read mode: " << gx_err << sendLog;
+			raiseHWError ();
 			return -1;
 		}
 	}
@@ -606,12 +648,14 @@ int GXCCD::reinitCamera ()
 	{
 		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
 		logStream (MESSAGE_ERROR) << "reinitilization failed - cannot get temperature: " << gx_err << sendLog;
+		raiseHWError ();
 		return -1;
 	}
 
 	logStream (MESSAGE_WARNING) << "reinitialization succeeded" << sendLog;
 
 	clearHWError ();
+
 	return 0;
 }
 
