@@ -56,13 +56,14 @@
 #define ELYA_BAT_ON      0x0004
 #define ELYA_BAT_LOW     0x0008
 #define ELYA_LOW_PRESS   0x0010
+#define ELYA_STOP_STATE	 0x0020
 
 // Emergency bit (O3) and reset/force (J2) on ELYA model
 #define ELYA_EMERGENCY_B 0x0020
 #define ELYA_EMERGENCY_R 0x0008
 #define ELYA_EMERGENCY_F 0x0010
 
-// bit mask for state register
+// bit mask for state register (O4 on PK version)
 #define ZS_SW_AUTO       0x0001
 #define ZS_SW_OPENCLOSE  0x0002
 #define ZS_TIMEOUT       0x0004
@@ -343,6 +344,9 @@ int Zelio::startOpen ()
 
 bool Zelio::isGoodWeather ()
 {
+/* *FIXME* This function returns as soon as it knows the answer.  However,
+ * this function has valuable sideeffects (it sets values), and that
+*/
 	if (getIgnoreMeteo ())
 		return true;
 	if (ignoreAutomode->getValueBool () == true && isOpened () == -2)
@@ -986,6 +990,15 @@ int Zelio::info ()
 	sendValueAll (J3XT1);
 	sendValueAll (J4XT1);
 
+	if(O1XT1->getValueInteger () != regs[4])
+		logStream (MESSAGE_DEBUG) << std::hex << "O1XT1 changed from 0x" << O1XT1->getValueInteger () << " to 0x" << regs[4] << " (" << regs[4] << " " << regs[5] << " "  << regs[6] << " " << regs[7] << ")" << sendLog;
+	if(O2XT1->getValueInteger () != regs[5])
+		logStream (MESSAGE_DEBUG) << std::hex << "O2XT1 changed from 0x" << O2XT1->getValueInteger () << " to 0x" << regs[5] << " (" << regs[4] << " " << regs[5] << " "  << regs[6] << " " << regs[7] << ")" << sendLog;
+	if(O3XT1->getValueInteger () != regs[6])
+		logStream (MESSAGE_DEBUG) << std::hex << "O3XT1 changed from 0x" << O3XT1->getValueInteger () << " to 0x" << regs[6] << " (" << regs[4] << " " << regs[5] << " "  << regs[6] << " " << regs[7] << ")" << sendLog;
+	if(O4XT1->getValueInteger () != regs[7])
+		logStream (MESSAGE_DEBUG) << std::hex << "O4XT1 changed from 0x" << O4XT1->getValueInteger () << " to 0x" << regs[7] << " (" << regs[4] << " " << regs[5] << " "  << regs[6] << " " << regs[7] << ")" << sendLog;
+
 	O1XT1->setValueInteger (regs[4]);
 	O2XT1->setValueInteger (regs[5]);
 	O3XT1->setValueInteger (regs[6]);
@@ -1021,7 +1034,7 @@ int Zelio::info ()
 
 int Zelio::initHardware ()
 {
-	setIdleInfoInterval (60);
+	setIdleInfoInterval (10);
 
 	if (host == NULL)
 	{
@@ -1269,10 +1282,21 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == emergencyReset) {
 		logStream (MESSAGE_INFO) << "Emergency reset switch turned " << (((rts2core::ValueBool*) newValue)->getValueBool () ? "on" : "off") << sendLog;
 
-		if (zelioModel == ZELIO_ELYA)
-			return setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		if (zelioModel == ZELIO_ELYA) {
+			int ret = setBitsInput (ZREG_J2XT1, ELYA_EMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+
+			info ();
+
+			return ret;
+		}
 		else
-			return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		{
+			int ret = setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+
+			info ();
+
+			return ret;
+		}
 	}
 	switch (zelioModel)
 	{
