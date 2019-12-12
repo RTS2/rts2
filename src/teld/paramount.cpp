@@ -170,7 +170,7 @@ class Paramount:public GEM
 
 		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
-		virtual void updateTrack ();
+		// virtual void updateTrack ();
 
 		virtual int startResync ();
 		virtual int stopMove ();
@@ -250,7 +250,7 @@ class Paramount:public GEM
 
 		int checkRetAxis (const MKS3Id & axis, int reta);
 		int checkRet ();
-		int updateStatus ();
+		// int updateStatus ();
 
 		int loadModelFromFile ();
 
@@ -371,74 +371,74 @@ int Paramount::checkRet ()
 	return 0;
 }
 
-int Paramount::updateStatus ()
-{
-	CWORD16 new_status;
-	char strstat[512];
+// int Paramount::updateStatus ()
+// {
+// 	CWORD16 new_status;
+// 	char strstat[512];
 
-	// logStream (MESSAGE_DEBUG) << "Paramount::updateStatus" << sendLog;
+// 	// logStream (MESSAGE_DEBUG) << "Paramount::updateStatus" << sendLog;
 
-	ret0 = MKS3StatusGet (axis0, &new_status);
-	logStream (MESSAGE_DEBUG) << "MKS3StatusGet axis0: ret0=" << ret0 << "(" << (ret0?"err.":"-OK-") << ") status=" << new_status << " (" << statusStr(new_status, strstat) << ")" << sendLog;
+// 	ret0 = MKS3StatusGet (axis0, &new_status);
+// 	logStream (MESSAGE_DEBUG) << "MKS3StatusGet axis0: ret0=" << ret0 << "(" << (ret0?"err.":"-OK-") << ") status=" << new_status << " (" << statusStr(new_status, strstat) << ")" << sendLog;
 
-	if (statusRa->getValueInteger () != new_status)
-	{
-		//logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << statusRa->getValueInteger () << " to " << new_status << sendLog;
-		statusRa->setValueInteger (new_status);
-	}
+// 	if (statusRa->getValueInteger () != new_status)
+// 	{
+// 		//logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << statusRa->getValueInteger () << " to " << new_status << sendLog;
+// 		statusRa->setValueInteger (new_status);
+// 	}
 
-	ret1 = MKS3StatusGet (axis1, &new_status);
-	//logStream (MESSAGE_DEBUG) << "MKS3StatusGet axis1: ret1=" << ret1 << "(" << (ret1?"err.":"-OK-") << ") status=" << new_status << " (" << statusStr(new_status, strstat) << ")" << sendLog;
+// 	ret1 = MKS3StatusGet (axis1, &new_status);
+// 	//logStream (MESSAGE_DEBUG) << "MKS3StatusGet axis1: ret1=" << ret1 << "(" << (ret1?"err.":"-OK-") << ") status=" << new_status << " (" << statusStr(new_status, strstat) << ")" << sendLog;
 
-	if (statusDec->getValueInteger () != new_status)
-	{
-		logStream (MESSAGE_DEBUG) << "changed axis 1 state from " << std::hex << statusDec->getValueInteger () << " to " << new_status << sendLog;
-		statusDec->setValueInteger (new_status);
-	}
+// 	if (statusDec->getValueInteger () != new_status)
+// 	{
+// 		logStream (MESSAGE_DEBUG) << "changed axis 1 state from " << std::hex << statusDec->getValueInteger () << " to " << new_status << sendLog;
+// 		statusDec->setValueInteger (new_status);
+// 	}
 
-	if (checkRet ())
-		return -1;
+// 	if (checkRet ())
+// 		return -1;
 
-	// set / unset HW error
-	if (
-		(statusRa->getValueInteger ()  & MOTOR_ERR ) ||
-		(statusDec->getValueInteger () & MOTOR_ERR ) ||
-		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING) ||
-		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING) ||
-		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) ||
-		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) ||
-		statusRa->getValueInteger ()  == (               MOTOR_INDEXING | MOTOR_SLEWING) ||
-		statusDec->getValueInteger () == (               MOTOR_INDEXING | MOTOR_SLEWING)
-	)
+// 	// set / unset HW error
+// 	if (
+// 		(statusRa->getValueInteger ()  & MOTOR_ERR ) ||
+// 		(statusDec->getValueInteger () & MOTOR_ERR ) ||
+// 		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING) ||
+// 		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING) ||
+// 		statusRa->getValueInteger ()  == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) ||
+// 		statusDec->getValueInteger () == (MOTOR_HOMING | MOTOR_INDEXING | MOTOR_SLEWING) ||
+// 		statusRa->getValueInteger ()  == (               MOTOR_INDEXING | MOTOR_SLEWING) ||
+// 		statusDec->getValueInteger () == (               MOTOR_INDEXING | MOTOR_SLEWING)
+// 	)
 
-		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
-	else
-		maskState (DEVICE_ERROR_HW, 0, "cleared error conditions");
+// 		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
+// 	else
+// 		maskState (DEVICE_ERROR_HW, 0, "cleared error conditions");
 
-	// motor status..
-	ret0 = MKS3MotorStatusGet (axis0, &new_status);
+// 	// motor status..
+// 	ret0 = MKS3MotorStatusGet (axis0, &new_status);
 
 
-	//if (getDebug ())
-	//	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
+// 	//if (getDebug ())
+// 	//	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
 
-	if (motorStatusRa->getValueInteger () != new_status)
-	{
-		logStream (MESSAGE_DEBUG) << "changed motor 0 state from " << std::hex << motorStatusRa->getValueInteger () << " to " << new_status << sendLog;
-		motorStatusRa->setValueInteger (new_status);
-	}
+// 	if (motorStatusRa->getValueInteger () != new_status)
+// 	{
+// 		logStream (MESSAGE_DEBUG) << "changed motor 0 state from " << std::hex << motorStatusRa->getValueInteger () << " to " << new_status << sendLog;
+// 		motorStatusRa->setValueInteger (new_status);
+// 	}
 
-	ret1 = MKS3MotorStatusGet (axis1, &new_status);
-	//logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis1: ret1=" << ret1 << " status=" << new_status << sendLog;
+// 	ret1 = MKS3MotorStatusGet (axis1, &new_status);
+// 	//logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis1: ret1=" << ret1 << " status=" << new_status << sendLog;
 
-	if (motorStatusDec->getValueInteger () != new_status)
-	{
-		logStream (MESSAGE_DEBUG) << "changed motor 1 state from " << std::hex << motorStatusDec->getValueInteger () << " to " << new_status << sendLog;
-		motorStatusDec->setValueInteger (new_status);
-	}
+// 	if (motorStatusDec->getValueInteger () != new_status)
+// 	{
+// 		logStream (MESSAGE_DEBUG) << "changed motor 1 state from " << std::hex << motorStatusDec->getValueInteger () << " to " << new_status << sendLog;
+// 		motorStatusDec->setValueInteger (new_status);
+// 	}
 
-	return checkRet ();
-}
+// 	return checkRet ();
+// }
 
 int Paramount::saveAxis (std::ostream & os, const MKS3Id & axis)
 {
@@ -738,10 +738,21 @@ int Paramount::initHardware ()
 	// south hemispehere
 	if (telLatitude->getValueDouble () < 0)
 	{
+		logStream (MESSAGE_DEBUG) << "Running in Southern hemisphere, inverting some values" << sendLog;
 		// swap values which are opposite for south hemispehere
 		haZero->setValueDouble (haZero->getValueDouble () * -1.0);
 		hourRa->setValueLong (-1 * hourRa->getValueLong ());
+
+		haCpd->setValueDouble (haCpd->getValueDouble () * -1.0);
+		decCpd->setValueDouble (decCpd->getValueDouble () * -1.0);
+
+		ra_ticks->setValueLong (-1 * ra_ticks->getValueLong ());
+		dec_ticks->setValueLong (-1 * dec_ticks->getValueLong ());
 	}
+
+	// Init tracking speed
+	setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
+
 
 	return 0;
 }
@@ -873,65 +884,73 @@ int Paramount::initValues ()
 
 int Paramount::setTracking (int track, bool addTrackingTimer, bool send)
 {
-	if (track)
-		MKS3MotorOn (axis0);
-	else
-		MKS3MotorOff (axis0);
-	// do not run tracking (yet)
-	return Telescope::setTracking (track, false, send);
-}
-
-void Paramount::updateTrack ()
-{
-	double JD;
-	struct ln_equ_posn corr_pos;
-	struct ln_hrz_posn hrz;
-
-	return;
-
-	gettimeofday (&track_next, NULL);
-	if (track_recalculate.tv_sec < 0)
-		return;
-	timeradd (&track_next, &track_recalculate, &track_next);
-
-	if (!track0 || !track1)
+	if (isConnected)
 	{
-		JD = ln_get_julian_from_sys ();
-
-		getTarget (&corr_pos);
-		startResync ();
-		return;
+		if (track)
+			MKS3MotorOn (axis0);
+		else
+			MKS3MotorOff (axis0);
+		// do not run tracking (yet)
+		return Telescope::setTracking (track, false, send);
 	}
-	double track_delta;
-	CWORD32 ac = encoderRa->getValueLong ();
-	CWORD32 dc = encoderDec->getValueLong ();;
-	MKS3ObjTrackStat stat0, stat1;
-
-	track_delta =
-		track_next.tv_sec - track_start_time.tv_sec + (track_next.tv_usec -
-		track_start_time.tv_usec) /
-		USEC_SEC;
-	JD = ln_get_julian_from_timet (&track_next.tv_sec);
-	JD += track_next.tv_usec / USEC_SEC / 86400.0;
-	getTarget (&corr_pos);
-	// calculate position at track_next time
-	bool use_flipped = false;
-	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger (), use_flipped, true, 0);
-
-	int32_t haOff;
-	int ret = getHomeOffsetAxis (axis0, haOff);
-	if (ret)
-		return;
-	ac -= haOff;
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " << track_delta << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	ret0 = MKS3ObjTrackPointAdd (axis0, track0, track_delta + track0->prevPointTimeTicks / track0->sampleFreq, (CWORD32) (ac + (track_delta * 10000)), &stat0);
-	ret1 = 	MKS3ObjTrackPointAdd (axis1, track1, track_delta + track1->prevPointTimeTicks / track1->sampleFreq, (CWORD32) (dc + (track_delta * 10000)), &stat1);
-	checkRet ();
+	else
+	{
+		logStream (MESSAGE_DEBUG) << "Can't change tracking to " << track << " on disconnected mount" << sendLog;
+		return -1;
+	}
 }
+
+// void Paramount::updateTrack ()
+// {
+// 	double JD;
+// 	struct ln_equ_posn corr_pos;
+// 	struct ln_hrz_posn hrz;
+
+// 	return;
+
+// 	gettimeofday (&track_next, NULL);
+// 	if (track_recalculate.tv_sec < 0)
+// 		return;
+// 	timeradd (&track_next, &track_recalculate, &track_next);
+
+// 	if (!track0 || !track1)
+// 	{
+// 		JD = ln_get_julian_from_sys ();
+
+// 		getTarget (&corr_pos);
+// 		startResync ();
+// 		return;
+// 	}
+// 	double track_delta;
+// 	CWORD32 ac = encoderRa->getValueLong ();
+// 	CWORD32 dc = encoderDec->getValueLong ();;
+// 	MKS3ObjTrackStat stat0, stat1;
+
+// 	track_delta =
+// 		track_next.tv_sec - track_start_time.tv_sec + (track_next.tv_usec -
+// 		track_start_time.tv_usec) /
+// 		USEC_SEC;
+// 	JD = ln_get_julian_from_timet (&track_next.tv_sec);
+// 	JD += track_next.tv_usec / USEC_SEC / 86400.0;
+// 	getTarget (&corr_pos);
+// 	// calculate position at track_next time
+// 	bool use_flipped = false;
+// 	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger (), use_flipped, true, 0);
+
+// 	int32_t haOff;
+// 	int ret = getHomeOffsetAxis (axis0, haOff);
+// 	if (ret)
+// 		return;
+// 	ac -= haOff;
+
+// 	#ifdef DEBUG_EXTRA
+// 	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " << track_delta << sendLog;
+// 	#endif						 /* DEBUG_EXTRA */
+
+// 	ret0 = MKS3ObjTrackPointAdd (axis0, track0, track_delta + track0->prevPointTimeTicks / track0->sampleFreq, (CWORD32) (ac + (track_delta * 10000)), &stat0);
+// 	ret1 = 	MKS3ObjTrackPointAdd (axis1, track1, track_delta + track1->prevPointTimeTicks / track1->sampleFreq, (CWORD32) (dc + (track_delta * 10000)), &stat1);
+// 	checkRet ();
+// }
 
 double Paramount::getUsec()
 {
@@ -946,29 +965,31 @@ int Paramount::doPara()
 	CWORD16 stat0,stat1;
 	char strstat[512];
 	double usec;
-	usec=getUsec();
+	usec = getUsec();
 
 	while ( true )
 	{
 
 	// There are cases we should not touch the mount until some time is elapsed
 	if (canTouch > usec)
-		{
+	{
 //		logStream (MESSAGE_DEBUG) << "not touching" << sendLog;
-		return 0;
-		}
+		return 1;
+	}
 
 	if (!isConnected)
 	{
 		int ret = MKS3Init (device_name);
 		if (ret == 0) {
-			logStream (MESSAGE_INFO) << "Re-connected to mount" << sendLog;
+			logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "Re-connected to mount" << sendLog;
 			isConnected = true;
 		}
 		else
 		{
+			maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "mount disconnected");
+
 			canTouch = getUsec() + 10.0;
-			return 0;
+			return -1;
 		}
 	}
 
@@ -985,20 +1006,23 @@ int Paramount::doPara()
 		checkRet();
 
 		if (errorCount > 2) {
+			logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "Disconnected from mount" << sendLog;
 			logStream (MESSAGE_INFO) << "Re-connecting to mount..." << sendLog;
 			MKS3Free ();
 
 			isConnected = false;
 
+			maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "mount disconnected");
+
 			return doPara ();
 		}
 
 		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
-		canTouch = getUsec()+1.0;
+		canTouch = getUsec() + 1.0;
 		wasTimeout = 1;
-		errorCount++;
+		errorCount ++;
 
-		return 0;
+		return -1;
 	}
 
 	errorCount = 0;
@@ -1038,7 +1062,7 @@ int Paramount::doPara()
 		// I may do a real sleep10 in this place and do a proper initHw here
 		// instead of the beginning, updateLimits, loadModel etc... that would cause
 		//  a power cycle on the mount do a driver reinitialization without further action
-		canTouch = getUsec()+10.0;
+		canTouch = getUsec() + 10.0;
 		//basicInfo();
 
 		// This was there and I think it should not be there, it spoils
@@ -1054,13 +1078,13 @@ int Paramount::doPara()
 
 	// if the motors are homing we should wait for them to finish and do nothing
 	if (stat0 & MOTOR_HOMING || stat1 & MOTOR_HOMING)
-		{
+	{
 		/*logStream (MESSAGE_DEBUG)
-			<< ((stat0 & MOTOR_HOMING) ? "Axis0 is still homing":"Axis0 is homed" )
-			<< ((stat0 & MOTOR_HOMING) ? "Axis1 is still homing":"Axis1 is homed" )
-			<< sendLog;*/
+		  << ((stat0 & MOTOR_HOMING) ? "Axis0 is still homing":"Axis0 is homed" )
+		  << ((stat0 & MOTOR_HOMING) ? "Axis1 is still homing":"Axis1 is homed" )
+		  << sendLog;*/
 		return 0;
-		}
+	}
 
 	// need to do homing of at least one axis (this switches the motors on)
 	if(forceHoming || (!(stat0 & MOTOR_HOMED)) || (!(stat1 & MOTOR_HOMED)) )
@@ -1132,7 +1156,7 @@ int Paramount::doPara()
 			// issue the actual move
 			ret = calculateTarget (utc1, utc2, &tar, &hrz, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
-                                return -1;
+				return -1;
 
 			int32_t haOff;
 
@@ -1327,14 +1351,37 @@ int Paramount::doInfo ()
 
 int Paramount::startResync ()
 {
-	doSlew=1;
-	doPara();
-	return 0;
+	doSlew = 1;
+
+	int res;
+
+	do {
+		res = doPara();
+
+		if (res)
+		{
+			logStream (MESSAGE_DEBUG) << "Paramount::startResync move failed: " << res << sendLog;
+
+			usleep (USEC_SEC);
+		}
+	} while (res > 0);
+
+	if (res > 0)
+		res = -1;
+	else if (res < 0)
+		doSlew = 0;
+
+	return res;
 }
 
 int Paramount::isMoving ()
 {
-	doPara();
+	int res = doPara();
+
+	if (res < 0)
+		return -1;
+	else if (res > 0)
+		return USEC_SEC / 10;
 
 	if ( (statusRa->getValueInteger () & MOTOR_SLEWING)
 		|| (statusDec->getValueInteger () & MOTOR_SLEWING))
@@ -1346,29 +1393,31 @@ int Paramount::isMoving ()
 int Paramount::stopMove ()
 {
 	// there may be an unfinished slew request
-	doSlew=0;
+	doSlew = 0;
 
 	// in any case
-	doAbort=1;
+	doAbort = 1;
 
-	doPara();
-
-	return 0;
+	return doPara();
 }
 
 int Paramount::startPark ()
 {
-	forceHoming=1;
-	doPark=1;
+	forceHoming = 1;
+	doPark = 1;
 
-	doPara();
-
-	return 0;
+	return doPara();
 }
 
 int Paramount::isParking ()
 {
-	doPara();
+	int res = doPara();
+
+	if (res < 0)
+		return -1;
+	else if (res > 0)
+		return USEC_SEC / 10;
+
 	if ((statusRa->getValueInteger () & MOTOR_HOMING) || (statusDec->getValueInteger () & MOTOR_HOMING))
 		return USEC_SEC / 10;
 
@@ -1559,15 +1608,20 @@ int Paramount::loadModel ()
 
 void Paramount::setDiffTrack (double dra, double ddec)
 {
-	// calculate diff track..
-	logStream (MESSAGE_DEBUG) << "Paramount::setDiffTrack" << sendLog;
-	dra = (-dra * haCpd->getValueDouble ());
-	ddec = (ddec * decCpd->getValueDouble ());
-	if (getFlip ())
-		ddec *= -1;
-	baseRa->setValueLong (dra + hourRa->getValueLong ());
-	baseDec->setValueLong (ddec);
-	setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
+	if (isConnected)
+	{
+		// calculate diff track..
+		logStream (MESSAGE_DEBUG) << "Paramount::setDiffTrack" << sendLog;
+		dra = (-dra * haCpd->getValueDouble ());
+		ddec = (ddec * decCpd->getValueDouble ());
+		if (getFlip ())
+			ddec *= -1;
+		baseRa->setValueLong (dra + hourRa->getValueLong ());
+		baseDec->setValueLong (ddec);
+		setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
+	}
+	else
+		logStream (MESSAGE_DEBUG) << "Paramount::setDiffTrack failed due to disconnected mount" << sendLog;
 }
 
 int Paramount::getParamountValue32 (int id, rts2core::ValueLong *vRa, rts2core::ValueLong *vDec)
