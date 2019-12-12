@@ -1204,6 +1204,12 @@ void Zelio::createZelioValues ()
 				createValue (onBattery, "on_battery", "running on battery", false);
 				createValue (batteryLow, "battery_low", "low battery voltage", false);
 				createValue (lowAccPressure, "low_acc_pressure", "not enough pressure in accumulator", false);
+
+				lowOil->setValueBool (false);
+				batteryFault->setValueBool (false);
+				onBattery->setValueBool (false);
+				batteryLow->setValueBool (false);
+				lowAccPressure->setValueBool (false);
 				break;
 			}
 
