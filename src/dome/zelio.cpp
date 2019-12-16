@@ -444,8 +444,8 @@ bool Zelio::isGoodWeather ()
 		if (lowOil->getValueBool ())
 		{
 			valueError (lowOil);
-			//setWeatherTimeout (60, "low oil level");
-			//return false;
+			setWeatherTimeout (60, "low oil level");
+			return false;
 		}
 		else
 		{
