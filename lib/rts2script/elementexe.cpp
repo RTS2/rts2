@@ -104,7 +104,12 @@ void ConnExecute::processCommand (char *cmd)
 	char *comm;
 
 #ifdef DEBUG_EXE
-	logStream (MESSAGE_DEBUG) << "connexe: " << cmd << " " << command_buf_top << sendLog;
+	std::string devname;
+
+	if (masterElement && masterElement->getConnection ())
+		devname = masterElement->getConnection ()->getName ();
+
+	logStream (MESSAGE_DEBUG) << "connexe: " << devname << " " << cmd << " " << command_buf_top << sendLog;
 #endif
 	// initiate timeout for external script inactivity - connection will terminate if nothing received for a long time
 	if (getMaster ()->getValue (".", "exe_timeout") &&
@@ -614,7 +619,12 @@ std::list <Image *>::iterator ConnExecute::findImage (const char *path)
 int ConnExecute::writeToProcess (const char *msg)
 {
 #ifdef DEBUG_EXE
-	logStream (MESSAGE_DEBUG) << "connexe reply: " << msg << sendLog;
+	std::string devname;
+
+	if (masterElement && masterElement->getConnection ())
+		devname = masterElement->getConnection ()->getName ();
+
+	logStream (MESSAGE_DEBUG) << "connexe reply: " << devname << " " << msg << sendLog;
 #endif
 
 	return ConnExe::writeToProcess (msg);
