@@ -116,6 +116,8 @@ class Execute:public Element
 		virtual void printXml (std::ostream &os) { os << "  <exe path='" << exec << "'/>"; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXE << "\",\"path\":\"" << exec << "\""; }
 
+		virtual double getExpectedDuration (int runnum) { return 60; }
+
 		/**
 		 * Ask exe block to end whole script.
 		 */
