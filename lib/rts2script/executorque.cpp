@@ -415,9 +415,11 @@ void TargetQueue::filterExpired (double now)
 				double t_end = iter->t_end;
 				if ((!std::isnan (t_start) && t_start <= now) || (!std::isnan (t_end) && t_end <= now))
 				{
-					logStream (MESSAGE_DEBUG) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") has start and end times set (" << LibnovaDateDouble (t_start) << " " << LibnovaDateDouble (t_end) << ", removing previous targets." << sendLog;
 					for (TargetQueue::iterator irem = begin (); irem != iter;)
+					{
+						logStream (MESSAGE_DEBUG) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") has start and end times set (" << LibnovaDateDouble (t_start) << " " << LibnovaDateDouble (t_end) << ", removing previous target " << irem->target->getTargetName () << " (" << irem->target->getTargetID () << ")" << sendLog;
 						irem = removeEntry (irem, REMOVED_NEXT_NEEDED);
+					}
 				}
 			}
 			break;
@@ -775,7 +777,9 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 	{
 		double now = getNow ();
 		double t_start = NAN;
-		if (filter (now, next_length, removeObserved, &t_start) && front ().notExpired (now))
+		// we will wake up a minute before next target is scheduled,
+		// so let's accept the target what will be active in a minute from now
+		if (filter (now + 60, next_length, removeObserved, &t_start) && front ().notExpired (now + 60))
 		{
 			if (std::isnan (next_length))
 			{
@@ -809,7 +813,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		}
 		else
 		{
-			double t = now + 60;
+			double t = now + 60; // we will wake up a minute before next target is scheduled
 			// add timers..
 			if (!std::isnan (t_start) && (std::isnan (timerAdded) || t_start != timerAdded) && t_start > t)
 			{
