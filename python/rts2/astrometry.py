@@ -40,6 +40,9 @@ import numpy
 import math
 import signal
 
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, append=True)
+
 from . import dms
 
 class WCSAxisProjection:
@@ -146,9 +149,11 @@ class AstrometryScript:
 			solve_field.append('-6')
 			solve_field.append(extension)
 
-		if order is not None:
+		if order:
 			solve_field.append('-t')
 			solve_field.append(str(order))
+		else:
+			solve_field.append('-T')
 
 		if center:
 			solve_field.append('--crpix-center')
@@ -194,20 +199,28 @@ class AstrometryScript:
 					ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
 
 			if ret and verify and iter == 'initial':
-				# TODO: reuse star list from first iteration to save some CPU time on second one
-				shutil.move(self.odir+'/input.new', self.odir+'/input.fits')
+				shutil.move(self.odir+'/input.new', self.odir+'/input-solved.fits')
+				shutil.move(self.odir+'/input.wcs', self.odir+'/input-wcs.fits')
+				shutil.move(self.odir+'/input.axy', self.odir+'/input.fits')
+				# solve_field.append('--continue')
 				solve_field.append('--overwrite')
-				solve_field.append('--verify')
-				solve_field.append(self.odir+'/input.fits')
 				if extension is not None:
 					solve_field.append('--verify-ext')
 					solve_field.append(extension)
+				solve_field.append('--verify')
+				solve_field.append(self.odir+'/input-solved.fits')
 			else:
 				# No verification phase
 				break
 
 		if replace and ret is not None:
-			shutil.move(self.odir+'/input.new', self.fits_file)
+			fits = pyfits.open(self.odir+'/input-solved.fits', mode='update')
+			wcsheader = pyfits.getheader(self.odir+'/input.wcs')
+			extnum = extension if extension is not None else 0
+			fits[extnum].header.update(wcsheader)
+			fits.close(output_verify='ignore')
+
+			shutil.move(self.odir+'/input-solved.fits', self.fits_file)
 
 		shutil.rmtree(self.odir)
 		return ret

@@ -118,7 +118,10 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 
 	ff.close()
 
-	ret=a.run(replace=True,verbose=verbose,extension=extension,center=center,downsample=downsample, order=order) if blind else a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose, extension=extension, center=center, downsample=downsample, order=order)
+	if blind:
+		ret = a.run(scale=scale, replace=True, timeout=timeout, verbose=verbose, extension=extension, center=center, downsample=downsample, order=order)
+	else:
+		ret = a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose, extension=extension, center=center, downsample=downsample, order=order)
 
 	if ret and print_results:
 		# script needs to reopen file
@@ -202,7 +205,7 @@ parser.add_option('--extension', help="FITS extension to solve", action="store",
 parser.add_option('-z', help="downsample the image before running source extractions", action="store", dest="downsample", default=None)
 parser.add_option('--bashrc', help="write results into bash export file", action="store", dest="bashrc", default=None)
 parser.add_option('--sextractor', help="use SExtractor", action="store_true", dest="use_sextractor", default=False)
-parser.add_option('--order', help='SIP tweak order', action='store', dest='order', default=None)
+parser.add_option('--order', help='SIP tweak order', action='store', dest='order', type='int', default=None)
 parser.add_option('--pixscale', help='Pixel scale in arcsec', action='store', type='float', dest='pixscale', default=None)
 parser.add_option('--config', help='Config for Astrometry.Net', action='store', dest='config', default=None)
 
