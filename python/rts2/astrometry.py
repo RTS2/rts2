@@ -220,7 +220,10 @@ class AstrometryScript:
 			fits[extnum].header.update(wcsheader)
 			fits.close(output_verify='ignore')
 
-			shutil.move(self.odir+'/input-solved.fits', self.fits_file)
+			try:
+				shutil.move(self.odir+'/input-solved.fits', self.fits_file)
+			except:
+				print('Error moving matched file to', self.fits_file)
 
 		shutil.rmtree(self.odir)
 		return ret
