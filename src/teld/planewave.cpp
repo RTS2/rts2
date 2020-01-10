@@ -3,6 +3,8 @@
  * Copyright (C) 2019 Michael Mommert <mommermiscience@gmail.com>
  * and Giannina Guzman <gguzman@lowell.edu>
  *
+ * up-to-date with PWI4-version 4.0.5 beta16
+ *
  * Note for anyone maintaining this in the future:
  * function information are available in rts2/include/teld.h
  *
@@ -77,14 +79,15 @@ class PlaneWave:public Telescope
 		char pointmodel_used[100];
 		char pointmodel_filename[100];
 		
-		
 		float geometry, ra_apparent_h, dec_apparent_d, ra_j2000_d, dec_j2000_d, 
-		azimuth, altitude, field_angle_local, field_angle_target, field_anglerate, 
+		azimuth, altitude, field_angle_local, field_angle_target,
+		field_anglerate, 
 		path_angle_target, path_anglerate, axis0_rms_error_arcsec, 
 		axis0_dist_to_target_arcsec, axis0_err, axis0_position, 
 		axis1_rms_error_arcsec, axis1_dist_to_target_arcsec, axis1_err, 
 		axis1_position, model_numpoints_total, model_numpoints_enabled,
-		model_rms_error;
+		model_rms_error,
+		target_ra_apparent_hours, target_dec_apparent_degs;
 
 		const char *url;
 };
@@ -154,9 +157,14 @@ int  PlaneWave::mountstatus_parser(std::string s)
          pos += 1;
 	}
 
-	sscanf(sCleaned.c_str(), "mount.is_connected=%d\nmount.geometry=%f\n"
-	        "mount.ra_apparent_hours=%f\nmount.dec_apparent_degs=%f\n"
+	// check whether status was properly retrieved
+	field_angle_target = -999;
+	
+	sscanf(sCleaned.c_str(),
+		"mount.is_connected=%d\nmount.geometry=%f\n"
+	    "mount.ra_apparent_hours=%f\nmount.dec_apparent_degs=%f\n"
 		"mount.ra_j2000_hours=%f\nmount.dec_j2000_degs=%f\n"
+		"mount.target_ra_apparent_hours=%f\nmount.target_dec_apparent_degs=%f\n"
 		"mount.azimuth_degs=%f\nmount.altitude_degs=%f\n"
 		"mount.is_slewing=%d\nmount.is_tracking=%d\n"
 		"mount.field_angle_here_degs=%f\n"
@@ -174,7 +182,9 @@ int  PlaneWave::mountstatus_parser(std::string s)
 		"mount.model.num_points_total=%f\n"
 		"mount.model.num_points_enabled=%f\nmount.model.rms_error_arcsec=%f",
 		&is_connected, &geometry, &ra_apparent_h, &dec_apparent_d, &ra_j2000_h, 
-		&dec_j2000_d, &azimuth, &altitude, &is_slewing, &is_tracking, &field_angle_local, 
+		&dec_j2000_d,
+        &target_ra_apparent_hours, &target_dec_apparent_degs,
+	    &azimuth, &altitude, &is_slewing, &is_tracking, &field_angle_local, 
 		&field_angle_target, &field_anglerate, &path_angle_target, &path_anglerate, 
 		&axis0_is_enabled, &axis0_rms_error_arcsec, &axis0_dist_to_target_arcsec, 
 		&axis0_err, &axis0_position, &axis1_is_enabled, &axis1_rms_error_arcsec, 
@@ -183,6 +193,12 @@ int  PlaneWave::mountstatus_parser(std::string s)
 
 	// convert ra from hours to degs
 	ra_j2000_d = floor(ra_j2000_h)*15+(ra_j2000_h-floor(ra_j2000_h))*15;
+
+	//logStream (MESSAGE_INFO) << "RA: " << ra_j2000_d << ", Dec: " << dec_j2000_d << sendLog;
+	
+	// check whether status was properly retrieved
+	if (field_angle_target == -999)
+		return -1;
 	
 	return 0;
 
@@ -250,6 +266,10 @@ int PlaneWave::init()
 	if (status)
 		return status;
 
+	logStream (MESSAGE_INFO) << "here" <<
+		sendLog;	
+
+	
 	// connect to the mount
 	ret = send_command("mount/connect");
 	usleep(USEC_SEC * 1);
@@ -289,13 +309,13 @@ int PlaneWave::init()
 	// home telescope
 	ret = send_command("mount/find_home");
     usleep(USEC_SEC * 20);
-	logStream (MESSAGE_INFO) << "homing telescope" << sendLog;	
+	logStream (MESSAGE_INFO) << "telescope @ home" << sendLog;	
 
 	// load pointing model
 	char cmdbuffer[120];
 	sprintf(cmdbuffer, "mount/model/load?filename=%s", pointmodel_filename);
 	ret = send_command(cmdbuffer);
-	logStream (MESSAGE_INFO) << "loading pointing model" << sendLog;	
+	logStream (MESSAGE_INFO) << "pointing model loaded" << sendLog;	
 
 	// send telescope to park position
 	startPark();
@@ -327,10 +347,17 @@ int PlaneWave::info()
 {
 	// this function is called when you use <info> in rts2-mon; should also be used
 	// to update telescope information
+
+	//logStream (MESSAGE_INFO) << "query status" << sendLog;
 	
 	if (send_command("status") != 0)
+	{
+		logStream (MESSAGE_ERROR) << "could not retrieve status" << sendLog;
 		return -1;
+	}
 
+	logStream (MESSAGE_INFO) << "RA: " << ra_j2000_d << ", Dec: " << dec_j2000_d << sendLog;
+	
 	// set rts2-internal telescope coordinates
 	setTelRa(ra_j2000_d);
 	setTelDec(dec_j2000_d);
@@ -343,9 +370,8 @@ int PlaneWave::startResync()
 {
 	// this function is called when you use <move ra dec> in rts2-mon
 
+  	logStream (MESSAGE_INFO) << "moving" << sendLog;	
 
-
-	
     // check if target is above/below horizon
 	struct ln_equ_posn tar;	
 	getTarget (&tar);
@@ -354,9 +380,12 @@ int PlaneWave::startResync()
 	char cmd[100];
 	sprintf(cmd, "mount/goto_ra_dec_j2000?ra_hours=%f&dec_degs=%f",
 			tar.ra/15, tar.dec);
+  	logStream (MESSAGE_INFO) << "moving with: " << cmd << sendLog;	
+
 	if (send_command(cmd) < 0)
 		return -1;
 
+	
 	struct ln_hrz_posn hrz;
 	double JD = ln_get_julian_from_sys ();
 
