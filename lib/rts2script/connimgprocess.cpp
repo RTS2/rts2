@@ -61,11 +61,12 @@ int ConnImgOnlyProcess::init ()
 	{
 		Image image;
 		image.openFile (imgPath.c_str (), true, false);
-		if (image.getShutter () == SHUT_CLOSED)
+		if (image.getShutter () == SHUT_CLOSED || image.getImageType () == IMGTYPE_DARK)
 		{
 			astrometryStat = DARK;
-			return 0;
 		}
+		else if (image.getImageType () == IMGTYPE_FLAT)
+			astrometryStat = FLAT;
 
 		expDate = image.getExposureStart () + image.getExposureLength ();
 	}
@@ -174,7 +175,7 @@ int ConnImgProcess::init ()
 
 int ConnImgProcess::newProcess ()
 {
-	if (astrometryStat == DARK)
+	if (astrometryStat == DARK || astrometryStat == FLAT)
 		return 0;
 
 	return ConnImgOnlyProcess::newProcess ();
