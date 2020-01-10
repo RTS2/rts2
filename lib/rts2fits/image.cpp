@@ -458,6 +458,13 @@ void Image::getHeaders ()
 
 	getValue ("CAM_FILT", filter_i, false);
 
+	int tshutter = SHUT_UNKNOW;
+	getValue ("SHUTTER", tshutter, false);
+	if (tshutter == 0)
+		shutter = SHUT_OPENED;
+	else if (tshutter == 1)
+		shutter = SHUT_CLOSED;
+
 	filter = new char[5];
 	getValue ("FILTER", filter, 5, "UNK", verbose);
 	getValue ("AVERAGE", average, false);

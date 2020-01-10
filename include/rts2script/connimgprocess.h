@@ -142,6 +142,7 @@ class ConnObsProcess:public ConnProcess
 {
 	public:
 		ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout);
+		virtual ~ ConnObsProcess (void);
 
 		virtual const char* getProcessArguments () { return obs == NULL ? "unknown" : obs->getTargetName ().c_str (); }
 

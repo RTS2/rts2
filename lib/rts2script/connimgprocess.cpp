@@ -209,9 +209,17 @@ void ConnImgProcess::connectionError (int last_data_size)
 		{
 			// just return..
 			if (image->getImageType () == IMGTYPE_FLAT)
+			{
 				astrometryStat = FLAT;
+				if (end_event <= 0)
+					image->toFlat ();
+			}
 			else
+			{
 				astrometryStat = DARK;
+				if (end_event <= 0)
+					image->toDark ();
+			}
 			delete image;
 			ConnImgOnlyProcess::connectionError (last_data_size);
 			return;
@@ -395,9 +403,12 @@ ConnObsProcess::ConnObsProcess (rts2core::Block * in_master, const char *in_exe,
 		addArg (obs->getTargetId ());
 		addArg (obs->getTargetType ());
 	}
-
-	delete obs;
 #endif
+}
+
+ConnObsProcess::~ConnObsProcess (void)
+{
+	delete obs;
 }
 
 void ConnObsProcess::processLine ()
