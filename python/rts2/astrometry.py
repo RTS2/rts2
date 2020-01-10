@@ -214,14 +214,14 @@ class AstrometryScript:
 				break
 
 		if replace and ret is not None:
-			fits = pyfits.open(self.odir+'/input-solved.fits', mode='update')
+			fits = pyfits.open(self.odir+'/input-solved.fits', mode='readonly')
 			wcsheader = pyfits.getheader(self.odir+'/input.wcs')
 			extnum = extension if extension is not None else 0
 			fits[extnum].header.update(wcsheader)
-			fits.close(output_verify='ignore')
+			fits.writeto(self.odir+'/input-solved-new.fits')
 
 			try:
-				shutil.move(self.odir+'/input-solved.fits', self.fits_file)
+				shutil.move(self.odir+'/input-solved-new.fits', self.fits_file)
 			except:
 				print('Error moving matched file to', self.fits_file)
 
