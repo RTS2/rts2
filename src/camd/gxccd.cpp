@@ -611,7 +611,15 @@ int GXCCD::reinitCamera ()
 	else
 		quiet = true;
 
+	// Crude hack to prevent simultaneous initialization of several cameras
+	int fd = open ("/tmp/.gxccd.init.lock", O_RDWR | O_CREAT, 0666);
+	flock (fd, LOCK_EX);
+	logStream (MESSAGE_DEBUG) << "locked GXCCD driver for re-initialization of camera id " << id->getValueInteger () << sendLog;
 	camera = gxccd_initialize_usb (id->getValueInteger ());
+	flock (fd, LOCK_UN);
+	close (fd);
+	logStream (MESSAGE_DEBUG) << "unlocked GXCCD driver after re-initialization of camera id " << id->getValueInteger () << sendLog;
+
 	if (camera == NULL) {
 		if (!quiet)
 			logStream (MESSAGE_ERROR) << "reinitialization failed: " << gx_err << sendLog;
@@ -652,6 +660,15 @@ int GXCCD::reinitCamera ()
 		return -1;
 	}
 
+	ret = gxccd_set_temperature (camera, tempTarget->getValueFloat ());
+	if (ret)
+	{
+		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+		logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set target temperature: " << gx_err << sendLog;
+		raiseHWError ();
+		return -1;
+	}
+
 	logStream (MESSAGE_WARNING) << "reinitialization succeeded" << sendLog;
 
 	clearHWError ();
@@ -669,6 +686,15 @@ int GXCCD::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return clearCCD (pref_time, nclear);
 	}
+#ifdef GXCCD_HAS_RESET_FILTERS
+	else if (conn->isCommand ("reset_filters"))
+	{
+		int nfilters = gxccd_reset_filters (camera);
+		logStream (MESSAGE_INFO) << "GXCCD::resetFilters " << nfilters << sendLog;
+
+		return 0;
+	}
+#endif
 	return Camera::commandAuthorized (conn);
 }
 
