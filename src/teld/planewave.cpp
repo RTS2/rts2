@@ -108,7 +108,7 @@ Planewave::Planewave (int argc, char **argv):Telescope (argc, argv, true, true)
 	parkPos.az = 270; // E; (N:180, W:90, S:0, E:270)	
 }
 
-void Planewave::~Planewave()
+Planewave::~Planewave(void)
 {
 	startPark();
 	endPark();
