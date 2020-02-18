@@ -84,6 +84,9 @@ class GXCCD:public Camera
 
 		rts2core::ValueInteger *filterFailed;
 
+		rts2core::ValueFloat *preflash;
+		rts2core::ValueInteger *preflash_nclears;
+
 		camera_t *camera;
 
 		bool reseted_shutter;
@@ -118,6 +121,11 @@ GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (filterFailed, "filter_err", "filter failed count", false);
 	filterFailed->setValueInteger (0);
+
+	createValue (preflash, "PREFLASH", "Duration of CCD pre-exposure preflash", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	preflash->setValueFloat (0);
+	createValue (preflash_nclears, "NCLEARS", "Number of CCD pre-exposure clears after preflash", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	preflash_nclears->setValueInteger (0);
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 	addOption ('f', NULL, 1, "filter names (separated with :)");
@@ -511,6 +519,9 @@ int GXCCD::startExposure ()
 		if (reinit && reinitCamera ())
 			return -1;
 	}
+
+	if (preflash->getValueFloat () > 0)
+		clearCCD (preflash->getValueFloat (), preflash_nclears->getValueInteger ());
 
 	// The GXCCD library expects pre-binned region coordinates and size
 	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 0,
