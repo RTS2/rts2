@@ -103,6 +103,8 @@ class MICCD:public Camera
 
 		rts2core::ValueInteger *shift;
 
+		rts2core::ValueInteger *nclears;
+
 		camera_t camera;
 		camera_info_t cami;
 
@@ -134,6 +136,9 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (shift, "SHIFT", "shift (for partial, not cleared readout)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	shift->setValueInteger (0);
+
+	createValue (nclears, "NCLEARS", "Number of CCD clears before exposure", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	nclears->setValueInteger (0);
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 	addOption ('f', NULL, 1, "filter names (separated with :)");
@@ -501,8 +506,11 @@ int MICCD::startExposure ()
 				if (reinitCamera ())
 					return -1;
 				usleep (USEC_SEC / 100);
-			} else
+			} else {
+				for (int i = 0; i < nclears->getValueInteger (); i++)
+					miccd_hclear (&camera);
 				break;
+			}
 		}
 		if (ret)
 		{
@@ -535,20 +543,26 @@ int MICCD::startExposure ()
 			}
 			if (getExposure () <= 8)
 			{
-				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
-				if (ret < 0)
+				for (int iter = 0; iter < 3; iter ++)
 				{
-					// else try to reinit..
-					logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinitialize it.." << sendLog;
-					if (reinitCamera ())
-						return -1;
 					ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 					if (ret < 0)
 					{
-						logStream (MESSAGE_ERROR) << "reinitialization failed" << sendLog;
-						return -1;
+						logStream (MESSAGE_ERROR) << "start exposure error: " << ret << " on try " << iter << sendLog;
+						if (reinitCamera ())
+							return -1;
+						usleep (USEC_SEC / 100);
 					}
+					else
+						break;
 				}
+
+				if (ret)
+				{
+					logStream (MESSAGE_ERROR) << "start exposure error" << sendLog;
+					return -1;
+				}
+
 				setExposure (((float) ret) / 8000.0);
 				internalTimer = true;
 			}
@@ -563,9 +577,25 @@ int MICCD::startExposure ()
 		case GX_BI:
 			if (getExpType () != 1)
 			{
-				ret = miccd_open_shutter (&camera);
+				for(int iter = 0; iter < 3; iter ++)
+				{
+					ret = miccd_open_shutter (&camera);
+					if (ret < 0)
+					{
+						logStream (MESSAGE_ERROR) << "open shutter error: " << ret << " on try " << iter << sendLog;
+						if (reinitCamera ())
+							return -1;
+						usleep (USEC_SEC / 100);
+					}
+					else
+						break;
+				}
+
 				if (ret)
+				{
+					logStream (MESSAGE_ERROR) << "open shutter error" << sendLog;
 					return -1;
+				}
 			}
 			break;
 	}
@@ -598,12 +628,28 @@ int MICCD::endExposure (int ret)
 		case G2:
 		case G3:
 		case G3_H:
-                case GX_BI:
+		case GX_BI:
 			if (getExpType () != 1)
 			{
-				cret = miccd_close_shutter (&camera);
+				for(int iter = 0; iter < 3; iter ++)
+				{
+					cret = miccd_close_shutter (&camera);
+					if (cret < 0)
+					{
+						logStream (MESSAGE_ERROR) << "close shutter error: " << cret << " on try " << iter << sendLog;
+						if (reinitCamera ())
+							return -1;
+						usleep (USEC_SEC / 100);
+					}
+					else
+						break;
+				}
+
 				if (cret)
-					return cret;
+				{
+					logStream (MESSAGE_ERROR) << "close shutter error" << sendLog;
+					return -1;
+				}
 			}
 			break;
 	}
@@ -620,6 +666,8 @@ int MICCD::endExposure (int ret)
 
 int MICCD::stopExposure ()
 {
+	std::cout << "stopExposure" << std::endl;
+
  	int ret;
 	switch (camera.model)
 	{
@@ -639,10 +687,26 @@ int MICCD::stopExposure ()
 		case G2:
 		case G3:
 		case G3_H:
-                case GX_BI:
-			ret = miccd_close_shutter (&camera);
+		case GX_BI:
+			for(int iter = 0; iter < 3; iter ++)
+			{
+				ret = miccd_close_shutter (&camera);
+				if (ret < 0)
+				{
+					logStream (MESSAGE_ERROR) << "close shutter error: " << ret << " on try " << iter << sendLog;
+					if (reinitCamera ())
+						return -1;
+					usleep (USEC_SEC / 100);
+				}
+				else
+					break;
+			}
+
 			if (ret)
+			{
+				logStream (MESSAGE_ERROR) << "close shutter error" << sendLog;
 				return -1;
+			}
 			break;
 	}
 	#ifdef WITH_K8055
@@ -683,12 +747,18 @@ int MICCD::doReadout ()
 		if (ret) {
 			logStream (MESSAGE_ERROR) << "data read error: " << ret << " on try " << iter << sendLog;
 			// TODO: reset the camera?..
+			if (reinitCamera ())
+				return -1;
+			usleep (USEC_SEC / 100);
 		} else
 			break;
 	}
 
 	if (ret)
+	{
+		logStream(MESSAGE_ERROR) << "data read error" << sendLog;
 		return -1;
+	}
 
 	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
@@ -757,6 +827,12 @@ int MICCD::reinitCamera ()
 	if (miccd_set_cooltemp (&camera, tempTarget->getValueFloat ()))
 	{
 		logStream (MESSAGE_ERROR) << "reinitialization failed - cannot set target temperature" << sendLog;
+		return -1;
+	}
+
+	if (miccd_filter (&camera, camFilterVal->getValueInteger ()))
+	{
+		logStream (MESSAGE_ERROR) << "reinitialization failed - cannot set filter" << sendLog;
 		return -1;
 	}
 
