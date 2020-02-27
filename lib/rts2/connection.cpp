@@ -539,7 +539,7 @@ std::string Connection::getStateString (bool verbose)
 		case DEVICE_TYPE_IMGPROC:
 			if (verbose)
 			{
-				_os << " | " << getValueInteger ("queue_size") << " : "<< getValueInteger ("good_astrom") << " " << getValueInteger ("no_astrom") << " | ";
+				_os << " | " << getValueInteger ("queue_size") << " : "<< getValueInteger ("night_astrom") << " " << getValueInteger ("night_noastrom") << " | ";
 				_os << std::fixed << std::setprecision(1) << getValueDouble("free_diskspace")/1024/1024/1024 << " Gb | ";
 			}
 			if (real_state & IMGPROC_RUN)
