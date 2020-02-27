@@ -478,7 +478,8 @@ int Planewave::isParking()
 	}
 
 	// disable tracking and return -2 if parking is complete
-	stopTracking();
+	// issue here: will stop slewing to park position...
+	//stopTracking();
 	return -2;
 }
 
