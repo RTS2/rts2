@@ -41,6 +41,8 @@ class LX200:public TelLX200
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
+		virtual int checkPrecision ();
+
 		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int stopMove ();
@@ -162,18 +164,8 @@ int LX200::commandAuthorized (rts2core::Connection *conn)
 	return TelLX200::commandAuthorized (conn);
 }
 
-int LX200::initHardware ()
+int LX200::checkPrecision ()
 {
-	setIdleInfoInterval (1);
-
-	int ret = TelLX200::initHardware ();
-	if (ret)
-		return ret;
-
-	int ovtime = serConn->getVTime ();
-
-	serConn->setVTime (100);
-
 	char rbuf[100];
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
@@ -197,6 +189,25 @@ int LX200::initHardware ()
 		}
 	}
 
+	return 0;
+}
+
+int LX200::initHardware ()
+{
+	setIdleInfoInterval (1);
+
+	int ret = TelLX200::initHardware ();
+	if (ret)
+		return ret;
+
+	int ovtime = serConn->getVTime ();
+
+	serConn->setVTime (100);
+
+	if (checkPrecision () < 0)
+		return -1;
+
+	char rbuf[100];
 	// get product name
 	ret = serConn->writeRead (":GVP#", 5, rbuf, 99, '#');
 	if (ret < 0)
@@ -254,6 +265,8 @@ int LX200::initValues ()
 int LX200::info ()
 {
 	serConn->flushPortIO ();
+
+	checkPrecision ();
 
 	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
 	{
