@@ -557,7 +557,8 @@ int SelectorDev::selectNext ()
 						logStream (MESSAGE_INFO) << "set interrupt to true (next target has hard time start)" << sendLog;
 					sendValueAll (queueSelectUntil);
 
-					logStream (MESSAGE_INFO) << "selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << " target " << id << sendLog;
+					if (next_id->getValueInteger () != id)
+						logStream (MESSAGE_INFO) << "selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << " target " << id << sendLog;
 
 					return id;
 				}
