@@ -706,6 +706,8 @@ ValueRaDec::ValueRaDec (std::string in_val_name, std::string in_description, boo
 
 int ValueRaDec::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	double r, d;
 	if (connection->paramNextDMS (&r))
 		return -2;
@@ -856,6 +858,8 @@ ValueAltAz::ValueAltAz (std::string in_val_name, std::string in_description, boo
 
 int ValueAltAz::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	if (connection->paramNextDouble (&alt))
 		return -2;
 	if (connection->paramEnd ())
@@ -960,6 +964,8 @@ ValuePID::ValuePID (std::string in_val_name, std::string in_description, bool wr
 
 int ValuePID::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	int p, i, d;
 	if (connection->paramNextInteger (&p) || connection->paramNextInteger (&i) || connection->paramNextInteger (&d) || !connection->paramEnd ())
 		return -2;

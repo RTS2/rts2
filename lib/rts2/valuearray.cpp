@@ -132,6 +132,8 @@ DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool 
 
 int DoubleArray::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	value.clear ();
 
 	while (!(connection->paramEnd ()))
@@ -338,6 +340,8 @@ IntegerArray::IntegerArray (std::string _val_name, std::string _description, boo
 
 int IntegerArray::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	value.clear ();
 
 	while (!(connection->paramEnd ()))
@@ -483,6 +487,8 @@ const char * BoolArray::getDisplayValue ()
 
 int BoolArray::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	value.clear ();
 
 	while (!(connection->paramEnd ()))

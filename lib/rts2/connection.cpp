@@ -2238,6 +2238,40 @@ int Connection::paramNextTimeval (struct timeval *tv)
 	return 0;
 }
 
+void Connection::unquoteRest ()
+{
+	char ch = 0;
+
+	while (isspace (*command_buf_top) || *command_buf_top == '"' || *command_buf_top == '\'')
+	{
+		if (!isspace(*command_buf_top))
+			ch = *command_buf_top;
+
+		*command_buf_top = ' ';
+		command_buf_top ++;
+
+		if (ch)
+			break;
+	}
+
+	if (!ch)
+		return;
+
+	char *ptr = command_buf_top;
+
+	while (*ptr)
+		ptr ++;
+
+	while (ptr > command_buf_top)
+	{
+		ptr --;
+		if (isspace(*ptr) || *ptr == ch)
+			*ptr = '\0';
+		else
+			break;
+	}
+}
+
 void Connection::newDataConn (int data_conn)
 {
 	if (otherDevice)

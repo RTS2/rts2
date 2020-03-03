@@ -500,6 +500,11 @@ class Connection:public Object
 
 		int paramNextTimeval (struct timeval *tv);
 
+		/**
+		 * Remove leading and trailing quotes from the rest of the parameters string.
+		 */
+		void unquoteRest ();
+
 		Block *getMaster () { return master; }
 
 		virtual void childReturned (pid_t child_pid) {}
