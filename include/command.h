@@ -498,17 +498,6 @@ class CommandExposure:public Command
 		DevClientCamera * camera;
 };
 
-/**
- * Start data readout.
- *
- * @ingourp RTS2Command
- */
-class CommandReadout:public Command
-{
-	public:
-		CommandReadout (Block * _master);
-};
-
 class CommandShiftStart: public Command
 {
 	public:

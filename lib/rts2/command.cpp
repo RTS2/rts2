@@ -190,11 +190,6 @@ int CommandExposure::commandReturnFailed (int status, Connection * conn)
 	return Command::commandReturnFailed (status, conn);
 }
 
-CommandReadout::CommandReadout (Block * _master):Command (_master)
-{
-	setCommand ("readout");
-}
-
 CommandShiftStart::CommandShiftStart (Block * _master, float expTime, int _bopMask):Command (_master)
 {
 	std::ostringstream _os;
