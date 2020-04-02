@@ -2669,12 +2669,15 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextHMS (&obj_ha) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		double JD = ln_get_julian_from_sys ();
-		obj_ra = getLocSidTime ( JD) * 15. - obj_ha ;
+		obj_ra = getLocSidTime (JD) * 15.0 - obj_ha;
 
 		setOri (obj_ra, obj_dec);
 		resetMpecTLE ();
-		tarRaDec->setValueRaDec (NAN, NAN);
-		return startResyncMove (conn, 0);
+		startTracking (true);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			stopTracking ("stop tracking, move cannot be perfomed");
+		return ret;
 	}
 	else if (conn->isCommand ("move_not_model"))
 	{

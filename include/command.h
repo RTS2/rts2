@@ -662,6 +662,17 @@ class CommandMoveFixed:public CommandMove
 };
 
 /**
+ * Command for telescope movement in HA/Dec coordinates
+ *
+ * @ingroup RTS2Command
+ */
+class CommandMoveHaDec:public CommandMove
+{
+       public:
+               CommandMoveHaDec (Block * _master, DevClientTelescope * _tel, double ha, double dec);
+};
+
+/**
  * Command for telescope movement in alt az.
  *
  * @ingroup RTS2Command
