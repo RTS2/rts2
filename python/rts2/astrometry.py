@@ -114,7 +114,7 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True):
+	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True, verify_pixel_error=3):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots']
 
@@ -161,6 +161,10 @@ class AstrometryScript:
 		if downsample is not None:
 			solve_field.append('-z')
 			solve_field.append(downsample)
+
+		if verify_pixel_error:
+			solve_field.append('--pixel-error')
+			solve_field.append(str(verify_pixel_error))
 
 		solve_field.append(self.infpath)
 
@@ -218,7 +222,7 @@ class AstrometryScript:
 			wcsheader = pyfits.getheader(self.odir+'/input.wcs')
 			extnum = extension if extension is not None else 0
 			fits[extnum].header.update(wcsheader)
-			fits.writeto(self.odir+'/input-solved-new.fits')
+			fits.writeto(self.odir+'/input-solved-new.fits', output_verify='fix')
 
 			try:
 				shutil.move(self.odir+'/input-solved-new.fits', self.fits_file)
