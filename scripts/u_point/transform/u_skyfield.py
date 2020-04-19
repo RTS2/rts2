@@ -23,6 +23,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 from skyfield.api import Star,load,Angle,utc
 planets = load('de421.bsp')
+from skyfield.api import Topos
 
 
 import numpy as np
@@ -49,7 +50,7 @@ class Transformation(object):
     elevation=float(str(height).replace('m','').replace('meter',''))
     earth = planets['earth']
     # N +, E + hurray
-    self.obs=earth.topos(
+    self.obs=earth + Topos(
           latitude_degrees=latitude.degree,
           longitude_degrees=longitude.degree,
           elevation_m=elevation,

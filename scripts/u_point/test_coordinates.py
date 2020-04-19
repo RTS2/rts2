@@ -12,14 +12,15 @@ from astropy.coordinates import EarthLocation
 from datetime import datetime
 from astropy.time import Time,TimeDelta
 from astropy.utils import iers
-
-try:
-  iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
-#                                               ###########
-except:
-  print('download:')
-  print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
-  sys.exit(1)
+from astropy.utils import iers
+iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
+#try:
+#  iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
+##                                               ###########
+#except:
+#  print('download:')
+#  print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
+#  sys.exit(1)
 
 import ephem
 from transform.u_astropy import Transformation as AstroPyTF
