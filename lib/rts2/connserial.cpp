@@ -191,6 +191,19 @@ int ConnSerial::setVTime (int _vtime)
 	return 0;
 }
 
+int ConnSerial::clearRTS()
+{
+	int flag = TIOCM_RTS;
+	return ioctl(sock, TIOCMBIC, &flag);
+}
+
+
+int ConnSerial::setRTS()
+{
+	int flag = TIOCM_RTS;
+	return ioctl(sock, TIOCMBIS, &flag);
+}
+
 int ConnSerial::writePort (unsigned char ch)
 {
 	int wlen = 0;

@@ -1,6 +1,8 @@
 /**
  * IRF90 Rotating Focuser from Planewave Instruments.
  *
+ * Protocol details: https://planewave.com/files/tech/efa-protocol.html
+ *
  * Copyright (C) 2019 Michael Mommert <mommermiscience@gmail.com>
  * based on Hedrick Focuser driver (planewave.cpp)
  *
@@ -174,15 +176,18 @@ int PWIIRF90::setFan(int fancmd)
 	// logStream (MESSAGE_DEBUG) << "send command "  << _buf << sendLog;
 	
 	// send command
-	sconn->flushPortIO();
+	sconn->flshPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "setFan: cannot send command"
 								  << sendLog;
+
+		sconn->clearRTS();
 		return -1;
 	}
-		
+	sconn->clearRTS();
 	
 	// read acknowledgement
 	if (sconn->readPort((char*)returnstr, 7) == -1)
@@ -193,7 +198,6 @@ int PWIIRF90::setFan(int fancmd)
 	}
 
 	// switch RTS bit to receive results
-	sconn->switchRTS();
 
 	// read reply
 	if (sconn->readPort((char*)returnstr,
@@ -201,7 +205,6 @@ int PWIIRF90::setFan(int fancmd)
 	{
 		logStream (MESSAGE_ERROR) << "setFan: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
@@ -219,14 +222,9 @@ int PWIIRF90::setFan(int fancmd)
 	
 	if ((int)(unsigned char)returnstr[6] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "result checksum corrupt" << sendLog;
 		return -1;
 	}
-	
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-
 	
 	return 0;
 }    
@@ -249,13 +247,16 @@ int PWIIRF90::getFan()
 	
 	// send command
 	sconn->flushPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "getFan: cannot send command"
 								  << sendLog;
+		sconn->clearRTS();
 		return -1;
 	}
+	sconn->clearRTS();
 		
 	
 	// read acknowledgement
@@ -266,16 +267,12 @@ int PWIIRF90::getFan()
 		return -1;
 	}
 
-	// switch RTS bit to receive results
-	sconn->switchRTS();
-
 	// read reply
 	if (sconn->readPort((char*)returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "getFan: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
@@ -293,15 +290,11 @@ int PWIIRF90::getFan()
 	
 	if ((int)(unsigned char)returnstr[6] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "getFan: result checksum corrupt"
 								  << sendLog;
 		return -1;
 	}
 	
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-
 	if (returnstr[5] == 3)
 		fanMode->setValueBool(0);  // fan off
 	else if (returnstr[5] == 0)
@@ -343,13 +336,16 @@ int PWIIRF90::GetTemperature(double *temp, int tempsensor=0)
 	
 	// send command
 	sconn->flushPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "GetTemperature: cannot send command"
 								  << sendLog;
+		sconn->clearRTS();
 		return -1;
 	}
+	sconn->clearRTS();
 
 	// read acknowledgement
 	if (sconn->readPort((char*)returnstr, 7) == -1)
@@ -368,16 +364,12 @@ int PWIIRF90::GetTemperature(double *temp, int tempsensor=0)
 	// logStream (MESSAGE_DEBUG) << "received acknowledgement "
 	//                           << _buf << sendLog;
 
-	// switch RTS bit to receive results
-	sconn->switchRTS();
-
 	// read reply
 	if (sconn->readPort((char*)returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "GetTemperature: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
@@ -395,14 +387,10 @@ int PWIIRF90::GetTemperature(double *temp, int tempsensor=0)
 	
 	if ((int)(unsigned char)returnstr[7] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "result checksum corrupt" << sendLog;
 		return -1;
 	}
 	
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-
 	// calculate temperature from result
 	float _temp = (256*(int)(unsigned char)returnstr[6] +
 				  (int)(unsigned char)returnstr[5]) / 16.0;
@@ -482,13 +470,16 @@ int PWIIRF90::MoveFocuser(int focdir)
 
 	// send command
 	sconn->flushPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "MoveFocus: cannot send command"
 								  << sendLog;
+		sconn->clearRTS();
 		return -1;
 	}
+	sconn->clearRTS();
 
 	// read acknowledgement
 	if (sconn->readPort((char*)acknstr,
@@ -523,22 +514,15 @@ int PWIIRF90::MoveFocuser(int focdir)
 	// logStream (MESSAGE_DEBUG) << "received acknowledgement "
 	//                           << _buf << sendLog;
 
-	// switch RTS bit to receive results
-	sconn->switchRTS();
-
 	// read reply
 	if (sconn->readPort((char*)returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "MoveFocus: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-	
 	// check checksum
 	for (i=1, chksum=0; i<(sizeof(returnstr)/sizeof(unsigned char)-1); i++)
 		chksum += (unsigned int)returnstr[i];
@@ -553,7 +537,6 @@ int PWIIRF90::MoveFocuser(int focdir)
 	
 	if ((int)(unsigned char)returnstr[6] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "MoveFocus: result checksum corrupt"
 								  << sendLog;
 		return -1;
@@ -615,13 +598,16 @@ int PWIIRF90::GotoPos2(long targetTicks)
 
 	// send command
 	sconn->flushPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "GotoPos2: cannot send command"
 								  << sendLog;
+		sconn->clearRTS();
 		return -1;
 	}
+	sconn->clearRTS();
 
 	// read acknowledgement
 	if (sconn->readPort((char*)acknstr,
@@ -640,9 +626,6 @@ int PWIIRF90::GotoPos2(long targetTicks)
 	// logStream (MESSAGE_DEBUG) << "received acknowledgement "
 	//                           << _buf << sendLog;
 
-	// switch RTS bit to receive results
-	sconn->switchRTS();
-
 	// read reply
 	if (sconn->readPort((char*)returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
@@ -650,13 +633,9 @@ int PWIIRF90::GotoPos2(long targetTicks)
 		logStream (MESSAGE_ERROR) <<
 			"GotoPos2: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-	
 	// check checksum
 	for (i=1, chksum=0; i<(sizeof(returnstr)/sizeof(unsigned char)-1); i++)
 		chksum += (unsigned int)returnstr[i];
@@ -671,7 +650,6 @@ int PWIIRF90::GotoPos2(long targetTicks)
 	
 	if ((int)(unsigned char)returnstr[6] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "GotoPos2: result checksum corrupt"
 								  << sendLog;
 		return -1;
@@ -701,14 +679,17 @@ int PWIIRF90::IsGotoDone()
 
 	// send command
 	sconn->flushPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) <<
 			"IsGotoDone: cannot send command"
 								  << sendLog;
+		sconn->clearRTS();
 		return -1;
 	}
+	sconn->clearRTS();
 
 	// read acknowledgement
 	if (sconn->readPort((char*)acknstr,
@@ -728,9 +709,6 @@ int PWIIRF90::IsGotoDone()
 	// logStream (MESSAGE_DEBUG) << "received acknowledgement "
 	//                           << _buf << sendLog;
 
-	// switch RTS bit to receive results
-	sconn->switchRTS();
-
 	// read reply
 	if (sconn->readPort((char*)returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
@@ -738,13 +716,9 @@ int PWIIRF90::IsGotoDone()
 		logStream (MESSAGE_ERROR) <<
 			"IsGotoDone: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-	
 	// check checksum
 	for (i=1, chksum=0; i<(sizeof(returnstr)/sizeof(unsigned char)-1); i++)
 		chksum += (unsigned int)returnstr[i];
@@ -759,7 +733,6 @@ int PWIIRF90::IsGotoDone()
 	
 	if ((int)(unsigned char)returnstr[6] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "result checksum corrupt" << sendLog;
 		return -1;
 	}
@@ -911,13 +884,16 @@ int PWIIRF90::getPos ()
 
 	// send command
 	sconn->flushPortIO();
+	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "getPos: cannot send command"
 								  << sendLog;
+		sconn->clearRTS();
 		return -1;
 	}
+	sconn->clearRTS();
 
 	// read acknowledgement
 	if (sconn->readPort(returnstr,
@@ -936,16 +912,12 @@ int PWIIRF90::getPos ()
 	// logStream (MESSAGE_DEBUG) << "received acknowledgement "
 	//                           << _buf << sendLog;
 
-	// switch RTS bit to receive results
-	sconn->switchRTS();
-
 	// read reply
 	if (sconn->readPort(returnstr,
 						sizeof(returnstr)/sizeof(unsigned char)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "getPos: cannot read return"
 								  << sendLog;
-		sconn->switchRTS();
 		return -1;
 	}
 
@@ -963,14 +935,10 @@ int PWIIRF90::getPos ()
 	
 	if ((int)(unsigned char)returnstr[8] != chksum)
 	{
-		sconn->switchRTS();
 		logStream (MESSAGE_ERROR) << "result checksum corrupt" << sendLog;
 		return -1;
 	}
 	
-	// switch RTS bit to enable requests again
-	sconn->switchRTS();
-
 	int b0 = (unsigned char) returnstr[5];
   	int b1 = (unsigned char) returnstr[6];
   	int b2 = (unsigned char) returnstr[7];
