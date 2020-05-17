@@ -176,7 +176,7 @@ int PWIIRF90::setFan(int fancmd)
 	// logStream (MESSAGE_DEBUG) << "send command "  << _buf << sendLog;
 	
 	// send command
-	sconn->flshPortIO();
+	sconn->flushPortIO();
 	sconn->setRTS();
 	if (sconn->writePort((const char*)(&sendstr),
 						 sizeof(sendstr)/sizeof(unsigned char)) == -1)
