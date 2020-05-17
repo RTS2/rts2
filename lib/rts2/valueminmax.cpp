@@ -196,7 +196,7 @@ int ValueIntegerMinMax::doOpValue (char op, Value * old_value)
 
 const char * ValueIntegerMinMax::getValue ()
 {
-	sprintf (buf, "%.20le %.20le %.20le", getValueInteger (), getMin (), getMax ());
+	sprintf (buf, "%d %d %d", getValueInteger (), getMin (), getMax ());
 	return buf;
 }
 
