@@ -167,6 +167,8 @@ class ConnSerial: public ConnNoSend
 
 		void setDSR ();
 
+		void switchRTS();
+
 		std::string getModemBits ();
 
 		/**

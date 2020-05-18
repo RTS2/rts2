@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #   Queue targets to selector
 #   (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
@@ -244,8 +244,8 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
     if options.list:
         tl = rts2.target.list()
-	print(tl)
-	print(rts2.target.print_list(tl))
+        print(tl)
+        print(rts2.target.print_list(tl))
 
     # above test make sure create_radec is also defined
     if options.create is not None:

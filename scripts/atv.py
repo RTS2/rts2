@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #

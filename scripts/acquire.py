@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # targets 557 564 & 1111 for now
 # spectroscopic acquisition = centering & slit

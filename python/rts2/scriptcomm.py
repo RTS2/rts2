@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # RTS2 script communication
 # (C) 2009,2010 Petr Kubanek <petr@kubanek.net>

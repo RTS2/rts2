@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Calculates median from files suplied as arguments. Median
 # is saved to file specified as first argument.

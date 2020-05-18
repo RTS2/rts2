@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Example configuation of flats.
 # (C) 2010 Petr Kubanek

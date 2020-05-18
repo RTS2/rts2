@@ -54,8 +54,8 @@ rts2_teld_apgto_pk_SOURCES = apgto_pk.cpp
 rts2_teld_apgto_pk_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
 
 rts2_teld_planewave_SOURCES = planewave.cpp
-#rts2_teld_planewave_LDADD = -L/usr/lib/x86_64-linuvx-gnu/v -lcurl ${LDADD}
-rts2_teld_planewave_LDADD = -lcurl ${LDADD}
+rts2_teld_planewave_LDADD = @LIBCURL@ ${LDADD}
+rts2_teld_planewave_CXXFLAGS = ${AM_CXXFLAGS} @LIBCURL_CPPFLAGS@
 
 if !SUNCYGMAC
 bin_PROGRAMS += rts2-teld-d50

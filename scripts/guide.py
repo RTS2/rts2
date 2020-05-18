@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Guiding script.
 # (C) 2010 Martin Jelinek & Petr Kubanek

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Script for autoconfiguring Andor exposure times
 # (C) 2010,2011 Martin Jelinnek
