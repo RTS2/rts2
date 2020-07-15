@@ -68,8 +68,8 @@ class Transformation(object):
     self.refraction_method=refraction_method
     self.obs=obs
     self.ln_obs=LN_lnlat_posn()    
-    self.ln_obs.lng=obs.longitude.degree # deg
-    self.ln_obs.lat=obs.latitude.degree  # deg
+    self.ln_obs.lng=obs.lon.degree # deg
+    self.ln_obs.lat=obs.lat.degree  # deg
     self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
 
   def transform_to_hadec(self,tf=None,sky=None,mount_set_icrs=None):

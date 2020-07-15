@@ -161,3 +161,26 @@ rts2_camd_asi_CXXFLAGS = -I@ASI_INCLUDE@ ${AM_CXXFLAGS}
 else
 EXTRA_DIST += asi.cpp
 endif
+
+if PRINCETON
+bin_PROGRAMS += rts2-camd-pi
+rts2_camd_pi_SOURCES = pi.cpp
+rts2_camd_pi_LDFLAGS= -rpath @PI_LIB@ -rpath @PI_LIB@/genicam/bin/Linux64_x64/
+rts2_camd_pi_LDADD = -L@PI_LIB@ -L@PI_LIB@/genicam/bin/Linux64_x64/ \
+  -lPvBase                     \
+  -lPvDevice                   \
+  -lPvBuffer                   \
+  -lPvGenICam                  \
+  -lPvStream                   \
+  -lPvTransmitter              \
+  -lPvVirtualDevice            \
+  -lPvAppUtils                 \
+  -lPvPersistence              \
+  -lPvSerial                   \
+  -lPvGUI                      \
+  -lSimpleImagingLib           \
+  ${LDADD}
+rts2_camd_pi_CXXFLAGS = -I@PI_INCLUDE@ ${AM_CXXFLAGS}
+else
+EXTRA_DIST += pi.cpp
+endif

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Astrometry routines.
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org

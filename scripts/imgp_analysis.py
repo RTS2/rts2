@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # (C) 2011-2013, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage: imgp_analysis.py /absolute/path/to/fits 

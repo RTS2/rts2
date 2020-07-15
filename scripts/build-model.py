@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import rts2.altazpath
 import rts2.scriptcomm

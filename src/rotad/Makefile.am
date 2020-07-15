@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-rotad-dummy rts2-rotad-pyxis rts2-rotad-sitech
+bin_PROGRAMS = rts2-rotad-dummy rts2-rotad-pyxis rts2-rotad-sitech rts2-rotad-pwiirf90r
 
 noinst_HEADERS = sitech-rotator.h sitech-multi.h
 
@@ -7,5 +7,6 @@ AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 rts2_rotad_dummy_SOURCES = dummy.cpp
 rts2_rotad_pyxis_SOURCES = pyxis.cpp
-
 rts2_rotad_sitech_SOURCES = sitech-multi.cpp sitech-rotator.cpp
+rts2_rotad_pwiirf90r_SOURCES = pwiirf90r.cpp
+

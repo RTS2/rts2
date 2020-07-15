@@ -228,3 +228,17 @@ else
 EXTRA_DIST += bigng.cpp
 
 endif
+
+if SNMP
+
+bin_PROGRAMS += rts2-sensor-apc
+
+rts2_sensor_apc_SOURCES = apc.cpp
+rts2_sensor_apc_CFLAGS = @SNMP_CFLAGS@
+rts2_sensor_apc_LDADD = @SNMP_LIBS@ ${LDADD}
+
+else
+
+EXTRA_DIST += apc.cpp
+
+endif

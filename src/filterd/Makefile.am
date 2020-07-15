@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy rts2-filterd-fw102c rts2-filterd-apm rts2-filterd-galil
+bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy rts2-filterd-fw102c rts2-filterd-apm rts2-filterd-galil rts2-filterd-fliindi
 
 EXTRA_DIST = 
 
@@ -14,6 +14,10 @@ rts2_filterd_fw102c_SOURCES = fw102c.cpp
 rts2_filterd_apm_SOURCES = apm.cpp
 
 rts2_filterd_galil_SOURCES = galil.cpp
+
+rts2_filterd_fliindi_SOURCES = fliindi.cpp
+rts2_filterd_fliindi_LDADD = -L../../lib/libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
+rts2_filterd_fliindi_CPPFLAGS = -I../../lib/libindi ${CPPFLAGS} -I../../include
 
 if FLI
 bin_PROGRAMS += rts2-filterd-fli

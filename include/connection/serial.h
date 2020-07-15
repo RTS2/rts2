@@ -96,6 +96,16 @@ class ConnSerial: public ConnNoSend
 		void setFlushSleepTime (int fst) { flushSleepTime = fst; }
 
 		/**
+		 * Clear RTS (Ready To Send) pin.
+		 */
+		int clearRTS();
+
+		/**
+		 * Set RTS (Ready To Send) pin.
+		 */
+		int setRTS();
+
+		/**
 		 * Write single character to serial port.
 		 *
 		 * @param ch Character to write.
@@ -156,6 +166,8 @@ class ConnSerial: public ConnNoSend
 		void dropDTR ();
 
 		void setDSR ();
+
+		void switchRTS();
 
 		std::string getModemBits ();
 

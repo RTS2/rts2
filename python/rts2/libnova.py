@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Basic libnova calculatons
 # (C) 2011 - 2016, Petr Kubanek, Institute of Physics <kubanek@fzu.cz>

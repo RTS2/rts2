@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # test xy2wcs - compares what we get using ds9 and xy2wcs algorithm
 

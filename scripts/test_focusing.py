@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Test focusing infrastrucure
 
@@ -7,7 +7,7 @@ import sys
 from astropy.io import fits
 
 from scipy import *
-from pylab import *
+from matplotlib.pyplot import *
 
 tries = {}
 

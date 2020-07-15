@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Requeue script
 # (C) 2018 Petr Kubanek
