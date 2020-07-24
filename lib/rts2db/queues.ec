@@ -261,7 +261,7 @@ std::list <unsigned int> rts2db::queueQids (int queue_id)
 	WHERE
 		queue_id = :db_queue_id
 	ORDER BY
-		qid ASC;
+		queue_order ASC;
 	EXEC SQL OPEN cur_queues;
 
 	while (1)
