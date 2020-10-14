@@ -177,7 +177,7 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
 {
 	_os << "<form name='download' method='post' action='" << getRequest () -> getRequestBase () << getServer ()->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='b'>New window</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
 	"<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
-	"<form name='label' method='get' action='./'>"
+	"<form name='label' method='get' action='?'>"
 #ifdef CHANNELS
 	"\nChannels <select name='chan'><option value='-1'";
 
