@@ -145,6 +145,8 @@ class Selector
 		 */
 		void revalidateConstraints (int watch_id);
 
+		int getTargetBonus(int id);
+
 	private:
 		std::vector < TargetEntry* > possibleTargets;
 		void considerTarget (int consider_tar_id, double JD);

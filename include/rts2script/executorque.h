@@ -275,6 +275,11 @@ class ExecutorQueue:public TargetQueue
 		int moveIndex (int index, int newindex);
 
 		/**
+		 * Update start/end times for a target with given index
+		 */
+		int updateIndexTimes (int index, double t_start = NAN, double t_end = NAN);
+
+		/**
 		 * Add target to the first possible position.
 		 */
 		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = NAN, double t_end = NAN, int rep_n = -1, float rep_separation = NAN, int plan_id = -1, bool hard = false);
@@ -400,6 +405,8 @@ class ExecutorQueue:public TargetQueue
 
 		double timerAdded;
 		int queue_id;
+
+		std::string queue_name;
 
 		// remove target with debug entry why it was removed from the queue
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const removed_t reason);

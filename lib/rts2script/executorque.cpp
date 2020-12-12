@@ -546,6 +546,7 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 	currentTarget = NULL;
 	timerAdded = NAN;
 	queue_id = _queue_id;
+	queue_name = sn;
 
 	int read_only_fl = read_only ? 0 : RTS2_VALUE_WRITABLE;
 
@@ -701,6 +702,19 @@ int ExecutorQueue::moveIndex (int index, int newindex)
 	// insert(newiter, *iter);
 
 	updateVals ();
+	return 0;
+}
+
+int ExecutorQueue::updateIndexTimes (int index, double t_start, double t_end)
+{
+	ExecutorQueue::iterator iter = findIndex (index);
+	if (iter == end ())
+		return -1;
+
+	iter->t_start = t_start;
+	iter->t_end = t_end;
+
+	updateVals();
 	return 0;
 }
 
@@ -945,6 +959,8 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 			addFirst (nt, fo, n_start, t_start, t_end, nrep, separation);
 		else
 			addTarget (nt, t_start, t_end, index, nrep, separation);
+
+		logStream (MESSAGE_INFO) << "adding to queue " << queue_name << " target " << nt->getTargetName () << " (" << nt->getTargetID () << ", start " << LibnovaDateDouble (t_start) << ", end " << LibnovaDateDouble (t_end) << ")" << sendLog;
 	}
 	return failed;
 }

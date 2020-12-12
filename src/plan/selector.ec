@@ -464,3 +464,15 @@ void Selector::revalidateConstraints (int watch_id)
 		(*iter)->target->revalidateConstraints (watch_id);
 	}
 }
+
+int Selector::getTargetBonus (int id)
+{
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();
+	for (; iter != possibleTargets.end (); iter++)
+	{
+		if ((*iter)->target->getTargetID() == id)
+			return (*iter)->bonus;
+	}
+
+	return -1;
+}

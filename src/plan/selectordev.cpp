@@ -518,15 +518,23 @@ int SelectorDev::selectNext ()
 		double next_length = NAN;
 		double selectLength = selectUntil->getValueDouble ();
 		bool removeObserved = true;
+
 		if (!std::isnan (selectLength))
 		{
 			selectLength -= getNow ();
 		  	next_length = selectLength;
 		}
 
+		int auto_id = sel->selectNext (getMasterState (), next_length, ignoreDay->getValueBool ());
+		int auto_bonus = auto_id >= 0 ? sel->getTargetBonus (auto_id) : -1;
+
 		queueSelectUntil->setValueDouble (NAN);
 
-	 	if ((getMasterState () == SERVERD_NIGHT || ignoreDay->getValueBool () == true) && queues.size () > 0)
+	 	if ((getMasterState () == SERVERD_NIGHT || ignoreDay->getValueBool () == true) && queues.size () > 0 &&
+			// If automatic target is above priority 1000 it should be used instead of the queues
+			// TODO: make the limit configurabe on a per-queue basis
+			(auto_id < 0 || auto_bonus < 1000 || queueOnly->getValueBool ())
+			)
 		{
 			int id = -1;
 			int q = 1;
@@ -576,11 +584,10 @@ int SelectorDev::selectNext ()
 		// select calibration frames even if in queue mode
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
 		{
-			int id = sel->selectNext (getMasterState (), next_length, ignoreDay->getValueBool ());
-			if (id != last_auto_id)
+			if (auto_id != last_auto_id)
 			{
-				logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
-				last_auto_id = id;
+				logStream (MESSAGE_INFO) << "selecting from automatic selector " << auto_id << sendLog;
+				last_auto_id = auto_id;
 				if (interrupt->getValueBool ())
 				{
 					interrupt->setValueBool (false);
@@ -590,7 +597,7 @@ int SelectorDev::selectNext ()
 			}
 			next_qid->setValueInteger (-1);
 			next_plan_id->setValueInteger (-1);
-			return id;
+			return auto_id;
 		}
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
 	}
@@ -949,6 +956,32 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		try
 		{
 			if (q->moveIndex (index, newindex))
+				return -2;
+			afterQueueChange (q);
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
+			return -2;
+		}
+		return 0;
+	}
+	else if (conn->isCommand ("update_times"))
+	{
+		int index;
+		double t_start = NAN;
+		double t_end = NAN;
+
+		if (conn->paramNextString (&name) || conn->paramNextInteger (&index) || conn->paramNextDoubleTime (&t_start) || conn->paramNextDoubleTime (&t_end))
+			return -2;
+		// try to find queue with name..
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
+			return -2;
+		rts2plan::ExecutorQueue * q = &(*qi);
+		try
+		{
+			if (q->updateIndexTimes (index, t_start, t_end))
 				return -2;
 			afterQueueChange (q);
 		}
