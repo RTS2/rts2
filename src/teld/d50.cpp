@@ -41,10 +41,13 @@
 //#define RA_TICKS                 (-14350 * 65535)
 //#define DEC_TICKS                (-10400 * 65535)
 // config pro D50:
-#define RA_TRANSMISION		2304
-#define DEC_TRANSMISION		2000
-#define RA_TICKS		(-2304 * 65536)
-#define DEC_TICKS		(2000 * 65536)
+//#define DEC_TRANSMISION              2000
+#define RA_TRANSMISION                2304
+// 24.11.2020 menime prevodovku 1:10 na 1:20, kolo ma 200 zubu
+#define DEC_TRANSMISION                4000
+#define RA_TICKS               (-2304 * 65536)
+//#define DEC_TICKS            (2000 * 65536)
+#define DEC_TICKS              (4000 * 65536)
 
 #define RAGSTEP			1000
 #define DEGSTEP			1000
