@@ -65,6 +65,9 @@
 #define REMOTES_REG_MC_STEPPERSIGNALENABLED	0x02
 #define REMOTES_REG_MC_CLOCKWISEDIRECTIONENABLED	0x01
 
+// absolute encoders (connected via remotes, placed directly on axes)
+#define ABS_ENC_REMOTES_STEPSPERREVOLUTION	8192
+
 
 namespace rts2teld
 {
@@ -168,6 +171,16 @@ class D50:public Fork
 		//rts2core::ValueInteger *remotesIncEncRA;
 		//rts2core::ValueInteger *remotesIncEncDec;
 
+		// the zero position is at ha/dec = 0/0
+		rts2core::ValueInteger *remotesAbsEncRAOffset;
+		rts2core::ValueInteger *remotesAbsEncDecOffset;
+		double remotesAbsEncDegsPerStep;
+		// hadec according to encoders, in degrees
+		rts2core::ValueRaDec *remotesAbsEncDeg;
+		rts2core::ValueRaDec *remotesAbsEncDegDifference;
+		rts2core::ValueDouble *remotesAbsEncDegDifferenceLimit;
+		rts2core::ValueBool *remotesAbsEncDegDifferenceIgnore;
+
 		// high-level functions for managing the REMOTES things
 		int setMotorsPower (bool power);
 		int setMotorsExternalEnable (bool extEnable);
@@ -203,7 +216,7 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	haZero = decZero = 0.0;
 	
 	parking = false;
-	
+
 	createRaPAN ();
 	createDecPAN ();
 	
@@ -279,8 +292,19 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	remotesWormStepsFreqTarget->setValueDouble (remotesWormStepsFreqDefault->getValueDouble ());
 	createValue (remotesWormStepsFreqReal, "remotes_worm_steps_freq", "actual frequency of HA tracking steps generator [Hz]", false);
 	createValue (remotesWormStepsPulseLength, "remotes_worm_steps_pulse_length", "pulse length of HA tracking steps generator", false);
-	createValue (remotesAbsEncRA, "remotes_abs_encoder_ra", "raw abs. encoder position, RA axis", true);
-	createValue (remotesAbsEncDec, "remotes_abs_encoder_dec", "raw abs. encoder position, Dec axis", true);
+	createValue (remotesAbsEncRA, "remotes_abs_encoder_ra", "raw abs. encoder position, RA axis", false);
+	createValue (remotesAbsEncDec, "remotes_abs_encoder_dec", "raw abs. encoder position, Dec axis", false);
+	createValue (remotesAbsEncRAOffset, "remotes_abs_encoder_ra_offset", "encoder's positional offset, RA axis", false, RTS2_VALUE_WRITABLE);
+	createValue (remotesAbsEncDecOffset, "remotes_abs_encoder_dec_offset", "encoder's positional offset, Dec axis", false, RTS2_VALUE_WRITABLE);
+
+	remotesAbsEncDegsPerStep = 360.0 / (double) ABS_ENC_REMOTES_STEPSPERREVOLUTION;
+
+	createValue (remotesAbsEncDeg, "remotes_abs_encoder_deg", "abs. encoder HA/Dec position [deg]", false, RTS2_DT_DEGREES);
+	createValue (remotesAbsEncDegDifference, "remotes_abs_encoder_difference", "difference of positions: motor - encoder, [deg]", false, RTS2_DT_DEGREES);
+	createValue (remotesAbsEncDegDifferenceLimit, "limit_remotes_abs_encoder_difference", "limit of difference of positions, [deg]", false, RTS2_VALUE_WRITABLE);
+	remotesAbsEncDegDifferenceLimit->setValueDouble (0.5);
+	createValue (remotesAbsEncDegDifferenceIgnore, "ignore_remotes_abs_encoder_difference", "ignore limit of difference of positions", false, RTS2_VALUE_WRITABLE);
+	remotesAbsEncDegDifferenceIgnore->setValueBool (false);
 
 #ifndef RTS2_LIBERFA
 	// apply all corrections by rts2 for mount
@@ -444,9 +468,11 @@ int D50::init ()
 	setWormStepsFreq (remotesWormStepsFreqDefault->getValueDouble ());
 	remotesGetAbsolutePosition (remotesRA, &us);
 	remotesAbsEncRA->setValueInteger (us);
+	remotesAbsEncDeg->setRa ( ln_range_degrees ( (double) (us - remotesAbsEncRAOffset->getValueInteger ()) * remotesAbsEncDegsPerStep + 180.0) - 180.0);
+
 	remotesGetAbsolutePosition (remotesDec, &us);
 	remotesAbsEncDec->setValueInteger (us);
-
+	remotesAbsEncDeg->setDec ( ln_range_degrees ( (double) (us - remotesAbsEncDecOffset->getValueInteger ()) * remotesAbsEncDegsPerStep + 180.0) - 180.0);
 
 	// and finally, the remaining usual teld setup...
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
@@ -493,9 +519,11 @@ int D50::info ()
 
 	remotesGetAbsolutePosition (remotesRA, &usRA);
 	remotesAbsEncRA->setValueInteger (usRA);
-	//logStream (MESSAGE_DEBUG) << "RA position: " << us << " " << std::hex << us << sendLog;
+	remotesAbsEncDeg->setRa (ln_range_degrees ( (double) (usRA - remotesAbsEncRAOffset->getValueInteger ()) * remotesAbsEncDegsPerStep + 180.0) - 180.0);
+
 	remotesGetAbsolutePosition (remotesDec, &usDec);
 	remotesAbsEncDec->setValueInteger (usDec);
+	remotesAbsEncDeg->setDec (ln_range_degrees ( (double) (usDec - remotesAbsEncDecOffset->getValueInteger ()) * remotesAbsEncDegsPerStep + 180.0) - 180.0);
 
         double t_telRa;
         double t_telDec;
@@ -508,7 +536,10 @@ int D50::info ()
 	setTelRaDec (t_telRa, t_telDec);
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
-	logStream (MESSAGE_DEBUG) << "info: position (drive_raw/drive_sky/sensor_raw): HA " << raPos << "/" << (double) (raPos / haCpd) + haZero << "/" << usRA << ", DEC " << decPos << "/" << (double) (decPos / decCpd) + decZero << "/" << usDec << sendLog;
+	remotesAbsEncDegDifference->setRa ((double) (raPos / haCpd) + haZero - remotesAbsEncDeg->getRa ());	// it's probably better this way than getting and subtracting LST from ut_telRa
+	remotesAbsEncDegDifference->setDec (ut_telDec - remotesAbsEncDeg->getDec ());
+
+	//logStream (MESSAGE_DEBUG) << "info: position (drive_raw/drive_sky/sensor_raw): HA " << raPos << "/" << (double) (raPos / haCpd) + haZero << "/" << usRA << ", DEC " << decPos << "/" << (double) (decPos / decCpd) + decZero << "/" << usDec << sendLog;
 
 	return Fork::info ();
 }
@@ -521,7 +552,7 @@ int D50::idle ()
 	runD50 ();
 
 
-	unsigned short usRA, usDec;
+	/*unsigned short usRA, usDec;
 	remotesGetAbsolutePosition (remotesRA, &usRA);
 	remotesGetAbsolutePosition (remotesDec, &usDec);
 	if (remotesAbsEncRA->getValueInteger () != usRA || remotesAbsEncDec->getValueInteger () != usDec)
@@ -533,7 +564,7 @@ int D50::idle ()
 	        int32_t decPos = decDrive->getPositionAct ();
 
 		logStream (MESSAGE_DEBUG) << "idle: position (drive_raw/drive_sky/sensor_raw): HA " << raPos << "/" << (double) (raPos / haCpd) + haZero << "/" << usRA << ", DEC " << decPos << "/" << (double) (decPos / decCpd) + decZero << "/" << usDec << sendLog;
-	}
+	}*/
 	return Fork::idle ();
 }
 
@@ -681,7 +712,12 @@ int D50::endMove ()
 	raDrive->setPositionKp (raPosKpTrack->getValueFloat ());
 	decDrive->setPositionKp (decPosKpTrack->getValueFloat ());
 	setTimeout (USEC_SEC);
-	//TODO: pridat check, jestli informace z ABS (a inc?) cidel odpovida poloze!
+	info ();
+	if (! remotesAbsEncDegDifferenceIgnore->getValueBool () && (remotesAbsEncDegDifference->getRa () > remotesAbsEncDegDifferenceLimit->getValueDouble () || remotesAbsEncDegDifference->getDec () > remotesAbsEncDegDifferenceLimit->getValueDouble ()))
+	{
+		// TODO: just scream for now, we will solve this more appropriately in the future
+		logStream (MESSAGE_ERROR) << "Remotes ABS encoders difference above the limit: " << remotesAbsEncDegDifference->getRa () << ":" << remotesAbsEncDegDifference->getDec () << sendLog;
+	}
 	return Fork::endMove ();
 }
 
