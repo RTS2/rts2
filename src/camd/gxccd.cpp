@@ -75,11 +75,11 @@ class GXCCD:public Camera
 
 		rts2core::ValueInteger *id;
 		rts2core::ValueSelection *mode;
-		rts2core::ValueIntegerMinMax *fan;
+		rts2core::ValueIntegerMinMax *fan = NULL;
 		rts2core::ValueIntegerMinMax *windowHeating;
 		rts2core::ValueFloat *tempRamp;
 		rts2core::ValueFloat *tempTarget;
-		rts2core::ValueFloat *power;
+		rts2core::ValueFloat *power = NULL;
 		rts2core::ValueFloat *voltage;
 		rts2core::ValueFloat *gain;
 
