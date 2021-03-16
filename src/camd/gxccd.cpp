@@ -30,7 +30,7 @@ namespace rts2camd
 {
 
 /**
- * Class for a dummy camera.
+ * Driver for cameras from Moravian Instruments (using their closed-source gxccd library)
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -90,6 +90,8 @@ class GXCCD:public Camera
 		bool reseted_shutter;
 		bool internalTimer;
 
+		bool hasCooling = false;
+
 		// buffer for error messages
 		char gx_err[200];
 };
@@ -101,8 +103,14 @@ using namespace rts2camd;
 GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 {
 	createExpType ();
+	createFilter ();
 	createTempAir ();
 	createTempCCD ();
+	createTempSet ();
+
+	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	tempRamp->setValueFloat (1.0);
+	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
 
 	createValue (voltage, "VOLTAGE", "[V] current voltage of the camera power supply", true);
 	createValue (gain, "GAIN", "[e-ADU] gain", true);
@@ -200,19 +208,16 @@ int GXCCD::initHardware ()
 
 	bool val;
 	int valInt;
-	gxccd_get_boolean_parameter (camera, GBP_FILTERS, &val);
+	/*gxccd_get_boolean_parameter (camera, GBP_FILTERS, &val);
 	if (val)
 	{
-		createFilter ();
-	}
+		// This way this is not functional (because of the need of parsing CLI parameters, function createFilter () has to be called much sooner).	// When needed, this could be solved the same way I did the "hasCooling" problem... However, it is not necessary in this case, as filters are only taken into account when specified on commandline...
+		//createFilter ();
+	}*/
 	gxccd_get_boolean_parameter (camera, GBP_COOLER, &val);
 	if (val)
 	{
-		createTempSet ();
-		createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-		tempRamp->setValueFloat (1.0);
-
-		createValue (tempTarget, "TETAR", "[C] current target temperature", false);
+		hasCooling = true;
 	}
 	gxccd_get_boolean_parameter (camera, GBP_FAN, &val);
 	if (val)
@@ -432,6 +437,10 @@ int GXCCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 int GXCCD::setCoolTemp (float new_temp)
 {
 	float val;
+
+	if (hasCooling == false)
+		return -2;
+
 	int ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
 	if (ret)
 	{
@@ -452,6 +461,9 @@ int GXCCD::setCoolTemp (float new_temp)
 int GXCCD::switchCooling (bool cooling)
 {
 	int ret;
+
+	if (hasCooling == false)
+		return -2;
 
 	Camera::switchCooling (cooling);
 
