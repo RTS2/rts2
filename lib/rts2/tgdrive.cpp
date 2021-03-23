@@ -59,6 +59,11 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	_master->createValue (aSpeedInt, pbuf, "[r/s] actual speed", false);
 	strcpy (p, "MAXSPEED");
 	_master->createValue (maxSpeed, pbuf, "[r/s] maximal profile generator speed", false, RTS2_VALUE_WRITABLE);
+
+	strcpy (p, "PHYSPEEDLIMIT");
+	_master->createValue (physicalSpeedLimit, pbuf, "[r/s] physical speed limit of the motor", false, RTS2_VALUE_WRITABLE);
+	physicalSpeedLimit->setValueDouble (3700.0/60.0);	// D50's motors can handle this (3000rpm is the official value, we found 3700 yet usable), let's use it as a default value
+
 	strcpy (p, "ACCEL");
 	_master->createValue (accel, pbuf, "[r/s**2] acceleration", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "DECEL");
@@ -182,7 +187,14 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		}
 		else if (old_value == accel)
 		{
-			write4b (TGA_ACCEL, new_value->getValueDouble () * TGA_ACCELFACTOR);
+			// the acceleration must be outside of the range (11.4;19.1), as we found emprirically
+			// (otherwise the "runaways" can accure)
+			double accelNew = new_value->getValueDouble ();
+			if (accelNew > 11.4 && accelNew < 19.1)
+			{
+				accelNew = 11.4;	// the lower value is generally safer than rounding
+			}
+			write4b (TGA_ACCEL, accelNew * TGA_ACCELFACTOR);
 		}
 		else if (old_value == decel)
 		{
@@ -288,6 +300,12 @@ void TGDrive::setTargetSpeed (int32_t dspeed, bool changeMode)
 
 void TGDrive::setMaxSpeed (double speed)
 {
+	// the speed must be slower than physical speed limit of the motor, let's assure this
+	if ( speed > physicalSpeedLimit->getValueDouble () )
+	{
+		speed = physicalSpeedLimit->getValueDouble ();
+	}
+
 	write4b (TGA_VMAX, speed * TGA_SPEEDFACTOR);
 }
 

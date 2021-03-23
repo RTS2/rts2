@@ -293,6 +293,7 @@ class TGDrive: public rts2core::ConnSerial
 		rts2core::ValueDouble *aSpeed;
 		rts2core::ValueInteger *aSpeedInt;
 		rts2core::ValueDouble *maxSpeed;
+		rts2core::ValueDouble *physicalSpeedLimit;
 
 		rts2core::ValueDouble *accel;
 		rts2core::ValueDouble *decel;
