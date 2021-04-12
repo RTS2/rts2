@@ -562,13 +562,6 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 				queCommand (new rts2core::CommandMove (getMaster (), this, pos->ra, pos->dec), BOP_TEL_MOVE);
 			}
 			break;
-		case EVENT_NEW_TARGET_HADEC:
-		case EVENT_CHANGE_TARGET_HADEC:
-			{
-				struct ln_equ_posn *pos = (struct ln_equ_posn *) event->getArg ();
-				queCommand (new rts2core::CommandMoveHaDec (getMaster (), this, pos->ra, pos->dec), BOP_TEL_MOVE);
-			}
-			break;
 		case EVENT_NEW_TARGET_ALTAZ:
 		case EVENT_CHANGE_TARGET_ALTAZ:
 			{

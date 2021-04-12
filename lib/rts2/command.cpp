@@ -401,13 +401,6 @@ CommandMoveFixed::CommandMoveFixed (Block * _master, DevClientTelescope * _tel, 
 	setCommand (_os);
 }
 
-CommandMoveHaDec::CommandMoveHaDec (Block * _master, DevClientTelescope * _tel, double ha, double dec):CommandMove (_master,_tel)
-{
-       std::ostringstream _os;
-       _os << COMMAND_TELD_HADEC " " << std::fixed << ha << " " << dec;
-       setCommand (_os);
-}
-
 CommandMoveAltAz::CommandMoveAltAz (Block * _master, DevClientTelescope * _tel, double alt, double az):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;

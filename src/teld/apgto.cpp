@@ -895,7 +895,7 @@ int APGTO::startPark ()
   double park_ra= fmod(localSiderealTime()+ PARK_POSITION_RA, 360.);
   logStream (MESSAGE_DEBUG) <<"APGTO::startPark "<< park_ra<<  sendLog;
   setTarget(park_ra, PARK_POSITION_DEC);
-  return startResync () ? -1 : 1;
+  return startResync ();
 }
 
 int APGTO::isParking ()

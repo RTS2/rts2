@@ -73,7 +73,7 @@ class Sitech:public GEM
 			return isMoving ();
 		}
 
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		/**
 		 * Starts mount tracking - endless speed limited pointing.
@@ -922,13 +922,13 @@ int Sitech::endMove ()
 	return GEM::endMove ();
 }
 
-int Sitech::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
+int Sitech::setTracking (int track, bool addTrackingTimer, bool send)
 {
 	if (track)
 	{
 		wasStopped = false;
 	}
-	return GEM::setTracking (track, addTrackingTimer, send, stopMsg);
+	return GEM::setTracking (track, addTrackingTimer, send);
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -963,7 +963,7 @@ int Sitech::startPark ()
 		return 0;
 	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
-	return moveAltAz () ? -1 : 1;
+	return moveAltAz ();
 }
 
 void Sitech::internalTracking (double sec_step, float speed_factor)

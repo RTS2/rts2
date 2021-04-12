@@ -37,8 +37,6 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	char pbuf[strlen (prefix) + 20];
 	char *p = pbuf + strlen (prefix);
 
-	_masterDev = _master;
-
 	strcpy (pbuf, prefix);
 
 	strcpy (p, "TPOS");
@@ -143,25 +141,6 @@ void TGDrive::info ()
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
 	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
-	_masterDev->sendValueAll (dPos);
-	_masterDev->sendValueAll (aPos);
-	_masterDev->sendValueAll (posErr);
-	_masterDev->sendValueAll (aCur);
-	_masterDev->sendValueAll (appStatus);
-	_masterDev->sendValueAll (faults);
-	_masterDev->sendValueAll (masterCmd);
-}
-
-int32_t TGDrive::getPositionAct ()
-{
-	aPos->setValueInteger (read4b (TGA_CURRPOS));
-	return aPos->getValueInteger ();
-}
-
-int32_t TGDrive::getPositionTarget ()
-{
-	dPos->setValueInteger (read4b (TGA_TARPOS));
-	return dPos->getValueInteger ();
 }
 
 int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
@@ -291,11 +270,6 @@ void TGDrive::setMaxSpeed (double speed)
 	write4b (TGA_VMAX, speed * TGA_SPEEDFACTOR);
 }
 
-void TGDrive::setPositionKp (float newPositionKp)
-{
-	write2b (TGA_POSITIONREG_KP, newPositionKp * TGA_GAINFACTOR);
-}
-
 void TGDrive::stop ()
 {
 	// other way to stop..with backslahs
@@ -340,16 +314,6 @@ bool TGDrive::checkStopPlain ()
 void TGDrive::reset ()
 {
 	write2b (TGA_MASTER_CMD, 5);
-	write2b (TGA_MASTER_CMD, 2);
-}
-
-void TGDrive::sleep ()
-{
-	write2b (TGA_MASTER_CMD, 1);
-}
-
-void TGDrive::wakeup ()
-{
 	write2b (TGA_MASTER_CMD, 2);
 }
 

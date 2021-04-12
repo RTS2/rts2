@@ -267,14 +267,6 @@ class Rts2Comm:
 		print("newobs {0} {1}".format(ra,dec))
 		sys.stdout.flush()
 
-	def hadec(self,ha,dec):
-		print("hadec {0} {1}".format(ha,dec))
-		sys.stdout.flush()
-
-	def newObsHaDec(self,ha,dec):
-		print("newhadec {0} {1}".format(ha,dec))
-		sys.stdout.flush()
-
 	def altaz(self,alt,az):
 		print("altaz {0} {1}".format(alt,az))
 		sys.stdout.flush()

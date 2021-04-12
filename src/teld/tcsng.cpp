@@ -83,7 +83,7 @@ class TCSNG:public Telescope
 			return getTargetDistance () * 2.0;
 		}
 
-		virtual int setTracking(int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
+		virtual int setTracking(int track, bool addTrackingTimer = false, bool send = true);
 
 		virtual int moveTLE (const char *l1, const char *l2);
 		
@@ -388,9 +388,9 @@ int TCSNG::isMoving ()
 	return -1;
 }
 
-int TCSNG::setTracking( int track, bool addTrackingTimer, bool send, const char *stopMsg)
+int TCSNG::setTracking( int track, bool addTrackingTimer, bool send)
 {
-	return Telescope::setTracking (track, addTrackingTimer, send, stopMsg);
+	return Telescope::setTracking (track, addTrackingTimer, send);
 }
 
 int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)

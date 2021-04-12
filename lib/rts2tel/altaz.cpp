@@ -414,19 +414,18 @@ void AltAz::unlockPointing ()
 
 void AltAz::runTracking ()
 {
-	if (trackingRequested () != 3)	// exclude case of tracking without derotators
-		parallacticTracking ();
+	parallacticTracking ();
 	Telescope::runTracking ();
 }
 
-int AltAz::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
+int AltAz::setTracking (int track, bool addTrackingTimer, bool send)
 {
 	if (track == 3)
 	{
 		rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), 0, telAltAz->getAlt(), telAltAz->getAz());
 		queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
 	}
-	return Telescope::setTracking (track, addTrackingTimer, send, stopMsg);
+	return Telescope::setTracking (track, addTrackingTimer, send);
 }
 
 void AltAz::parallacticTracking ()
