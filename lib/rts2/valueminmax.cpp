@@ -123,14 +123,14 @@ ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name):ValueInteger (i
 {
 	min = INT_MIN;
 	max = INT_MAX;
-	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
+	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_INTEGER;
 }
 
 ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueInteger (in_val_name, in_description, writeToFits, flags)
 {
 	min = INT_MIN;
 	max = INT_MAX;
-	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
+	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_INTEGER;
 }
 
 int ValueIntegerMinMax::setValue (Connection * connection)
@@ -209,7 +209,7 @@ const char * ValueIntegerMinMax::getDisplayValue ()
 void ValueIntegerMinMax::setFromValue (Value * newValue)
 {
 	ValueInteger::setFromValue (newValue);
-	if (newValue->getValueType () == (RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE))
+	if (newValue->getValueType () == (RTS2_VALUE_MMAX | RTS2_VALUE_INTEGER))
 	{
 		copyMinMax ((ValueIntegerMinMax *) newValue);
 	}

@@ -33,6 +33,11 @@ namespace rts2core
 /**
  * UDP connection.
  *
+ * Intended to be used primarily for UDP connection to other server.
+ * It can be used for creating a "listening server" (to receive data from 
+ * automated meteo stations etc) on local port as well, in which case set
+ * the hostname to NULL and use the receive function.
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  * @autor Standa Vitek <standa@vitkovi.net>
  */
@@ -42,7 +47,7 @@ class ConnUDP:public ConnNoSend
 		/**
 		 * Configure UDP connection.
 		 *
-		 * @param hostname   host to which data will be send, can be left NULL
+		 * @param hostname   hostname of the remote server to connect to, if left NULL, we bind to the local port and serve as a server on all interfaces
 		 */
 		ConnUDP (int _port, rts2core::Block * _master, const char* hostname = NULL, size_t _maxSize = 500);
 		virtual int init ();
@@ -60,7 +65,10 @@ class ConnUDP:public ConnNoSend
 		 * @param len   received data length
 		 * @param from  address of the source (originator) of data
 		 */
-		virtual int process (size_t len, struct sockaddr_in &from) = 0;
+		virtual int process (size_t len, struct sockaddr_in &from)
+		{
+			return 0;
+		}
 		virtual void connectionError (int last_data_size)
 		{
 			// do NOT call Connection::connectionError, UDP connection must run forewer.
@@ -69,7 +77,7 @@ class ConnUDP:public ConnNoSend
 	private:
 		const char *hostname;
 		size_t maxSize;
-		struct sockaddr_in servaddr, clientaddr;
+		struct sockaddr_in servaddr;
 };
 
 }

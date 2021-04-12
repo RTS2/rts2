@@ -168,7 +168,7 @@ class Paramount:public GEM
 
 		virtual int updateLimits ();
 
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 
 		virtual void updateTrack ();
 
@@ -866,14 +866,14 @@ int Paramount::initValues ()
 	return Telescope::initValues ();
 }
 
-int Paramount::setTracking (int track, bool addTrackingTimer, bool send)
+int Paramount::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	if (track)
 		MKS3MotorOn (axis0);
 	else
 		MKS3MotorOff (axis0);
 	// do not run tracking (yet)
-	return Telescope::setTracking (track, false, send);
+	return Telescope::setTracking (track, false, send, stopMsg);
 }
 
 void Paramount::updateTrack ()

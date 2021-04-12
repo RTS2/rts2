@@ -744,7 +744,7 @@ int SitechAltAz::startPark ()
 	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
 	wasStopped = false;
-	return moveAltAz ();
+	return moveAltAz () ? -1 : 1;
 }
 
 void SitechAltAz::runTracking ()

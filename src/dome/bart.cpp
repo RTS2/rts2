@@ -45,7 +45,7 @@ enum stavy
 enum stavy zasuvky_stavy[3][NUM_ZAS] =
 {
 	// off
-	{ZAS_ZAP, ZAS_ZAP, ZAS_VYP, ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
+	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
 	// standby
 	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
 	// observnig
@@ -118,9 +118,9 @@ Bart::Bart (int argc, char **argv):Ford (argc, argv)
 	createValue (domeSouthSwitchClosed, "south_roof_closed", "switch on south roof, closed state", false, RTS2_DT_ONOFF);
 	domeSouthSwitchClosed->addSelVal ("---");
 	domeSouthSwitchClosed->addSelVal ("CLOSED");
-	createValue (socket1, "socket1", "wall socket #1 (camera CNF0)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
-	createValue (socket2, "socket2", "wall socket #2 (camera CWF1)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
-	createValue (socket3, "socket3", "wall socket #3", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket1, "socket1", "wall socket #1 (camera C1)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket2, "socket2", "wall socket #2 (camera C2)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket3, "socket3", "wall socket #3 (camera C3)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (socket4, "socket4", "wall socket #4", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (socket5, "socket5", "wall socket #5 (mount T0)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (socket6, "socket6", "wall socket #6 (anti-dew heating of NF & WF)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
