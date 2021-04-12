@@ -379,7 +379,7 @@ int LX200::startResync ()
 	if (hasAstroPhysicsExtensions)
 		serConn->writePort (":PO#", 4);
 
-	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
+	tel_slew_to (getTargetRa (), getTargetDec ());
 
 	set_move_timeout (100);
 	return 0;

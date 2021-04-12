@@ -349,19 +349,6 @@ void Executor::postEvent (rts2core::Event * event)
 		case EVENT_CHANGE_TARGET:
 			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg (), p1, p2, current_plan_id->getValueInteger ());
 			break;
-		case EVENT_NEW_TARGET_HADEC:
-		case EVENT_CHANGE_TARGET_HADEC:
-			{
-				struct ln_equ_posn *posHaDec = (struct ln_equ_posn *) event->getArg ();
-				struct ln_equ_posn pos;
-				pos.ra = ln_get_apparent_sidereal_time ( ln_get_julian_from_sys () ) * 15.0 + observer->lng - posHaDec->ra;
-				pos.dec = posHaDec->dec;
-				if (event->getType () == EVENT_NEW_TARGET_HADEC)
-					currentTarget->newObsSlew (&pos, p1, p2, current_plan_id->getValueInteger ());
-				else
-					currentTarget->updateSlew (&pos, p1, p2, current_plan_id->getValueInteger ());
-			}
-			break;
 		case EVENT_NEW_TARGET_ALTAZ:
 		case EVENT_CHANGE_TARGET_ALTAZ:
 			{

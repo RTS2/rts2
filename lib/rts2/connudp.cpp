@@ -42,16 +42,17 @@ int ConnUDP::init ()
 	int ret;
 
 	bzero (&servaddr, sizeof (servaddr));
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons (getLocalPort ());
-	if (hostname == NULL)
+        if (hostname != NULL)
 	{
-		servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+		servaddr.sin_family = AF_INET;
+       		servaddr.sin_addr.s_addr = inet_addr (hostname);
+		servaddr.sin_port = htons (getLocalPort ());
 	}
-	else
-	{
-		servaddr.sin_addr.s_addr = inet_addr (hostname);
-	}
+
+	bzero (&clientaddr, sizeof (clientaddr));
+	clientaddr.sin_family = AF_INET;
+	clientaddr.sin_port = htons (getLocalPort ());
+	clientaddr.sin_addr.s_addr = htonl (INADDR_ANY);
 
 	sock = socket (PF_INET, SOCK_DGRAM, 0);
 	if (sock < 0)
@@ -65,13 +66,10 @@ int ConnUDP::init ()
 		logStream (MESSAGE_ERROR) << "ConnUPD::init fcntl: " << strerror (errno) << sendLog;
 		return -1;
 	}
-	if (hostname == NULL)
+	ret = bind (sock, (struct sockaddr *) &clientaddr, sizeof (clientaddr));
+	if (ret)
 	{
-		ret = bind (sock, (struct sockaddr *) &servaddr, sizeof (servaddr));
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "ConnUPD::init bind: " << strerror (errno) << sendLog;
-		}
+		logStream (MESSAGE_ERROR) << "ConnUPD::init bind: " << strerror (errno) << sendLog;
 	}
 	if (maxSize >= buf_size)
 	{
@@ -83,19 +81,7 @@ int ConnUDP::init ()
 
 int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned int length, int noreceive, float rectimeout)
 {
-	int ret;
-
-	if (noreceive == 0)
-	{
-		// flush the recv buffer prior sending - to get relevant response only
-		ret = 1;
-		unsigned int slen = sizeof (servaddr);
-		char buff[80];
-		while (ret > 0)
-			ret = recvfrom (sock, buff, 80, 0, (struct sockaddr *) &servaddr, &slen);
-	}
-
-	ret = sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
+	int ret = sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	if (noreceive == 0)
 	{
@@ -121,9 +107,9 @@ int ConnUDP::receiveMessage (char * ret_message, unsigned int length, float rect
 		// timeout..
 		return -1;
 
-	unsigned int slen = sizeof (servaddr);
+	unsigned int slen = sizeof (clientaddr);
 
-	return recvfrom (sock, ret_message, length, 0, (struct sockaddr *) &servaddr, &slen);
+	return recvfrom (sock, ret_message, length, 0, (struct sockaddr *) &clientaddr, &slen);
 }
 
 int ConnUDP::receive (Block *block)
@@ -131,16 +117,16 @@ int ConnUDP::receive (Block *block)
 	int data_size = 0;
 	if (sock >= 0 && block->isForRead (sock))
 	{
-		socklen_t size = sizeof (servaddr);
-		data_size = recvfrom (sock, buf, maxSize, 0, (struct sockaddr *) &servaddr, &size);
+		socklen_t size = sizeof (clientaddr);
+		data_size = recvfrom (sock, buf, maxSize, 0, (struct sockaddr *) &clientaddr, &size);
 		if (data_size < 0)
 		{
-			logStream (MESSAGE_DEBUG) << "error in receiving data over UDP: %m" << strerror (errno) << sendLog;
+			logStream (MESSAGE_DEBUG) << "error in receiving weather data: %m" << strerror (errno) << sendLog;
 			return 1;
 		}
 		buf[data_size] = 0;
 		command_buf_top = buf;
-		process (data_size, servaddr);
+		process (data_size, clientaddr);
 	}
 	return data_size;
 }

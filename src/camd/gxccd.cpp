@@ -30,7 +30,7 @@ namespace rts2camd
 {
 
 /**
- * Driver for cameras from Moravian Instruments (using their closed-source gxccd library)
+ * Class for a dummy camera.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -56,7 +56,7 @@ class GXCCD:public Camera
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int setCoolTemp (float new_temp);
-		virtual int switchCooling (bool cooling);
+		virtual void afterNight ();
 
 		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 
@@ -75,11 +75,10 @@ class GXCCD:public Camera
 
 		rts2core::ValueInteger *id;
 		rts2core::ValueSelection *mode;
-		rts2core::ValueIntegerMinMax *fan = NULL;
-		rts2core::ValueIntegerMinMax *windowHeating;
+		rts2core::ValueBool *fan;
 		rts2core::ValueFloat *tempRamp;
 		rts2core::ValueFloat *tempTarget;
-		rts2core::ValueFloat *power = NULL;
+		rts2core::ValueFloat *power;
 		rts2core::ValueFloat *voltage;
 		rts2core::ValueFloat *gain;
 
@@ -89,8 +88,6 @@ class GXCCD:public Camera
 
 		bool reseted_shutter;
 		bool internalTimer;
-
-		bool hasCooling = false;
 
 		// buffer for error messages
 		char gx_err[200];
@@ -110,8 +107,9 @@ GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	tempRamp->setValueFloat (1.0);
-	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
 
+	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
+	createValue (power, "TEMPPWR", "[%] utilization of cooling power", true);
 	createValue (voltage, "VOLTAGE", "[V] current voltage of the camera power supply", true);
 	createValue (gain, "GAIN", "[e-ADU] gain", true);
 
@@ -207,44 +205,12 @@ int GXCCD::initHardware ()
 	}
 
 	bool val;
-	int valInt;
-	/*gxccd_get_boolean_parameter (camera, GBP_FILTERS, &val);
-	if (val)
-	{
-		// This way this is not functional (because of the need of parsing CLI parameters, function createFilter () has to be called much sooner).	// When needed, this could be solved the same way I did the "hasCooling" problem... However, it is not necessary in this case, as filters are only taken into account when specified on commandline...
-		//createFilter ();
-	}*/
-	gxccd_get_boolean_parameter (camera, GBP_COOLER, &val);
-	if (val)
-	{
-		hasCooling = true;
-	}
 	gxccd_get_boolean_parameter (camera, GBP_FAN, &val);
 	if (val)
 	{
-		createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE);
-		gxccd_get_integer_parameter (camera, GIP_MAX_FAN, &valInt);
-		fan->setMin (0);
-		fan->setMax (valInt);
-		updateMetaInformations (fan);
-		fan->setValueInteger (valInt);
-		gxccd_set_fan (camera, valInt);
-	}
-	gxccd_get_boolean_parameter (camera, GBP_WINDOW_HEATING, &val);
-	if (val)
-	{
-		createValue (windowHeating, "WINDOW_HEATING", "CCD window anti-frost heating", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
-		gxccd_get_integer_parameter (camera, GIP_MAX_WINDOW_HEATING, &valInt);
-		windowHeating->setMin (0);
-		windowHeating->setMax (valInt);
-		updateMetaInformations (windowHeating);
-		windowHeating->setValueInteger (0);
-		gxccd_set_window_heating (camera, 0);
-	}
-	gxccd_get_boolean_parameter (camera, GBP_POWER_UTILIZATION, &val);
-	if (val)
-	{
-		createValue (power, "TEMPPWR", "[%] utilization of cooling power", true);
+		createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+		gxccd_set_fan (camera, 1);
+		fan->setValueBool (true);
 	}
 
 	gxccd_get_boolean_parameter (camera, GBP_READ_MODES, &val);
@@ -329,7 +295,7 @@ int GXCCD::initValues ()
 
 void GXCCD::initDataTypes ()
 {
-	if (mode->selSize () >= 3)
+	if (mode->selSize () == 3)
 	{
 		addDataType (RTS2_DATA_USHORT);
 		addDataType (RTS2_DATA_BYTE);
@@ -390,11 +356,8 @@ int GXCCD::info ()
 	ret = gxccd_get_value (camera, GV_ADC_GAIN, &val);
 	gain->setValueFloat (ret ? NAN : val);
 
-	if (power)
-	{
-		ret = gxccd_get_value (camera, GV_POWER_UTILIZATION, &val);
-		power->setValueFloat (ret ? NAN : val);
-	}
+	ret = gxccd_get_value (camera, GV_POWER_UTILIZATION, &val);
+	power->setValueFloat (ret ? NAN : val);
 
 	ret = gxccd_get_value (camera, GV_SUPPLY_VOLTAGE, &val);
 	voltage->setValueFloat (ret ? NAN : val);
@@ -437,10 +400,6 @@ int GXCCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 int GXCCD::setCoolTemp (float new_temp)
 {
 	float val;
-
-	if (hasCooling == false)
-		return -2;
-
 	int ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
 	if (ret)
 	{
@@ -458,36 +417,10 @@ int GXCCD::setCoolTemp (float new_temp)
 	return Camera::setCoolTemp (new_temp);
 }
 
-int GXCCD::switchCooling (bool cooling)
+void GXCCD::afterNight ()
 {
-	int ret;
-
-	if (hasCooling == false)
-		return -2;
-
-	Camera::switchCooling (cooling);
-
-	if (cooling)
-	{
-		if (std::isnan (tempSet->getValueFloat ()))
-		{
-			if (!nightCoolTemp || std::isnan (nightCoolTemp->getValueFloat ()))
-			{
-				logStream (MESSAGE_ERROR) << "nightCoolTemp not defined" << sendLog;
-				ret = -1;
-			}
-			else
-				ret = setCoolTemp (nightCoolTemp->getValueFloat ());
-		}
-		else
-			ret = setCoolTemp (tempSet->getValueFloat ());
-	}
-	else
-	{
-		ret = setCoolTemp (50.0);
-	}
-	return ret;
-
+	// FIXME: delete and implement normal cooling control!
+	setCoolTemp (+50);
 }
 
 int GXCCD::setFilterNum (int new_filter, const char *fn)

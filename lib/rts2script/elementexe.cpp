@@ -150,24 +150,6 @@ void ConnExecute::processCommand (char *cmd)
 			return;
 		master->postEvent (new rts2core::Event (EVENT_NEW_TARGET, (void *) &radec));
 	}
-	else if (!strcasecmp (cmd, "hadec"))
-	{
-		if (!checkActive ())
-			return;
-		struct ln_equ_posn hadec;
-		if (paramNextHMS (&hadec.ra) || paramNextDMS (&hadec.dec) || !paramEnd ())
-			return;
-		master->postEvent (new rts2core::Event (EVENT_CHANGE_TARGET_HADEC, (void *) &hadec));
-	}
-	else if (!strcasecmp (cmd, "newhadec"))
-	{
-		if (!checkActive ())
-			return;
-		struct ln_equ_posn hadec;
-		if (paramNextHMS (&hadec.ra) || paramNextDMS (&hadec.dec) || !paramEnd ())
-			return;
-		master->postEvent (new rts2core::Event (EVENT_NEW_TARGET_HADEC, (void *) &hadec));
-	}
 	else if (!strcasecmp (cmd, "altaz"))
 	{
 		if (!checkActive (false))
