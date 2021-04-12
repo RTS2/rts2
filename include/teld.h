@@ -66,8 +66,8 @@ namespace rts2teld
  *   - <b>ORIRA, ORIDEC</b> contains original, J2000 coordinates. Those are usually entered by observing program (rts2-executor).
  *   - <b>OFFSRA, OFFSDEC</b> contains offsets applied to ORI coordinates.
  *   - <b>OBJRA,OBJDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.
- *   - <b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in MORA and MODEC
- *   - <b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed totelescope. Telescope coordinates are then calculated as TARRA-CORR_RA, TAR_DEC - CORR_DEC
+ *   - <b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do NOT contain modelling (which is stored in MORA and MODEC) and corrections from astrometry (stored in CORR_RA, CORR_DEC).
+ *   - <b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed to telescope. Telescope coordinates are then calculated as TARRA - CORR_RA, TARDEC - CORR_DEC
  *   - <b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA - MORA, TARDEC - CORR_DEC - MODEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.
  *   - <b>MORA,MODEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).
  *
@@ -365,7 +365,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Apply model for RA/DEC position pos, for specified flip and JD.
 		 * All resulting coordinates also includes corrRaDec corection.
-		 * If writeValue is set to true, changes tel_target (telTargetRA) variable, including model computation and corrRaDec.
+		 * If writeValue is set to true, changes tel_target (telTargetRaDec) variable, including model computation and corrRaDec.
 		 * Also sets MO_RTS2 (modelRaDec) variable, mirroring (only) computed model difference.
 		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
 		 *
@@ -378,7 +378,7 @@ class Telescope:public rts2core::Device
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
-		 * Sets MO_RTS2 (modelRaDec) and tel_target (telTargetRA) variables, also includes applyCorrRaDec if applyCorr parameter set to true.
+		 * Sets MO_RTS2 (modelRaDec) and tel_target (telTargetRaDec) variables, also includes applyCorrRaDec if applyCorr parameter set to true.
 		 */
 		void applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr);
 
@@ -574,6 +574,7 @@ class Telescope:public rts2core::Device
 		 * Return target position. This is equal to ORI[RA|DEC] +
 		 * OFFS[RA|DEC] + any transformations required for mount
 		 * operation.
+		 * Still without astrometry-feedback correction and/or model!
 		 *
 		 * @param out_tar Target position
 		 */
@@ -923,28 +924,40 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal 3 - no tracking, including derotators
+		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal 3 - tracking, excluding derotators
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @param send		 if true, set rts2value and send in to all connections
+		 * @param stopMsg	set message for "no tracking" case; if NULL, omit setting of state to NOTRACK
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 
-		void startTracking (bool check = false);
+		/**
+		 * Starts telescope tracking, either physically as a consequence of finished movement (following
+		 * the actual state of tracking variable) or also logically, i.e. setting tracking variable
+		 * to defaultTracking value, when it is in zero (no tracking) state and parameter check is set to true.
+		 *
+		 * @param check		if true, check if tracking variable is set to tracking (else set it to defaultTracking).
+		 * @return 0 on success, -1 on error
+		 */
+		int startTracking (bool check = false);
+
+		/**
+		 * Stops telescope tracking.
+		 *
+		 * @param stopMsg	set message; if NULL, omit setting of state to NOTRACK
+		 * @return 0 on success, -1 on error
+		 */
+		int stopTracking (const char *stopMsg = "tracking stopped");
 
 		/**
 		 * Returns if tracking is requested.
 		 *
-		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking 3 - no tracking, including derotators stop
+		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking 3 - tracking, excluding derotators
 		 */
 		int trackingRequested () { return tracking->getValueInteger (); }
 
 		bool isTracking () { return (getState () & TEL_MASK_TRACK) == TEL_TRACKING; }
-
-		/**
-		 * Stops tracking. Calls stopMove and set tracking state to NOTRACK.
-		 */
-		void stopTracking (const char *msg = "tracking stopped");
 
 		int trackingNum;
 
@@ -952,7 +965,7 @@ class Telescope:public rts2core::Device
 		 * Called to run tracking. It is up to driver implementation
 		 * to send updated position to telescope driver.
 		 *
-		 * If tracking timer shall not be called agin, call setTracking (false).
+		 * If tracking timer should not be called again, call setTracking (false).
 		 * Run every trackingInterval seconds.
 		 *
 		 * @see setTracking
@@ -1046,6 +1059,7 @@ class Telescope:public rts2core::Device
 		double getDiffTrackAz () { return diffTrackAltAz->getAz (); }
 		double getDiffTrackAlt () { return diffTrackAltAz->getAlt (); }
 
+		bool getBlockMove () { return blockMove->getValueBool (); }
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 
@@ -1094,7 +1108,20 @@ class Telescope:public rts2core::Device
 		int moveInfoCount;
 		int moveInfoMax;
 
+		/**
+		 * Reflects actual desired tracking state (taken into account also during slew etc).
+		 * Values: 0 - no tracking, 1 - on object, 2 - sidereal 3 - tracking, excluding derotators.
+		 * It's being changed automatically (to 0 during stop/park, to *defaultTracking as a consequence
+		 * of specific MOVE commands) or direcly by startTracking () / stopTracking () / setTracking ().
+		 */
 		rts2core::ValueSelection *tracking;
+
+		/**
+		 * Default value for setting the *tracking selection, when tracking is going to start without determining
+		 * the specific tracking type. Setting this value to 0 disables tracking as a consequence of MOVE commands.
+		 */
+		rts2core::ValueSelection *defaultTracking;
+
 		rts2core::ValueDoubleStat *trackingFrequency;
 		rts2core::ValueInteger *trackingFSize;
 		rts2core::ValueFloat *trackingWarning;
@@ -1231,7 +1258,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *modelRaDec;
 
 		/**
-		 * Telescope target coordinates, corrected (precessed, aberated, refracted) with modelling offset.
+		 * Telescope target coordinates, corrected (precessed, aberated, refracted) with modelling offset and astrometry-feedback corrections.
 		 */
 		rts2core::ValueRaDec *telTargetRaDec;
 

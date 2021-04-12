@@ -160,7 +160,7 @@ class MM2:public Telescope
 		virtual int isParking ();
 		virtual int endPark ();
 
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 		int stopWorm ();
 
 		virtual int startDir (char *dir);
@@ -1112,7 +1112,7 @@ int MM2::endPark ()
 	return 0;
 }
 
-int MM2::setTracking (int track, bool addTrackingTimer, bool send)
+int MM2::setTracking (int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	int ret;
 
@@ -1126,7 +1126,7 @@ int MM2::setTracking (int track, bool addTrackingTimer, bool send)
 	if (ret)
 		return ret;
 
-	return Telescope::setTracking (track, addTrackingTimer, send);
+	return Telescope::setTracking (track, addTrackingTimer, send, stopMsg);
 }
 
 int MM2::stopWorm ()

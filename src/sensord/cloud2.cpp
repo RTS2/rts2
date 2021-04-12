@@ -353,7 +353,7 @@ Cloud2::Cloud2 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	measurementIntervalActual->setValueInteger (10);	// we want set it low, it will be reset during the first run
 
 	createValue (measureDuringDay, "msr_during_day", "measure also during day", false, RTS2_VALUE_WRITABLE);
-	measureDuringDay->setValueBool (false);
+	measureDuringDay->setValueBool (true);
 
 	createValue (measurementBoost, "msr_boost", "temporary measurement interval boost", false);
 	measurementBoost->setValueBool (true);	// we have lack of data at the beginning

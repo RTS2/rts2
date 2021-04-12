@@ -12,7 +12,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-thermocube rts2-sensor-reinhardt rts2-sensor-davis \
 	rts2-sensor-tbt rts2-sensor-binder \
 	rts2-sensor-saao rts2-sensor-cpx400 rts2-sensor-afg rts2-sensor-allnet \
-	rts2-sensor-bigelow rts2-sensor-external
+	rts2-sensor-bigelow rts2-sensor-external rts2-sensor-d50-wfunit
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
 
@@ -154,6 +154,8 @@ rts2_sensor_tbt_SOURCES = tbt.cpp
 rts2_sensor_binder_SOURCES = binder.cpp
 
 rts2_sensor_external_SOURCES = external.cpp
+
+rts2_sensor_d50_wfunit_SOURCES = d50-wfunit.cpp
 
 if LIBUSB1
 bin_PROGRAMS += rts2-sensor-fows

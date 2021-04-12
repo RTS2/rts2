@@ -89,7 +89,7 @@ class AltAz: public Telescope
 		 */
 		virtual void runTracking ();
 
-		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true, const char *stopMsg = "tracking stopped");
 
 		/**
 		 * Sends new target parallactic angle to 

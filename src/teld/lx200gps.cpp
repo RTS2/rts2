@@ -362,14 +362,14 @@ int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_d
 /*!
  * Park telescope to neutral location.
  *
- * @return -1 and errno on error, 0 otherwise
+ * @return -1 and errno on error, 1 to retain target positions, 0 otherwise
  */
 int LX200::startPark ()
 {
 	if (parkPos)
 	{
 		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());	
-		return moveAltAz ();
+		return moveAltAz () ? -1 : 1;
 	}
 	//int ret = serConn->writePort (":hF#", 4);
 	//int ret = serConn->writePort (":hP#", 4);
