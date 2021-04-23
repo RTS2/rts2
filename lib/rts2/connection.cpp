@@ -2255,7 +2255,18 @@ int Connection::metaInfo (int rts2Type, std::string m_name, std::string desc)
 			new_value = new ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_MMAX:
-			new_value = new ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			switch (rts2Type & RTS2_BASE_TYPE)
+			{
+				case RTS2_VALUE_DOUBLE:
+					new_value = new ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
+				case RTS2_VALUE_INTEGER:
+					new_value = new ValueIntegerMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "Undefined base type of RTS2_VALUE_MMAX (should be RTS2_VALUE_DOUBLE/RTS2_VALUE_INTEGER)" << sendLog;
+					exit (10);
+			}
 			break;
 		case RTS2_VALUE_RECTANGLE:
 			new_value = new ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);

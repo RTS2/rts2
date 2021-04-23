@@ -776,14 +776,23 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 	for (iter = master->getValuesBegin (); iter != master->getValuesEnd (); iter++)
 	{
 		rts2core::Value *val = (*iter)->getValue ();
-		if (val->getValueExtType () == RTS2_VALUE_MMAX && val->getValueBaseType () == RTS2_VALUE_DOUBLE)
+		if (val->getValueExtType () == RTS2_VALUE_MMAX)
 		{
-			rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (val);
 			if (firstMMax)
 				firstMMax = false;
 			else
 				os << ",";
-			os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
+
+			if (val->getValueBaseType () == RTS2_VALUE_DOUBLE)
+			{
+				rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (val);
+				os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
+			}
+			else if (val->getValueBaseType () == RTS2_VALUE_INTEGER)
+			{
+				rts2core::ValueIntegerMinMax *v = (rts2core::ValueIntegerMinMax *) (val);
+				os << "\"" << v->getName () << "\":[" << v->getMin () << "," << v->getMax () << "]";
+			}
 		}
 	}
 
