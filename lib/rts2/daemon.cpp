@@ -763,9 +763,21 @@ Value * Daemon::duplicateValue (Value * old_value, bool withVal)
 			dup_val = new ValueDoubleStat (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
 			break;
 		case RTS2_VALUE_MMAX:
-			dup_val = new ValueDoubleMinMax (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
-			((ValueDoubleMinMax *) dup_val)->copyMinMax ((ValueDoubleMinMax *) old_value);
-			break;
+			switch (old_value->getValueBaseType ())
+			{
+				case RTS2_VALUE_DOUBLE:
+					dup_val = new ValueDoubleMinMax (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
+					((ValueDoubleMinMax *) dup_val)->copyMinMax ((ValueDoubleMinMax *) old_value);
+					break;
+				case RTS2_VALUE_INTEGER:
+					dup_val = new ValueIntegerMinMax (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
+					((ValueIntegerMinMax *) dup_val)->copyMinMax ((ValueIntegerMinMax *) old_value);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "Undefined base type of RTS2_VALUE_MMAX (should be RTS2_VALUE_DOUBLE/RTS2_VALUE_INTEGER)" << sendLog;
+			}
+			if (dup_val)
+				break;
 		case RTS2_VALUE_RECTANGLE:
 			dup_val = new ValueRectangle (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 			break;

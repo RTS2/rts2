@@ -87,7 +87,15 @@ void Gpib::writeValue (const char *name, rts2core::Value *value)
 	switch (value->getValueExtType ())
 	{
 		case RTS2_VALUE_MMAX:
-			_os << value->getValueDouble ();
+			switch (value->getValueBaseType ())
+			{
+				case RTS2_VALUE_DOUBLE:
+					_os << value->getValueDouble ();
+					break;
+				case RTS2_VALUE_INTEGER:
+					_os << value->getValueInteger ();
+					break;
+			}
 			break;
 		default:
 			switch (value->getValueType ())

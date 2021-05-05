@@ -68,6 +68,11 @@ class GXCCD:public Camera
 
 		virtual int scriptEnds ();
 
+		virtual void beforeNight ();
+		virtual void afterNight ();
+
+		int setWindowHeating (int heatingLevel);
+
 	private:
 		int clearCCD (double pref_time, int nclears);
 
@@ -76,7 +81,7 @@ class GXCCD:public Camera
 		rts2core::ValueInteger *id;
 		rts2core::ValueSelection *mode;
 		rts2core::ValueIntegerMinMax *fan = NULL;
-		rts2core::ValueIntegerMinMax *windowHeating;
+		rts2core::ValueIntegerMinMax *windowHeating = NULL;
 		rts2core::ValueFloat *tempRamp;
 		rts2core::ValueFloat *tempTarget;
 		rts2core::ValueFloat *power = NULL;
@@ -91,6 +96,9 @@ class GXCCD:public Camera
 		bool internalTimer;
 
 		bool hasCooling = false;
+
+		rts2core::ValueIntegerMinMax *desiredNightWindowHeating;
+		int desiredNightHeatingInitValue = 0;
 
 		// buffer for error messages
 		char gx_err[200];
@@ -121,6 +129,7 @@ GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 	createValue (filterFailed, "filter_err", "filter failed count", false);
 	filterFailed->setValueInteger (0);
 
+	addOption ('w', NULL, 1, "desired level of CCD window heating (autostarted with cooling, for night observations)");
 	addOption ('p', NULL, 1, "MI CCD product ID");
 	addOption ('f', NULL, 1, "filter names (separated with :)");
 
@@ -181,6 +190,9 @@ int GXCCD::processOption (int opt)
 			addFilters (optarg);
 			setFilterWorking (true);
 			break;
+		case 'w':
+			desiredNightHeatingInitValue = atoi (optarg);
+			break;
 		default:
 			return Camera::processOption (opt);
 	}
@@ -240,6 +252,11 @@ int GXCCD::initHardware ()
 		updateMetaInformations (windowHeating);
 		windowHeating->setValueInteger (0);
 		gxccd_set_window_heating (camera, 0);
+		createValue (desiredNightWindowHeating, "WINDOW_HEATING_NIGHT", "desired night value of CCD window anti-frost heating", false, RTS2_VALUE_WRITABLE);
+		desiredNightWindowHeating->setMin (0);
+		desiredNightWindowHeating->setMax (valInt);
+		updateMetaInformations (desiredNightWindowHeating);
+		desiredNightWindowHeating->setValueInteger (desiredNightHeatingInitValue);
 	}
 	gxccd_get_boolean_parameter (camera, GBP_POWER_UTILIZATION, &val);
 	if (val)
@@ -430,8 +447,31 @@ int GXCCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 		return -2;
 	}
+	if (oldValue == windowHeating)
+	{
+		return setWindowHeating (newValue->getValueInteger ());
+	}
 
 	return Camera::setValue (oldValue, newValue);
+}
+
+int GXCCD::setWindowHeating (int heatingLevel)
+{
+	int ret = gxccd_set_window_heating (camera, heatingLevel);
+	if (ret != 0)
+	{
+		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+		logStream (MESSAGE_ERROR) << "cannot set windowHeating " << gx_err << sendLog;
+
+		if (ret == -1)
+			reinitCamera ();
+
+		return -2;
+	}
+
+	windowHeating->setValueInteger (heatingLevel);
+
+	return 0;
 }
 
 int GXCCD::setCoolTemp (float new_temp)
@@ -605,6 +645,20 @@ int GXCCD::scriptEnds ()
 	return Camera::scriptEnds ();
 }
 
+void GXCCD::beforeNight ()
+{
+	if (windowHeating)
+		setWindowHeating (desiredNightWindowHeating->getValueInteger ());
+	Camera::beforeNight ();
+}
+
+void GXCCD::afterNight ()
+{
+	if (windowHeating)
+		setWindowHeating (0);
+	Camera::afterNight ();
+}
+
 int GXCCD::clearCCD (double pref_time, int nclear)
 {
 	int ret = gxccd_set_preflash (camera, pref_time, nclear);
@@ -645,6 +699,17 @@ int GXCCD::reinitCamera ()
 		{
 			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
 			logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set fan: " << gx_err << sendLog;
+			return -1;
+		}
+	}
+
+	if (windowHeating)
+	{
+		ret = gxccd_set_window_heating (camera, windowHeating->getValueInteger ());
+		if (ret)
+		{
+			gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+			logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set windowHeating: " << gx_err << sendLog;
 			return -1;
 		}
 	}

@@ -276,6 +276,9 @@ void NDeviceWindow::createValueBox ()
 		case RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE:
 			valueBox = new ValueBoxDouble (this, (rts2core::ValueDouble *) val, 21, s);
 			break;
+		case RTS2_VALUE_MMAX | RTS2_VALUE_INTEGER:
+			valueBox = new ValueBoxInteger (this, (rts2core::ValueInteger *) val, 21, s);
+			break;
 		case RTS2_VALUE_SELECTION:
 			valueBox = new ValueBoxSelection (this, (rts2core::ValueSelection *) val, 21, s);
 			break;

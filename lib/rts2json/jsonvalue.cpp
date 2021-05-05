@@ -121,6 +121,8 @@ void rts2json::sendValue (rts2core::Value *value, std::ostringstream &os)
 			os << JsonDouble (value->getValueDouble ());
 			break;
 		case RTS2_VALUE_INTEGER:
+			os << value->getValueInteger ();
+			break;
 		case RTS2_VALUE_LONGINT:
 		case RTS2_VALUE_SELECTION:
 		case RTS2_VALUE_BOOL:
@@ -195,14 +197,23 @@ void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connecti
 
 	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
-		if ((*iter)->getValueExtType () == RTS2_VALUE_MMAX && (*iter)->getValueBaseType () == RTS2_VALUE_DOUBLE)
+		if ((*iter)->getValueExtType () == RTS2_VALUE_MMAX)
 		{
-			rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (*iter);
 			if (firstMMax)
 				firstMMax = false;
 			else
 				os << ",";
-			os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
+
+			if ((*iter)->getValueBaseType () == RTS2_VALUE_DOUBLE)
+			{
+				rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (*iter);
+				os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
+			}
+			else if ((*iter)->getValueBaseType () == RTS2_VALUE_INTEGER)
+			{
+				rts2core::ValueIntegerMinMax *v = (rts2core::ValueIntegerMinMax *) (*iter);
+				os << "\"" << v->getName () << "\":[" << v->getMin () << "," << v->getMax () << "]";
+			}
 		}
 	}
 
