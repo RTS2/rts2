@@ -1,4 +1,4 @@
-/* 
+/*
  * Generic serial port connection.
  * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -83,6 +83,8 @@ const char * ConnSerial::getBaudSpeed ()
 			return "9600";
 		case BS19200:
 			return "19200";
+		case BS38400:
+			return "38400";
 		case BS57600:
 			return "57600";
 		case BS115200:
@@ -95,7 +97,7 @@ int ConnSerial::init ()
 {
 	if (sock < 0)
 		return -1;
-	
+
 	// set blocking mode
 	fcntl (sock, F_SETFL, 0);
 
@@ -125,6 +127,9 @@ int ConnSerial::init ()
 			break;
 		case BS19200:
 			b_speed = B19200;
+			break;
+		case BS38400:
+			b_speed = B38400;
 			break;
 		case BS57600:
 			b_speed = B57600;
@@ -340,7 +345,7 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 				ls << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully '";
 				logBuffer (ls, rbuf, rlen);
 				ls << "'" << sendLog;
-				
+
 				flushError ();
 				return -1;
 			}
@@ -381,7 +386,7 @@ size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return 0;
-		throw Error (strerror (errno));	
+		throw Error (strerror (errno));
 	}
 	if (debugComm)
 	{
