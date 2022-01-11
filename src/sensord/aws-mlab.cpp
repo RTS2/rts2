@@ -156,7 +156,7 @@ int AWSmlab::readSensor (bool update)
 
 	if (sensorTempHum1Enable->getValueBool())
 	{
-		if (hum1 > 110.0)
+		if (hum1 > 115.0)
 		{
 			temp1 = NAN;
 			hum1 = NAN;
@@ -169,7 +169,7 @@ int AWSmlab::readSensor (bool update)
 	
 	if (sensorTempHum2Enable->getValueBool())
 	{
-		if (hum2 > 110.0)
+		if (hum2 > 115.0)
 		{
 			temp2 = NAN;
 			hum2 = NAN;
