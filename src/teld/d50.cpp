@@ -482,9 +482,6 @@ int D50::init ()
 	lastSafeRaPos = 0;
 	lastSafeDecPos = 0;
 
-	numberOfSuccesivePoints = 0;
-	successicePointsActualPosition = 0;
-
 	// and finally, the remaining usual teld setup...
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
