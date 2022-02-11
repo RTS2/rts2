@@ -94,6 +94,8 @@ class D50:public Fork
 		virtual int isMoving ();
 		virtual int endMove ();
 		virtual int stopMove ();
+		virtual void telescopeAboveHorizon ();
+		virtual int abortMoveTracking ();
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int setToPark ();
 		virtual int startPark ();
@@ -189,6 +191,8 @@ class D50:public Fork
 		int setWormStepsFreq (double freq);
 		int updateWormStepsFreq (bool updateAlsoTargetFreq = false);
 
+		int32_t lastSafeRaPos;
+		int32_t lastSafeDecPos;
 };
 
 };
@@ -474,6 +478,13 @@ int D50::init ()
 	remotesAbsEncDec->setValueInteger (us);
 	remotesAbsEncDeg->setDec ( ln_range_degrees ( (double) (us - remotesAbsEncDecOffset->getValueInteger ()) * remotesAbsEncDegsPerStep + 180.0) - 180.0);
 
+	// safe initial values for low-level "last safe" ac/dc - 0:0 is close to the "park" position
+	lastSafeRaPos = 0;
+	lastSafeDecPos = 0;
+
+	numberOfSuccesivePoints = 0;
+	successicePointsActualPosition = 0;
+
 	// and finally, the remaining usual teld setup...
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
@@ -680,8 +691,8 @@ int D50::isMoving ()
                         // if difference in HA is greater than tolerance...
                         if (fabs (diffAc) > haCpd * moveTolerance->getValueDouble ())
                         {
-                                raDrive->setTargetPos (ac);
-                                tAc = ac;
+                                tAc = ac + USEC_SEC / 10 / 3600 / 24 * 360 * haCpd;	// setting value in advance - the sidereal tracking ("worm") will not be started sooner than in next cycle of isMoving () (the USEC_SEC / 10 corresponds to returned value below)
+                                raDrive->setTargetPos (tAc);
 				return USEC_SEC / 10;
                         }
                 }
@@ -719,6 +730,40 @@ int D50::endMove ()
 		logStream (MESSAGE_ERROR) << "Remotes ABS encoders difference above the limit: " << remotesAbsEncDegDifference->getRa () << ":" << remotesAbsEncDegDifference->getDec () << sendLog;
 	}
 	return Fork::endMove ();
+}
+
+void D50::telescopeAboveHorizon ()
+{
+#ifdef DEBUG_BRUTAL
+	logStream (MESSAGE_DEBUG) << "****** telescopeAboveHorizon ()" << sendLog;
+#endif
+	lastSafeRaPos = raDrive->getPosition ();
+	lastSafeDecPos = decDrive->getPosition ();
+}
+
+int D50::abortMoveTracking ()
+{
+#ifdef DEBUG_BRUTAL
+	logStream (MESSAGE_DEBUG) << "****** abortMoveTracking ()" << sendLog;
+#endif
+	Telescope::abortMoveTracking ();	// stop tracking, also waits till stop is really finished
+
+	// OK, this might be a bit controversial, let's try this approach - after being caught in a "below horizon" area, we stop and then return to the previously known safe position.
+	// We use only a "low level" (and slow) movements for it, i.e. rts2 doesn't know we are moving. When there will be some moving-attempt in meantime, it will be either accepted
+	// (which will lead to normal operations) or denied by a below-horizon situation again, in which case a new "extrication attempt" will follow in the next info cycle.
+	// As this is only an emergency case (which should happen only rarely), this should be acceptable.
+	// TODO: Solve a potential (temporarily) below-horizon unavailability for "park" operations. (Repeat the park command after an interval, maybe? Or use some advanced techniques.)
+	if (labs (raDrive->getPosition () - lastSafeRaPos) < (int32_t) fabs (10.0 * haCpd) && labs (decDrive->getPosition () - lastSafeDecPos) < (int32_t) fabs (10.0 * decCpd)) // safety limit
+	{
+		logStream (MESSAGE_DEBUG) << "abortMoveTracking - returning back to last known safe position: " << lastSafeRaPos << " " << lastSafeDecPos << sendLog;
+		raDrive->setTargetPos (lastSafeRaPos);
+		decDrive->setTargetPos (lastSafeDecPos);
+	}
+	else
+	{
+		logStream (MESSAGE_DEBUG) << "abortMoveTracking - distance to lastSafePos too high:" << labs (raDrive->getPosition () - lastSafeRaPos) / haCpd << " " << labs (decDrive->getPosition () - lastSafeDecPos) / decCpd << sendLog;
+	}
+	return 0;
 }
 
 int D50::stopMove ()
