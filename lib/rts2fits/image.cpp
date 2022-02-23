@@ -480,15 +480,21 @@ void Image::getHeaders ()
 
 void Image::getTargetHeaders ()
 {
-	// get IRAF info..
-	targetName = new char[FLEN_VALUE];
-	getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
-	// get info
-	getValue ("TARGET", targetId, verbose);
-	getValue ("TARSEL", targetIdSel, verbose);
-	getValue ("TARTYPE", targetType, verbose);
-	getValue ("OBSID", obsId, verbose);
-	getValue ("IMGID", imgId, verbose);
+	try
+	{
+		// get IRAF info..
+		targetName = new char[FLEN_VALUE];
+		getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
+		// get info
+		getValue ("TARGET", targetId, verbose);
+		getValue ("TARSEL", targetIdSel, verbose);
+		getValue ("TARTYPE", targetType, verbose);
+		getValue ("OBSID", obsId, verbose);
+		getValue ("IMGID", imgId, verbose);
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 }
 
 void Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype)
