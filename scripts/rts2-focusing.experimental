@@ -198,6 +198,7 @@ if __name__ == '__main__':
 	parser.add_option('--minnthresh', help='Minimum amount of pixels above threshold', action='store', dest='minnthresh', type='float', default=2)
 	parser.add_option('--minarea', help='Minimum area of object', action='store', dest='minarea', type='float', default=5)
 	parser.add_option('--relfluxradius', help='Relative radius of total flux circle, in FWHM units', action='store', dest='relfluxradius', type='float', default=3.0)
+	parser.add_option('-i', '--ignore', help='Ignore the result of focusing', action='store_true', dest='ignore', default=False)
 	(options,args) = parser.parse_args()
 
 	if options.dir:
@@ -269,7 +270,7 @@ if __name__ == '__main__':
 			elif estimator.fitFailed:
 				comm.log('I', 'Fit failed')
 				break
-			else:
+			elif not options.ignore:
 				comm.log('I', 'Applying this value to FOC_DEF')
 				comm.setValue('FOC_DEF', bestPos, focuser)
 				break
