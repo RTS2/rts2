@@ -30,6 +30,7 @@
 
 #define OPT_RA                OPT_LOCAL + 2201
 #define OPT_DEC               OPT_LOCAL + 2202
+#define OPT_CEILING           OPT_LOCAL + 2203
 
 #define RTS2_D50_TIMER_GUIDE_RA    RTS2_LOCAL_EVENT + 1210
 #define RTS2_D50_TIMER_GUIDE_DEC    RTS2_LOCAL_EVENT + 1211
@@ -82,6 +83,10 @@
 #define BACKLASH_CROSS_STRATEGY_TIME_INTERVAL	0
 #define BACKLASH_CROSS_STRATEGY_ENCODER_TICKS	1
 #define BACKLASH_CROSS_STRATEGY_MIND_DIRECTION_AND_SIZE	2
+
+// We should never get closer to Sun than... [deg]
+#define SUN_AVOID_DISTANCE 10.0
+
 
 namespace rts2teld
 {
@@ -199,11 +204,11 @@ class D50:public Fork
 		int32_t computeMovement (int isDec, int32_t fromCount, int32_t toCount, double initSpeed, double inspectionTime, double* speedAtInspectionTime = NULL);
 
 		/**
-		* Check potential conflict with a hard-horizon for the position in raw coordinates.
+		* Check potential conflict with a hard-horizon, Sun distance and dome's ceiling for the position in raw coordinates.
 		*
-		* @return 1 if position is ok, 0 when collision with hard-horizon detected
+		* @return 1 if position is ok, 0 when collision with hard-horizon, Sun proximity or dome's ceiling (when checked) detected
 		*/
-		int checkRawPosition (int32_t AC, int32_t DC);
+		int checkRawPosition (int32_t AC, int32_t DC, bool checkSunDistance = true, bool checkCeiling = false);
 
 		int numberOfSuccesivePoints;
 		int32_t successivePointsAC[MAX_NUMBER_OF_SUCCESSIVE_POINTS + 1], successivePointsDC[MAX_NUMBER_OF_SUCCESSIVE_POINTS + 1];
@@ -296,6 +301,10 @@ class D50:public Fork
 
 		int32_t lastSafeRaPos;
 		int32_t lastSafeDecPos;
+
+		const char *closedDomeCeilingFile;		// ceiling "horizon" file (for closed dome)
+		ObjectCheck hardCeiling;
+		rts2core::ValueBool *domeIsClosed;
 
 		struct ln_lnlat_posn observerLongLat;		// we use this many times and Longitude/Latitude is constant for us, so...
 };
@@ -394,6 +403,8 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
 
+	addOption (OPT_CEILING, "ceiling", 1, "telescope hard ceiling (anti-horizon) when the dome is closed");
+
 	addParkPosOption ();
 
 	createValue (remotesMotorsPower, "remotes_motors_power", "el. power to both motors", false);
@@ -423,6 +434,11 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	remotesAbsEncDegDifferenceLimit->setValueDouble (0.5);
 	createValue (remotesAbsEncDegDifferenceIgnore, "ignore_remotes_abs_encoder_difference", "ignore limit of difference of positions", false, RTS2_VALUE_WRITABLE);
 	remotesAbsEncDegDifferenceIgnore->setValueBool (false);
+
+	closedDomeCeilingFile = NULL;
+
+	createValue (domeIsClosed, "dome_closed", "dome-closed switch (limits movement of telescope)", false, RTS2_VALUE_WRITABLE);
+	domeIsClosed->setValueBool (false);
 
 #ifndef RTS2_LIBERFA
 	// apply all corrections by rts2 for mount
@@ -548,6 +564,9 @@ int D50::processOption (int opt)
                 case OPT_DEC:
                         devDEC = optarg;
                         break;
+                case OPT_CEILING:
+                        closedDomeCeilingFile = optarg;
+                        break;
                 default:
                         return Fork::processOption (opt);
         }
@@ -656,6 +675,12 @@ int D50::init ()
 	{
 		decZero *= -1.0;
 		// swap values which are opposite for south hemispehere
+	}
+
+	if (closedDomeCeilingFile)
+	{
+		if (hardCeiling.loadHorizon (closedDomeCeilingFile))
+			return -1;
 	}
 
 	// TODO: mozna jeste poresit i uplne vypnuti serv? A take pridat check, jestli aktualni poloha ze serv odpovida te z cidel...
@@ -871,7 +896,7 @@ int D50::isMoving ()
                         // if difference in HA is greater than tolerance...
                         if (fabs (diffAc) > haCpd * moveTolerance->getValueDouble ())
                         {
-                                tAc = ac + USEC_SEC / 10 / 3600 / 24 * 360 * haCpd;	// setting value in advance - the sidereal tracking ("worm") will not be started sooner than in next cycle of isMoving () (the USEC_SEC / 10 corresponds to returned value below)
+                                tAc = ac + 1/10 / 3600 * 15 * haCpd;	// setting value in advance - the sidereal tracking ("worm") will not be started sooner than in next cycle of isMoving () (the 1/10s corresponds to returned value below)
                                 raDrive->setTargetPos (tAc);
 				return USEC_SEC / 10;
                         }
@@ -1412,6 +1437,12 @@ double D50::checkPassage (int32_t fromAC, int32_t fromDC, int32_t toAC, int32_t 
 #endif
 	double fullMovementTime, inspectionTime;
 	int32_t posAC, posDC;
+	bool checkSunDistance;
+
+	if ((getMasterState () & SERVERD_STATUS_MASK) == SERVERD_NIGHT)
+		checkSunDistance = false;
+	else
+		checkSunDistance = true;
 
 	fullMovementTime = computeFullMovementTime (fromAC, fromDC, toAC, toDC, initSpeedAC, initSpeedDC);
 
@@ -1422,7 +1453,7 @@ double D50::checkPassage (int32_t fromAC, int32_t fromDC, int32_t toAC, int32_t 
 #ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "------ checkPassage () fromAC/fromDC: " << fromAC << "/" << fromDC << ", toAC:toDC " << toAC << "/" << toDC << ", posAC/posDC: " << posAC << "/" << posDC << ", inspectionTime: " << inspectionTime << sendLog;
 #endif
-		if (!checkRawPosition (posAC, posDC))
+		if (!checkRawPosition (posAC, posDC, checkSunDistance, domeIsClosed->getValueBool ()))
 			return -1.0 * inspectionTime;
 	}
 
@@ -1455,7 +1486,7 @@ int32_t D50::computeMovement (int isDec, int32_t fromCount, int32_t toCount, dou
 		return toCount;
 	}
 
-	double v_max, a1, a2;
+	double v_max, a1, a2, v_physmax;
 
 	if (moveTurboSwitch->getValueBool ())	// first get current maxspeed in degrees/s, we will convert it to counts/s later
 		v_max = moveSpeedTurbo->getValueDouble ();
@@ -1466,15 +1497,20 @@ int32_t D50::computeMovement (int isDec, int32_t fromCount, int32_t toCount, dou
 	if (isDec == 0)		// i.e. this all relates to RA axis
 	{
 		v_max = v_max * fabs (haCpd);
+		v_physmax = raDrive->getPhysicalSpeedLimit () * (double) SERVO_COUNTS_PER_ROUND;
 		a1 = raDrive->getAccel () * (double) SERVO_COUNTS_PER_ROUND;
 		a2 = raDrive->getDecel () * (double) SERVO_COUNTS_PER_ROUND;
 	}
 	else			// i.e. this all relates to Dec axis
 	{
 		v_max = v_max * fabs (decCpd);
+		v_physmax = decDrive->getPhysicalSpeedLimit () * (double) SERVO_COUNTS_PER_ROUND;
 		a1 = decDrive->getAccel () * (double) SERVO_COUNTS_PER_ROUND;
 		a2 = decDrive->getDecel () * (double) SERVO_COUNTS_PER_ROUND;
 	}
+
+	if (v_max > v_physmax)
+		v_max = v_physmax;
 
 	double T_ramp1, T_ramp2;
 	int32_t S_ramp1, S_ramp2, S_const, movementDirection;
@@ -1544,7 +1580,7 @@ int32_t D50::computeMovement (int isDec, int32_t fromCount, int32_t toCount, dou
 	return toCount;
 }
 
-int D50::checkRawPosition (int32_t AC, int32_t DC)
+int D50::checkRawPosition (int32_t AC, int32_t DC, bool checkSunDistance, bool checkCeiling)
 {
 #ifdef DEBUG_BRUTAL
 	logStream (MESSAGE_DEBUG) << "****** checkRawPosition ()" << sendLog;
@@ -1560,7 +1596,31 @@ int D50::checkRawPosition (int32_t AC, int32_t DC)
 	logStream (MESSAGE_DEBUG) << "------ checkRawPosition () ac/dc: " << AC << "/" << DC << ", ra0/dec: " << equPosition.ra << "/" << equPosition.dec << ", alt/az: " << hrzPosition.alt << "/" << hrzPosition.az << sendLog;
 #endif
 
-	return hardHorizon.is_good (&hrzPosition);
+	if (!hardHorizon.is_good (&hrzPosition))
+		return 0;
+
+	if (checkCeiling)
+	{
+#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "------ checkRawPosition () checkCeiling"  << sendLog;
+#endif
+		if (hardCeiling.is_good (&hrzPosition))		// !!! we use the "horizon" object, but need a ceiling test, so the logic is reversed
+			return 0;
+	}
+	else if (checkSunDistance)
+	{
+		double JD;
+		struct ln_equ_posn eq_sun;
+		JD = ln_get_julian_from_sys ();
+		ln_get_solar_equ_coords (JD, &eq_sun);
+		equPosition.ra = equPosition.ra + ln_get_mean_sidereal_time (JD)*15.0 + observerLongLat.lng;
+#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "------ checkRawPosition () angular distance to Sun: " << ln_get_angular_separation (&eq_sun, &equPosition) << ", ra/dec: " << equPosition.ra << "/" << equPosition.dec << sendLog;
+#endif
+		if (ln_get_angular_separation (&eq_sun, &equPosition) < SUN_AVOID_DISTANCE)
+			return 0;
+	}
+	return 1;
 }
 
 int D50::remotesGetMCRegister (rts2core::ConnREMOTES * connRem, unsigned char * mcReg)
