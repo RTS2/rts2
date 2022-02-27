@@ -229,6 +229,10 @@ Image::Image (const char *in_expression, int in_expNum, const struct timeval *in
 
 	createImage (expandPath (in_expression), _overwrite);
 	writeExposureStart ();
+
+	setValue ("CCD_NAME", in_connection->getName (), "camera name");
+
+	setEnvironmentalValues ();
 }
 
 Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart, const char *expand_path, bool overwrite):FitsFile (in_exposureStart)
