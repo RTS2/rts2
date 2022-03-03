@@ -2839,7 +2839,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
-		return startPark (conn);
+		return (startPark (conn) >= 0) ? 0 : -1;
 	}
 	else if (conn->isCommand ("stop"))
 	{
