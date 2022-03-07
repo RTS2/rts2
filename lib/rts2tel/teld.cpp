@@ -2220,6 +2220,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (std::isnan (oriRaDec->getRa ()) || std::isnan (oriRaDec->getDec ()))
 	{
 		logStream (MESSAGE_ERROR) << "cannot move, null RA or DEC " << oriRaDec->getRa () << " " << oriRaDec->getDec () << sendLog;
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "null RA or DEC");
 		return -1;
 	}
 
@@ -2325,7 +2327,9 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "failure calling stopMove before starting actual movement" << sendLog;
-			return ret;
+			if (conn)
+				conn->sendCommandEnd (DEVDEM_E_HW, "stopMove failed");
+			return -1;
 		}
 	}
 
@@ -2410,7 +2414,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
-		return ret;
+		return -1;
 	}
 
 	targetStarted->setNow ();
@@ -2445,7 +2449,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	setIdleInfoInterval (refreshSlew->getValueDouble ());
 
-	return ret;
+	return 0;
 }
 
 int Telescope::setTo (rts2core::Connection * conn, double set_ra, double set_dec)
@@ -2473,6 +2477,8 @@ int Telescope::startPark (rts2core::Connection * conn)
 	if (blockMove->getValueBool () == true)
 	{
 		logStream (MESSAGE_ERROR) << "Telescope parking blocked" << sendLog;
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "telescope move blocked");
 		return -1;
 	}
 	int ret;
@@ -2484,7 +2490,9 @@ int Telescope::startPark (rts2core::Connection * conn)
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "failure calling stopMove before starting parking" << sendLog;
-			return ret;
+			if (conn)
+				conn->sendCommandEnd (DEVDEM_E_HW, "stopMove error");
+			return -1;
 		}
 	}
 	useParkFlipping = true;
@@ -2499,6 +2507,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
 		logStream (MESSAGE_ERROR) << "parking failed" << sendLog;
+		return -1;
 	}
 	else
 	{
@@ -2521,7 +2530,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 
 	setIdleInfoInterval (refreshSlew->getValueDouble ());
 
-	return ret;
+	return 0;
 }
 
 int Telescope::getFlip ()
@@ -2752,10 +2761,11 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		ret = setTo (conn, tarRaDec->getRa (), tarRaDec->getDec ());
-		if (ret)
-			return DEVDEM_E_PARAMSVAL;
-		corrRaDec->setValueRaDec (0, 0);
-		wcorrRaDec->setValueRaDec (0, 0);
+		if (!ret)
+		{
+			corrRaDec->setValueRaDec (0, 0);
+			wcorrRaDec->setValueRaDec (0, 0);
+		}
 		return ret;
 	}
 	else if (conn->isCommand ("correct"))
@@ -2839,14 +2849,22 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
-		return (startPark (conn) >= 0) ? 0 : -1;
+		return startPark (conn);
 	}
 	else if (conn->isCommand ("stop"))
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		stopTracking ("tracking stopped");
-		return stopMove ();
+		ret = stopMove ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "failure calling stopMove" << sendLog;
+			if (conn)
+				conn->sendCommandEnd (DEVDEM_E_HW, "stopMove failed");
+			return -1;
+		}
+		return 0;
 	}
 	else if (conn->isCommand ("change"))
 	{
