@@ -747,7 +747,7 @@ int GXCCD::commandAuthorized (rts2core::Connection * conn)
 		int nclear;
 		if (conn->paramNextDouble (&pref_time) || conn->paramNextInteger (&nclear) || !conn->paramEnd ())
 			return -2;
-		return clearCCD (pref_time, nclear);
+		return clearCCD (pref_time, nclear) == 0 ? 0 : DEVDEM_E_HW;
 	}
 	return Camera::commandAuthorized (conn);
 }

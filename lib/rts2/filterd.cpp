@@ -195,7 +195,7 @@ int Filterd::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return homeFilter ();
+		return homeFilter () == 0 ? 0 : DEVDEM_E_HW;
 	}
 	else if (conn->isCommand ("help"))
 	{

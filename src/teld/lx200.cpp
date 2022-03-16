@@ -113,9 +113,9 @@ int LX200::commandAuthorized (rts2core::Connection *conn)
 	else if (conn->isCommand ("track"))
 	{
 		if (hasAstroPhysicsExtensions)
-			return serConn->writePort (":RT2#", 5);
+			return serConn->writePort (":RT2#", 5) == 0 ? 0 : DEVDEM_E_HW;
 		else
-			return serConn->writePort (":TQ#", 4);
+			return serConn->writePort (":TQ#", 4) == 0 ? 0 : DEVDEM_E_HW;
 	}
 	else if (conn->isCommand ("shutdown"))
 	{

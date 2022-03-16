@@ -1109,8 +1109,6 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 			if (ret)
 				failed++;
 		}
-		if (failed != 0)
-			return -2;
 		return failed == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("queue_at"))
@@ -1210,7 +1208,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 	{
 		char *imgn;
 		if (conn->paramNextString (&imgn) || !conn->paramEnd ())
-			return -1;
+			return -2;
 		rts2image::Image image;
 		image.openFile (imgn, false, true);
 		postEvent (new rts2core::Event (EVENT_WRITE_ONLY_IMAGE, (void *) &image));

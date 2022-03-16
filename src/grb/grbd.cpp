@@ -333,7 +333,7 @@ int Grbd::commandAuthorized (rts2core::Connection * conn)
 		int tar_id;
 		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
 			return -2;
-		return newGcnGrb (tar_id);
+		return newGcnGrb (tar_id) == 0 ? 0 : DEVDEM_E_HW;
 	}
 	return DeviceDb::commandAuthorized (conn);
 }
