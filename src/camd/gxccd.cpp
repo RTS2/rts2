@@ -680,6 +680,15 @@ int GXCCD::reinitCamera ()
 		return -1;
 	}
 
+	ret = gxccd_set_filter (camera, camFilterVal->getValueFloat ());
+	if (ret)
+	{
+		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
+		logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set filter: " << gx_err << sendLog;
+		raiseHWError ();
+		return -1;
+	}
+
 	logStream (MESSAGE_WARNING) << "reinitialization succeeded" << sendLog;
 
 	clearHWError ();
@@ -702,6 +711,7 @@ int GXCCD::commandAuthorized (rts2core::Connection * conn)
 	{
 		int nfilters = gxccd_reset_filters (camera);
 		logStream (MESSAGE_INFO) << "GXCCD::resetFilters " << nfilters << sendLog;
+		gxccd_set_filter (camera, camFilterVal->getValueFloat ());
 
 		return 0;
 	}
