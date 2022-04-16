@@ -33,6 +33,7 @@
 #define OPT_RAINDET_VARIABLE    OPT_LOCAL + 346
 
 #define READSENSOR_MINIMAL_REQUEST_PERIOD	3.0	// in seconds
+#define COMMPROBLEMS_COUNT_MAX			2
 
 namespace rts2sensord
 {
@@ -103,6 +104,7 @@ class Cloud2: public SensorWeather
 		rts2core::ValueBool *measurementBoost;
 
 		double lastReadSensorTime;
+		int commProblemsCount;
 
 		/**
 		 * Check rain state from external rain sensor.
@@ -118,6 +120,8 @@ class Cloud2: public SensorWeather
 
 		/**
 		 * Perform measurement of sky. Measure temperature in azimuth/alt: East/45, 90 (zenith), West/45.
+		 *
+		 * @return -1 when raining, -2 if there are comm or parsing problems, 0 for success.
 		 */
 		int measureSky (bool update);
 };
@@ -188,8 +192,6 @@ int Cloud2::readSensor (bool update)
 	tempIn->calculate ();
 	tempGround->calculate ();
 
-	usleep (USEC_SEC / 4);
-
 	return 0;
 }
 
@@ -208,9 +210,9 @@ int Cloud2::measureSky (bool update)
 	// check the device, it's fast and easy to do it this way
 	ret = readSensor (false);
 	if (ret < 0)
-		return ret;
+		return -2;
 
-	usleep (USEC_SEC / 4);
+	usleep (USEC_SEC);
 
 	// There is a small chance the device is not properly parked before 
 	// measurement (wind, ...), readSensor () isn't taking care of it. It 
@@ -218,7 +220,7 @@ int Cloud2::measureSky (bool update)
 	// measurement prior the main measuring procedure to take care of it:
 	ret = mrakConn->writeRead ("0", 1, buf, 50, '\n');
 	if (ret < 0)
-		return ret;
+		return -2;
 
 	buf_start = buf;
 
@@ -226,15 +228,15 @@ int Cloud2::measureSky (bool update)
 	{
 		buf[ret] = '\0';
 		logStream (MESSAGE_ERROR) << "measureSky (): error in command '0', reply was: '" << buf << "'" << sendLog;	
-		return -1;
+		return -2;
 	}
 
-	usleep (USEC_SEC / 4);
+	usleep (USEC_SEC);
 
 	// OK, now the real measurement
 	ret = mrakConn->writeRead ("m", 1, buf, 80, '\n');
 	if (ret < 0)
-		return ret;
+		return -2;
 	buf[ret] = '\0';
 
 	buf_start = buf;
@@ -247,7 +249,7 @@ int Cloud2::measureSky (bool update)
 	if (x != 9) 
 	{
 		logStream (MESSAGE_ERROR) << "measureSky (): cannot parse reply from cloud sensor, reply was: '" << buf << "', return " << x << sendLog;
-		return -1;
+		return -2;
 	}
 
 	if (update == false)
@@ -406,6 +408,8 @@ Cloud2::Cloud2 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	rainDetectorDevice = NULL;
 	rainDetectorVariable = NULL;
 
+	commProblemsCount = 0;
+
 	setIdleInfoInterval (10);
 
 	addTimer (measurementIntervalActual->getValueInteger (), new rts2core::Event (EVENT_CLOUD_MEASUREMENT, this));
@@ -463,7 +467,12 @@ void Cloud2::postEvent (rts2core::Event * event)
 				else
 				{
 					int ret = measureSky (true);
-					if (ret != 0)
+					if (ret == -2)
+						commProblemsCount++;
+					else
+						commProblemsCount = 0;
+
+					if (ret == -1 || commProblemsCount > COMMPROBLEMS_COUNT_MAX)
 					{
 						// it's raining or the device is not working properly...
 						tempDiff->setValueDouble (NAN);
