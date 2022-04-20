@@ -36,7 +36,7 @@ if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
 		fi
 		echo -n "starting centrald on port $centrald_port .. "
 		if [ $localstart == 0 ]; then
-			$RTS2_BIN_PREFIX/rts2-centrald $centrald_options >>$RTS2_LOG 2>&1
+			eval $RTS2_BIN_PREFIX/rts2-centrald $centrald_options >>$RTS2_LOG 2>&1
 			started=$?
 			if [ $started == 255 ]; then
 				echo "already running"
@@ -48,7 +48,7 @@ if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
 			fi
 		else
 			echo "rts2-centrald $extraargs $centrald_options"
-			$RTS2_BIN_PREFIX/rts2-centrald $extraargs $centrald_options
+			eval $RTS2_BIN_PREFIX/rts2-centrald $extraargs $centrald_options
 		fi
 		started=$?
 		if [ $started == 255 ]; then
@@ -71,7 +71,7 @@ while read device type device_name options; do
 	if [ "x$device_name" == "x$name" -o "x$name" == "xall" ]; then
 		echo -n "starting device $device_name .. "
 		if [ $localstart == 0 ]; then
-			$RTS2_BIN_PREFIX/rts2-$device-$type -d $device_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+			eval $RTS2_BIN_PREFIX/rts2-$device-$type -d $device_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
 			res=$?
 			if [ $res == 255 ]; then
 				echo "already running"
@@ -83,7 +83,7 @@ while read device type device_name options; do
 			fi
 		else
 			echo "rts2-$device-$type $extraargs -d $device_name $options $CENTRALD_OPTIONS"
-			$RTS2_BIN_PREFIX/rts2-$device-$type $extraargs -d $device_name $options $CENTRALD_OPTIONS
+			eval $RTS2_BIN_PREFIX/rts2-$device-$type $extraargs -d $device_name $options $CENTRALD_OPTIONS
 		fi
 		res=$?
 		if [ $res == 255 ]; then
@@ -101,7 +101,7 @@ while read service service_name options; do
 	if [ "x$service_name" == "x$name" -o "x$name" == "xall" ]; then
 		echo -n "starting  service $service_name .. "
 		if [ $localstart == 0 ]; then
-			$RTS2_BIN_PREFIX/rts2-$service -d $service_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+			eval $RTS2_BIN_PREFIX/rts2-$service -d $service_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
 			res=$?
 			if [ $res == 255 ]; then
 				echo "already running"
@@ -113,7 +113,7 @@ while read service service_name options; do
 			fi
 		else
 			echo "rts2-$service $extraargs -d $service_name $options $CENTRALD_OPTIONS"
-			$RTS2_BIN_PREFIX/rts2-$service $extraargs -d $service_name $options $CENTRALD_OPTIONS
+			eval $RTS2_BIN_PREFIX/rts2-$service $extraargs -d $service_name $options $CENTRALD_OPTIONS
 		fi
 		res=$?
 		if [ $res == 255 ]; then
