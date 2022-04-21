@@ -132,7 +132,7 @@ class WindRS:public SensorWeather
 		rts2core::ValueFloat *windDir;
 
 		rts2core::ValueFloat *windLimitAvg;
-
+		rts2core::ValueFloat *windTimeout;
 };
 
 }
@@ -150,7 +150,10 @@ WindRS::WindRS (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (windAvg, "WIND_AVG", "[m/s] average wind speed over last N minutes", false);
 	createValue (windDir, "WIND_DIR", "wind direction (deg)", false, RTS2_DT_DEGREES);
 	createValue (windLimitAvg, "AVG_LIMIT", "[m/s]maximum safe average windspeed", false, RTS2_VALUE_WRITABLE);
-	windLimitAvg->setValueFloat(LUDICROUS_SPEED);
+	windLimitAvg->setValueFloat (LUDICROUS_SPEED);
+
+	createValue (windTimeout, "timeout", "timeout for bad weather", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	windTimeout->setValueFloat (300);
 
 	addOption ('f', NULL, 1, "serial port (usually /dev/ttyUSBx)");
 	addOption (OPT_LIMIT_AVG, "avg-limit", 1, "limit (m/s) for average wind.");
@@ -317,7 +320,7 @@ bool WindRS::isGoodWeather ()
 {
 	if (windAvg->getValueFloat () > windLimitAvg->getValueFloat ())
 	{
-		setWeatherTimeout (WINDRS_WEATHER_TIMEOUT, "Wind speed above limit");
+		setWeatherTimeout (windTimeout->getValueDouble (), "Wind speed above limit");
 		return false;
 	}
 	return SensorWeather::isGoodWeather ();
