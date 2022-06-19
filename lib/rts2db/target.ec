@@ -112,6 +112,9 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 	jd = jd_start;
 	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
 	{
+		if (!checkConstraints (jd))
+			continue;
+
 		getAltAz (&hrz, jd);
 		if (format_output)
 			old_fill = _os.fill ('0');
