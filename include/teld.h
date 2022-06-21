@@ -568,7 +568,7 @@ class Telescope:public rts2core::Device
 		 *
 		 * @see moveAltAz()
 		 */
-		void setTargetAltAz (double alt, double az) { telAltAz->setValueAltAz (alt, az); }
+		void setTargetAltAz (double alt, double az) { tarAltAz->setValueAltAz (alt, az); }
 
 		/**
 		 * Return target position. This is equal to ORI[RA|DEC] +
@@ -743,6 +743,18 @@ class Telescope:public rts2core::Device
 		 * @param jd  Julian date for which position will be calculated.
 		 */
 		void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+
+		/**
+		 * Returns ALT AZ coordinates of previously set "ALTAZ" target (only returns coordinates, stored in tarAltAz variable).
+		 * Don't confuse this with getTargetAltAz (), which really recomputes coordinates of the current target stored in OBJ.
+		 *
+		 * @param hrz ALT AZ coordinates of target.
+		 */
+		void getTarAltAz (struct ln_hrz_posn *hrz)
+		{
+			hrz->alt = tarAltAz->getAlt ();
+			hrz->az = tarAltAz->getAz ();
+		}
 
 		double getTargetHa ();
 		double getTargetHa (double jd);
@@ -1296,7 +1308,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Target HRZ coordinates.
 		 */
-		struct ln_hrz_posn tarAltAz;
+		rts2core::ValueAltAz *tarAltAz;
 
 		/**
 		 * Target HRZ coordinates with corrections applied.

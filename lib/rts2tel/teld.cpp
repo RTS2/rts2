@@ -228,6 +228,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	}
 
 	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
+	createValue (tarAltAz, "TAR_ALTAZ", "target position when set in horizontal coordinates", true, RTS2_VALUE_WRITABLE);
 
 	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	corrRaDec->setValueRaDec (0, 0);
@@ -274,7 +275,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 			break;
 	}
 
-	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true, RTS2_VALUE_WRITABLE);
+	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true);
 
 	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set)", false, RTS2_VALUE_WRITABLE);
 	createValue (mpec_refresh, "mpec_refresh", "refresh MPEC ra_diff and dec_diff every mpec_refresh seconds", false, RTS2_VALUE_WRITABLE);
@@ -435,7 +436,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	addOption ('r', NULL, 1, "telescope rotang");
 	addOption (OPT_HORIZON, "horizon", 1, "telescope hard horizon");
-	addOption (OPT_CORRECTION, "max-correction", 1, "correction limit (in arcsec)");
+	addOption (OPT_CORRECTION, "max-correction", 1, "correction limit (in degrees)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z,-)");
 	addOption (OPT_DEC_UPPER_LIMIT, "dec-upper-limit", 1, "maximal declination the telescope is able to point to");
 	addOption (OPT_DUT1_USNO, "dut1-filename", 1, "filename of USNO DUT1 offset file");
@@ -793,6 +794,7 @@ void Telescope::calculateCorrAltAz ()
 {
 	struct ln_equ_posn equ_target;
 	struct ln_equ_posn equ_corr;
+	struct ln_hrz_posn targetAltAz;
 
 	struct ln_lnlat_posn observer;
 
@@ -809,14 +811,17 @@ void Telescope::calculateCorrAltAz ()
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
 
+	targetAltAz.alt = tarAltAz->getAlt ();
+	targetAltAz.az = tarAltAz->getAz ();
+
 	double ast = ln_get_apparent_sidereal_time(jd);
 
-	ln_get_hrz_from_equ_sidereal_time (&equ_target, &observer, ast, &tarAltAz);
+	ln_get_hrz_from_equ_sidereal_time (&equ_target, &observer, ast, &targetAltAz);
 
 	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
 	{
-		corrAltAz.alt = tarAltAz.alt;
-		corrAltAz.az = tarAltAz.az;
+		corrAltAz.alt = targetAltAz.alt;
+		corrAltAz.az = targetAltAz.az;
 	}
 	else
 	{
@@ -831,7 +836,7 @@ double Telescope::getCorrZd ()
 
 	calculateCorrAltAz ();
 
-	return corrAltAz.alt - tarAltAz.alt;
+	return corrAltAz.alt - tarAltAz->getAlt ();
 }
 
 double Telescope::getCorrAz ()
@@ -841,7 +846,7 @@ double Telescope::getCorrAz ()
 
 	calculateCorrAltAz ();
 
-	return tarAltAz.az - corrAltAz.az;
+	return tarAltAz->getAz () - corrAltAz.az;
 }
 
 double Telescope::getTargetDistance ()
@@ -1037,6 +1042,7 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 	if (changed_value == oriRaDec)
 	{
 		mpec->setValueString ("");
+		tarAltAz->setValueAltAz (NAN, NAN);
 		startResyncMove (NULL, 0);
 	}
 	if (changed_value == mpec)
@@ -1048,7 +1054,7 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 	{
 		startOffseting (changed_value);
 	}
-	if (changed_value == telAltAz)
+	if (changed_value == tarAltAz)
 	{
 		moveAltAz ();
 	}
@@ -1426,6 +1432,7 @@ int Telescope::initValues ()
 #endif
 	modelRaDec->setValueRaDec (0, 0);
 	telTargetRaDec->setFromValue (telRaDec);
+	tarAltAz->setValueAltAz (NAN, NAN);
 
 	if (wcs_crval1 && wcs_crval2)
 	{
@@ -2340,6 +2347,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		setOri (NAN, NAN);
 		objRaDec->setValueRaDec (NAN, NAN);
 		tarRaDec->setValueRaDec (NAN, NAN);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		stopMove ();
 		stopTracking (NULL);
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
@@ -2359,6 +2367,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			setOri (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			tarRaDec->setValueRaDec (NAN, NAN);
+			tarAltAz->setValueAltAz (NAN, NAN);
 			stopMove ();
 			stopTracking (NULL);
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
@@ -2474,6 +2483,11 @@ int Telescope::setToPark (rts2core::Connection * conn)
 
 int Telescope::startPark (rts2core::Connection * conn)
 {
+	if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
+	{
+		return 0;	// the "park" command could easily be repeated, e.g. by dome in some cases
+	}
+
 	if (blockMove->getValueBool () == true)
 	{
 		logStream (MESSAGE_ERROR) << "Telescope parking blocked" << sendLog;
@@ -2520,6 +2534,8 @@ int Telescope::startPark (rts2core::Connection * conn)
 			telTargetRaDec->resetValueChanged ();
 			oriRaDec->setValueRaDec (NAN, NAN);
 			oriRaDec->resetValueChanged ();
+			tarAltAz->setValueAltAz (NAN, NAN);
+			tarAltAz->resetValueChanged ();
 		}
 
 		incMoveNum ();
@@ -2594,7 +2610,12 @@ int Telescope::peek (double ra, double dec)
 int Telescope::moveAltAz ()
 {
 	struct ln_hrz_posn hrz;
-	telAltAz->getAltAz (&hrz);
+	tarAltAz->getAltAz (&hrz);
+	if (std::isnan (hrz.alt) || std::isnan (hrz.az))
+	{
+		logStream (MESSAGE_ERROR) << "cannot move, null Alt or Az" << sendLog;
+		return -1;
+	}
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
@@ -2620,6 +2641,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		setOri (obj_ra, obj_dec);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2634,6 +2656,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		setOri (obj_ra, obj_dec, 2000.0, pmRa / 3600.0, pmDec / 3600.0);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2649,6 +2672,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 		modelOn ();
 		setOri (obj_ra, obj_dec, epoch, 0, 0);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2666,6 +2690,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 		modelOn ();
 		setOri (obj_ra, obj_dec, epoch, pmRa / 3600.0, pmDec / 3600.0);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2681,6 +2706,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		obj_ra = getLocSidTime (JD) * 15.0 - obj_ha;
 
 		setOri (obj_ra, obj_dec);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2694,6 +2720,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		modelOff ();
 		setOri (obj_ra, obj_dec);
+		tarAltAz->setValueAltAz (NAN, NAN);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2707,6 +2734,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&str) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
+		tarAltAz->setValueAltAz (NAN, NAN);
 		mpec->setValueString (str);
 		std::string desc;
 		if (LibnovaEllFromMPC (&mpec_orbit, desc, str))
@@ -2730,7 +2758,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
-		telAltAz->setValueAltAz (obj_ra, obj_dec);
+		tarAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE (conn->isCommand (COMMAND_TELD_ALTAZ_NC));
 		stopTracking ("stop tracking while in AltAz");
 		return moveAltAz () == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
