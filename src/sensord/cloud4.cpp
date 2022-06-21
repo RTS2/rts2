@@ -376,7 +376,7 @@ int Cloud4::init ()
 		return ret;
 
 	mrakConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 10);
-	mrakConn->setDebug ();
+	mrakConn->setDebug (getDebug ());
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;

@@ -337,7 +337,7 @@ int AWSmlab::initHardware ()
 	}
 
 	AWSConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 10);
-	AWSConn->setDebug ();
+	AWSConn->setDebug (getDebug ());
 	int ret = AWSConn->init ();
 	if (ret)
 		return ret;
