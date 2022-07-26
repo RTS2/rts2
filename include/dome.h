@@ -23,6 +23,10 @@
 #include "device.h"
 
 #define DEF_WEATHER_TIMEOUT 10
+#define DEF_CENTRALD_CONTACT_TIMEOUT 10
+#define DEF_INITIAL_SETTLE_TIME 12
+
+#define EVENT_DOMECLOSE_RETRY		RTS2_LOCAL_EVENT + 402
 
 /**
  * Dome, copulas and roof controllers.
@@ -41,12 +45,14 @@ class Dome:public rts2core::Device
 		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME, bool inhibit_auto_close = false);
 		virtual ~Dome ();
 
+		virtual void postEvent (rts2core::Event * event);
+
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		/**
-		 * Increases ignore timeout by given amount of seconds.
+		 * Set ignore timeout to given amount of seconds from now
 		 *
-		 * @param _ignore_time  Seconds by which a timeout will be increased.
+		 * @param _ignore_time  Seconds of timeout from now
 		 */ 
 		void setIgnoreTimeout (time_t _ignore_time);
 
@@ -174,6 +180,13 @@ class Dome:public rts2core::Device
 		rts2core::ValueString *stateMaster;
 
 		bool closeFailReported;
+
+		double centraldLastContactTime;
+
+		rts2core::ValueTime *closeRepeatTimeAfterPark;
+
+		// this is for not to close the dome right after the daemon initialization, so the connections have time to settle down
+		double initialSettleTime;
 };
 
 }

@@ -66,8 +66,6 @@ namespace rts2dome
 class Bart:public Ford
 {
 	private:
-		unsigned char spinac[2];
-
 		int handle_zasuvky (int zas);
 
 		time_t domeTimeout;
@@ -354,10 +352,10 @@ int Bart::info ()
 	ret = zjisti_stav_portu ();
 	if (ret)
 		return -1;
-	sw_state->setValueInteger (!getPortState (KONCAK_OTEVRENI_JIH));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (SMER) << 1));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (KONCAK_ZAVRENI_JIH) << 2));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (MOTOR) << 3));
+	sw_state->setValueInteger ((!getPortState (KONCAK_OTEVRENI_JIH))
+		| (!getPortState (SMER) << 1)
+		| (!getPortState (KONCAK_ZAVRENI_JIH) << 2)
+		| (!getPortState (MOTOR) << 3));
 	domeMotorPower->setValueBool (getPortState (MOTOR));
 	domeMotorDirection->setValueInteger (getPortState (SMER));
 	domeSouthSwitchOpened->setValueInteger (getPortState (KONCAK_OTEVRENI_JIH));

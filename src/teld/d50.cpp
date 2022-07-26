@@ -1,6 +1,7 @@
 /* 
  * Driver for Ondrejov, Astrolab D50 scope.
  * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2010-2022 Jan Strobl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,29 +29,27 @@
 #include "libnova_cpp.h"
 
 
-#define OPT_RA                OPT_LOCAL + 2201
-#define OPT_DEC               OPT_LOCAL + 2202
-#define OPT_CEILING           OPT_LOCAL + 2203
+#define OPT_RA				OPT_LOCAL + 2201
+#define OPT_DEC				OPT_LOCAL + 2202
+#define OPT_CEILING			OPT_LOCAL + 2203
+#define OPT_DOME_DEVICE			OPT_LOCAL + 2204
+#define OPT_DOME_OPENSWITCH_VARIABLE	OPT_LOCAL + 2205
 
-#define RTS2_D50_TIMER_GUIDE_RA    RTS2_LOCAL_EVENT + 1210
-#define RTS2_D50_TIMER_GUIDE_DEC    RTS2_LOCAL_EVENT + 1211
+#define RTS2_D50_TIMER_GUIDE_RA		RTS2_LOCAL_EVENT + 1210
+#define RTS2_D50_TIMER_GUIDE_DEC	RTS2_LOCAL_EVENT + 1211
 
-#define RTS2_D50_AUTOSAVE   RTS2_LOCAL_EVENT + 1212
-#define RTS2_D50_BOOSTSPEED   RTS2_LOCAL_EVENT + 1213
-#define RTS2_D50_SUCCESSIVE_POINTS   RTS2_LOCAL_EVENT + 1214
+#define RTS2_D50_AUTOSAVE		RTS2_LOCAL_EVENT + 1212
+#define RTS2_D50_BOOSTSPEED		RTS2_LOCAL_EVENT + 1213
+#define RTS2_D50_SUCCESSIVE_POINTS	RTS2_LOCAL_EVENT + 1214
 
-// steps per full RA and DEC revolutions (360 degrees)
-//#define RA_TICKS                 (-14350 * 65535)
-//#define DEC_TICKS                (-10400 * 65535)
 // config pro D50:
-//#define DEC_TRANSMISION              2000
-#define RA_TRANSMISION                2304
-// 24.11.2020 menime prevodovku 1:10 na 1:20, kolo ma 200 zubu
-#define DEC_TRANSMISION                4000
 #define SERVO_COUNTS_PER_ROUND	65536
-#define RA_TICKS               (-2304 * 65536)
-//#define DEC_TICKS            (2000 * 65536)
-#define DEC_TICKS              (4000 * 65536)
+#define RA_TRANSMISION		2304
+// 24.11.2020 menime prevodovku 1:10 na 1:20, kolo ma 200 zubu
+#define DEC_TRANSMISION		4000
+// steps per full RA and DEC revolutions (360 degrees)
+#define RA_TICKS		(-2304 * 65536)
+#define DEC_TICKS		(4000 * 65536)
 
 #define RAGSTEP			1000
 #define DEGSTEP			1000
@@ -104,6 +103,7 @@ class D50:public Fork
 		virtual void usage ();
 		virtual int processOption (int in_opt);
 		virtual int init ();
+		//virtual void beforeRun ();
 		virtual int info ();
 		virtual int idle ();
 
@@ -127,6 +127,7 @@ class D50:public Fork
 		virtual int getHomeOffset (int32_t & off);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 	private:
 		int runD50 ();
 
@@ -304,9 +305,21 @@ class D50:public Fork
 
 		const char *closedDomeCeilingFile;		// ceiling "horizon" file (for closed dome)
 		ObjectCheck hardCeiling;
-		rts2core::ValueBool *domeIsClosed;
+		rts2core::ValueBool *insideDomeOnlyMovement;
 
 		struct ln_lnlat_posn observerLongLat;		// we use this many times and Longitude/Latitude is constant for us, so...
+
+		// variables willConnect () will use, for direct communication with dome (and ensuring the dome is really open)
+		const char *domeDevice;
+		const char *domeDeviceOpenswitchVariable;
+		rts2core::ValueBool *disableDomeOpenCheck;
+
+		/**
+		* Get info from (external) dome device.
+		*
+		* @return zero (0) when the dome is open (i.e., the openswitch is triggered), -1 if an error occur, 1 otherwise
+		*/
+		int getDomeState ();
 };
 
 };
@@ -405,6 +418,9 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 
 	addOption (OPT_CEILING, "ceiling", 1, "telescope hard ceiling (anti-horizon) when the dome is closed");
 
+	addOption (OPT_DOME_DEVICE, "dome_device", 1, "name of dome device [DOME]");
+	addOption (OPT_DOME_OPENSWITCH_VARIABLE, "dome-openswitch-variable", 1, "name of variable in dome, which holds the dome-open info [roof_open]");
+
 	addParkPosOption ();
 
 	createValue (remotesMotorsPower, "remotes_motors_power", "el. power to both motors", false);
@@ -437,8 +453,13 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 
 	closedDomeCeilingFile = NULL;
 
-	createValue (domeIsClosed, "dome_closed", "dome-closed switch (limits movement of telescope)", false, RTS2_VALUE_WRITABLE);
-	domeIsClosed->setValueBool (false);
+	createValue (insideDomeOnlyMovement, "inside_dome_limit", "limit movement of the telescope to the inside-dome space, also enables closing of the dome", false, RTS2_VALUE_WRITABLE);
+	insideDomeOnlyMovement->setValueBool (false);
+
+	createValue (disableDomeOpenCheck, "disable_domeopen_check", "disable checking the dome's endswitch (requirement for movement)", false, RTS2_VALUE_WRITABLE);
+	disableDomeOpenCheck->setValueBool (false);
+	domeDevice = "DOME";
+	domeDeviceOpenswitchVariable = "roof_opened";
 
 #ifndef RTS2_LIBERFA
 	// apply all corrections by rts2 for mount
@@ -567,10 +588,25 @@ int D50::processOption (int opt)
                 case OPT_CEILING:
                         closedDomeCeilingFile = optarg;
                         break;
+                case OPT_DOME_DEVICE:
+                        domeDevice = optarg;
+                        break;
+                case OPT_DOME_OPENSWITCH_VARIABLE:
+                        domeDeviceOpenswitchVariable = optarg;
+                        break;
                 default:
                         return Fork::processOption (opt);
         }
         return 0;
+}
+
+int D50::willConnect (rts2core::NetworkAddress * in_addr)
+{
+	if (in_addr->getType () == DEVICE_TYPE_DOME && in_addr->isAddress (domeDevice)) {
+		logStream (MESSAGE_DEBUG) << "D50::willConnect to DEVICE_TYPE_DOME: "<< domeDevice << sendLog;
+		return 1;
+	}
+	return Fork::willConnect (in_addr);
 }
 
 int D50::init ()
@@ -689,6 +725,14 @@ int D50::init ()
 
 	return 0;
 }
+
+/* - finally, it looks like it's not needed, but I'll keep it here yet, for now at least.
+void D50::beforeRun ()
+{
+	// this is because we need to have initialized the mount's positional values, primarily because of the initial changeMasterState () checks...
+	info ();
+	Telescope::info ();
+}*/
 
 int D50::info ()
 {
@@ -825,6 +869,35 @@ int D50::startResync ()
 
 	int retFP;
 	int32_t dc;
+
+	if (!disableDomeOpenCheck->getValueBool ())
+	{
+		if (getDomeState ())		// when DOME is not fully open or not reachable (AND domeopen_check is not disabled), limit the movement of the telescope to the "inside dome" space (only if we already are in this area - as setting this variable insideDomeOnlyMovement also implies the roof closing can start!)
+		{
+			logStream (MESSAGE_DEBUG) << "****** startResync () - domestate bad, limit the movement" << sendLog;
+			struct ln_hrz_posn hrpos;
+			hrpos.alt = telAltAz->getAlt ();
+			hrpos.az = telAltAz->getAz ();
+			//logStream (MESSAGE_DEBUG) << "****** getTelRa (): " << getTelRa () << ", getTelDec (): " << getTelDec () << sendLog;
+			//logStream (MESSAGE_DEBUG) << "****** hrpos.alt: " << hrpos.alt << ", hrpos.az: " << hrpos.az << sendLog;
+			if (hardCeiling.is_good (&hrpos))	// !!! we use the "horizon" object, but need a ceiling test, so the logic is reversed
+			{
+				logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "Something is PRETTY WRONG!!! The dome is not open (or responding) and we are not below ceiling... Aborting movement (including park attempts)! It you insist, you can set the 'disable_domeopen_check' to on." << sendLog;
+				return -1;
+			}
+			if (!remotesAbsEncDegDifferenceIgnore->getValueBool () && (remotesAbsEncDegDifference->getRa () > remotesAbsEncDegDifferenceLimit->getValueDouble () || remotesAbsEncDegDifference->getDec () > remotesAbsEncDegDifferenceLimit->getValueDouble ()))
+			{
+				logStream (MESSAGE_ERROR) << "The dome is not open, which would normaly lead to a movement within the inside_dome limits. But the position from ABS encoders differs too much, so we rather cancel the movement... You can use the 'ignore_remotes_abs_encoder_difference' switch for bypass." << sendLog;
+				return -1;
+			}
+			insideDomeOnlyMovement->setValueBool (true);
+		}
+		else
+		{
+			insideDomeOnlyMovement->setValueBool (false);
+			logStream (MESSAGE_DEBUG) << "****** startResync () - domestate good" << sendLog;
+		}
+	}
 
 	retFP = findPath ();
 	if (retFP < 0)
@@ -1086,6 +1159,7 @@ int D50::endPark ()
 	logStream (MESSAGE_DEBUG) << "****** endPark ()" << sendLog;
 #endif
         //callAutosave ();
+
         parking = false;
 	setWormPressureLimiter (false);
 	setWormStepsGenerator (false);
@@ -1094,7 +1168,28 @@ int D50::endPark ()
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	//setTimeout (USEC_SEC * 10);
 	setTimeout (USEC_SEC);
-	//TODO: pridat check, jestli informace z ABS (a inc?) cidel odpovida poloze!
+
+	struct ln_hrz_posn hrpos;
+	hrpos.alt = telAltAz->getAlt ();
+	hrpos.az = telAltAz->getAz ();
+	if (hardCeiling.is_good (&hrpos))	// !!! we use the "horizon" object, but need a ceiling test, so the logic is reversed
+	{
+		logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "THE DOME WILL NOT BE CLOSED, EMERGENCY INTERVENTION NECESSARY!!! Reason: the telescope has parked, but it's position prevents to close the dome." << sendLog;
+		return -1;
+	}
+
+	// we don't refresh the remotesAbsEncDegDifference values, it's made within the "info ()" function (it's called every 1s during the movement).
+	if (!remotesAbsEncDegDifferenceIgnore->getValueBool () && (remotesAbsEncDegDifference->getRa () > 10.0 || remotesAbsEncDegDifference->getDec () > 6.0))	// we set this VERY loose, we do not want to obstruct dome-closing, unless it's really necessary
+	{
+		logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "THE DOME WILL NOT BE CLOSED, EMERGENCY INTERVENTION NECESSARY!!! Reason: the telescope has parked (according to the servos), but the position from ABS sensors differs too much... You can use the 'ignore_remotes_abs_encoder_difference' switch to bypass this check." << sendLog;
+		return -1;
+	}
+	else
+	{
+		insideDomeOnlyMovement->setValueBool (true);
+		sendValueAll (insideDomeOnlyMovement);		// to let the DOME know we will not cross it's border :-) so the roof can be closed
+	}
+
 	usleep (USEC_SEC * 2);
 	raDrive->sleep ();
 	decDrive->sleep ();
@@ -1300,6 +1395,26 @@ int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	{
 		return setWormStepsFreq (new_value->getValueDouble ());
 	}
+	else if (old_value == insideDomeOnlyMovement)
+	{
+		if (new_value->getValueInteger ())
+		{
+			struct ln_hrz_posn hrpos;
+			hrpos.alt = telAltAz->getAlt ();
+			hrpos.az = telAltAz->getAz ();
+			if (hardCeiling.is_good (&hrpos))	// !!! we use the "horizon" object, but need a ceiling test, so the logic is reversed
+			{
+				logStream (MESSAGE_ERROR) << "Cannot limit movement to 'inside dome', while not being in this area!" << sendLog;
+				return -2;
+			}
+			if (!remotesAbsEncDegDifferenceIgnore->getValueBool () && (remotesAbsEncDegDifference->getRa () > remotesAbsEncDegDifferenceLimit->getValueDouble () || remotesAbsEncDegDifference->getDec () > remotesAbsEncDegDifferenceLimit->getValueDouble ()))
+			{
+				logStream (MESSAGE_ERROR) << "Cannot limit movement to 'inside dome', the position from ABS encoders differs too much... If you insist, use the 'ignore_remotes_abs_encoder_difference' switch." << sendLog;
+				return -2;
+			}
+		}
+		return 0;
+	}
 
         int ret = raDrive->setValue (old_value, new_value);
         if (ret != 1)
@@ -1453,7 +1568,7 @@ double D50::checkPassage (int32_t fromAC, int32_t fromDC, int32_t toAC, int32_t 
 #ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "------ checkPassage () fromAC/fromDC: " << fromAC << "/" << fromDC << ", toAC:toDC " << toAC << "/" << toDC << ", posAC/posDC: " << posAC << "/" << posDC << ", inspectionTime: " << inspectionTime << sendLog;
 #endif
-		if (!checkRawPosition (posAC, posDC, checkSunDistance, domeIsClosed->getValueBool ()))
+		if (!checkRawPosition (posAC, posDC, checkSunDistance, insideDomeOnlyMovement->getValueBool ()))
 			return -1.0 * inspectionTime;
 	}
 
@@ -1793,6 +1908,54 @@ int D50::setWormStepsFreq (double freq)
 		return 0;
 	}
 	return -1;
+}
+
+int D50::getDomeState ()
+{
+	rts2core::Connection *connDome = NULL;
+	rts2core::Value *tmpValue = NULL;
+
+	logStream (MESSAGE_DEBUG) << "getDomeState: A1" << sendLog;
+	connDome = getOpenConnection (domeDevice);
+	if (connDome == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "getDomeState: device connection error!" << sendLog;
+		return -1;
+	}
+        if (connDome->getConnState () != CONN_AUTH_OK && connDome->getConnState () != CONN_CONNECTED)
+	{
+		logStream (MESSAGE_ERROR) << "getDomeState: device connection not ready!" << sendLog;
+		return -1;
+	}
+
+	logStream (MESSAGE_DEBUG) << "getDomeState: A2" << sendLog;
+	tmpValue = connDome->getValue ("infotime");
+	if (tmpValue == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "getDomeState: infotime is NULL..." << sendLog;
+		return -1;
+	}
+	if (getNow () - tmpValue->getValueDouble () > 12.0)
+	{
+		logStream (MESSAGE_ERROR) << "getDomeState: infotime too old: " << getNow () - tmpValue->getValueDouble () << "s" << sendLog;
+		return -1;
+	}
+
+	logStream (MESSAGE_DEBUG) << "getDomeState: A3" << sendLog;
+	tmpValue = NULL;
+	tmpValue = connDome->getValue (domeDeviceOpenswitchVariable);
+	if (tmpValue == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "getDomeState: wrong openswitch variable name?" << sendLog;
+		return -1;
+	}
+	logStream (MESSAGE_DEBUG) << "getDomeState: A4" << sendLog;
+	if (tmpValue->getValueInteger () == 1)
+	{
+		return 0;	// dome is fully open!
+	}
+	logStream (MESSAGE_DEBUG) << "getDomeState: A5" << sendLog;
+	return 1; // dome is closed or not fully open
 }
 
 int D50::updateWormStepsFreq (bool updateAlsoTargetFreq)
