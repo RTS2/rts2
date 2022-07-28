@@ -183,7 +183,7 @@ class Dome:public rts2core::Device
 
 		double centraldLastContactTime;
 
-		rts2core::ValueTime *closeRepeatTimeAfterPark;
+		rts2core::ValueDouble *closeRepeatTimeAfterPark;
 
 		// this is for not to close the dome right after the daemon initialization, so the connections have time to settle down
 		double initialSettleTime;
