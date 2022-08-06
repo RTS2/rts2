@@ -909,7 +909,7 @@ Constraint *Constraints::createConstraint (const char *name)
 	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
 		return new ConstraintLunarDistance ();
 	else if (!strcmp (name, CONSTRAINT_LALTITUDE))
-		return new ConstraintLunarDistance ();
+		return new ConstraintLunarAltitude ();
 	else if (!strcmp (name, CONSTRAINT_LPHASE))
 		return new ConstraintLunarPhase ();
 	else if (!strcmp (name, CONSTRAINT_SDISTANCE))
