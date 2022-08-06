@@ -28,7 +28,7 @@ XML file, which should match schema from constraint.xsd file. The
 structure of the constraint file is described in the following text.
 Usually constraint is a set of intervals specifying allowed values for
 given variable/observable. You can check value of most variables on target
-information page, or looking from output of linkman:rts2-targetinfo[7] 
+information page, or looking from output of linkman:rts2-targetinfo[7]
 -e command (executed with -e option).
 
 There is an example **constraints**
@@ -78,7 +78,7 @@ Intervals always use or logic - e.g. if interval for airmass is specified as:
 	</interval>
 </airmass>
 ----
-      
+
 the object airmass should be either lower then 2.0, or between 2.5 and
 3.0. Object observing constraints will be violated if the object airmass
 is between 2.5 and 2.0, or lower then 3.0. The use of the _on logic_ is also demonstrated in time interval above.
@@ -98,9 +98,13 @@ satisfied.
 
 * **HA** Allowed hour angle in units of degrees [0, +/-180]. Hour angle 0 is
   at local meridian (e.g. when the object is at the highest
-  altitude), and is 180 (or -180) 12 hours after that. 
+  altitude), and is 180 (or -180) 12 hours after that.
 
-* **dec** Allowed declination in units of degrees [0, +/-90]. 
+* **dec** Allowed declination in units of degrees [0, +/-90].
+
+* **altitude** Allowed altitude of the object.
+
+* **azimuth** Allowed azimuth of the object.
 
 * **lunarDistance** Angular distance between object and moon center.
 
@@ -126,4 +130,3 @@ AUTHOR
 ------
 
 Petr Kubanek <petr@rts2.org>
-
