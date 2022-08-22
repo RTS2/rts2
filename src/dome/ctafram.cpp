@@ -1,5 +1,5 @@
 /*
- * Driver for CTA FRAM controll.
+ * Driver for CTA FRAM control.
  * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2021 Ronan Cunniffe <ronan@cunniffe.net>
  *
@@ -18,6 +18,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/* Open Source OPC UA licensed under the MPL v2.0 */
+/* https://github.com/open62541/open62541 */
+/* http://www.open62541.org */
 #include <open62541/client_config_default.h>
 #include <open62541/client_highlevel.h>
 #include <open62541/client_subscriptions.h>
@@ -32,6 +35,7 @@
 #define EVENT_PINGMOUNT   RTS2_LOCAL_EVENT + 1352 // 1351 is used (*FIXME*)
 
 #define DEFAULT_DEADMAN_TIMEOUT_S   10
+#define OPENING_DEADMAN_TIMEOUT_S   1 // Value used for opening
 #define DEFAULT_COOLDOWN_LOCKOUT_S  1200 // Heat dissipation
 
 // *FIXME* new opts
@@ -44,7 +48,7 @@
 #define OPT_NO_POWER               OPT_LOCAL + 408
 #define OPT_DONT_RESTART_OPENING   OPT_LOCAL + 409
 #define OPT_COOLDOWN               OPT_LOCAL + 410
-
+#define OPT_REMOTE                 OPT_LOCAL + 411
 
 // Read-write parameters (ns=4)
 #define DEADMAN_TIMEOUT                "ns=4;i=2"
@@ -68,12 +72,12 @@
 
 /* These exist, but are not used by this driver
 #define SECOND_SIREN_TONE              "ns=4;i=18"
+*/
 #define REMOTE_REQUEST_LEFT_OPEN       "ns=4;i=20"
 #define REMOTE_REQUEST_LEFT_CLOSE      "ns=4;i=21"
 #define REMOTE_REQUEST_RIGHT_OPEN      "ns=4;i=23"
 #define REMOTE_REQUEST_RIGHT_CLOSE     "ns=4;i=24"
-#define SCARY_REMOTE                   "ns=4;i=25"// master enable of the 4 raw cmds.
-*/
+#define EMERGENCY_REMOTE               "ns=4;i=25"// master enable of the 4 raw cmds.
 
 // Read-only parameters ("ns=5)"
 #define OIL_LEVEL                      "ns=5;i=2"
@@ -109,7 +113,9 @@
 #define TIMEOUT_L                      "ns=5;i=8"
 #define TIMEOUT_R                      "ns=5;i=9"
 #define TIMEOUT_ACCUM_VALUE            "ns=5;i=10"
+*/
 #define BTN_DEADMAN                    "ns=5;i=23"
+/*
 #define SWITCH_O/C                     "ns=5;i=26"
 #define TIMEOUT_ACTIVE                 "ns=5;i=30"
 #define BATTERY_ON                     "ns=5;i=33"
@@ -125,7 +131,6 @@
 
 namespace rts2dome
 {
-
 
 /**
  * Driver for CTA FRAM dome.
@@ -224,6 +229,8 @@ class CTA_Fram:public Dome
         rts2core::ValueBool *battery_fault;
         rts2core::ValueBool *battery_low;
 
+        rts2core::ValueBool *btn_deadman;
+
 		/* Overview */
         rts2core::ValueBool *motor_on;
         rts2core::ValueString *right_roof;
@@ -253,6 +260,13 @@ class CTA_Fram:public Dome
         rts2core::ValueBool *remote_mode;// false = local/manual
         rts2core::ValueBool *raw_remote;// scary mode (*no* safety - doors can collide)
         rts2core::ValueBool *site_lockdown;
+
+		bool remote_enabled; /* Whether to expose raw remote controls */
+        rts2core::ValueBool *emergency_remote;
+        rts2core::ValueBool *remote_left_open;
+        rts2core::ValueBool *remote_left_close;
+        rts2core::ValueBool *remote_right_open;
+        rts2core::ValueBool *remote_right_close;
 };
 
 }
@@ -491,11 +505,21 @@ bool CTA_Fram::isGoodWeather ()
 		valueGood (battery_low);
 	}
 
+	if (!btn_deadman->getValueBool ())
+	{
+		valueError (btn_deadman);
+		setWeatherTimeout (30, "Btn Deadman is not set");
+		return false;
+	} else {
+		valueGood (btn_deadman);
+	}
+
 	sendValueAll (accum_ok);
 	sendValueAll (oil_level_ok);
 	sendValueAll (mains_ok);
 	sendValueAll (battery_fault);
 	sendValueAll (battery_low);
+	sendValueAll (btn_deadman);
 
 	if (remote_mode->getValueBool () == false)
 	{
@@ -575,9 +599,10 @@ int CTA_Fram::startClose ()
 	// logStream (MESSAGE_INFO) << "Starting to close." << sendLog;
 
 	// *FIXME* check we're actually open....
-	opcua_set_byte (DEADMAN_TIMEOUT, 1);  // force the close.  When heartbeat timer expires, it will start closing
+	opcua_set_byte (DEADMAN_TIMEOUT, OPENING_DEADMAN_TIMEOUT_S);  // force the close.  When heartbeat timer expires, it will start closing
 
-	setWeatherTimeout (cooldownSecs->getValueInteger (), "closed, timeout for opening (to allow dissipate motor heat)");
+	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
+		setWeatherTimeout (cooldownSecs->getValueInteger (), "closed, timeout for opening (to allow dissipate motor heat)");
 
 	return 0;
 }
@@ -635,9 +660,16 @@ int CTA_Fram::commandAuthorized (rts2core::Connection * conn)
 
 	if (conn->isCommand ("reset_emergency"))
 	{
+		/* error_reset works only in emergency remote mode */
+		opcua_set_bool(EMERGENCY_REMOTE, true);
+		usleep (USEC_SEC / 2);
+
 		opcua_set_bool(ERROR_RESET, true);
 		usleep (USEC_SEC / 2);
 		opcua_set_bool(ERROR_RESET, false);
+		usleep (USEC_SEC / 2);
+
+		opcua_set_bool(EMERGENCY_REMOTE, false);
 
 		logStream (MESSAGE_INFO) << "emergency reset switch toggled on/off" << sendLog;
 
@@ -674,6 +706,9 @@ int CTA_Fram::processOption (int in_opt)
 		case OPT_COOLDOWN: // *FIXME* need to make sure this is actually written the PLC
 			cooldownSecs->setValueInteger (atoi (optarg));
 			sendValueAll(cooldownSecs);
+			break;
+		case OPT_REMOTE:
+			remote_enabled = true;
 			break;
 		default:
 			return Dome::processOption (in_opt);
@@ -718,8 +753,6 @@ CTA_Fram::CTA_Fram (int argc, char **argv):Dome (argc, argv)
 	cooldownSecs->setValueInteger(DEFAULT_COOLDOWN_LOCKOUT_S);
 	sendValueAll(cooldownSecs);
 
-
-
 	Q1 = NULL;
 	Q2 = NULL;
 	Q3 = NULL;
@@ -741,6 +774,9 @@ CTA_Fram::CTA_Fram (int argc, char **argv):Dome (argc, argv)
 	left_state_bits = right_state_bits = 0;
 
 	client = NULL;
+
+	addOption (OPT_REMOTE, "remote", 0, "whether to expose raw remote controls");
+	remote_enabled = false;
 }
 
 
@@ -858,6 +894,12 @@ int CTA_Fram::info ()
 		sendValueAll (battery_low);
 	}
 
+	if (opcua_get_bool (BTN_DEADMAN, b) == 0)
+	{
+		btn_deadman->setValueBool (b);
+		sendValueAll (btn_deadman);
+	}
+
 	if (opcua_get_bool (WEATHER_OK, b) == 0)
 	{
 		weather_ok->setValueBool (b);
@@ -873,6 +915,12 @@ int CTA_Fram::info ()
 	if (opcua_get_bool (SCARY_REMOTE, b) == 0)
 	{
 		raw_remote->setValueBool (b);
+
+		if (b)
+			valueError (raw_remote);
+		else
+			valueGood (raw_remote);
+
 		sendValueAll (raw_remote);
 	}
 
@@ -906,7 +954,9 @@ int CTA_Fram::info ()
 		sendValueAll (roof_timeout_R);
 	}
 
-	if (opcua_get_int (DEADMAN_TIMEOUT, i) == 0)
+	/* We should ignore DEADMAN_TIMEOUT value used during the opening */
+	/* FIXME: Zelio driver does not read this value from PLC at all - should we?.. */
+	if (opcua_get_int (DEADMAN_TIMEOUT, i) == 0 && i != OPENING_DEADMAN_TIMEOUT_S)
 	{
 		deadman_timeout->setValueInteger (i);
 		sendValueAll (deadman_timeout);
@@ -933,6 +983,45 @@ int CTA_Fram::info ()
 		sendValueAll (oil_level);
 	}
 
+	// raw remote controls
+	if (remote_enabled)
+	{
+		if (opcua_get_bool (EMERGENCY_REMOTE, b) == 0)
+		{
+			emergency_remote->setValueBool (b);
+
+			if (b)
+				valueError (emergency_remote);
+			else
+				valueGood (emergency_remote);
+
+			sendValueAll(emergency_remote);
+		}
+
+		if (opcua_get_bool (REMOTE_REQUEST_LEFT_OPEN, b) == 0)
+		{
+			remote_left_open->setValueBool (b);
+			sendValueAll(remote_left_open);
+		}
+
+		if (opcua_get_bool (REMOTE_REQUEST_LEFT_CLOSE, b) == 0)
+		{
+			remote_left_close->setValueBool (b);
+			sendValueAll(remote_left_close);
+		}
+
+		if (opcua_get_bool (REMOTE_REQUEST_RIGHT_OPEN, b) == 0)
+		{
+			remote_right_open->setValueBool (b);
+			sendValueAll(remote_right_open);
+		}
+
+		if (opcua_get_bool (REMOTE_REQUEST_RIGHT_CLOSE, b) == 0)
+		{
+			remote_right_close->setValueBool (b);
+			sendValueAll(remote_right_close);
+		}
+	}
 
 	return Dome::info ();
 }
@@ -970,6 +1059,8 @@ int CTA_Fram::initHardware ()
 	createValue(ignore_bad_weather, "ignore_bad_weather", "Open even if weather_is_ok is false", false, RTS2_VALUE_WRITABLE);
 	createValue(raw_remote, "raw_remote", "Engineering mode - should not be used!", false);
 
+	createValue(btn_deadman, "btn_deadman", "Deadman Button", false);
+
 	createValue(limit_switches, "limit_switches", "'*' where door is detected (LO/LC/RC/RO)", false);
 	createValue(right_roof, "right_roof", "right roof status", false);
 	createValue(left_roof, "left_roof", "left roof status", false);
@@ -990,8 +1081,6 @@ int CTA_Fram::initHardware ()
 	createValue (timeoLeft, "timeo_left", "left timeout", false);
 	createValue (timeoRight, "timeo_right", "right timeout", false);
 
-	createValue(reset_error, "reset_error", "Reset error flag.", false, RTS2_VALUE_WRITABLE);
-
 	// *FIXME* TODO
 	//createValue(software_estop, "EMERGENCY_STOP", "Stop dome movement immediately.", false, RTS2_VALUE_WRITABLE);
 	createValue(mount_power_toggle, "mount_power_toggle", "On -> Off, or Off -> On", false, RTS2_VALUE_WRITABLE);
@@ -1011,6 +1100,20 @@ int CTA_Fram::initHardware ()
 	createValue(cabinet_temp, "cabinet_temp", "[C] Cabinet temperature.", false);
 	createValue(cabinet_temp_limit, "heater_setpoint", "[C] Cabinet heater ON setpoint", false, RTS2_VALUE_WRITABLE);
 	createValue(cabinet_heater, "cabinet_heater_on", "50W heater is running", false);
+
+	if (getDebug ())
+		/* Enable emergency remote in debug mode */
+		remote_enabled = true;
+
+	if (remote_enabled)
+	{
+		createValue(emergency_remote, "emergency_remote", "Enable raw remote control", false, RTS2_VALUE_WRITABLE);
+		createValue(reset_error, "reset_error", "Reset error flag.", false, RTS2_VALUE_WRITABLE);
+		createValue(remote_left_open, "remote_left_open", "Remote left open", false, RTS2_VALUE_WRITABLE);
+		createValue(remote_left_close, "remote_left_close", "Remote left close", false, RTS2_VALUE_WRITABLE);
+		createValue(remote_right_open, "remote_right_open", "Remote right open", false, RTS2_VALUE_WRITABLE);
+		createValue(remote_right_close, "remote_right_close", "Remote right close", false, RTS2_VALUE_WRITABLE);
+	}
 
 	right_state_bits = left_state_bits = 0;
 	int ret = info ();
@@ -1076,9 +1179,22 @@ int CTA_Fram::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == roof_timeout_R)
 		return opcua_set_byte(ROOF_TIMEOUT_RIGHT, ((rts2core::ValueInteger *) newValue)->getValueInteger());
 
+	if (remote_enabled)
+	{
+		if (oldValue == emergency_remote)
+			return opcua_set_bool (EMERGENCY_REMOTE, ((rts2core::ValueBool *) newValue)->getValueBool ());
+		if (oldValue == remote_left_open)
+			return opcua_set_bool (REMOTE_REQUEST_LEFT_OPEN, ((rts2core::ValueBool *) newValue)->getValueBool ());
+		if (oldValue == remote_left_close)
+			return opcua_set_bool (REMOTE_REQUEST_LEFT_CLOSE, ((rts2core::ValueBool *) newValue)->getValueBool ());
+		if (oldValue == remote_right_open)
+			return opcua_set_bool (REMOTE_REQUEST_RIGHT_OPEN, ((rts2core::ValueBool *) newValue)->getValueBool ());
+		if (oldValue == remote_right_close)
+			return opcua_set_bool (REMOTE_REQUEST_RIGHT_CLOSE, ((rts2core::ValueBool *) newValue)->getValueBool ());
+	}
+
 	return Dome::setValue (oldValue, newValue);
 }
-
 
 int CTA_Fram::updateRoofHalf(rts2core::Value *door, char &old_state, char new_state,
 							 const char *opening_node, const char *closing_node, const char *timedout_node)
