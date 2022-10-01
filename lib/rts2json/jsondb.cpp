@@ -436,6 +436,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			case TYPE_TERESTIAL:
 			case TYPE_AUGER:
 			case TYPE_LANDOLT:
+			case TYPE_ELLIPTICAL:
 			{
 				rts2db::ConstTarget *tar = (rts2db::ConstTarget *) t;
 
@@ -445,25 +446,34 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 					tar->setTargetName (tn);
 				}
 
-				if (params->hasParam ("ra") && params->hasParam ("dec"))
+				if (t->getTargetType () != TYPE_ELLIPTICAL)
 				{
-					double ra = params->getDouble ("ra", -1000);
-					double dec = params->getDouble ("dec", -1000);
-					tar->setPosition (ra, dec);
-				}
-
-				if (params->hasParam ("pm_ra") && params->hasParam ("pm_dec"))
-				{
-					double pm_ra = params->getDouble ("pm_ra", NAN);
-					double pm_dec = params->getDouble ("pm_dec", NAN);
-					switch (tar->getTargetType ())
+					if (params->hasParam ("ra") && params->hasParam ("dec"))
 					{
-						case TYPE_CALIBRATION:
-						case TYPE_OPORTUNITY:
-							((rts2db::ConstTarget *) (tar))->setProperMotion (pm_ra, pm_dec);
-							break;
-						default:
-							throw XmlRpc::JSONException ("only calibration and oportunity targets can have proper motion");
+						double ra = params->getDouble ("ra", -1000);
+						double dec = params->getDouble ("dec", -1000);
+						tar->setPosition (ra, dec);
+					}
+
+					if (params->hasParam ("pm_ra") && params->hasParam ("pm_dec"))
+					{
+						double pm_ra = params->getDouble ("pm_ra", NAN);
+						double pm_dec = params->getDouble ("pm_dec", NAN);
+						switch (tar->getTargetType ())
+						{
+							case TYPE_CALIBRATION:
+							case TYPE_OPORTUNITY:
+								((rts2db::ConstTarget *) (tar))->setProperMotion (pm_ra, pm_dec);
+								break;
+							default:
+								throw XmlRpc::JSONException ("only calibration and oportunity targets can have proper motion");
+						}
+					}
+
+					if (params->hasParam ("info"))
+					{
+						const char *info = params->getString ("info", NULL);
+						tar->setTargetInfo (std::string (info));
 					}
 				}
 
@@ -488,12 +498,6 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 					double priority = params->getInteger ("priority", 0);
 
 					tar->setTargetPriority (priority);
-				}
-
-				if (params->hasParam ("info"))
-				{
-					const char *info = params->getString ("info", NULL);
-					tar->setTargetInfo (std::string (info));
 				}
 
 				tar->save (true);
