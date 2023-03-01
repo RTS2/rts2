@@ -314,14 +314,14 @@ class FlatScript (scriptcomm.Rts2Comm):
         self.setValue('exposure', self.exptime)
         self.setValue('SHUTTER', 'LIGHT')
         img = self.exposure(self.beforeReadout)
-	self.log("I", "IMG name is {}".format(img))
-	#to_dataserver(img)
+        self.log("I", "IMG name is {}".format(img))
+        #to_dataserver(img)
         # Calculate average of image (can be just the central
         # 100x100pix if you want to speed up)
         time.sleep(1)
         self.sendCommand("info")
         avrg = self.getValueFloat('average')
-	self.log("I", "avrg = {}".format(avrg))
+        self.log("I", "avrg = {}".format(avrg))
         ratio = (avrg - self.biasLevel) / self.optimalFlat
         ret = None
         expMulti = 1

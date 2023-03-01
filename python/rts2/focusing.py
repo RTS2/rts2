@@ -130,12 +130,12 @@ class Focusing (scriptcomm.Rts2Comm):
 
 		if fit == LINEAR:
 			b = (self.linear_fit_fwhm - self.fwhm_poly[0]) / self.fwhm_poly[1]
-	        elif fit == H3:
-		        b = self.fwhm_poly[2]
+		elif fit == H3:
+			b = self.fwhm_poly[2]
 			self.log('I', 'found minimum FWHM: {0}'.format(abs(self.fwhm_poly[0])))
 			self.log('I', 'found slope at infinity: {0}'.format(abs(self.fwhm_poly[1])))
-	        elif fit == H2:
-		        b = self.fwhm_poly[1]
+		elif fit == H2:
+			b = self.fwhm_poly[1]
 			self.log('I', 'found minimum FWHM: {0}'.format(abs(self.fwhm_poly[0])))
 		else:
 			b = optimize.fmin(fitfunc_r,self.fwhm_MinimumX,args=(self.fwhm_poly), disp=0)[0]
@@ -259,7 +259,7 @@ class Focusing (scriptcomm.Rts2Comm):
 		self.current_focus = None
 
 		for self.num in range(1,self.attempts+1):
-		  	self.log('I','starting {0}s exposure on offset {1}'.format(self.exptime,self.off))
+			self.log('I','starting {0}s exposure on offset {1}'.format(self.exptime,self.off))
 			img = self.exposure(self.beforeReadout,'%b/focusing/%N/%o/%f')
 			tries[self.current_focus] = img
 
