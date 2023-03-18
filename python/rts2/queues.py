@@ -40,7 +40,7 @@ class Queues:
 
 	def from_xml(self, node, queues=None):
 		for qu in node.getElementsByTagName('queue'):
-		  	qname = qu.getAttribute('name')
+			qname = qu.getAttribute('name')
 			if queues is not None and not(qname in queues):
 				continue
 			q = queue.Queue(self.jsonProxy, qname)

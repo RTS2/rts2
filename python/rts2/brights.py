@@ -54,10 +54,10 @@ def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None, 
 		return None, None, None, None
 	# remove all "stars" below threshold
 	if pix_treshold is not None:
-	        s_new = []
+		s_new = []
 		for o in s_objects:
 			if o['tnpix'] >= pix_treshold:
-			    s_new.append(o)
+				s_new.append(o)
 		if len(s_new) == 0:
 			return None, None, None, None
 
