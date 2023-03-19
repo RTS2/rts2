@@ -56,7 +56,7 @@ class Sextractor:
 		return self.fields.index(fieldname)
 
 	def runSExtractor(self,filename):
-	    	pf,pfn = tempfile.mkstemp()
+		pf,pfn = tempfile.mkstemp()
 		ofd,output = tempfile.mkstemp()
 		pfi = os.fdopen(pf,'w')
 		for f in self.fields:
@@ -78,7 +78,7 @@ class Sextractor:
 		self.objects = []
 		of = os.fdopen(ofd,'r')
 		while (True):
-		 	x=of.readline()
+			x=of.readline()
 			if self.verbose:
 				print(x, end=' ')
 			if x == '':
@@ -86,7 +86,7 @@ class Sextractor:
 			if x[0] == '#':
 				continue
 			self.objects.append(list(map(float,x.split())))
-	
+
 		# unlink tmp files
 		pfi.close()
 		of.close()
@@ -95,8 +95,8 @@ class Sextractor:
 		os.unlink(output)
 
 	def sortObjects(self,col):
-	        """Sort objects by given collumn."""
-	    	self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
+		"""Sort objects by given collumn."""
+		self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
 
 	def reverseObjects(self,col):
 		"""Reverse sort objects by given collumn."""
@@ -115,7 +115,7 @@ class Sextractor:
 		except ValueError as ve:
 			print('result does not contain CLASS_STAR')
 			traceback.print_exc()
-	
+
 	def get_FWHM_stars(self,starsn=None,filterGalaxies=True,segments=None):
 		"""Returns candidate stars for FWHM calculations. """
 		if len(self.objects) == 0:
@@ -165,8 +165,8 @@ class Sextractor:
 			i_fwhm = self.get_field('FWHM_IMAGE')
 			import numpy
 			fwhms = [x[i_fwhm] for x in obj]
- 			return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
- 		#	return numpy.average(obj), len(obj)
+			return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
+		#	return numpy.average(obj), len(obj)
 		except ValueError as ve:
 			traceback.print_exc()
 			raise Exception('cannot find FWHM_IMAGE value')

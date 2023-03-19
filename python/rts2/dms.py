@@ -38,7 +38,7 @@ def parse(strin):
 		elif x >= '0' and x <= '9':
 			if fraction >= 1:
 				subres = fraction*subres + int(x)
-	  			fraction*=10
+				fraction*=10
 			else:
 				subres = subres + int(x)*fraction
 				fraction/=10
