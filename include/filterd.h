@@ -52,6 +52,8 @@ class Filterd:public rts2core::Device
 		virtual int info ();
 		virtual int scriptEnds ();
 
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
+
 		int setFilterNum (rts2core::Connection * conn, int new_filter);
 
 		virtual int homeFilter ();
@@ -86,6 +88,8 @@ class Filterd:public rts2core::Device
 		rts2core::ValueSelection *filter;
 		rts2core::ValueSelection *defaultFilter;
 		const char *arg_defaultFilter;
+		rts2core::ValueSelection *daytimeFilter;
+		const char *arg_daytimeFilter;
 
 		int setFilterNumMask (int new_filter);
 };

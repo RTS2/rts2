@@ -32,6 +32,9 @@
 #define OPT_RAINDET_DEVICE      OPT_LOCAL + 345
 #define OPT_RAINDET_VARIABLE    OPT_LOCAL + 346
 
+#define READSENSOR_MINIMAL_REQUEST_PERIOD	3.0	// in seconds
+#define COMMPROBLEMS_COUNT_MAX			2
+
 namespace rts2sensord
 {
 
@@ -100,6 +103,8 @@ class Cloud2: public SensorWeather
 		rts2core::ValueBool *measureDuringDay;
 		rts2core::ValueBool *measurementBoost;
 
+		double lastReadSensorTime;
+
 		/**
 		 * Check rain state from external rain sensor.
 		 *
@@ -114,6 +119,8 @@ class Cloud2: public SensorWeather
 
 		/**
 		 * Perform measurement of sky. Measure temperature in azimuth/alt: East/45, 90 (zenith), West/45.
+		 *
+		 * @return -1 when raining, -2 if there are comm or parsing problems, 0 for success.
 		 */
 		int measureSky (bool update);
 };
@@ -126,15 +133,29 @@ int Cloud2::readSensor (bool update)
 {
 	int ret;
 	char buf[1024];
-	ret = mrakConn->writeRead (heater->getValueBool () ? "h" : "f", 1, buf, 50, '\r');
+
+	if (getNow () - lastReadSensorTime < READSENSOR_MINIMAL_REQUEST_PERIOD)
+	{
+		if (update == false)
+		{
+			// it's safe to simply skip this measurement, the acquired values are fresh enough (but the reason for this is not to poll so frequently)
+			logStream (MESSAGE_DEBUG) << "omitting the readSensor request (the interval from the last request is smaller than " << READSENSOR_MINIMAL_REQUEST_PERIOD << "s)" << sendLog;
+			return 0;
+		}
+
+		// OK, we will fulfill the gap the hard way... This should be acceptable here :-).
+		usleep (int((lastReadSensorTime - getNow () + READSENSOR_MINIMAL_REQUEST_PERIOD)*USEC_SEC));
+	}
+
+	ret = mrakConn->writeRead (heater->getValueBool () ? "h" : "f", 1, buf, 50, '\n');
 	if (ret < 0)
 		return ret;
+
+	lastReadSensorTime = getNow ();
+
 	buf[ret] = '\0';
 
 	char *buf_start = buf;
-
-	if (buf[0] == '\n')
-		buf_start++;
 
 	// Typical response:
 	// F 1773 1157 T 0
@@ -185,42 +206,41 @@ int Cloud2::measureSky (bool update)
 	if (ret != 0)
 		return ret;
 
-	// check the device, it's fast and easy do it this way
+	// check the device, it's fast and easy to do it this way
 	ret = readSensor (false);
 	if (ret < 0)
-		return ret;
+		return -2;
+
+	usleep (USEC_SEC);
 
 	// There is a small chance the device is not properly parked before 
 	// measurement (wind, ...), readSensor () isn't taking care of it. It 
 	// might be an overkill, but we will do the minimal-movement 
 	// measurement prior the main measuring procedure to take care of it:
-	ret = mrakConn->writeRead ("0", 1, buf, 50, '\r');
+	ret = mrakConn->writeRead ("0", 1, buf, 50, '\n');
 	if (ret < 0)
-		return ret;
+		return -2;
 
 	buf_start = buf;
-
-	if (buf[0] == '\n')
-		buf_start++;
 
 	if (buf_start[0] != 'S')
 	{
 		buf[ret] = '\0';
 		logStream (MESSAGE_ERROR) << "measureSky (): error in command '0', reply was: '" << buf << "'" << sendLog;	
-		return -1;
+		return -2;
 	}
 
+	usleep (USEC_SEC);
 
 	// OK, now the real measurement
-	ret = mrakConn->writeRead ("m", 1, buf, 80, '\r');
+	ret = mrakConn->writeRead ("m", 1, buf, 80, '\n');
 	if (ret < 0)
-		return ret;
+		return -2;
 	buf[ret] = '\0';
 
 	buf_start = buf;
 
-	if (buf[0] == '\n')
-		buf_start++;
+	lastReadSensorTime = getNow ();
 
 	// parse response
 	int tempInRaw1, tempInRaw2, tempInRaw3, tempInRaw4, tempOutRaw1, tempOutRaw2, tempOutRaw3, tempGroundRaw, heaterCD;
@@ -228,7 +248,7 @@ int Cloud2::measureSky (bool update)
 	if (x != 9) 
 	{
 		logStream (MESSAGE_ERROR) << "measureSky (): cannot parse reply from cloud sensor, reply was: '" << buf << "', return " << x << sendLog;
-		return -1;
+		return -2;
 	}
 
 	if (update == false)
@@ -265,9 +285,27 @@ int Cloud2::getRainState ()
 
 	connRain = getOpenConnection (rainDetectorDevice);
 	if (connRain == NULL) {
-		logStream (MESSAGE_ERROR) << "Rain detector: device not connected!" << sendLog;
+		logStream (MESSAGE_ERROR) << "Rain detector: device connection error!" << sendLog;
 		rainStateByRainDet->setValueInteger (2);
 		return -1;	// error connecting to rain detector
+	}
+
+	if (connRain->getConnState () != CONN_AUTH_OK && connRain->getConnState () != CONN_CONNECTED)
+	{
+		logStream (MESSAGE_ERROR) << "Rain detector: device connection not ready!" << sendLog;
+		return -1;
+	}
+
+	rain_tmp = connRain->getValue ("infotime");
+	if (rain_tmp == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "Rain detector: infotime is NULL..." << sendLog;
+		return -1;
+	}
+	if (getNow () - rain_tmp->getValueDouble () > 60.0)
+	{
+		logStream (MESSAGE_ERROR) << "Rain detector: infotime too old: " << getNow () - rain_tmp->getValueDouble () << "s" << sendLog;
+		return -1;
 	}
 
 	rain_tmp = connRain->getValue (rainDetectorVariable);
@@ -285,7 +323,7 @@ int Cloud2::getRainState ()
 	// It seems like there is no rain... 
 	// To add a bit more reliability, we check if the infotime of rain-sensor is sufficiently fresh.
 	rain_tmp = connRain->getValue ("infotime");
-      	if (getNow () - rain_tmp->getValueDouble () > 10.0 )
+	if (getNow () - rain_tmp->getValueDouble () > 50.0 )
 	{
 		logStream (MESSAGE_ERROR) << "Rain detector: infotime too old: " << getNow () - rain_tmp->getValueDouble () << "s" << sendLog;
 		rainStateByRainDet->setValueInteger (2);
@@ -369,7 +407,7 @@ Cloud2::Cloud2 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	rainDetectorDevice = NULL;
 	rainDetectorVariable = NULL;
 
-	setIdleInfoInterval (20);
+	setIdleInfoInterval (10);
 
 	addTimer (measurementIntervalActual->getValueInteger (), new rts2core::Event (EVENT_CLOUD_MEASUREMENT, this));
 }
@@ -409,7 +447,7 @@ void Cloud2::postEvent (rts2core::Event * event)
 			{
 				int dayStatus = getMasterState () & SERVERD_STATUS_MASK;
 				int onOffStatus = getMasterState () & SERVERD_ONOFF_MASK;
-				if (!(dayStatus == SERVERD_DUSK || dayStatus == SERVERD_NIGHT || dayStatus == SERVERD_DAWN) && measureDuringDay->getValueBool () == false)
+				if ((!(dayStatus == SERVERD_DUSK || dayStatus == SERVERD_NIGHT || dayStatus == SERVERD_DAWN)) && measureDuringDay->getValueBool () == false)
 				{
 					// not measuring, set the values to NAN
 					tempDiff->setValueDouble (NAN);
@@ -426,7 +464,28 @@ void Cloud2::postEvent (rts2core::Event * event)
 				else
 				{
 					int ret = measureSky (true);
-					if (ret != 0)
+					if (ret == -2)
+					{
+						// OK, this is because of a partially broken hardware we have now, the response is sometimes wrong...
+						// Before we will solve this the correct way, let's use this hotfix... It isn't a bad thing anyway...?
+						// We don't need to solve potential errors in other calls of this function, as they are all related to heating - and the heating is being switched of automatically by the device's internal timer.
+						int retryAttempt;
+						for ( retryAttempt = 0; retryAttempt < 5; retryAttempt ++)
+						{
+						        sleep (3);
+						        mrakConn->flushPortIO ();
+						        logStream (MESSAGE_ERROR) << "There was a problem in measureSky (), retrying..." << sendLog;
+						        ret = measureSky (true);
+						        if (!ret)
+						                break;
+						}
+						if (retryAttempt >= 5)
+						{
+						        setWeatherTimeout (60, "cannot read data from device");
+						}
+					}
+
+					if (ret == -1)
 					{
 						// it's raining or the device is not working properly...
 						tempDiff->setValueDouble (NAN);
@@ -569,6 +628,9 @@ int Cloud2::initHardware ()
 
 	if (!std::isnan (triggerGood->getValueDouble ()))
 		setWeatherState (false, "TRIGGOOD unspecified");
+
+	lastReadSensorTime = getNow () - READSENSOR_MINIMAL_REQUEST_PERIOD;
+
 	return 0;
 }
 
@@ -578,9 +640,25 @@ int Cloud2::info ()
 	ret = readSensor (true);
 	if (ret)
 	{
-		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60, "cannot read data from device");
-		return -1;
+                // OK, this is because of a partially broken hardware we have now, the response is sometimes wrong...
+                // Before we will solve this the correct way, let's use this hotfix... It isn't a bad thing anyway...?
+                // We don't need to solve potential errors in other calls of this function, as they are all related to heating - and the heating is being switched of automatically by the device's internal timer.
+                int retryAttempt;
+                for ( retryAttempt = 0; retryAttempt < 5; retryAttempt ++)
+                {
+                        sleep (3);
+                        mrakConn->flushPortIO ();
+                        logStream (MESSAGE_ERROR) << "There was a problem in readSensor (), retrying..." << sendLog;
+                        ret = readSensor (true);
+                        if (!ret)
+                                break;
+                }
+                if (retryAttempt >= 5)
+                {
+                        if (getLastInfoTime () > 60)
+                                setWeatherTimeout (60, "cannot read data from device");
+                        return -1;
+                }
 	}
 
 	if (!std::isnan (tempDiff->getValueDouble ()) && tempDiff->getNumMes () >= numVal->getValueInteger ())
@@ -624,6 +702,17 @@ int Cloud2::info ()
 	}
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();
+
+	rts2core::Connection *connRain = NULL;
+	connRain = getOpenConnection (rainDetectorDevice);
+	if (connRain == NULL) {
+		logStream (MESSAGE_ERROR) << "Rain detector: device connection error!" << sendLog;
+	}
+	else
+	{
+		connRain->queCommand (new rts2core::Command (this, COMMAND_INFO));
+	}
+
 	return SensorWeather::info ();
 }
 

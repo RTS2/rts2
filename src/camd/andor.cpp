@@ -275,7 +275,7 @@ namespace rts2camd
     int setADCMode (int mode);
 
     FILE *kinSeriesTarget = NULL;
-      rts2core::ValueString * kinFile;
+    rts2core::ValueString * kinFile;
     //char *kinFile = NULL;
     uint64_t *kinSeriesBuffer = NULL;
     uint64_t kinSeriesNumber = 0;
@@ -320,10 +320,12 @@ Andor::startExposure ()
       break;
 
     case ACQMODE_VIDEO: // video is still broken
+      kinFile->setValueCharArr ("none");
       realTimeDataTransferCount = 0;
       break;
 
     default:
+      kinFile->setValueCharArr ("none");
       realTimeDataTransferCount = -1;
       break;
     }
@@ -1843,6 +1845,8 @@ Andor::initHardware ()
   adcMode->setValueInteger (defaultADCMode);
   ret = setADCMode (defaultADCMode);
   checkRet ("initHardware()", "setADCMode()");
+
+  kinFile->setValueCharArr ("none");
 
   // added the following code to get quick updates in rts2-mon.. (SG)
   setIdleInfoInterval (2);

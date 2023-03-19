@@ -38,11 +38,15 @@ namespace rts2sensord
 class BartRain: public SensorWeather
 {
 	private:
+		int ioctlSetRead (int flagsSet, int * flagsRead);
+
 		int rain_port;
+		int flags0, flags1;
 		const char *rain_detector;
 
 		rts2core::ValueBool *rain;
 		rts2core::ValueInteger *timeoutRain;
+		rts2core::ValueInteger *timeoutTechnicalProblems;
 
 	protected:
 		virtual int processOption (int _opt);
@@ -82,60 +86,116 @@ int BartRain::init ()
 	if (ret)
 		return ret;
 	// init rain detector
-	int flags;
 	rain_port = open (rain_detector, O_RDWR | O_NOCTTY);
 	if (rain_port == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Bart::init cannot open " << rain_detector << " " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "BartRain::init cannot open " << rain_detector << " " << strerror (errno) << sendLog;
 		return -1;
 	}
-	ret = ioctl (rain_port, TIOCMGET, &flags);
+	ret = ioctl (rain_port, TIOCMGET, &flags0);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Bart::init cannot get flags: " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "BartRain::init cannot get flags: " << strerror (errno) << sendLog;
 		return -1;
 	}
-	flags &= ~TIOCM_DTR;
-	flags |= TIOCM_RTS;
-	ret = ioctl (rain_port, TIOCMSET, &flags);
+	flags0 &= ~TIOCM_DTR;
+	flags0 |= TIOCM_RTS;
+	ret = ioctl (rain_port, TIOCMSET, &flags0);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Bart::init cannot set flags: " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "BartRain::init cannot set flags: " << strerror (errno) << sendLog;
 		return -1;
 	}
+
+	// flags1 are same but reversed logic of DTR/RTS, for testing if the rain sensor is really connected
+	flags1 = flags0 | TIOCM_DTR;
+	flags1 &= ~TIOCM_RTS;
 	return 0;
 }
 
 int BartRain::info ()
 {
-	int flags;
+	int flags_actual;
 	int ret;
-	ret = ioctl (rain_port, TIOCMGET, &flags);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Bart::isGoodWeather flags: " << flags << " rain: " << (flags & TIOCM_RI) << sendLog;
-	#endif
-		// ioctl failed or it's raining..
-	if (ret || !(flags & TIOCM_RI))
+
+	// first, try the "standard" setup, DTR off, RTS on
+	ret = ioctlSetRead (flags0, &flags_actual);
+	if (!ret)
 	{
-		setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
-		if (!rain->getValueBool ())
+		if (flags_actual & TIOCM_RI)	// it's raining (this also implies the device is really connected!)
 		{
-			rain->setValueBool (true);
-			maskState (WR_RAIN, WR_RAIN, "rain detected from rain sensor");
-			setIdleInfoInterval (60);
+			setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
+			if (!rain->getValueBool ())
+			{
+				rain->setValueBool (true);
+				maskState (WR_RAIN, WR_RAIN, "rain detected from rain sensor");
+				setIdleInfoInterval (60);
+			}
 		}
-	}
-	else
-	{
-		if (rain->getValueBool ())
+		else	// it isn't raining or the device is not connected (let's find out!)
 		{
-			rain->setValueBool (false);
-			maskState (WR_RAIN, 0, "no rain");
-			setIdleInfoInterval (1);
+			// let's try the "reversed" logic, DTR on, RTS off (if the RING state is reversed as well, device is connected)
+			ret = ioctlSetRead (flags1, &flags_actual);
+			if(!ret)
+			{
+				if (flags_actual & TIOCM_RI)	// in reversed logic this means the sensor is connected and dry!
+				{
+					if (rain->getValueBool ())
+					{
+						rain->setValueBool (false);
+						maskState (WR_RAIN, 0, "no rain");
+						setIdleInfoInterval (1);
+					}
+				}
+				else	// this means, the sensor device is not physically connected to the serial port
+				{
+					setWeatherTimeout (timeoutTechnicalProblems->getValueInteger (), "rain sensor not connected to serial port");
+					if (!rain->getValueBool ())
+					{
+						rain->setValueBool (true);
+						maskState (WR_RAIN, WR_RAIN, "rain sensor not connected to serial port");
+						setIdleInfoInterval (60);
+					}
+				}
+			}
 		}
 	}
 	return SensorWeather::info ();
 }
+
+
+int BartRain::ioctlSetRead (int flagsSet, int * flagsRead)
+{
+	int ret;
+	ret = ioctl (rain_port, TIOCMSET, &flagsSet);
+	if (ret)
+		logStream (MESSAGE_ERROR) << "BartRain::ioctlSetRead cannot set flags: " << strerror (errno) << sendLog;
+	else
+	{
+		usleep (USEC_SEC / 5);
+		ret = ioctl (rain_port, TIOCMGET, flagsRead);
+	}
+
+	if (ret)
+	{
+		setWeatherTimeout (timeoutTechnicalProblems->getValueInteger (), "serial port comm problem");
+		if (!rain->getValueBool ())
+		{
+			rain->setValueBool (true);
+			maskState (WR_RAIN, WR_RAIN, "serial port comm problem");
+			setIdleInfoInterval (60);
+		}
+		return -1;
+	}
+	else
+	{
+		#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "BartRain::ioctlSetRead flagsRead: " << *flagsRead << ", DTR: " << (*flagsRead & TIOCM_DTR) << ", RTS: " << (*flagsRead & TIOCM_RTS) << ", RING: " << (*flagsRead & TIOCM_RI) << sendLog;
+		#endif
+		return 0;
+	}
+}
+
 
 BartRain::BartRain (int argc, char **argv):SensorWeather (argc, argv)
 {
@@ -147,6 +207,9 @@ BartRain::BartRain (int argc, char **argv):SensorWeather (argc, argv)
 
 	createValue (timeoutRain, "timeout_rain", "rain timeout in seconds", false, RTS2_VALUE_WRITABLE);
 	timeoutRain->setValueInteger (3600);
+
+	createValue (timeoutTechnicalProblems, "timeout_technical_problems", "technical problems timeout in seconds", false, RTS2_VALUE_WRITABLE);
+	timeoutTechnicalProblems->setValueInteger (600);
 
 	addOption ('f', NULL, 1, "/dev/file for rain detector, default to /dev/ttyS0");
 	addOption ('r', NULL, 1, "rain timeout in seconds. Default to 3600 seconds (= 60 minutes = 1 hour)");

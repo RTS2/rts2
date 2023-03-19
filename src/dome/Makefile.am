@@ -1,8 +1,8 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-apm rts2-dome-fram \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
-	rts2-cupola-maxdomeii rts2-cupola-saao rts2-cupola-tcsng \
-	rts2-cupola-ddw
+	rts2-dome-d50 rts2-cupola-maxdomeii rts2-cupola-saao \
+	rts2-cupola-tcsng rts2-cupola-ddw
 
 SUBDIRS = zelio
 
@@ -31,6 +31,8 @@ rts2_dome_bootes1b_SOURCES = bootes1b.cpp
 rts2_dome_zelio_SOURCES = zelio.cpp
 
 rts2_dome_opentpl_SOURCES = opentpl.cpp
+
+rts2_dome_d50_SOURCES = d50.cpp
 
 rts2_dome_ahe_SOURCES = ahe.cpp 
 

@@ -21,6 +21,7 @@
 #include "filterd.h"
 
 #define OPT_DEFAULT_FILTER         OPT_LOCAL + 430
+#define OPT_DAYTIME_FILTER         OPT_LOCAL + 431
 
 using namespace rts2filterd;
 
@@ -29,9 +30,12 @@ Filterd::Filterd (int in_argc, char **in_argv, const char *defName):rts2core::De
 	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
 	defaultFilter = NULL;
 	arg_defaultFilter = NULL;
+	daytimeFilter = NULL;
+	arg_daytimeFilter = NULL;
 
 	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
-	addOption (OPT_DEFAULT_FILTER, "default-filter", 1, "default filter (name or number)");
+	addOption (OPT_DEFAULT_FILTER, "default-filter", 1, "default filter (name or number), automatically set in every scriptEnds"); // probably unwanted in most cases, in fact this is not a real "implicit" filter position at the moment, it simply leads to turning the wheel into this position after every observation (and it also sometimes causes an error that the first filter in script is silently replaced by this one)... TODO: this should be replaced by something much smarter, the scriptexec should use this value only when there is no filter-selection made before the first exposure...
+	addOption (OPT_DAYTIME_FILTER, "daytime-filter", 1, "daytime filter (name or number), automatically set at daytime (only)");
 }
 
 Filterd::~Filterd (void)
@@ -48,6 +52,10 @@ int Filterd::processOption (int in_opt)
 			createValue(defaultFilter, "def_filter", "default filter", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			arg_defaultFilter = optarg;
 			break;
+		case OPT_DAYTIME_FILTER:
+			createValue(daytimeFilter, "day_filter", "daytime filter", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			arg_daytimeFilter = optarg;
+			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
 	}
@@ -60,6 +68,11 @@ int Filterd::initValues ()
 	{
 		defaultFilter->copySel(filter);	
 		defaultFilter->setValueCharArr(arg_defaultFilter);
+	}
+	if (daytimeFilter && arg_daytimeFilter)
+	{
+		daytimeFilter->copySel(filter);
+		daytimeFilter->setValueCharArr(arg_daytimeFilter);
 	}
 	return rts2core::Device::initValues ();
 }
@@ -75,6 +88,14 @@ int Filterd::scriptEnds()
 	if (defaultFilter)
 		setFilterNumMask(defaultFilter->getValueInteger());
 	return rts2core::Device::scriptEnds();
+}
+
+void Filterd::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+{
+	if (daytimeFilter && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY))
+		setFilterNumMask(daytimeFilter->getValueInteger());
+
+	rts2core::Device::changeMasterState (old_state, new_state);
 }
 
 int Filterd::setFilterNum (int new_filter)
@@ -174,7 +195,7 @@ int Filterd::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return homeFilter ();
+		return homeFilter () == 0 ? 0 : DEVDEM_E_HW;
 	}
 	else if (conn->isCommand ("help"))
 	{

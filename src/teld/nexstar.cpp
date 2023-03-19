@@ -147,7 +147,7 @@ int NexStar::startResync ()
 int NexStar::moveAltAz ()
 {
 	struct ln_hrz_posn hrz;
-	telAltAz->getAltAz (&hrz);
+	getTarAltAz (&hrz);
 	setPreciseDeg ('b', hrz.az, hrz.alt);
 	maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 	return 0;

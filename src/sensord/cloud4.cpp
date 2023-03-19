@@ -125,7 +125,7 @@ int Cloud4::readSensor (bool update)
 		int x = sscanf (buf_start + 6, "%d %f %f %*d %*d *%2hhx", &tno, &temp0, &temp1, &checksum);
 		if (x != 4) 
 		{
-			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud sensor, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
 		}
 	}
@@ -376,7 +376,7 @@ int Cloud4::init ()
 		return ret;
 
 	mrakConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 10);
-	mrakConn->setDebug ();
+	mrakConn->setDebug (getDebug ());
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
@@ -394,9 +394,25 @@ int Cloud4::info ()
 	ret = readSensor (true);
 	if (ret)
 	{
-		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60, "cannot read data from device");
-		return -1;
+		// OK, this is because of a partially broken hardware we have now, the response is sometimes wrong...
+		// Before we will solve this the correct way, let's use this hotfix... It isn't a bad thing anyway...?
+		// We don't need to solve potential errors in other calls of this function, as they are all related to heating - and the heating is being switched of automatically by the device's internal timer.
+		int retryAttempt;
+		for ( retryAttempt = 0; retryAttempt < 2; retryAttempt ++)
+		{
+			sleep (3);
+			mrakConn->flushPortIO ();
+			logStream (MESSAGE_ERROR) << "There was a problem in readSensor (), retrying..." << sendLog;
+			ret = readSensor (true);
+			if (!ret)
+				break;
+		}
+		if (retryAttempt >= 2)
+		{
+			if (getLastInfoTime () > 60)
+				setWeatherTimeout (60, "cannot read data from device");
+			return -1;
+		}
 	}
 	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
 	{

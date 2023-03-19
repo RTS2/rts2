@@ -618,7 +618,7 @@ int SitechAltAz::startResync ()
 int SitechAltAz::moveAltAz ()
 {
 	struct ln_hrz_posn hrz;
-	telAltAz->getAltAz (&hrz);
+	getTarAltAz (&hrz);
 
 	int32_t taz = r_az_pos->getValueLong ();
 	int32_t talt = r_alt_pos->getValueLong ();

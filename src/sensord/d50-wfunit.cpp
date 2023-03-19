@@ -133,7 +133,7 @@ int D50WFUnit::initHardware ()
 		return ret;
 
 	wfunitConn->flushPortIO ();
-	wfunitConn->setDebug (true);
+	wfunitConn->setDebug (getDebug ());
 
 	// it must be twice here, from some reason the first response after inicialization is never received...
 	ret = wfunitCommand ('s');
