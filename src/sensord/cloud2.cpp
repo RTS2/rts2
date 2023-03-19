@@ -104,7 +104,6 @@ class Cloud2: public SensorWeather
 		rts2core::ValueBool *measurementBoost;
 
 		double lastReadSensorTime;
-		int commProblemsCount;
 
 		/**
 		 * Check rain state from external rain sensor.
@@ -324,7 +323,7 @@ int Cloud2::getRainState ()
 	// It seems like there is no rain... 
 	// To add a bit more reliability, we check if the infotime of rain-sensor is sufficiently fresh.
 	rain_tmp = connRain->getValue ("infotime");
-      	if (getNow () - rain_tmp->getValueDouble () > 10.0 )
+	if (getNow () - rain_tmp->getValueDouble () > 50.0 )
 	{
 		logStream (MESSAGE_ERROR) << "Rain detector: infotime too old: " << getNow () - rain_tmp->getValueDouble () << "s" << sendLog;
 		rainStateByRainDet->setValueInteger (2);
@@ -408,8 +407,6 @@ Cloud2::Cloud2 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	rainDetectorDevice = NULL;
 	rainDetectorVariable = NULL;
 
-	commProblemsCount = 0;
-
 	setIdleInfoInterval (10);
 
 	addTimer (measurementIntervalActual->getValueInteger (), new rts2core::Event (EVENT_CLOUD_MEASUREMENT, this));
@@ -468,11 +465,27 @@ void Cloud2::postEvent (rts2core::Event * event)
 				{
 					int ret = measureSky (true);
 					if (ret == -2)
-						commProblemsCount++;
-					else
-						commProblemsCount = 0;
+					{
+						// OK, this is because of a partially broken hardware we have now, the response is sometimes wrong...
+						// Before we will solve this the correct way, let's use this hotfix... It isn't a bad thing anyway...?
+						// We don't need to solve potential errors in other calls of this function, as they are all related to heating - and the heating is being switched of automatically by the device's internal timer.
+						int retryAttempt;
+						for ( retryAttempt = 0; retryAttempt < 5; retryAttempt ++)
+						{
+						        sleep (3);
+						        mrakConn->flushPortIO ();
+						        logStream (MESSAGE_ERROR) << "There was a problem in measureSky (), retrying..." << sendLog;
+						        ret = measureSky (true);
+						        if (!ret)
+						                break;
+						}
+						if (retryAttempt >= 5)
+						{
+						        setWeatherTimeout (60, "cannot read data from device");
+						}
+					}
 
-					if (ret == -1 || commProblemsCount > COMMPROBLEMS_COUNT_MAX)
+					if (ret == -1)
 					{
 						// it's raining or the device is not working properly...
 						tempDiff->setValueDouble (NAN);
@@ -627,9 +640,25 @@ int Cloud2::info ()
 	ret = readSensor (true);
 	if (ret)
 	{
-		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60, "cannot read data from device");
-		return -1;
+                // OK, this is because of a partially broken hardware we have now, the response is sometimes wrong...
+                // Before we will solve this the correct way, let's use this hotfix... It isn't a bad thing anyway...?
+                // We don't need to solve potential errors in other calls of this function, as they are all related to heating - and the heating is being switched of automatically by the device's internal timer.
+                int retryAttempt;
+                for ( retryAttempt = 0; retryAttempt < 5; retryAttempt ++)
+                {
+                        sleep (3);
+                        mrakConn->flushPortIO ();
+                        logStream (MESSAGE_ERROR) << "There was a problem in readSensor (), retrying..." << sendLog;
+                        ret = readSensor (true);
+                        if (!ret)
+                                break;
+                }
+                if (retryAttempt >= 5)
+                {
+                        if (getLastInfoTime () > 60)
+                                setWeatherTimeout (60, "cannot read data from device");
+                        return -1;
+                }
 	}
 
 	if (!std::isnan (tempDiff->getValueDouble ()) && tempDiff->getNumMes () >= numVal->getValueInteger ())
