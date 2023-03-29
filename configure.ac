@@ -260,7 +260,7 @@ AC_ARG_WITH(xml2,
 	*) XML_CONFIG=${withval} ;;
 esac],[XML_CONFIG=xml2-config])
 AC_MSG_CHECKING(looking for xml2 library)
-AS_IF(["${XML_CONFIG}" --libs print > /dev/null 2>&1], [
+AS_IF(["${XML_CONFIG}" --libs > /dev/null 2>&1], [
 	XMLVERS=`${XML_CONFIG} --version`
 	LIBXML_LIBS=`${XML_CONFIG} --libs`
 	LIBXML_CFLAGS=`${XML_CONFIG} --cflags`
