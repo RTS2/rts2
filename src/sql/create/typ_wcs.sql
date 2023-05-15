@@ -1,10 +1,10 @@
-CREATE FUNCTION wcs_in (opaque) -- OR REPLACE
+CREATE TYPE wcs;
+
+CREATE FUNCTION wcs_in (cstring) -- OR REPLACE
   RETURNS wcs AS 'pg_wcs.so','wcs_in' LANGUAGE 'c';
 
-CREATE FUNCTION wcs_out (opaque) -- OR REPLACE
-  RETURNS opaque AS 'pg_wcs.so', 'wcs_out' LANGUAGE 'c';
-
--- poprve se vypise varovani, ze typ neni
+CREATE FUNCTION wcs_out (wcs) -- OR REPLACE
+  RETURNS cstring AS 'pg_wcs.so', 'wcs_out' LANGUAGE 'c';
 
 CREATE TYPE wcs (
   internallength = 220,  -- zjisti si laskave presnou velikost, az to budes mit hotove

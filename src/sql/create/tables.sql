@@ -194,7 +194,7 @@ CONSTRAINT images_prim_key PRIMARY KEY (obs_id, img_id)
 
 CREATE TABLE counts ( 
 	obs_id		integer REFERENCES observations(obs_id),
-	count_date	abstime NOT NULL,
+	count_date	timestamp with time zone NOT NULL,
 	count_usec	integer NOT NULL,
 	count_value	integer NOT NULL,
 	count_exposure	float,

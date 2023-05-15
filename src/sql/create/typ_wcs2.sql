@@ -1,9 +1,11 @@
 -- wcs2 type
-CREATE FUNCTION wcs2_in (opaque) -- OR REPLACE
+CREATE TYPE wcs2;
+
+CREATE FUNCTION wcs2_in (cstring) -- OR REPLACE
   RETURNS wcs2 AS 'pg_wcs2.so','wcs2_in' LANGUAGE 'c';
 
-CREATE FUNCTION wcs2_out (opaque) -- OR REPLACE
-  RETURNS opaque AS 'pg_wcs2.so', 'wcs2_out' LANGUAGE 'c';
+CREATE FUNCTION wcs2_out (wcs2) -- OR REPLACE
+  RETURNS cstring AS 'pg_wcs2.so', 'wcs2_out' LANGUAGE 'c';
 
 CREATE TYPE wcs2 (
   internallength = 80,

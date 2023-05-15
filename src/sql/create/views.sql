@@ -74,22 +74,3 @@ WHERE
 ORDER BY
 	count_date DESC;
 
-CREATE VIEW images_path AS
-SELECT
-	img_id,
-	imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, abstime(img_date)) as img_path,
-	img_date,
-	round(img_exposure/100.0,2) as img_exposure_sec,
-	round(img_temperature/10.0,2) as img_temperature_deg,
-	img_filter,
-	imgrange (astrometry) as img_range,
-	images.obs_id,
-	observations.tar_id,
-	camera_name
-FROM
-	images,
-	observations
-WHERE
-	images.obs_id = observations.obs_id
-ORDER BY
-	img_id;
