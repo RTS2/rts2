@@ -21,7 +21,7 @@ CREATE TABLE targets_users (
 CREATE TABLE airmass_cal_images (
 	air_airmass_start  float NOT NULL,
 	air_airmass_end    float NOT NULL,
-	air_last_image     timestamp NOT NULL default abstime (0),
+	air_last_image     timestamp NOT NULL default to_timestamp (0),
 	-- referenced image - can be null
 	obs_id             integer,
 	img_id             integer,
