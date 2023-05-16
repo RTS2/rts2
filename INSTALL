@@ -9,25 +9,24 @@ Instalation from Git
 ====================
 
    You will need following packages (apt-get install on Debian based systems
-   should install them).
+   should install them), updated in May 2023:
 
-   git postgresql postgresql-server-dev libecpg-dev automake libtool
-   libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
+   git postgresql postgresql-server-dev-all libecpg-dev automake libtool
+   libcfitsio-dev libnova-dev gcc g++ libncurses5-dev
    libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev
-   libjson-glib-dev libsoup2.4-dev pkg-config
+   libjson-glib-dev libsoup2.4-dev pkg-config libcurl4-gnutls-dev libsnmp-dev
 
-   Please note that postgresql-server-dev is actually postgresql-server-dev-8.3
-   on Ubuntu 9.04, postgresql-server-dev-8.4 on 9.10 and postgresql-server-dev-9.5
-   on 16.04.
+   For using the e.g. gxccd driver, you will need also this package:
+   libusb-1.0-0-dev
 
    WCS libraries are needed for database and for rts2-f2j binary. If you wish
-   to use them, you must manually install WCS using folowing steps. Just before
-   you begin, important note: on Ubuntu 64bit installations, you need to
-   compile wcs with -fPIC CFLAG.
+   to use them, you must either use a package (again, for Debian based systems):
 
-   Note that as of April 2016 libwcstools-dev is available in both Debian and
-   Ubuntu and should be installed via the package manager, rather than the
-   process described here.
+   libwcstools-dev
+
+   (which is a preferred way), or to manually install WCS using folowing steps.
+   Just before you begin, important note: on Ubuntu 64bit installations, you need to
+   compile wcs with -fPIC CFLAG.
 
 user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.9.4.tar.gz
 user@host:tar xzf wcstools-3.9.4.tar.gz
