@@ -1,4 +1,4 @@
-/* 
+/*
  * Schedule class.
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,6 +19,7 @@
 
 #include "rts2db/sqlerror.h"
 #include "rts2db/queues.h"
+#include "rts2db/devicedb.h"
 #include "utilsfunc.h"
 
 using namespace rts2db;
@@ -40,6 +41,9 @@ QueueEntry::QueueEntry (unsigned int _qid, int _queue_id)
 
 void QueueEntry::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	unsigned int db_qid = qid;
 	int db_queue_id;
@@ -81,11 +85,11 @@ void QueueEntry::load ()
 		queues_targets
 	WHERE
 		qid = :db_qid;
-	
+
 	if (sqlca.sqlcode)
 		throw SqlError();
 
-	queue_id = db_queue_id;	
+	queue_id = db_queue_id;
 	tar_id = db_tar_id;
 	if (db_plan_id_ind == 0)
 		plan_id = db_plan_id;
@@ -103,6 +107,9 @@ int static_qid = 0;
 
 int QueueEntry::nextQid ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	unsigned int db_qid;
 	EXEC SQL END DECLARE SECTION;
@@ -122,6 +129,9 @@ int QueueEntry::nextQid ()
 
 void QueueEntry::create ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	unsigned int db_qid = qid;
 	int db_queue_id = queue_id;
@@ -170,6 +180,9 @@ void QueueEntry::create ()
 
 void QueueEntry::update ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	unsigned int db_qid = qid;
 	int db_queue_id = queue_id;
@@ -204,12 +217,15 @@ void QueueEntry::update ()
 		qid = :db_qid;
 	if (sqlca.sqlcode)
 		throw SqlError ();
-	
+
 	EXEC SQL COMMIT;
 }
 
 void QueueEntry::remove ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	unsigned int db_qid = qid;
 	EXEC SQL END DECLARE SECTION;
@@ -227,6 +243,9 @@ void QueueEntry::remove ()
 
 std::list <unsigned int> rts2db::queueQids (int queue_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_queue_id = queue_id;
 	unsigned int db_qid;
@@ -242,7 +261,7 @@ std::list <unsigned int> rts2db::queueQids (int queue_id)
 	WHERE
 		queue_id = :db_queue_id
 	ORDER BY
-		qid ASC;
+		queue_order ASC;
 	EXEC SQL OPEN cur_queues;
 
 	while (1)
@@ -272,6 +291,9 @@ Queue::Queue (int _queue_id)
 
 void Queue::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_queue_id = queue_id;
 
@@ -307,7 +329,7 @@ void Queue::load ()
 		queues
 	WHERE
 		queue_id = :db_queue_id;
-	
+
 	if (sqlca.sqlcode)
 		throw SqlError ();
 
@@ -319,12 +341,15 @@ void Queue::load ()
 	check_target_length = db_check_target_length;
 	queue_enabled = db_queue_enabled;
 	queue_window = db_queue_window;
-	
+
 	EXEC SQL ROLLBACK;
 }
 
 void Queue::save ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_queue_id = queue_id;
 	EXEC SQL END DECLARE SECTION;
@@ -345,6 +370,9 @@ void Queue::save ()
 
 void Queue::create ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_queue_id = queue_id;
 
@@ -379,15 +407,18 @@ void Queue::create ()
 		:db_queue_enabled,
 		:db_queue_window
 	);
-	
+
 	if (sqlca.sqlcode)
 		throw SqlError ();
-	
+
 	EXEC SQL COMMIT;
 }
 
 void Queue::update ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_queue_id = queue_id;
 
@@ -414,9 +445,9 @@ void Queue::update ()
 		queue_window = :db_queue_window
 	WHERE
 		queue_id = :db_queue_id;
-	
+
 	if (sqlca.sqlcode)
 		throw SqlError ();
-	
+
 	EXEC SQL COMMIT;
 }

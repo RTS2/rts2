@@ -1,4 +1,4 @@
-/* 
+/*
  * API access for RTS2.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -42,7 +42,7 @@ digraph "JSON API calls handling" {
   "HTTP/JSON library" -> "Client" [label="function return"];
 }
  * @enddot
- * 
+ *
  * @section JSON_API_errors Error handling
  *
  * Calls to existing API points with invalid arguments returns a valid JSON
@@ -257,7 +257,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw JSONException ("cannot find device with given name");
-			rts2core::Value * rts2v = master->getValue (device, variable);
+			rts2core::Value * rts2v = conn->getValue (variable);
 			if (rts2v == NULL)
 				throw JSONException ("cannot find variable");
 			if (rts2v->getValueBaseType () != RTS2_VALUE_SELECTION)
@@ -295,7 +295,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			const char *cname = params->getString ("cn", "");
 			if (cname[0] == '\0')
 				throw JSONException ("empty camera name");
-			
+
 			rts2script::Script script = rts2script::Script ();
 			script.setTarget (cname, target);
 			script.prettyPrint (os, rts2script::PRINT_JSON);
@@ -386,7 +386,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 						conn = master->getOpenConnection (device);
 					if (conn == NULL)
 						throw JSONException ("cannot find device with given name");
-					rts2core::Value * rts2v = master->getValue (device, variable);
+					rts2core::Value * rts2v = conn->getValue (variable);
 					if (rts2v == NULL)
 						throw JSONException ("cannot find variable");
 					if (async)
@@ -474,7 +474,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 								conn = master->getOpenConnection (devn.c_str ());
 							if (conn == NULL)
 								throw JSONException ("cannot find device with name " + devn);
-							rts2core::Value * rts2v = master->getValue (devn.c_str (), vn.c_str ());
+							rts2core::Value * rts2v = conn->getValue (vn.c_str ());
 							if (rts2v == NULL)
 								throw JSONException ("cannot find variable with name " + vn);
 							if (async == 0)
@@ -612,7 +612,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 					{
 						rts2json::AsyncAPI *aa = new rts2json::AsyncAPI (this, conn, connection, ext);
 						getServer ()->registerAPI (aa);
-		
+
 						conn->queCommand (new rts2core::Command (master, cmd), 0, aa);
 						throw XmlRpc::XmlRpcAsynchronous ();
 					}
@@ -722,6 +722,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			}
 			else if (vals[0] == "msgqueue")
 			{
+				double from = params->getDouble ("from", 0);
+				bool first = true;
+
 				os << std::fixed << "\"h\":["
 					"{\"n\":\"Time\",\"t\":\"t\",\"c\":0},"
 					"{\"n\":\"Component\",\"t\":\"s\",\"c\":1},"
@@ -731,9 +734,16 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 
 				for (std::deque <Message>::iterator iter = ((HttpD *) getMasterApp ())->getMessages ().begin (); iter != ((HttpD *) getMasterApp ())->getMessages ().end (); iter++)
 				{
-					if (iter != ((HttpD *) getMasterApp ())->getMessages ().begin ())
+					// return only messages after requested moment
+					if (iter->getMessageTime () <= from)
+						continue;
+
+					if (first)
+						first = false;
+					else
 						os << ",";
-					os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
+
+					os << "[" << iter->getMessageTime () << ",\"" << rts2json::JsonString (iter->getMessageOName ()) << "\"," << iter->getType () << ",\"" << rts2json::JsonString (iter->getMessageString ()) << "\"]";
 				}
 				os << "]";
 			}
@@ -796,7 +806,10 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 		}
 	}
 
-	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << rts2json::JsonDouble (from); 
+	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << rts2json::JsonDouble (from);
+
+	os << ",\"statestring\":\"\"";
+	os << ",\"type\":" << master->getDeviceType();
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)

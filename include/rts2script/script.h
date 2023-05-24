@@ -83,7 +83,7 @@ class ParsingError:public rts2core::Error
 class UnknowOperantMultiplier:public ParsingError
 {
 	public:
-		UnknowOperantMultiplier (char multiplier):ParsingError (std::string ("unknow multiplier '") + multiplier + "'") {} 
+		UnknowOperantMultiplier (char multiplier):ParsingError (std::string ("unknow multiplier '") + multiplier + "'") {}
 };
 
 /**
@@ -126,7 +126,7 @@ class Script:public Object, public std::list <Element *>
 		 * Parse target script.
 		 */
 		void parseScript (Rts2Target *target);
-		
+
 		/**
 		 * Get script from target, create vector of script elements and
 		 * script string, which will be put to FITS header.
@@ -144,7 +144,7 @@ class Script:public Object, public std::list <Element *>
 		 * Report error to current element.
 		 */
 		void errorReported (int current_state, int old_state);
- 
+
 		template < typename T > int nextCommand (T & device, Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		// returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
 		int getFaultLocation ()
@@ -158,7 +158,7 @@ class Script:public Object, public std::list <Element *>
 		void getDefaultDevice (char new_device[DEVICE_NAME_SIZE]) { strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE); }
 
 		char *getDefaultDevice () { return defaultDevice; }
-		
+
 		void exposureEnd (bool expectImage);
 		void exposureFailed ();
 
@@ -208,7 +208,7 @@ class Script:public Object, public std::list <Element *>
 		 * Return total number of exposures expected in script.
 		 */
 		int getExpectedImages ();
-		 
+
 		int getLoopCount () { return loopCount; }
 
 	private:
@@ -258,6 +258,8 @@ class Script:public Object, public std::list <Element *>
 
 		// offset for scripts spanning more than one line
 		int lineOffset;
+		// number of parsed lines
+		int lineNumber;
 
 		// full camera readout in seconds
 		float fullReadoutTime;
@@ -285,14 +287,19 @@ template < typename T > int Script::nextCommand (T & device, Command ** new_comm
 
 	while (1)
 	{
-		if (el_iter == end ())
+		if (el_iter == end ()) {
 			// command not found, end of script,..
+			device.queCommand (new CommandChangeValue (device.getMaster (), "scriptPosition", '=', 0));
+			device.queCommand (new CommandChangeValue (device.getMaster (), "scriptLen", '=', 0));
+
 			return NEXT_COMMAND_END_SCRIPT;
+		}
+
 		currElement = *el_iter;
 		ret = currElement->nextCommand (&device, new_command, new_device);
+
 		// send info about currently executed script element..
 		device.queCommand (new CommandChangeValue (device.getMaster (), "scriptPosition", '=', currElement->getStartPos ()));
-		
 		device.queCommand (new CommandChangeValue (device.getMaster (), "scriptLen", '=', currElement->getLen ()));
 
 		if (ret != NEXT_COMMAND_NEXT)

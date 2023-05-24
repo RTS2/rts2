@@ -1,4 +1,4 @@
-/* 
+/*
  * Utility classes for record values.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -20,11 +20,15 @@
 #include "rts2db/records.h"
 #include "rts2db/recvals.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
 int RecordsSet::getValueType ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
 	int d_value_type;
@@ -37,11 +41,14 @@ int RecordsSet::getValueType ()
 	if (sqlca.sqlcode)
 		throw SqlError ();
 	value_type = d_value_type;
-	return value_type;	
+	return value_type;
 }
 
 void RecordsSet::loadState (double t_from, double t_to)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
 	double d_rectime;
@@ -84,6 +91,9 @@ void RecordsSet::loadState (double t_from, double t_to)
 
 void RecordsSet::loadDouble (double t_from, double t_to)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
 	double d_rectime;
@@ -133,6 +143,9 @@ void RecordsSet::loadDouble (double t_from, double t_to)
 
 void RecordsSet::loadBoolean (double t_from, double t_to)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
 	double d_rectime;
@@ -197,4 +210,3 @@ void RecordsSet::load (double t_from, double t_to)
 			throw rts2core::Error ("unknown value type");
 	}
 }
-

@@ -282,8 +282,9 @@ class Image:public FitsFile
 		 * @param chan      channel number
 		 * @param histogram array for calculated histogram
 		 * @param nbins     number of histogram bins
+		 * @param npixels   number of good pixels
 		 */
-		void getChannelHistogram (int chan, long *histogram, long nbins);
+		void getChannelHistogram (int chan, long *histogram, long nbins, long *npixels);
 
 
 		template <typename bt, typename dt> void getChannelGrayscaleByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y);
@@ -354,7 +355,7 @@ class Image:public FitsFile
 		 *
 		 * @throw Exception
 		 */
-		void writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
+		std::string writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
 
 		/**
 		 * Store image to blob, which can be used to get data etc..
@@ -657,6 +658,16 @@ class Image:public FitsFile
 		void writeConn (rts2core::Connection * conn, imageWriteWhich_t which = EXPOSURE_START);
 
 		/**
+		 * Writes one value to image
+		 */
+		void writeConnValue (rts2core::Connection *conn, rts2core::Value *val);
+
+		/**
+		 * Records value change to image, if needed
+		 */
+		void recordChange (rts2core::Connection *conn, rts2core::Value *val);
+
+		/**
 		 * Sets image errors.
 		 */
 		void setErrors (double i_r, double i_d, double i_e)
@@ -809,12 +820,6 @@ class Image:public FitsFile
 		void prepareArrayData (const std::string name, rts2core::Connection *conn, rts2core::Value *val);
 
 		void writeConnArray (TableData *tableData);
-
-		// writes one value to image
-		void writeConnValue (rts2core::Connection *conn, rts2core::Value *val);
-
-		// record value changes
-		void recordChange (rts2core::Connection *conn, rts2core::Value *val);
 };
 
 }

@@ -30,6 +30,7 @@ import subprocess
 import sys
 import re
 import time
+import posixpath
 try:
 	import astropy.io.fits as pyfits
 except ImportError:
@@ -38,6 +39,9 @@ import tempfile
 import numpy
 import math
 import signal
+
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
 from . import dms
 
@@ -94,9 +98,10 @@ def cd2crota(fitsh):
 
 class AstrometryScript:
 	"""calibrate a fits image with astrometry.net."""
-	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
+	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex', astrometry_config=None):
 		self.scale_relative_error=scale_relative_error
 		self.astrometry_bin=astrometry_bin
+		self.astrometry_config = astrometry_config
 
 		self.fits_file = fits_file
 		self.odir = odir
@@ -109,9 +114,13 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True):
+	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, order=None, verify=True, verify_pixel_error=3):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots']
+
+		if self.astrometry_config is not None and posixpath.exists(self.astrometry_config):
+			solve_field.append('--config')
+			solve_field.append(self.astrometry_config)
 
 		if scale is not None:
 			scale_low=scale*(1-self.scale_relative_error)
@@ -140,9 +149,11 @@ class AstrometryScript:
 			solve_field.append('-6')
 			solve_field.append(extension)
 
-		if order is not None:
+		if order:
 			solve_field.append('-t')
 			solve_field.append(str(order))
+		else:
+			solve_field.append('-T')
 
 		if center:
 			solve_field.append('--crpix-center')
@@ -150,6 +161,10 @@ class AstrometryScript:
 		if downsample is not None:
 			solve_field.append('-z')
 			solve_field.append(downsample)
+
+		if verify_pixel_error:
+			solve_field.append('--pixel-error')
+			solve_field.append(str(verify_pixel_error))
 
 		solve_field.append(self.infpath)
 
@@ -172,6 +187,9 @@ class AstrometryScript:
 			ret = None
 
 			while True:
+				# Dispose of stderr output
+				proc.stderr.readlines()
+
 				try:
 					a=proc.stdout.readline()
 				except IOError:
@@ -185,20 +203,31 @@ class AstrometryScript:
 					ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
 
 			if ret and verify and iter == 'initial':
-				# TODO: reuse star list from first iteration to save some CPU time on second one
-				shutil.move(self.odir+'/input.new', self.odir+'/input.fits')
+				shutil.move(self.odir+'/input.new', self.odir+'/input-solved.fits')
+				shutil.move(self.odir+'/input.wcs', self.odir+'/input-wcs.fits')
+				shutil.move(self.odir+'/input.axy', self.odir+'/input.fits')
+				# solve_field.append('--continue')
 				solve_field.append('--overwrite')
-				solve_field.append('--verify')
-				solve_field.append(self.odir+'/input.fits')
 				if extension is not None:
 					solve_field.append('--verify-ext')
 					solve_field.append(extension)
+				solve_field.append('--verify')
+				solve_field.append(self.odir+'/input-solved.fits')
 			else:
 				# No verification phase
 				break
 
 		if replace and ret is not None:
-			shutil.move(self.odir+'/input.new', self.fits_file)
+			fits = pyfits.open(self.odir+'/input-solved.fits', mode='readonly')
+			wcsheader = pyfits.getheader(self.odir+'/input.wcs')
+			extnum = extension if extension is not None else 0
+			fits[extnum].header.update(wcsheader)
+			fits.writeto(self.odir+'/input-solved-new.fits', output_verify='fix')
+
+			try:
+				shutil.move(self.odir+'/input-solved-new.fits', self.fits_file)
+			except:
+				print('Error moving matched file to', self.fits_file)
 
 		shutil.rmtree(self.odir)
 		return ret

@@ -118,6 +118,13 @@ fxf {ra_diff} {dec_diff} [block]::
 
     {ra_diff} and {dec_diff} are in degrees.
 
+fxf {ra_diff} {dec_diff} {length} [block]::
+    Change mount position in an outward spiral pattern after
+    finishing [block] and execute [block] again. This will produce
+    {length} images, which are aligned on a spiral path.
+
+    {ra_diff} and {dec_diff} are in degrees.
+
 BIN {binning}::
     Change both vertical and horizontal binning. Will be
     dropped in favour of value (*binning*) operation.
@@ -226,6 +233,10 @@ tarboost {seconds} {bonus}::
     TARGET BONUS and TARGET BONUS TIME fields. Those fields
     can be changed by linkman:rts2-target[1] command executed with -b
     and -t options.
+
+loopdisable::
+    Disable looping of current obbservation. After the observation end, auto_loop
+    variable in executor will be re-set to default_auto_loop value.
 
 Communication with executable
 -----------------------------
@@ -516,13 +527,38 @@ double_array_w {variable name} {variable description} {values..}::
 double_array_add {variable name} {values..}::
     Add new values to an existing double array variable.
 
+stat {variable name} {variable description} {maxsize} {values..}::
+stat_w {variable name} {variable description} {maxsize} {values..}::
+    Creates or update double statistical variable. If the variable exists, its
+    values are overwritten by specified values. Values to an existing variable can
+    be added with *stat_add* command.
+
+stat_add {variable name} {maxsize} {values..}::
+    Add new values to an existing double statistical variable. The existing measurements are
+    cropped so that the amount of measurements never exceed maxsize.
+
+value_create {variable type} {variable_name} {variable description} {parameters or values..}::
+    Creates a value of given type (double,integer,timevalue,bool,onoff,double_value,stat).
+    Parameters are: writable, fits, or temporary, separated by whitespaces. The latter parameter
+    makes the value script-temporary, so it will be deleted automatically when script is finished.
+    This command may be sent to other device by prepending it with "C devicename".
+
+value_delete {variable name}::
+    Deletes the value with given name.
+    This command may be sent to other device by prepending it with "C devicename".
+
+value_add {variable name} {values..}::
+    Add arbitrary number of new values to the existing variable, which should be either
+    double array or double stat value.
+    This command may be sent to other device by prepending it with "C devicename".
+
 radec {ra} {dec}::
     Moves telescope to given equatorial (RA DEC) coordinates. Coordinates can
     be specified in HMS and DMS - see example bellow.
 
 ``` bash
-echo move 15 1  # moves to 1h RA, 1deg DEC
-echo move 1:2:3.4 -1:30 # moves to RA 1h 2m 3.4sec and DEC -1.5 deg
+echo radec 15 1  # moves to 1h RA, 1deg DEC
+echo radec 1:2:3.4 -1:30 # moves to RA 1h 2m 3.4sec and DEC -1.5 deg
 ```
 
 newobs {ra} {dec}

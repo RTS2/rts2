@@ -1,4 +1,4 @@
-/* 
+/*
  * Basic RTS2 devices and clients building block.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -74,6 +74,8 @@
 #define PROTO_METAINFO         "E"
 /** The command is metainformation about selection variable. Empty selection means clear selection list. @ingroup RTS2Protocol */
 #define PROTO_SELMETAINFO      "F"
+/** The command informs that variable is deleted. @ingroup RTS2Protocol */
+#define PROTO_DELETE           "Z"
 
 /** The command defines binary channel. @ingroup RTS2Protocol */
 #define PROTO_BINARY           "C"
@@ -187,7 +189,7 @@ class Block: public App
 			return connections.size ();
 		}
 
-		/** 
+		/**
 		 * Adds sockets for poll call.
 		 *
 		 * Enable application to add arbitary sockets.
@@ -394,9 +396,9 @@ class Block: public App
 		 * Returns true if all masters thinks it is safe weather to
 		 * operate observatory.  Masters can have multiple weather
 		 * sensors connected which can block weather.
-		 * 
+		 *
 		 * Master is responsible for handling those devices bad weather
-		 * state and set its state accordingly. It can also hold a list 
+		 * state and set its state accordingly. It can also hold a list
 		 * of devices which are necessary for observatory operation, and
 		 * if any of this devices is missing, it will set weather to bad
 		 * signal.
@@ -423,7 +425,7 @@ class Block: public App
 		bool allCentraldRunning ();
 
 		/**
-		 * Returns true if at least one connection to centrald is up and running. 
+		 * Returns true if at least one connection to centrald is up and running.
 		 * When that is the case, it is possible to log through RTS2 logging.
 		 * Otherwise, logging shall be diverted to syslog.
 		 *
@@ -571,6 +573,7 @@ class Block: public App
 		int queAll (Command * cmd);
 		int queAll (const char *text);
 
+		void queAllCentralds (Command * cmd);
 		void queAllCentralds (const char *command);
 
 		/**
@@ -814,7 +817,7 @@ class Block: public App
 		std::map <double, Event*> timers;
 
 		connections_t connections;
-		
+
 		// vector which holds connections which were recently added - idle loop will move them to connections
 		connections_t connections_added;
 

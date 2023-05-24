@@ -1,4 +1,4 @@
-/* 
+/*
  * TPoint input builder.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -29,13 +29,15 @@
 #include <ostream>
 #include <iostream>
 
-#include "cliapp.h"
+// #include "cliapp.h"
+#include "rts2db/appdb.h"
 #include "configuration.h"
 #include "rts2format.h"
 #include "rts2fits/image.h"
+// #include "rts2db/devicedb.h"
 
-
-class TPM:public rts2core::CliApp
+// class TPM:public rts2core::CliApp
+class TPM:public rts2db::AppDb
 {
 	public:
 		TPM (int argc, char **argv);
@@ -71,7 +73,7 @@ class TPM:public rts2core::CliApp
 		bool rawUseJ2k;
 };
 
-TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
+TPM::TPM (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	tarCorType = MOUNT;
 	ra_step = NAN;
@@ -109,7 +111,7 @@ int TPM::processOption (int in_opt)
 			{
 				x_ref = -1.0;
 				y_ref = -1.0;
-			} 
+			}
 			else
 			{
 				params = SplitStr (optarg, ":");
@@ -250,67 +252,67 @@ int TPM::headline (rts2image::Image * image, std::ostream & _os)
 
 int TPM::printImage (rts2image::Image * image, WorldCoor * wcs, std::ostream & _os)
 {
-	LibnovaRaDec actual;
-	LibnovaRaDec target;
-	time_t ct;
-	double JD;
-	double mean_sidereal;
-	float expo;
-	double aux0 = NAN;
-	double aux1 = NAN;
-	int num_pixels;
-	double x_pos, y_pos;
+	// LibnovaRaDec actual;
+	// LibnovaRaDec target;
+	// time_t ct;
+	// double JD;
+	// double mean_sidereal;
+	// float expo;
+	// double aux0 = NAN;
+	// double aux1 = NAN;
+	// int num_pixels;
+	// double x_pos, y_pos;
 
-	if (std::isnan (x_ref) || std::isnan (y_ref))
-		image->getCoordAstrometry (actual);
-	else
-	{
-		if (x_ref < 0.0 || y_ref < 0.0)	// use center of image
-		{
-			image->getValue ("NAXIS1", num_pixels, true);
-			x_ref = num_pixels / 2.0;
-			image->getValue ("NAXIS2", num_pixels, true);
-			y_ref = num_pixels / 2.0;
-		}
-		pix2wcs (wcs, x_ref, y_ref, &x_pos, &y_pos);
-		actual.setRa (x_pos);
-		actual.setDec (y_pos);
-	}
+	// if (std::isnan (x_ref) || std::isnan (y_ref))
+	// 	image->getCoordAstrometry (actual);
+	// else
+	// {
+	// 	if (x_ref < 0.0 || y_ref < 0.0)	// use center of image
+	// 	{
+	// 		image->getValue ("NAXIS1", num_pixels, true);
+	// 		x_ref = num_pixels / 2.0;
+	// 		image->getValue ("NAXIS2", num_pixels, true);
+	// 		y_ref = num_pixels / 2.0;
+	// 	}
+	// 	pix2wcs (wcs, x_ref, y_ref, &x_pos, &y_pos);
+	// 	actual.setRa (x_pos);
+	// 	actual.setDec (y_pos);
+	// }
 
-	if (forceRawComputation)
-		image->getCoordMountRawComputed (target);
-	else
-		image->getCoordMountRawBest (target);
+	// if (forceRawComputation)
+	// 	image->getCoordMountRawComputed (target);
+	// else
+	// 	image->getCoordMountRawBest (target);
 
-	image->getValue ("CTIME", ct);
-	image->getValue ("EXPOSURE", expo);
+	// image->getValue ("CTIME", ct);
+	// image->getValue ("EXPOSURE", expo);
 
-	aux0 = -2;
-	image->getValue ("MNT_AX0", aux1, false);
+	// aux0 = -2;
+	// image->getValue ("MNT_AX0", aux1, false);
 
-	aux1 = -2;
-	image->getValue ("MNT_AX1", aux1, false);
+	// aux1 = -2;
+	// image->getValue ("MNT_AX1", aux1, false);
 
-	ct = (time_t) (ct + expo / 2.);
+	// ct = (time_t) (ct + expo / 2.);
 
-	JD = ln_get_julian_from_timet (&ct);
-	mean_sidereal = ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) + obs.lng);
+	// JD = ln_get_julian_from_timet (&ct);
+	// mean_sidereal = ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) + obs.lng);
 
-	if (!std::isnan (ra_step))
-	{
-		image->getValue ("MNT_AX0", aux0, true);
-		target.setRa (ln_range_degrees (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
-	}
-	if (!std::isnan (dec_step))
-	{
-		image->getValue ("MNT_AX1", aux1, true);
-		target.setDec ((aux1 - dec_offset) / dec_step);
-	}
+	// if (!std::isnan (ra_step))
+	// {
+	// 	image->getValue ("MNT_AX0", aux0, true);
+	// 	target.setRa (ln_range_degrees (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
+	// }
+	// if (!std::isnan (dec_step))
+	// {
+	// 	image->getValue ("MNT_AX1", aux1, true);
+	// 	target.setDec ((aux1 - dec_offset) / dec_step);
+	// }
 
-	LibnovaHaM lst (mean_sidereal);
+	// LibnovaHaM lst (mean_sidereal);
 
-	_os << spaceDegSep << actual << " 0 0 2000.0 ";
-	_os << spaceDegSep << target << " " << lst << " " << aux0 << " " << aux1 << std::endl;
+	// _os << spaceDegSep << actual << " 0 0 2000.0 ";
+	// _os << spaceDegSep << target << " " << lst << " " << aux0 << " " << aux1 << std::endl;
 	return 0;
 }
 

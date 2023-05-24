@@ -1,4 +1,4 @@
-/* 
+/*
  * Application with database connection.
  * Copyright (C) 2004-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -18,6 +18,7 @@
  */
 
 #include "rts2db/appdb.h"
+#include "rts2db/devicedb.h"
 #include "configuration.h"
 
 #include <ecpgtype.h>
@@ -208,7 +209,7 @@ void SqlQuery::display ()
 		EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR "disp_desc";
 #else
 		EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR disp_desc;
-#endif		
+#endif
 
 		if (sqlca.sqlcode)
 		{
@@ -397,68 +398,7 @@ void AppDb::afterProcessing ()
 
 int AppDb::initDB ()
 {
-	std::string cs;
-	EXEC SQL BEGIN DECLARE SECTION;
-	const char *c_db;
-	const char *c_username;
-	const char *c_password;
-	EXEC SQL END DECLARE SECTION;
-	// try to connect to DB
-
-	rts2core::Configuration *config = rts2core::Configuration::instance ();
-
-	std::string db_username;
-	std::string db_password;
-
-	if (connectString)
-	{
-		c_db = connectString;
-	}
-	else
-	{
-		config->getString ("database", "name", cs);
-		c_db = cs.c_str ();
-	}
-
-	if (config->getString ("database", "username", db_username, "") == 0)
-	{
-		c_username = db_username.c_str ();
-		if (config->getString ("database", "password", db_password) == 0)
-		{
-			c_password = db_password.c_str ();
-			EXEC SQL CONNECT TO :c_db USER  :c_username USING :c_password;
-			if (sqlca.sqlcode != 0)
-			{
-				logStream (MESSAGE_ERROR) << "AppDb::init Cannot connect to DB '" << c_db 
-					<< "' with user '" << c_username
-					<< "' and password xxxx (see rts2.ini) :"
-					<< sqlca.sqlerrm.sqlerrmc << sendLog;
-				return -1;
-			}
-		}
-		else
-		{
-			EXEC SQL CONNECT TO :c_db USER  :c_username;
-			if (sqlca.sqlcode != 0)
-			{
-				logStream (MESSAGE_ERROR) << "AppDb::init Cannot connect to DB '" << c_db 
-					<< "' with user '" << c_username
-					<< "': " << sqlca.sqlerrm.sqlerrmc << sendLog;
-				return -1;
-			}
-		}
-	}
-	else
-	{
-		EXEC SQL CONNECT TO :c_db;
-		if (sqlca.sqlcode != 0)
-		{
-			logStream (MESSAGE_ERROR) << "AppDb::init Cannot connect to DB '" << c_db << "' : " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
-			return -1;
-		}
-	}
-
-	return 0;
+	return rts2db::connectToDb (connectString, "master");
 }
 
 int AppDb::init ()

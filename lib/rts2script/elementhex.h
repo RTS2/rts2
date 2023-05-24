@@ -116,5 +116,16 @@ class ElementFxF: public ElementHex
 		virtual ~ ElementFxF (void);
 };
 
+class ElementSpiral: public ElementHex
+{
+	protected:
+		virtual void constructPath ();
+	public:
+		ElementSpiral (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size, int in_length);
+		virtual ~ ElementSpiral (void);
+	private:
+		int length;
+};
+
 }
 #endif							 /* !__RTS2_SEHEX__ */

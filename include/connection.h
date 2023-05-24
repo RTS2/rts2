@@ -214,6 +214,7 @@ class Connection:public Object
 		 * Return current command.
 		 */
 		inline char *getCommand () { return command_start; }
+		std::string getCommandFull () { return command_full; }
 
 		/**
 		 * Check if the command match given string.
@@ -499,6 +500,11 @@ class Connection:public Object
 
 		int paramNextTimeval (struct timeval *tv);
 
+		/**
+		 * Remove leading and trailing quotes from the rest of the parameters string.
+		 */
+		void unquoteRest ();
+
 		Block *getMaster () { return master; }
 
 		virtual void childReturned (pid_t child_pid) {}
@@ -678,6 +684,7 @@ class Connection:public Object
 		 */
 		Block *master;
 		char *command_start;
+		std::string command_full;
 
 		/**
 		 * Connection file descriptor.

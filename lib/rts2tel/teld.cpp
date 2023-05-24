@@ -1494,7 +1494,11 @@ void Telescope::checkMoves ()
 			}
 			else
 			{
-				maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished without error");
+				if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()))
+					// We still have corrections to apply, let's do not reset the blocking yet
+					startResyncMove (NULL, (woffsRaDec->wasChanged () ? 1 : 0) | (wcorrRaDec->wasChanged () ? 2 : 0));
+				else
+					maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished without error");
 			}
 
 			if (move_connection)
@@ -2251,7 +2255,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	// if some value is waiting to be applied..
-	else if (wcorrRaDec->wasChanged ())
+	if (wcorrRaDec->wasChanged ())
 	{
 		corrRaDec->incValueRaDec (wcorrRaDec->getRa (), wcorrRaDec->getDec ());
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
@@ -2377,7 +2381,20 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 	}
 
-	// all checks done, give proper info and set TEL_ state and BOP
+	// all checks done, let's set BOP state and try to move
+	maskState (BOP_EXPOSURE, BOP_EXPOSURE, "movement is about to start");
+
+	ret = startResync ();
+	if (ret)
+	{
+		useParkFlipping = false;
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
+		return ret;
+	}
+
+	// now we may set the movement state and log it
 	if (correction)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
@@ -2396,7 +2413,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 
 		logStream (MESSAGE_INFO) << cortype << " to " << syncTo << " from " << syncFrom << " distances " << c_ra << " " << c_dec << sendLog;
-
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
 	}
 	else

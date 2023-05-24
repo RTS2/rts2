@@ -19,7 +19,9 @@
 
 #include "rts2db/sqlerror.h"
 #include "rts2db/target_auger.h"
+#include "rts2db/devicedb.h"
 
+#include "configuration.h"
 #include "timestamp.h"
 #include "infoval.h"
 #include "rts2fits/image.h"
@@ -185,6 +187,9 @@ TargetAuger::~TargetAuger (void)
 
 void TargetAuger::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id;
 	double d_auger_date;
@@ -254,6 +259,9 @@ void TargetAuger::getPosition (struct ln_equ_posn *pos, double JD)
 
 void TargetAuger::load (int auger_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id = auger_id;
 	double d_auger_date;
@@ -585,6 +593,9 @@ void TargetAuger::load (int auger_id)
 
 void TargetAuger::loadByOid (int _obs_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_obs_id = _obs_id;
 	int db_auger_t3id;
@@ -684,20 +695,23 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strncmp (device_name, "WF", 2))
+	if (!rts2core::Configuration::instance ()->getStringDefault ("auger", "camera", "C0").compare (device_name))
 	{
 		std::ostringstream _os;
-	 	_os << "filter=B ";
+	 	_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "script_preamble", "filter=B") << " ";
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
 		{
 			if (iter->ra != 0 || iter->dec != 0)
-				_os << "GM2000.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
-			_os << "E 30 ";
+				_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "mount", "T0") << ".WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
+			_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "script_main", "E 30") << " ";
 		}
+	 	_os << rts2core::Configuration::instance ()->getStringDefault ("auger", "script_end", "");
 		buf = _os.str ();
 		return false;
 	}
-	buf = std::string ("filter=B E 30");
+
+	buf = rts2core::Configuration::instance ()->getStringDefault ("auger", "default_script", "sleep 10");
+
 	return false;
 }
 
@@ -714,6 +728,9 @@ float TargetAuger::getBonus (double JD)
 
 moveType TargetAuger::afterSlewProcessed ()
 {
+	if (checkDbConnection ())
+		return OBS_MOVE_FAILED;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
 		int d_auger_t3id = t3id;

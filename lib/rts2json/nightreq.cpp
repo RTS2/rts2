@@ -128,7 +128,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	printHeader (_os, title.str ().c_str ());
 
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
+	int pagesiz = params->getInteger ("s", 400);
 
 	if (pageno <= 0)
 		pageno = 1;
@@ -137,15 +137,15 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	int ie = istart + pagesiz;
 	int in = 0;
 
-	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
+	int prevsize = params->getInteger ("ps", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_size")->getValueInteger ());
+	const char * label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
-	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
-	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
+	float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
+	int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
+	int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
 
 	time_t from;
 	int64_t duration;
@@ -154,7 +154,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 
 	time_t end = from + duration;
 
-	Previewer preview = Previewer (getServer ());
+	Previewer preview = Previewer (getServer (), this);
 	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
 
 	_os << "<p>";
@@ -288,9 +288,9 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 	else
 	{
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
-			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1},"
-			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
+			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":1},"
+			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"Start\",\"t\":\"tT\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"tT\",\"c\":5},"

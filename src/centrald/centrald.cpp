@@ -289,6 +289,30 @@ int ConnCentrald::commandClient ()
 		{
 			return master->changeStateSoftOff (login.c_str ());
 		}
+		if (isCommand ("day"))
+		{
+			return master->changeStateDay ();
+		}
+		if (isCommand ("evening"))
+		{
+			return master->changeStateEvening ();
+		}
+		if (isCommand ("dusk"))
+		{
+			return master->changeStateDusk ();
+		}
+		if (isCommand ("night"))
+		{
+			return master->changeStateNight ();
+		}
+		if (isCommand ("dawn"))
+		{
+			return master->changeStateDawn ();
+		}
+		if (isCommand ("morning"))
+		{
+			return master->changeStateMorning ();
+		}
 		if (isCommand (COMMAND_OPEN))
 		{
 			if (!paramEnd ())
@@ -1175,6 +1199,25 @@ void Centrald::updateOpenClose (bool clear)
 
 void Centrald::maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)
 {
+	if ((getState () & SERVERD_STATUS_MASK) != SERVERD_EVENING &&
+		(new_state & SERVERD_STATUS_MASK) == SERVERD_EVENING)
+		logStream (MESSAGE_INFO | MESSAGE_REPORTIT) << "evening started" << sendLog;
+	if ((getState () & SERVERD_STATUS_MASK) != SERVERD_DUSK &&
+		(new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK)
+		logStream (MESSAGE_INFO | MESSAGE_REPORTIT) << "dusk started" << sendLog;
+	if ((getState () & SERVERD_STATUS_MASK) != SERVERD_NIGHT &&
+		(new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT)
+		logStream (MESSAGE_INFO | MESSAGE_REPORTIT) << "night started" << sendLog;
+	if ((getState () & SERVERD_STATUS_MASK) != SERVERD_DAWN &&
+		(new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN)
+		logStream (MESSAGE_INFO | MESSAGE_REPORTIT) << "dawn started" << sendLog;
+	if ((getState () & SERVERD_STATUS_MASK) != SERVERD_MORNING &&
+		(new_state & SERVERD_STATUS_MASK) == SERVERD_MORNING)
+		logStream (MESSAGE_INFO | MESSAGE_REPORTIT) << "morning started" << sendLog;
+	if ((getState () & SERVERD_STATUS_MASK) != SERVERD_DAY &&
+		(new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
+		logStream (MESSAGE_INFO | MESSAGE_REPORTIT) << "day started" << sendLog;
+
 	if (!(getState () & SERVERD_STANDBY))
 	{
 		switch (getState () & SERVERD_STATUS_MASK)

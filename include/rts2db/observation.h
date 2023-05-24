@@ -1,4 +1,4 @@
-/* 
+/*
  * Observation entry.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
@@ -95,12 +95,20 @@ class Observation
 		 */
 		Target *getTarget ()
 		{
-                 	rts2db::TargetSet::iterator iter = rts2db::TargetSetSingleton::instance ()->find (getTargetId ());
-			if (iter == rts2db::TargetSetSingleton::instance ()->end ())
-    			{
-                         	return NULL;
+			rts2db::TargetSet::iterator iter;
+
+			for (int ntries = 0; ntries < 2; ntries ++)
+			{
+				iter = rts2db::TargetSetSingleton::instance ()->find (getTargetId ());
+				if (iter == rts2db::TargetSetSingleton::instance ()->end ())
+				{
+					if (ntries == 0)
+						rts2db::TargetSetSingleton::instance ()->load ();
+					else
+						return NULL;
+				}
 			}
-                        return (*iter).second;
+			return (*iter).second;
 		}
 
 		/**
@@ -347,19 +355,19 @@ class ObservationState
 				_os << 'M';
 			else
 				_os << ' ';
-		
+
 			if (obs_state.state & OBS_BIT_ACQUSITION_FAI)
 				_os << 'F';
 			else if (obs_state.state & OBS_BIT_ACQUSITION)
 				_os << 'A';
 			else
 				_os << ' ';
-		
+
 			if (obs_state.state & OBS_BIT_INTERUPED)
 				_os << 'I';
 			else
 				_os << ' ';
-		
+
 			return _os;
 		}
 	private:

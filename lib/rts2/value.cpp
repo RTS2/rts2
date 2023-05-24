@@ -88,6 +88,13 @@ void Value::send (Connection * connection)
 	connection->sendValueRaw (getName (), getValue ());
 }
 
+int Value::sendDelete (Connection * connection)
+{
+	std::ostringstream _os;
+	_os << PROTO_DELETE << " \"" << getName () << "\"";
+	return connection->sendMsg (_os.str ());
+}
+
 ValueString::ValueString (std::string in_val_name): Value (in_val_name)
 {
 	rts2Type |= RTS2_VALUE_STRING;
@@ -699,6 +706,8 @@ ValueRaDec::ValueRaDec (std::string in_val_name, std::string in_description, boo
 
 int ValueRaDec::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	double r, d;
 	if (connection->paramNextDMS (&r))
 		return -2;
@@ -849,6 +858,8 @@ ValueAltAz::ValueAltAz (std::string in_val_name, std::string in_description, boo
 
 int ValueAltAz::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	if (connection->paramNextDouble (&alt))
 		return -2;
 	if (connection->paramEnd ())
@@ -953,6 +964,8 @@ ValuePID::ValuePID (std::string in_val_name, std::string in_description, bool wr
 
 int ValuePID::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	int p, i, d;
 	if (connection->paramNextInteger (&p) || connection->paramNextInteger (&i) || connection->paramNextInteger (&d) || !connection->paramEnd ())
 		return -2;
@@ -1076,4 +1089,20 @@ Value *newValue (int rts2Type, std::string name, std::string desc)
 	}
 	logStream (MESSAGE_ERROR) << "unknow value name: " << name << " type: " << rts2Type << sendLog;
 	return NULL;
+}
+
+int32_t rts2core::typeFromString (const char *dt_string)
+{
+	if (dt_string == NULL)
+		return 0;
+	static const char *types [0xb] = {"DT_RA", "DT_DEC", "DT_DEGREES", "DT_DEG_DIST", "DT_PERCENTS", "DT_ROTANG", "DT_HEX", "DT_BYTESIZE", "DT_KMG", "DT_INTERVAL", "DT_ONOFF"};
+	const char** vn = types;
+	for (int32_t i = 0; i < 0xb; i++, vn++)
+	{
+		if (!strcasecmp (*vn, dt_string))
+			return (i + 1) << 16;
+	}
+
+	// throw rts2core::Error (std::string ("invalid data type ") + dt_string);
+	return 0;
 }

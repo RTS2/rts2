@@ -26,6 +26,7 @@
 #include "rts2script/script.h"
 #include "rts2fits/image.h"
 #include "rts2fits/devclifoc.h"
+#include "daemon.h"
 
 using namespace rts2script;
 using namespace rts2image;
@@ -588,4 +589,17 @@ void ElementCommand::printJson (std::ostream &os)
 		os << '"' << *iter << '"';
 	}
 	os << "]";
+}
+
+int ElementLoopDisable::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	Value *val = script->getMaster ()->getValue (".", "auto_loop");
+
+	if (val) {
+		logStream (MESSAGE_INFO) << "disabling auto_loop for current observation due to loopdisable command" << sendLog;
+		((rts2core::ValueBool *)val)->setValueBool (false);
+		((rts2core::Daemon *)script->getMaster ())->sendValueAll (val);
+	}
+
+	return NEXT_COMMAND_NEXT;
 }

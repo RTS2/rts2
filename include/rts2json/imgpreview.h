@@ -1,4 +1,4 @@
-/* 
+/*
  * Image preview and download classes.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -21,8 +21,6 @@
 #include "httpreq.h"
 #include "httpserver.h"
 
-#define DEFAULT_QUANTILES    0.005
-#define DEFAULT_COLOURVARIANT    0
 // number of channels in image
 #define CHANNELS             4
 
@@ -37,7 +35,7 @@ namespace rts2json
 class Previewer
 {
 	public:
-		Previewer (rts2json::HTTPServer *_http_server) { http_server = _http_server; }
+		Previewer (rts2json::HTTPServer *_http_server, rts2json::GetRequestAuthorized *_request) { http_server = _http_server; request = _request; }
 
 		/**
 		 * Returns additional style which is needed for JavaScript.
@@ -71,17 +69,19 @@ class Previewer
 		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char * label, float quantiles, int chan, int colourVariant);
 
 		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected, float quantiles, int chan, int colourVariant);
-	
+
 	private:
 		HTTPServer *getServer () { return http_server; }
+		GetRequestAuthorized *getRequest () { return request; }
 
 		HTTPServer *http_server;
+		GetRequestAuthorized *request;
 };
 
 #if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 
 /**
- * Returns JPEG image, generated from FITS file. Usefull for quick display of images in 
+ * Returns JPEG image, generated from FITS file. Usefull for quick display of images in
  * web browsers.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -125,7 +125,7 @@ class FitsImageRequest:public rts2json::GetRequestAuthorized
 };
 
 /**
- * Creates compressed archive of files for download, send them as binary file 
+ * Creates compressed archive of files for download, send them as binary file
  * to HTTP client.
  *
  * @author Petr Kubanek <petr@kubanek.net>

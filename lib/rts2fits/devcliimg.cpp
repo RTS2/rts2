@@ -1,4 +1,4 @@
-/* 
+/*
  * Client which produces images.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -72,6 +72,13 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 			logStream (MESSAGE_DEBUG) << "loaded FITS template from " << templateFile<< sendLog;
 		}
 	}
+
+#ifdef RTS2_HAVE_LIBJPEG
+	config->getString (connection->getName (), "preview_path", previewPath);
+	config->getDouble (connection->getName (), "preview_zoom", previewZoom, 1.0);
+	config->getDouble (connection->getName (), "preview_quantiles", previewQuantiles, 0.005);
+	config->getInteger (connection->getName (), "preview_color", previewColor, 0);
+#endif // RTS2_HAVE_LIBJPEG
 
 	actualImage = NULL;
 
@@ -183,7 +190,7 @@ void DevClientCameraImage::cameraMetadata (Image *image)
 	image->setTemplate (fitsTemplate);
 
 	image->setExposureLength (exposureTime);
-	
+
 	image->setCameraName (getName ());
 	image->setInstrument (instrume.c_str ());
 	image->setTelescope (telescop.c_str ());
@@ -292,6 +299,7 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 
 		// detector coordinates,..
 		rts2core::ValueRectangle *detsize = getRectangle ("DETSIZE");
+		rts2core::ValueRectangle *datasec = getRectangle ("DATASEC");
 
 		rts2core::DoubleArray *chan1_offsets = getDoubleArray ("CHAN1_OFFSETS");
 		rts2core::DoubleArray *chan2_offsets = getDoubleArray ("CHAN2_OFFSETS");
@@ -433,6 +441,16 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 				ci->image->setValue ("DTM1_1", 1, "detector transformation matrix");
 				ci->image->setValue ("DTM2_2", 1, "detector transformation matrix");
 			}
+
+			if (datasec)
+			{
+				int x1 = fmax (0, (datasec->getXInt () - x) / bin1);
+				int y1 = fmax (0, (datasec->getYInt () - y) / bin2);
+				int x2 = fmin ((datasec->getXInt () + datasec->getWidth ()->getValueInteger () - x)/ bin1, w);
+				int y2 = fmin ((datasec->getYInt () + datasec->getHeight ()->getValueInteger () - y) / bin2, h);
+
+				ci->image->setValueRectange ("DATASEC", x1 + 1, x2, y1 + 1, y2, "good data section");
+			}
 		}
 
 		ci->image->moveHDU (1);
@@ -538,6 +556,31 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 			// save us to the disk..
 			ci->image->saveImage ();
 		}
+
+#ifdef RTS2_HAVE_LIBJPEG
+		// Save image preview if requested
+		try
+		{
+			if (!previewPath.empty () &&
+				// Extremely hackish way to distinguish between running in Executor and ScriptExec
+				getMaster ()->getPort () > 0)
+			{
+				std::string preview = ci->image->writeAsJPEG (previewPath, previewZoom, "%Y-%m-%d %H:%M:%S @FILTER @EXPOSURE @OBJECT", previewQuantiles, -1, previewColor);
+
+				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_preview_image", '=', preview));
+				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_preview_time", '=', getNow ()));
+			}
+		}
+		catch (rts2core::Error &ex)
+		{
+			logStream (MESSAGE_WARNING) << "Cannot save preview image for " << ci->image->getAbsoluteFileName () << " : " << ex << sendLog;
+		}
+		catch (Magick::Exception &ex)
+		{
+			logStream (MESSAGE_WARNING) << "Cannot save preview image for " << ci->image->getAbsoluteFileName () << sendLog;
+		}
+#endif // RTS2_HAVE_LIBJPEG
+
 		// do basic processing
 		imageProceRes res = processImage (ci->image);
 		if (res == IMAGE_KEEP_COPY)
@@ -580,6 +623,8 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 
 	Image *image = NULL;
 
+	logStream (MESSAGE_DEBUG) << "start of camera " << connection->getName () << " exposure" << sendLog;
+
 	// don't create image if it is not expected
 	if (expectImage == false)
 	{
@@ -605,7 +650,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 		actualImage = new CameraImage (image, getNow (), prematurelyReceived);
 
 		prematurelyReceived.clear ();
-		
+
 		actualImage->image->writePrimaryHeader (getName ());
 		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 	}
@@ -664,7 +709,7 @@ void DevClientCameraImage::writeToFitsTransfer (Image *img)
 	cameraMetadata (img);
 
 	prematurelyReceived.clear ();
-		
+
 	img->writePrimaryHeader (getName ());
 
 	img->writeConn (getConnection (), EXPOSURE_START);

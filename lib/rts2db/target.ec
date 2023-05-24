@@ -1,4 +1,4 @@
-/* 
+/*
  * Target class.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -29,6 +29,7 @@
 #include "rts2db/observationset.h"
 #include "rts2db/targetset.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include "connnotify.h"
 #include "infoval.h"
@@ -104,13 +105,16 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 			old_settings = _os.flags ();
 			_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		}
-		
+
 		_os << " H ALT  AZ  HA  AIR  LD  SD SAL SAZ LAL LAZ" << std::endl;
 	}
 
 	jd = jd_start;
 	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
 	{
+		if (!checkConstraints (jd))
+			continue;
+
 		getAltAz (&hrz, jd);
 		if (format_output)
 			old_fill = _os.fill ('0');
@@ -193,7 +197,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude)
 	airmassScale = 750.0;
 
 	constraintsLoaded = CONSTRAINTS_NONE;
-	
+
 	constraintFile = NULL;
 
 	groupConstraintFile = NULL;
@@ -266,6 +270,9 @@ void Target::load ()
 
 void Target::loadTarget (int in_tar_id)
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
 	VARCHAR d_tar_name[150];
@@ -363,6 +370,9 @@ void Target::loadTarget (int in_tar_id)
 
 int Target::save (bool overwrite)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_new_id = getTargetID ();
 	EXEC SQL END DECLARE SECTION;
@@ -387,6 +397,9 @@ int Target::save (bool overwrite)
 
 void Target::deleteTarget ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getTargetID ();
 	int d_ret;
@@ -402,6 +415,9 @@ void Target::deleteTarget ()
 
 int Target::saveWithID (bool overwrite, int tar_id)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	// first, try an update..
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = tar_id;
@@ -557,6 +573,9 @@ int Target::compareWithTarget (Target *in_target, double in_sep_limit)
 
 moveType Target::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
 {
+	if (checkDbConnection ())
+		return OBS_MOVE_FAILED;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getObsTargetID ();
 	int d_obs_id;
@@ -674,6 +693,8 @@ moveType Target::afterSlewProcessed ()
 
 int Target::startObservation ()
 {
+	// print_backtrace ();
+
 	if (observationStarted ())
 		return 0;
 	time (&observationStart);
@@ -798,7 +819,8 @@ bool Target::isVisibleDuringNight (double jd, double horizon)
 
 int Target::beforeMove ()
 {
-	startCalledNum++;
+        printf("beforeMove\n");
+        startCalledNum++;
 	return 0;
 }
 
@@ -809,6 +831,9 @@ int Target::postprocess ()
 
 void Target::getDBScript (const char *camera_name, std::string &script)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int tar_id = getTargetID ();
 		VARCHAR d_camera_name[8];
@@ -875,6 +900,9 @@ bool Target::getScript (const char *device_name, std::string &buf)
 
 void Target::setScript (const char *device_name, const char *buf)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_camera_name[8];
 	VARCHAR d_script[2000];
@@ -928,7 +956,7 @@ void Target::setScript (const char *device_name, const char *buf)
 
 std::string Target::getPIName ()
 {
-	return labels.getTargetLabels (getTargetID (), LABEL_PI).getString ("not set", ",");
+	return labels.getTargetLabels (getTargetID (), LABEL_PI).getString ("", ",");
 }
 
 void Target::setPIName (const char *name)
@@ -939,7 +967,7 @@ void Target::setPIName (const char *name)
 
 std::string Target::getProgramName ()
 {
-	return labels.getTargetLabels (getTargetID (), LABEL_PROGRAM).getString ("not set", ",");
+	return labels.getTargetLabels (getTargetID (), LABEL_PROGRAM).getString ("", ",");
 }
 
 void Target::setProgramName (const char *program)
@@ -955,7 +983,7 @@ void Target::setConstraints (Constraints &cons)
 		throw rts2core::Error ((std::string ("cannot create directory for ") + getConstraintFile () + " : " + strerror (errno)).c_str ());
 
 	std::ofstream ofs;
-	
+
 	ofs.exceptions ( std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit );
 	try
 	{
@@ -1148,6 +1176,9 @@ double Target::getLunarRaDistance (double JD)
  */
 int Target::selectedAsGood ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	bool d_tar_enabled;
 	int d_tar_id = getTargetID ();
@@ -1287,6 +1318,9 @@ int Target::considerForObserving (double JD)
 
 int Target::dropBonus ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id;
 	EXEC SQL END DECLARE SECTION;
@@ -1315,6 +1349,9 @@ float Target::getBonus (double JD)
 
 int Target::changePriority (int pri_change, time_t *time_ch)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getObsTargetID ();
 		int db_priority_change = pri_change;
@@ -1347,6 +1384,9 @@ int Target::changePriority (int pri_change, double validJD)
 
 int Target::setNextObservable (time_t *time_ch)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = getObsTargetID ();
 	int db_next_observable;
@@ -1391,6 +1431,9 @@ int Target::setNextObservable (double validJD)
 
 int Target::getNumObs (time_t *start_time, time_t *end_time)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_start_time = (int) *start_time;
 		int d_end_time = (int) *end_time;
@@ -1420,6 +1463,9 @@ int Target::getNumObs (time_t *start_time, time_t *end_time)
 
 int Target::getTotalNumberOfObservations ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_count;
 	int d_tar_id = getTargetID ();
@@ -1443,6 +1489,9 @@ int Target::getTotalNumberOfObservations ()
 
 double Target::getLastObsTime ()
 {
+	if (checkDbConnection ())
+		return NAN;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = getTargetID ();
 		double d_time_diff;
@@ -1470,7 +1519,7 @@ double Target::getLastObsTime ()
 		else
 			logMsgDb ("Target::getLastObsTime", MESSAGE_ERROR);
 	}
-	
+
 	EXEC SQL COMMIT;
 
 	return d_time_diff;
@@ -1478,6 +1527,9 @@ double Target::getLastObsTime ()
 
 int Target::getTotalNumberOfImages ()
 {
+	if (checkDbConnection ())
+		return 0;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_count = 0;
 	int d_tar_id = getTargetID ();
@@ -1501,6 +1553,9 @@ int Target::getTotalNumberOfImages ()
 
 double Target::getTotalOpenTime ()
 {
+	if (checkDbConnection ())
+		return 0;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double total;
 	int d_tar_id = getTargetID ();
@@ -1524,6 +1579,9 @@ double Target::getTotalOpenTime ()
 
 double Target::getFirstObs ()
 {
+	if (checkDbConnection ())
+		return NAN;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getTargetID ();
 		double ret;
@@ -1548,6 +1606,9 @@ double Target::getFirstObs ()
 
 double Target::getLastObs ()
 {
+	if (checkDbConnection ())
+		return NAN;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = getTargetID ();
 	double ret;
@@ -1704,6 +1765,9 @@ int Target::printImages (double JD, std::ostream &_os, int flags, const char *im
 
 Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs, double _altitude)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = _tar_id;
 	char db_type_id;
@@ -2124,7 +2188,7 @@ const char *Target::getGroupConstraintFile ()
 {
 	if (groupConstraintFile)
 		return groupConstraintFile;
-	
+
 	std::ostringstream os;
 	os << rts2core::Configuration::instance ()->getTargetDir () << "/groups/" << getTargetType () << ".xml";
 	groupConstraintFile = new char[os.str ().length () + 1];
@@ -2186,7 +2250,7 @@ Constraints * Target::getConstraints ()
 	}
 
 	MasterConstraints::setTargetConstraints (getTargetID (), ret);
-	return ret; 
+	return ret;
 }
 
 bool Target::checkConstraints (double JD)
