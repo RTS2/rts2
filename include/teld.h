@@ -816,8 +816,10 @@ class Telescope:public rts2core::Device
 
 		/**
 		 * Move telescope to target ALTAZ coordinates.
+		 *
+		 * @param _ignoreHorizon   set ignoreHorizon to this value before the movement
 		 */
-		virtual int moveAltAz ();
+		virtual int moveAltAz (bool _ignoreHorizon = false);
 
 		/**
 		 * Issue cupola synchronization event.
@@ -1362,10 +1364,12 @@ class Telescope:public rts2core::Device
 		rts2core::ValueTime *targetReached;
 
 		/**
+		 * Start the movement procedure.
 		 *
-		 * @param correction   correction type bitmask - 0 for no corerction, 1 for offsets, 2 for correction
+		 * @param correction       correction type bitmask - 0 for no corerction, 1 for offsets, 2 for correction
+		 * @param _ignoreHorizon   set ignoreHorizon to this value before the movement
 		 */
-		int startResyncMove (rts2core::Connection * conn, int correction);
+		int startResyncMove (rts2core::Connection * conn, int correction, bool _ignoreHorizon = false);
 
 		/**
 		 * Date and time when last park command was issued.
@@ -1450,7 +1454,7 @@ class Telescope:public rts2core::Device
 		void setOri (double obj_ra, double obj_dec, double epoch = 2000.0, double pmRa = 0, double pmDec = 0);
 		bool useOEpoch;
 
-		void resetMpecTLE (bool _ignoreHorizon = false);
+		void resetMpecTLE ();
 
 		double nextCupSync;
 		double lastTrackLog;

@@ -193,7 +193,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		trackingFSize->setValueInteger (20);
 
 		createValue (ignoreHorizon, "ignore_horizon", "allow telescope to move below horizon", false);
-		ignoreHorizon->setValueBool (true);
+		ignoreHorizon->setValueBool (false);
 
 		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true, RTS2_DT_DEGREES);
 	}
@@ -1733,6 +1733,7 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send, const c
 		deleteTimers (EVENT_TRACKING_TIMER);
 		if (track == 1 || track == 2 || track == 3)
 		{
+			setIgnoreHorizon (false);
 			maskState (TEL_MASK_TRACK, TEL_TRACKING, "tracking started");
 			if (addTrackingTimer == true)
 			{
@@ -2187,7 +2188,7 @@ int Telescope::abortMoveTracking ()
 	return 0;
 }
 
-int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
+int Telescope::startResyncMove (rts2core::Connection * conn, int correction, bool _ignoreHorizon)
 {
 	int ret;
 
@@ -2203,6 +2204,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	utc1 = ln_get_julian_from_sys ();
 	utc2 = 0;
 #endif
+
+	setIgnoreHorizon (_ignoreHorizon);
 
 	// calculate from MPEC..
 	if (mpec->getValueString ().length () > 0)
@@ -2610,7 +2613,7 @@ int Telescope::peek (double ra, double dec)
 	return 0;
 }
 
-int Telescope::moveAltAz ()
+int Telescope::moveAltAz (bool _ignoreHorizon)
 {
 	struct ln_hrz_posn hrz;
 	tarAltAz->getAltAz (&hrz);
@@ -2627,7 +2630,7 @@ int Telescope::moveAltAz ()
 	ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &target);
 
 	setOri (target.ra, target.dec);
-	return startResyncMove (NULL, 0);
+	return startResyncMove (NULL, 0, _ignoreHorizon);
 }
 
 int Telescope::commandAuthorized (rts2core::Connection * conn)
@@ -2762,9 +2765,9 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		tarAltAz->setValueAltAz (obj_ra, obj_dec);
-		resetMpecTLE (conn->isCommand (COMMAND_TELD_ALTAZ_NC));
+		resetMpecTLE ();
 		stopTracking ("stop tracking while in AltAz");
-		return moveAltAz () == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
+		return moveAltAz (conn->isCommand (COMMAND_TELD_ALTAZ_NC)) == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
 	else if (conn->isCommand ("resync"))
 	{
@@ -3009,13 +3012,11 @@ void Telescope::setOri (double obj_ra, double obj_dec, double epoch, double pmRa
 	pmRaDec->setValueRaDec (pmRa, pmDec);
 }
 
-void Telescope::resetMpecTLE (bool _ignoreHorizon)
+void Telescope::resetMpecTLE ()
 {
 	mpec->setValueString ("");
 	tle_l1->setValueString ("");
 	tle_l2->setValueString ("");
-
-	setIgnoreHorizon (_ignoreHorizon);
 }
 
 void Telescope::updateDUT1 ()
@@ -3066,7 +3067,10 @@ int Telescope::requestDUT1 ()
 
 void Telescope::setIgnoreHorizon (bool newIgnore)
 {
-	hardHorizon.setIgnore (newIgnore);
-	ignoreHorizon->setValueBool (newIgnore);
-	sendValueAll (ignoreHorizon);
+	if (ignoreHorizon->getValueBool () != newIgnore)
+	{
+		hardHorizon.setIgnore (newIgnore);
+		ignoreHorizon->setValueBool (newIgnore);
+		sendValueAll (ignoreHorizon);
+	}
 }
