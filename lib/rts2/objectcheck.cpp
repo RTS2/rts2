@@ -36,7 +36,7 @@
 using namespace rts2core;
 
 ObjectCheck::ObjectCheck () : 
-	horType(HA_DEC), ignoreHorizon(true)
+	horType(HA_DEC), ignoreHorizon(false)
 {
 }
 
@@ -206,7 +206,7 @@ double ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1, ho
 double ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
 {
 	if (horizon.size () == 0)
-		return -2;
+		return 0;	// default height (alt) of hard horizon, when not explicitly defined
 
 	horizon_t::iterator iter = horizon.begin ();
 
