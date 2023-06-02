@@ -2381,20 +2381,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 	}
 
-	// all checks done, let's set BOP state and try to move
-	maskState (BOP_EXPOSURE, BOP_EXPOSURE, "movement is about to start");
-
-	ret = startResync ();
-	if (ret)
-	{
-		useParkFlipping = false;
-		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
-		if (conn)
-			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
-		return ret;
-	}
-
-	// now we may set the movement state and log it
+	// all checks done, give proper info and set TEL_ state and BOP
 	if (correction)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
