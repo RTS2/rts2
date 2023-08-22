@@ -33,4 +33,11 @@
  */
 rts2db::Target *createTargetByString (std::string tar_string, bool debug);
 
+/**
+ * Return new target object, with null position.
+ *
+ * @return new target object. Caller must deallocate target object (delete it).
+ */
+rts2db::Target *createEmptyTarget ();
+
 #endif // __RTS2_TARGETRES__
