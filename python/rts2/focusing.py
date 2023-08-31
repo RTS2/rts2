@@ -167,7 +167,7 @@ class Focusing (scriptcomm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def findBestFWHM(self,tries,defaultFit=H3,min_stars=95,ds9display=False,threshold=2.7,deblendmin=0.03):
+	def __sexFindFWHM(self,tries,defaultFit=H3,min_stars=95,ds9display=False,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
@@ -184,12 +184,12 @@ class Focusing (scriptcomm.Rts2Comm):
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
 			self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,fwhm,nstars))
-			focpos.append(k)
-			fwhm.append(fwhm)
+			self.focpos.append(k)
+			self.fwhm.append(fwhm)
 			if (fwhm_min is None or fwhm < fwhm_min):
-				fwhm_MinimumX = k
+				self.fwhm_MinimumX = k
 				fwhm_min = fwhm
-		return focpos,fwhm,fwhm_min,fwhm_MinimumX
+		return self.focpos,self.fwhm,fwhm_min,self.fwhm_MinimumX
 
 	def __sepFindFWHM(self,tries):
 		from astropy.io import fits
