@@ -95,3 +95,13 @@ Target *createTargetByString (std::string tar_string, bool debug)
 		return rtar;
 	}
 }
+
+Target *createEmptyTarget()
+{
+	ConstTarget *constTarget = new ConstTarget ();
+
+	constTarget->setTargetName("RTS2_EMPTY");
+	constTarget->setPosition(NAN, NAN);
+	constTarget->setTargetType (TYPE_OPORTUNITY);
+	return constTarget;
+}
