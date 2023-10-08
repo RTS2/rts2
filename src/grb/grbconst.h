@@ -399,6 +399,10 @@
 #define TYPE_FERMI_LAT_GND_TRIG          128  // FERMI LAT Ground-analysis Trigger Pos message
 #define TYPE_FERMI_POINTDIR              129  // FERMI Pointing Direction
 
+#define TYPE_ICECUBE_ASTROTRACK_GOLD     173  // ICECUBE High Energy Single (neutrino) Event
+#define TYPE_ICECUBE_ASTROTRACK_BRONZE   174  // ICECUBE High Energy Single (neutrino) Event (less confidence real)
+
 #define FIND_SXC  0				 // Used in hete_same()
 #define FIND_WXM  1				 // Ditto; check the corners of a WXM box
+
 #endif /* !__RTS2_GRBCONST__ */

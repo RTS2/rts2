@@ -10,6 +10,7 @@ RTS2_PID_PREFIX=@LOCK_PREFIX@
 RTS2_LOG=@LOG_FILE@
 
 localstart=0
+restart=0
 
 function start
 {
@@ -35,7 +36,7 @@ if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
 		fi
 		echo -n "starting centrald on port $centrald_port .. "
 		if [ $localstart == 0 ]; then
-			$RTS2_BIN_PREFIX/rts2-centrald $centrald_options >>$RTS2_LOG 2>&1
+			eval $RTS2_BIN_PREFIX/rts2-centrald $centrald_options >>$RTS2_LOG 2>&1
 			started=$?
 			if [ $started == 255 ]; then
 				echo "already running"
@@ -47,7 +48,7 @@ if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
 			fi
 		else
 			echo "rts2-centrald $extraargs $centrald_options"
-			$RTS2_BIN_PREFIX/rts2-centrald $extraargs $centrald_options
+			eval $RTS2_BIN_PREFIX/rts2-centrald $extraargs $centrald_options
 		fi
 		started=$?
 		if [ $started == 255 ]; then
@@ -67,10 +68,10 @@ fi
 CENTRALD_OPTIONS=`grep '^-' $CENTRALD_FILE 2>/dev/null`
 
 while read device type device_name options; do
-	if [ "x$device_name" == "x$name" -o "x$name" == "xall" ]; then 
+	if [ "x$device_name" == "x$name" -o "x$name" == "xall" ]; then
 		echo -n "starting device $device_name .. "
 		if [ $localstart == 0 ]; then
-			$RTS2_BIN_PREFIX/rts2-$device-$type -d $device_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+			eval $RTS2_BIN_PREFIX/rts2-$device-$type -d $device_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
 			res=$?
 			if [ $res == 255 ]; then
 				echo "already running"
@@ -82,7 +83,7 @@ while read device type device_name options; do
 			fi
 		else
 			echo "rts2-$device-$type $extraargs -d $device_name $options $CENTRALD_OPTIONS"
-			$RTS2_BIN_PREFIX/rts2-$device-$type $extraargs -d $device_name $options $CENTRALD_OPTIONS
+			eval $RTS2_BIN_PREFIX/rts2-$device-$type $extraargs -d $device_name $options $CENTRALD_OPTIONS
 		fi
 		res=$?
 		if [ $res == 255 ]; then
@@ -100,7 +101,7 @@ while read service service_name options; do
 	if [ "x$service_name" == "x$name" -o "x$name" == "xall" ]; then
 		echo -n "starting  service $service_name .. "
 		if [ $localstart == 0 ]; then
-			$RTS2_BIN_PREFIX/rts2-$service -d $service_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+			eval $RTS2_BIN_PREFIX/rts2-$service -d $service_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
 			res=$?
 			if [ $res == 255 ]; then
 				echo "already running"
@@ -112,7 +113,7 @@ while read service service_name options; do
 			fi
 		else
 			echo "rts2-$service $extraargs -d $service_name $options $CENTRALD_OPTIONS"
-			$RTS2_BIN_PREFIX/rts2-$service $extraargs -d $service_name $options $CENTRALD_OPTIONS
+			eval $RTS2_BIN_PREFIX/rts2-$service $extraargs -d $service_name $options $CENTRALD_OPTIONS
 		fi
 		res=$?
 		if [ $res == 255 ]; then
@@ -134,12 +135,68 @@ return 0
 
 }
 
+function stop
+{
+
+if [ "x$1" == "x" ]; then
+	echo "stopping everything"
+	name="all"
+else
+	name=$1
+fi
+
+if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
+	stopped=1
+	while read centrald centrald_port centrald_options; do
+		if [ "x${centrald_port}" == "x" ]; then
+			centrald_port=617
+		fi
+		echo -n "stopping centrald on port $centrald_port .. "
+		kill `cat /var/run/rts2_centrald_$centrald_port` 2>>/dev/null
+		stopped=$?
+		[ $stopped == 0 ] && echo "killed" || echo "failed"
+		if [ $stopped != 0 -a "x$name" != "xall" ]; then
+			return 1
+		fi
+	done < <(grep '^centrald' $CENTRALD_FILE)
+	if [ "x$name" != "xall" ]; then
+		return $stopped
+	fi
+fi
+
+if [ "x$name" == "xall" ]; then
+	while read device type device_name options; do
+		echo -n "stopping device $device_name .. "
+		kill `cat /var/run/rts2_$device_name` 2>>/dev/null
+		stopped=$?
+		[ $stopped == 0 ] && echo "killed" || echo "failed"
+	done < <(cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
+
+	while read service service_name options; do
+		echo -n "stopping service $service_name .. "
+		kill `cat /var/run/rts2_$service_name` 2>>/dev/null
+		stopped=$?
+		[ $stopped == 0 ] && echo "killed" || echo "failed"
+	done < <(cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
+else
+	echo -n "stopping $name .. "
+	kill `cat /var/run/rts2_$name` 2>/dev/null
+	stopped=$?
+	[ $stopped == 0 ] && echo "killed" || echo "failed"
+fi
+
+[ "x$name" != "xall" ] && return $stopped || return 0
+
+}
+
 count=0
 ret=0
 
 for x in $*; do
 	if [ "$x" == "-l" ]; then
 		localstart=1
+	elif [ "$x" == "-r" ]; then
+		restart=1
 	elif [ "$x" == "--list" ]; then
 		echo "Available devices:"
 		echo "------------------"
@@ -157,10 +214,17 @@ for x in $*; do
 	elif [ "$x" == "-h" -o "$x" == "--help" ]; then
 		echo "Use rts2-start to start RTS2 devices and services. Available options:"
 		echo "	-l     .. run locally (don't deamonise, run on foreground, with debugging on)"
+		echo "	-r     .. restart (kill already running instance first)"
 		echo "	--list .. list available devices and services"
 		exit 0
 	else
 		count=1
+
+		if [ $restart == 1 ]; then
+			stop $x
+			sleep 1
+		fi
+
 		start $x
 		r=$?
 		if [ $r -ne 0 ]; then
@@ -170,6 +234,10 @@ for x in $*; do
 done
 
 if [ $count -eq 0 ]; then
+	if [ $restart == 1 ]; then
+		stop $x
+		sleep 1
+	fi
 	start ""
 	r=$?
 	if [ $r -ne 0 ]; then

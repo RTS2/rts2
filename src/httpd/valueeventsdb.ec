@@ -1,5 +1,5 @@
-/* 
- * Value changes triggering infrastructure. 
+/*
+ * Value changes triggering infrastructure.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -21,6 +21,7 @@
 
 #include "rts2db/recvals.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 EXEC SQL include sqlca;
 
@@ -28,6 +29,9 @@ using namespace rts2xmlrpc;
 
 int ValueChangeRecord::getRecvalId (const char *suffix, int recval_type)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id;
 	VARCHAR db_device_name[25];
@@ -82,6 +86,9 @@ int ValueChangeRecord::getRecvalId (const char *suffix, int recval_type)
 
 void ValueChangeRecord::recordValueInteger (int recval_id, int val, double validTime)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = recval_id;
 	int  db_value = val;
@@ -102,6 +109,9 @@ void ValueChangeRecord::recordValueInteger (int recval_id, int val, double valid
 
 void ValueChangeRecord::recordValueDouble (int recval_id, double val, double validTime)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = recval_id;
 	double  db_value = val;
@@ -122,6 +132,9 @@ void ValueChangeRecord::recordValueDouble (int recval_id, double val, double val
 
 void ValueChangeRecord::recordValueBoolean (int recval_id, bool val, double validTime)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = recval_id;
 	bool db_value = val;

@@ -24,6 +24,8 @@
 #include "rts2fits/imagedb.h"
 #include "rts2fits/dbfilters.h"
 
+#include "rts2db/devicedb.h"
+
 #include <iomanip>
 #include <libnova/airmass.h>
 #include <sstream>
@@ -116,6 +118,9 @@ ImageDb::ImageDb (long in_img_date, int in_img_usec, float in_img_exposure):Imag
 
 int ImageDb::getOKCount ()
 {
+	if (rts2db::checkDbConnection ())
+		return 0;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_obs_id = getObsId ();
 	int db_count = 0;
@@ -145,6 +150,9 @@ int ImageDb::saveImage ()
 
 int ImageDb::renameImage (const char *new_filename)
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
 	int d_img_id = getImgId ();
@@ -191,6 +199,9 @@ std::ostream & operator << (std::ostream &_os, ImageDb &img_db)
  ********************************************************************/
 int ImageSkyDb::updateDB ()
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
 	int d_img_id = getImgId ();
@@ -316,6 +327,9 @@ int ImageSkyDb::updateDB ()
 
 int ImageSkyDb::updateAstrometry ()
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
 	int d_img_id = getImgId ();
@@ -412,6 +426,9 @@ int ImageSkyDb::isCalibrationImage ()
 
 void ImageSkyDb::updateCalibrationDb ()
 {
+	if (rts2db::checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_air_last_image;
 		float db_airmass;
@@ -565,6 +582,9 @@ int ImageSkyDb::saveImage ()
 
 int ImageSkyDb::deleteFromDB ()
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_img_id = getImgId ();
 	int d_obs_id = getObsId ();

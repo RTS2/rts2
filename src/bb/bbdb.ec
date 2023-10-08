@@ -19,6 +19,7 @@
 
 #include "bbdb.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 #include "rts2json/jsonvalue.h"
 
 #include <math.h>
@@ -35,6 +36,9 @@ Observatory::Observatory (int id)
 
 void Observatory::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
 	double db_longitude;
@@ -63,7 +67,7 @@ void Observatory::load ()
 		observatories
 	WHERE
 		observatory_id = :db_observatory_id;
-	
+
 	if (sqlca.sqlcode)
 		throw rts2db::SqlError ();
 
@@ -90,6 +94,9 @@ void Observatory::auth (SoupAuth *_auth)
 
 void Observatories::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id;
 	EXEC SQL END DECLARE SECTION;
@@ -122,6 +129,9 @@ void Observatories::load ()
 
 void ObservatorySchedule::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_schedule_id = schedule_id;
 	int db_observatory_id = observatory_id;
@@ -138,7 +148,7 @@ void ObservatorySchedule::load ()
 	int db_sched_to_ind;
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL SELECT 
+	EXEC SQL SELECT
 		state,
 		EXTRACT (EPOCH FROM created),
 		EXTRACT (EPOCH FROM last_update),
@@ -155,7 +165,7 @@ void ObservatorySchedule::load ()
 	WHERE
 		schedule_id = :db_schedule_id
 		AND observatory_id = :db_observatory_id;
-	
+
 	if (sqlca.sqlcode)
 		throw rts2db::SqlError ();
 
@@ -168,6 +178,9 @@ void ObservatorySchedule::load ()
 
 void ObservatorySchedule::updateState (int _state, double _from, double _to)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_schedule_id = schedule_id;
 	int db_observatory_id = observatory_id;
@@ -232,6 +245,9 @@ void ObservatorySchedule::toJSON (std::ostream &os)
 
 void BBSchedules::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_schedule_id = schedule_id;
 	int db_tar_id;
@@ -253,7 +269,7 @@ void BBSchedules::load ()
 
 	if (sqlca.sqlcode)
 		throw rts2db::SqlError ();
-	
+
 	tar_id = db_tar_id;
 
 	// load all schedules
@@ -300,7 +316,7 @@ void BBSchedules::load ()
 void BBSchedules::toJSON (std::ostream &os)
 {
 	os << "[";
-	
+
 	for (BBSchedules::iterator iter = begin (); iter != end (); iter++)
 	{
 		if (iter != begin ())
@@ -313,6 +329,9 @@ void BBSchedules::toJSON (std::ostream &os)
 
 void Schedules::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_schedule_id;
 	int db_tar_id;
@@ -372,25 +391,31 @@ void Schedules::toJSON (std::ostream &os)
  */
 void rts2bb::createMapping (int observatory_id, int tar_id, int obs_tar_id)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
 	int db_tar_id = tar_id;
 	int db_obs_tar_id = obs_tar_id;
 	EXEC SQL END DECLARE SECTION;
-	
+
 	EXEC SQL INSERT INTO targets_observatories
-		(observatory_id, tar_id, obs_tar_id) 
+		(observatory_id, tar_id, obs_tar_id)
 	VALUES
 		(:db_observatory_id, :db_tar_id, :db_obs_tar_id);
 
 	if (sqlca.sqlcode)
 		throw rts2db::SqlError ();
-	
+
 	EXEC SQL COMMIT;
 }
 
 void rts2bb::reportObservation (int observatory_id, int schedule_id, int obs_id, int obs_tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
 	int db_schedule_id = schedule_id;
@@ -457,6 +482,9 @@ void rts2bb::reportObservation (int observatory_id, int schedule_id, int obs_id,
 
 int rts2bb::findMapping (int observatory_id, int obs_tar_id)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
 	int db_obs_tar_id = obs_tar_id;
@@ -474,6 +502,9 @@ int rts2bb::findMapping (int observatory_id, int obs_tar_id)
 
 int rts2bb::findObservatoryMapping (int observatory_id, int tar_id)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
 	int db_obs_tar_id;
@@ -491,6 +522,9 @@ int rts2bb::findObservatoryMapping (int observatory_id, int tar_id)
 
 int rts2bb::createSchedule (int target_id)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_schedule_id;
 	int db_target_id = target_id;

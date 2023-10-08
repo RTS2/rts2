@@ -29,9 +29,14 @@
 #include "rts2script/execclidb.h"
 #include "rts2devcliphot.h"
 
+#ifdef RTS2_HAVE_LIBJPEG
+#include <Magick++.h>
+#endif // RTS2_HAVE_LIBJPEG
+
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
 #define OPT_DONT_DARK     OPT_LOCAL + 101
 #define OPT_DISABLE_AUTO  OPT_LOCAL + 102
+#define OPT_EXE_TIMEOUT   OPT_LOCAL + 103
 
 namespace rts2plan
 {
@@ -138,6 +143,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueInteger *current_obsid;
 		rts2core::ValueTime *current_obsstart;
 
+		rts2core::ValueString *objectName;
 		rts2core::ValueString *pi;
 		rts2core::ValueString *program;
 
@@ -153,6 +159,8 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueBool *ignoreDay;
 
 		rts2core::ValueInteger *img_id;
+
+		rts2core::ValueDouble *exe_timeout;
 
 		rts2core::ConnNotify *notifyConn;
 };
@@ -185,7 +193,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (acqusitionFailed, "acqusition_failed", "number of acqusitions which failed", false);
 	acqusitionFailed->setValueInteger (0);
 
-	createValue (next_night, "next_night", "true if next target is the first target in given night");
+	createValue (next_night, "next_night", "true if next target is the first target in given night", false);
 	next_night->setValueBool (false);
 
 	createValue (current_id, "current", "ID of current target", false);
@@ -197,6 +205,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (current_obsid, "obsid", "ID of observation", false);
 	createValue (current_obsstart, "observation_start", "time when the current observation started", false);
 
+	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
 	createValue (pi, "PI", "project investigator of the target", true, RTS2_VALUE_WRITABLE);
 	createValue (program, "PROGRAM", "target program name", true, RTS2_VALUE_WRITABLE);
 
@@ -210,10 +219,13 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (next_name, "next_name", "name of next target", false);
 	createValue (next_plan_id, "next_plan_id", "next plan ID", false);
 
-	createValue (activeQueue, "queue", "selected queueu", true, RTS2_VALUE_WRITABLE);
+	createValue (activeQueue, "queue", "selected queue", false, RTS2_VALUE_WRITABLE);
 	createQueue ("next");
 
 	createValue (img_id, "img_id", "ID of current image", false);
+
+	createValue (exe_timeout, "exe_timeout", "inactivity timeout interval for external scripts", false, RTS2_VALUE_WRITABLE);
+	exe_timeout->setValueDouble (600.0);
 
 	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false, RTS2_VALUE_WRITABLE);
 	doDarks->addSelVal ("not at all");
@@ -236,6 +248,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
 	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
 	addOption (OPT_DISABLE_AUTO, "no-auto", 0, "disable autolooping");
+	addOption (OPT_EXE_TIMEOUT, "exe-timeout", 1, "external script inactivity timeout");
 }
 
 Executor::~Executor (void)
@@ -259,6 +272,9 @@ int Executor::processOption (int in_opt)
 			autoLoop->setValueBool (false);
 			defaultAutoLoop->setValueBool (false);
 			break;
+		case OPT_EXE_TIMEOUT:
+			exe_timeout->setValueCharArr (optarg);
+			break;
 		default:
 			return rts2db::DeviceDb::processOption (in_opt);
 	}
@@ -273,8 +289,14 @@ int Executor::init ()
 	ret = notifyConn->init ();
 	if (ret)
 		return ret;
-	
+
 	addConnection (notifyConn);
+
+#ifdef RTS2_HAVE_LIBJPEG
+	Magick::InitializeMagick (".");
+#endif /* RTS2_HAVE_LIBJPEG */
+
+	setIdleInfoInterval(1);
 
 	return ret;
 }
@@ -434,6 +456,15 @@ void Executor::postEvent (rts2core::Event * event)
 					maskState (EXEC_STATE_MASK, EXEC_IDLE);
 					switchTarget ();
 				}
+				else if (scriptCount->getValueInteger () == 0)
+				{
+					logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED with observations not started" << sendLog;
+					maskState (EXEC_STATE_MASK, EXEC_IDLE);
+					// FIXME: crude workaround for fixing an unwelcome loop of this target due to not removing it in filterExpired
+					currentTarget->startObservation ();
+
+					switchTarget ();
+				}
 				// scriptCount is not 0, but we hit continues target..
 				else if (currentTarget->isContinues () == 1
 					&& (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ())
@@ -449,6 +480,7 @@ void Executor::postEvent (rts2core::Event * event)
 			}
 			else
 			{
+				maskState (EXEC_STATE_MASK, EXEC_IDLE);
 				if (scriptCount->getValueInteger () == 0)
 					switchTarget ();
 			}
@@ -459,7 +491,8 @@ void Executor::postEvent (rts2core::Event * event)
 				postEvent (new rts2core::Event (EVENT_CLEAR_WAIT));
 				break;
 			}
-			postEvent (new rts2core::Event (EVENT_OBSERVE));
+			if (currentTarget)
+				postEvent (new rts2core::Event (EVENT_OBSERVE));
 			break;
 		case EVENT_CORRECTING_OK:
 			if (waitState)
@@ -469,7 +502,8 @@ void Executor::postEvent (rts2core::Event * event)
 			else
 			{
 				// we aren't waiting, let's observe target again..
-				postEvent (new rts2core::Event (EVENT_OBSERVE));
+				if (currentTarget)
+					postEvent (new rts2core::Event (EVENT_OBSERVE));
 			}
 			break;
 		case EVENT_MOVE_FAILED:
@@ -501,6 +535,49 @@ void Executor::postEvent (rts2core::Event * event)
 		case EVENT_GET_ACQUIRE_STATE:
 			*((int *) event->getArg ()) =
 				(currentTarget) ? currentTarget->getAcquired () : -2;
+			break;
+		case EVENT_WRITE_TO_IMAGE:
+		case EVENT_WRITE_ONLY_IMAGE:
+		case EVENT_WRITE_TO_IMAGE_ENDS:
+			{
+				// Write self values to image
+				rts2image::CameraImage *ci = (rts2image::CameraImage *) event->getArg ();
+				rts2image::Image *image = ci->image;
+				CondValueVector::iterator iter;
+
+				for (iter = getValuesBegin (); iter != getValuesEnd (); iter++)
+				{
+					rts2core::Value *value = (*iter)->getValue ();
+
+					if (value->getWriteToFits ())
+					{
+						if (event->getType () == EVENT_WRITE_TO_IMAGE ||
+							event->getType () == EVENT_WRITE_ONLY_IMAGE)
+						{
+							if (value->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
+								image->writeConnValue (NULL, value);
+							value->resetValueChanged ();
+						}
+						else if (event->getType () == EVENT_WRITE_TO_IMAGE_ENDS)
+						{
+							if (value->writeWhenChanged ())
+								image->recordChange (NULL, value);
+						}
+					}
+				}
+
+				break;
+			}
+		case EVENT_SET_TARGET:
+		case EVENT_SET_TARGET_NOT_CLEAR:
+		case EVENT_SET_TARGET_KILL:
+		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
+			objectName->setValueString (currentTarget->getTargetName ());
+			pi->setValueString(currentTarget->getPIName ());
+			program->setValueString (currentTarget->getProgramName ());
+			sendValueAll (objectName);
+			sendValueAll (pi);
+			sendValueAll (program);
 			break;
 	}
 	rts2db::DeviceDb::postEvent (event);
@@ -903,6 +980,14 @@ void Executor::clearNextTargets ()
 	sendValueAll (next_id);
 	sendValueAll (next_name);
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
+
+	// switch auto loop back to default value
+	if (autoLoop->getValueBool () != defaultAutoLoop->getValueBool ())
+	{
+		logStream (MESSAGE_INFO) << "resetting auto_loop back to " << defaultAutoLoop->getValueBool () << sendLog;
+		autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
+		sendValueAll (autoLoop);
+	}
 }
 
 void Executor::doSwitch ()
@@ -931,6 +1016,16 @@ void Executor::doSwitch ()
 		currentTarget = NULL;
 		current_plan_id->setValueInteger (-1);
 	}
+
+	// switch auto loop back to default value
+	// FIXME: the same code as in clearNextTargets, probably refactor it to some function?..
+	if (autoLoop->getValueBool () != defaultAutoLoop->getValueBool ())
+	{
+		logStream (MESSAGE_INFO) << "resetting auto_loop back to " << defaultAutoLoop->getValueBool () << sendLog;
+		autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
+		sendValueAll (autoLoop);
+	}
+
 	if (getActiveQueue ()->size () != 0)
 	{
 		// go to post-process
@@ -946,9 +1041,6 @@ void Executor::doSwitch ()
 				processTarget (currentTarget);
 				currentTarget = getActiveQueue ()->front ().target;
 			}
-			// switch auto loop back to true
-			autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
-			sendValueAll (autoLoop);
 		}
 		else
 		{
@@ -968,6 +1060,9 @@ void Executor::doSwitch ()
 
 int Executor::switchTarget ()
 {
+	// Remove script temporary values from executor
+	deleteTemporaryValues ();
+
 	if (enabled->getValueBool () == false)
 	{
 		clearNextTargets ();
@@ -1006,6 +1101,7 @@ int Executor::switchTarget ()
 				doSwitch ();
 				break;
 			case SERVERD_DUSK | SERVERD_STANDBY:
+			case SERVERD_NIGHT | SERVERD_STANDBY:
 			case SERVERD_DAWN | SERVERD_STANDBY:
 				if (!currentTarget && getActiveQueue ()->size () != 0 && getActiveQueue ()->front ().target->getTargetID () == 1)
 				{
@@ -1213,6 +1309,33 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		image.openFile (imgn, false, true);
 		postEvent (new rts2core::Event (EVENT_WRITE_ONLY_IMAGE, (void *) &image));
 		image.saveImage ();
+		return 0;
+	}
+	else if (conn->isCommand ("correction_info"))
+	{
+		char *telescope_name;
+		int corr_mark, corr_img, corr_obs;
+		int imgId, obsId;
+		double ra_err, dec_err, pos_err;
+
+		if (conn->paramNextString (&telescope_name)
+			|| conn->paramNextInteger (&corr_mark) || conn->paramNextInteger (&corr_img) || conn->paramNextInteger (&corr_obs)
+			|| conn->paramNextInteger (&imgId) || conn->paramNextInteger (&obsId)
+			|| conn->paramNextDouble (&ra_err) || conn->paramNextDouble (&dec_err) || conn->paramNextDouble (&pos_err)
+			|| !conn->paramEnd ())
+			return -2;
+
+		// We should not correct if we are not inside an observing sequence
+		if ((getState () & EXEC_STATE_MASK) != EXEC_MOVE &&
+			(getState () & EXEC_STATE_MASK) != EXEC_OBSERVE &&
+			(getState () & EXEC_STATE_MASK) != EXEC_ACQUIRE)
+			return DEVDEM_E_IGNORE;
+
+		rts2core::Connection *telConn = findName (telescope_name);
+
+		if (telConn)
+			telConn->queCommand (new rts2core::CommandCorrect (this, corr_mark, corr_img, corr_obs, imgId, obsId, ra_err, dec_err, pos_err));
+
 		return 0;
 	}
 	return rts2db::DeviceDb::commandAuthorized (conn);

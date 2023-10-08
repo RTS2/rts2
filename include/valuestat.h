@@ -99,7 +99,7 @@ class ValueDoubleStat:public ValueDouble
 		 */
 		void addValue (double in_val, size_t maxQueSize)
 		{
-			while (valueList.size () >= maxQueSize)
+			while (maxQueSize > 0 && valueList.size () >= maxQueSize)
 				valueList.pop_front ();
 			addValue (in_val);
 		}

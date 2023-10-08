@@ -1,4 +1,4 @@
-/* 
+/*
  * User access.
  * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -20,6 +20,7 @@
 #include <algorithm>
 
 #include "rts2db/taruser.h"
+#include "rts2db/devicedb.h"
 #include "block.h"
 
 using namespace rts2db;
@@ -56,6 +57,9 @@ TarUser::~TarUser (void)
 
 int TarUser::load ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = tar_id;
 	char db_type_id = type_id;

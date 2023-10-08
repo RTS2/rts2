@@ -239,23 +239,56 @@ std::vector<std::string> SplitStr(const std::string& text, const std::string& de
 	if (text.empty ())
 		return result;
 
-	while (pos != std::string::npos)
-	{
-		pos = text.find(delimeter, oldpos);
-		if (pos - oldpos == 0)
-		{
-			// / is the only character..
-			if (text.length () == 1)
-				break;
-			oldpos += delimlen;
-			continue;
+	if (delimeter == " ") {
+		// Special handling for whitespace-separated strings, possibly quoted
+		while (pos < text.length ()) {
+			char quote = 0;
+
+			// Leading whitespaces
+			while (std::isspace (text[pos]))
+				pos ++;
+
+			// Quote start?
+			if (pos < text.length () && (text[pos] == '"' || text[pos] == '\'')) {
+				quote = text[pos];
+				pos ++;
+			}
+
+			// Token start
+			oldpos = pos;
+
+			// Token body
+			while (pos < text.length () &&
+				   ((quote && text[pos] != quote) ||
+					(!quote && !std::isspace (text[pos])))) {
+				pos ++;
+			}
+
+			if (pos > oldpos)
+				result.push_back(text.substr(oldpos, pos - oldpos));
+
+			// Finishing quote if any
+			if (quote)
+				pos ++;
 		}
-		result.push_back(text.substr(oldpos, pos - oldpos));
-		oldpos = pos + delimlen;
-		// last character..
-		if (pos == text.length () - 1)
-			break;
-	}
+	} else
+		while (pos != std::string::npos)
+		{
+			pos = text.find(delimeter, oldpos);
+			if (pos - oldpos == 0)
+			{
+				// / is the only character..
+				if (text.length () == 1)
+					break;
+				oldpos += delimlen;
+				continue;
+			}
+			result.push_back(text.substr(oldpos, pos - oldpos));
+			oldpos = pos + delimlen;
+			// last character..
+			if (pos == text.length () - 1)
+				break;
+		}
 
 	return result;
 }

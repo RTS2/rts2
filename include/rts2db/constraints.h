@@ -1,4 +1,4 @@
-/* 
+/*
  * Constraints.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2011      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
@@ -34,6 +34,8 @@ static const char* CONSTRAINT_AIRMASS      = "airmass";
 static const char* CONSTRAINT_ZENITH_DIST  = "zenithDistance";
 static const char* CONSTRAINT_HA           = "HA";
 static const char* CONSTRAINT_DEC          = "dec";
+static const char* CONSTRAINT_ALTITUDE     = "altitude";
+static const char* CONSTRAINT_AZIMUTH      = "azimuth";
 static const char* CONSTRAINT_LDISTANCE    = "lunarDistance";
 static const char* CONSTRAINT_LALTITUDE    = "lunarAltitude";
 static const char* CONSTRAINT_LPHASE       = "lunarPhase";
@@ -50,7 +52,7 @@ class Target;
  * Simple interval for constraints. Has lower and upper bounds.
  *
  * @author Petr Kubanek <petr@kubanek.net>
- */ 
+ */
 class ConstraintDoubleInterval
 {
 	public:
@@ -252,6 +254,22 @@ class ConstraintDec:public ConstraintInterval
 		virtual const char* getName () { return CONSTRAINT_DEC; }
 };
 
+class ConstraintAltitude:public ConstraintInterval
+{
+	public:
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
+
+		virtual const char* getName () { return CONSTRAINT_ALTITUDE; }
+};
+
+class ConstraintAzimuth:public ConstraintInterval
+{
+	public:
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
+
+		virtual const char* getName () { return CONSTRAINT_AZIMUTH; }
+};
+
 class ConstraintLunarDistance:public ConstraintInterval
 {
 	public:
@@ -337,7 +355,7 @@ class ConstraintsList:public std::list <ConstraintPtr>
 			}
 			return os;
 		}
-		
+
 		void printJSON (std::ostream &os);
 
 		std::string toString ()

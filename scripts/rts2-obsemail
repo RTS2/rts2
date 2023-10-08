@@ -1,0 +1,182 @@
+#!/usr/bin/env python
+#
+# Script for sending a simple observation report by e-mail
+#
+# You will need following python packages: numpy astropy sep
+
+from __future__ import print_function
+
+import sys, posixpath, datetime
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib.patches import Circle
+
+import sep
+import numpy as np
+from astropy.io import fits
+from astropy.wcs import WCS
+from astropy.coordinates import SkyCoord
+
+import smtplib
+from email.message import Message
+from email.mime.audio import MIMEAudio
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email import encoders
+import mimetypes
+import platform
+from io import BytesIO
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from rts2 import rtsapi
+
+# Cropping of overscans if any
+def parse_det(string):
+	x0,x1,y0,y1 = [int(_)-1 for _ in sum([_.split(':') for _ in string[1:-1].split(',')], [])]
+
+	return x0,x1,y0,y1
+
+def crop_overscans(image, header):
+	if not header.get('DATASEC'):
+		return image,header
+
+	x1,x2,y1,y2 = parse_det(header.get('DATASEC'))
+
+	if header.get('CRPIX1') is not None:
+		header['CRPIX1'] -= x1
+		header['CRPIX2'] -= y1
+
+	return np.ascontiguousarray(image[y1:y2+1, x1:x2+1]),header
+
+def colorbar(obj=None, ax=None, fig=None, size="5%", pad=0.1):
+	# create an axes on the right side of ax. The width of cax will be 5%
+	# of ax and the padding between cax and ax will be fixed at 0.05 inch.
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes("right", size=size, pad=pad)
+
+	fig.colorbar(obj, cax=cax)
+
+if __name__ == '__main__':
+	from optparse import OptionParser
+
+	parser = OptionParser(usage='usage: %prog [options] arg')
+	parser.add_option('-a', '--url', help='Base RTS2 HTTPD url', action='store', dest='baseurl', type='string', default='http://localhost:8889')
+	parser.add_option('-u', '--user', help='Username for RTS2 HTTPD', action='store', dest='username', type='string', default=None)
+	parser.add_option('-p', '--password', help='Password for RTS2 HTTPD', action='store', dest='password', type='string', default=None)
+	parser.add_option('-m', '--mail', help='Email for sending the diagnostic message', action='append', dest='mail', type='string', default=[])
+
+	(options,args) = parser.parse_args()
+
+	proxy = rtsapi.JSONProxy(url=options.baseurl, username=options.username, password=options.password)
+
+	for arg in args:
+		obsid = int(arg)
+
+		res = proxy.loadJson('/api/obyid', {'id': obsid})
+		obs = res['observation']
+		target = res['target']
+
+		images = proxy.loadJson('/api/ibyoid', {'oid': obsid})
+
+		# Skip processing observations with no images
+		if not len(images['d']):
+			continue
+
+		subject = 'Observation %d of target %d / %s finished' % (obs['id'], target['id'], target['name'])
+
+		message = 'Automatic report for observation %d of target %d / %s<br>' % (obs['id'], target['id'], target['name'])
+		message += '<br>'
+
+		if target['ra'] is not None and target['dec'] is not None:
+			sc=SkyCoord(target['ra'], target['dec'], unit='deg')
+			message += 'Target position: %s (%s %s) <br>' % (sc.to_string(style='hmsdms', sep=' '), sc.ra.to_string(decimal=True, ), sc.dec.to_string(decimal=True, alwayssign=True))
+
+		message += '<br>'
+		if obs['slew']:
+			message += 'Slew start: %s UT<br>' % datetime.datetime.utcfromtimestamp(obs['slew'])
+		if obs['start']:
+			message += 'Observation start: %s UT<br>' % datetime.datetime.utcfromtimestamp(obs['start'])
+		if obs['end']:
+			message += 'Observation end: %s UT<br>' % datetime.datetime.utcfromtimestamp(obs['end'])
+		message += 'Images: %d total, %d good, %d bad<br>' % (obs['images'], obs['good'], obs['images']-obs['good'])
+		message += '<br>'
+
+		sender = 'obsproc@' + platform.node()
+
+		msg = MIMEMultipart()
+		msg['Subject'] = subject
+		msg['From'] = sender
+
+		for num,img in enumerate(images['d']):
+			filename =  img[4]
+			image,header = fits.getdata(filename).astype(np.double), fits.getheader(filename)
+
+			image,header = crop_overscans(image,header)
+
+			bg = sep.Background(image)
+			image1 = image - bg.back()
+
+			try:
+				wcs = WCS(header)
+				x0,y0 = wcs.all_world2pix(target['ra'], target['dec'], 0)
+			except:
+				wcs = None
+				x0,y0 = None,None
+
+			time = datetime.datetime.utcfromtimestamp(img[1])
+
+			line = '%s - filter %s exp %g s - %s\n' % (time, img[3], img[2], filename)
+			message += '<p>' + line + '<br>'
+			message += '<img src="cid:image%d">\n' % num
+			message += '</p>'
+
+			fig = Figure(facecolor='white', dpi=72, figsize=(12,5), tight_layout=True)
+			ax = fig.add_subplot(121)
+			vmin,vmax = np.percentile(image, [0.5, 99.5])
+			p = ax.imshow(image, interpolation='bicubic', vmin=vmin, vmax=vmax, origin='lower', cmap = 'hot')
+			ax.add_patch(Circle((x0, y0), radius=20, color='blue', lw=2, fc='none'))
+			colorbar(p, ax=ax, fig=fig)
+
+			ax.set_title('%s UT - %s filter %s exp %g s' % (time, header.get('CCD_NAME', ''), img[3], img[2]))
+
+			if wcs is not None:
+				ax = fig.add_subplot(122)
+
+				vmin,vmax = np.percentile(image1, [0.5, 99.7])
+				p = ax.imshow(image1, interpolation='nearest', vmin=vmin, vmax=vmax, origin='lower', cmap = 'hot')
+				colorbar(p, ax=ax, fig=fig)
+
+				ax.set_title(target['name'])
+
+				ax.set_xlim(x0-50, x0+50)
+				ax.set_ylim(y0-50, y0+50)
+
+			buf = BytesIO()
+			canvas = FigureCanvas(fig)
+			canvas.print_jpeg(buf, bbox_inches='tight')
+			buf.seek(0)
+
+			part = MIMEBase('application', "octet-stream")
+			part.set_payload(buf.read())
+			encoders.encode_base64(part)
+			part.add_header('Content-Disposition', 'attachment; filename="%s"' % posixpath.splitext(posixpath.split(filename)[-1])[0] + '.jpg')
+			part.add_header('Content-ID', '<image%d>' % num)
+			msg.attach(part)
+
+		msg.attach(MIMEText(message, 'html'))
+
+		for to in options.mail:
+			msg['To'] = to
+			s = smtplib.SMTP('localhost')
+			s.sendmail(sender, to, msg.as_string())
+			s.quit()
+
+# Local Variables:
+# tab-width: 4
+# python-indent-offset: 4
+# indent-tabs-mode: t
+# End:

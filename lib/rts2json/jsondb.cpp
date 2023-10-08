@@ -1,4 +1,4 @@
-/* 
+/*
  * JSON database API calls.
  * Copyright (C) 2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -61,6 +61,13 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		tar_set.load ();
 		jsonTargets (tar_set, os, params);
 	}
+	// returns all selectable targets in database
+	else if (vals[0] == "tslist")
+	{
+		rts2db::TargetSetSelectable tar_set;
+		tar_set.load ();
+		jsonTargets (tar_set, os, params);
+	}
 	// returns target information specified by target name
 	else if (vals[0] == "tbyname")
 	{
@@ -102,7 +109,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		int label = params->getInteger ("l", -1);
 		if (label == -1)
 			tar_set.loadByName ("%", false, false);
-		else	
+		else
 			tar_set.loadByLabelId (label);
 		jsonTargets (tar_set, os, params);
 	}
@@ -149,7 +156,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		rts2db::Observation obs (obsid);
 		if (obs.load ())
 			throw XmlRpc::JSONException ("Cannot load observation set");
-		obs.loadImages ();	
+		obs.loadImages ();
 		jsonImages (obs.getImageSet (), os, params);
 	}
 	else if (vals[0] == "labels")
@@ -315,7 +322,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			throw XmlRpc::JSONException ("empty target name");
 
 		os << "\"data\":[";
-	
+
 		bool first = true;
 		struct ln_equ_posn pos;
 
@@ -353,26 +360,52 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 	else if (vals[0] == "create_target")
 	{
 		const char *tn = params->getString ("tn", "");
-		double ra = params->getDouble ("ra", NAN);
-		double dec = params->getDouble ("dec", NAN);
-		const char *type = params->getString ("type", "O");
-		const char *info = params->getString ("info", "");
 		const char *comment = params->getString ("comment", "");
 
 		if (strlen (tn) == 0)
 			throw XmlRpc::JSONException ("empty target name");
-		if (strlen (type) != 1)
-			throw XmlRpc::JSONException ("invalid target type");
 
-		rts2db::ConstTarget nt;
-		nt.setTargetName (tn);
-		nt.setPosition (ra, dec);
-		nt.setTargetInfo (std::string (info));
-		nt.setTargetComment (comment);
-		nt.setTargetType (type[0]);
-		nt.save (false);
+		rts2db::Target *target = NULL;
 
-		os << "\"id\":" << nt.getTargetID ();
+		if (params->hasParam ("ts"))
+		{
+			const char *tar_name = params->getString ("ts", "");
+			if (tar_name[0] == '\0')
+				throw XmlRpc::JSONException ("empty ts parameter");
+
+			target = createTargetByString (tar_name, getServer ()->getDebug ());
+
+			if (target == NULL)
+				throw XmlRpc::JSONException ("cannot parse target");
+		}
+		else
+		{
+			double ra = params->getDouble ("ra", NAN);
+			double dec = params->getDouble ("dec", NAN);
+			const char *info = params->getString ("info", "");
+			const char *type = params->getString ("type", "O");
+
+			if (strlen (type) != 1)
+				throw XmlRpc::JSONException ("invalid target type");
+
+			target = new rts2db::ConstTarget ();
+
+			((rts2db::ConstTarget *)target)->setPosition (ra, dec);
+			target->setTargetInfo (std::string (info));
+			target->setTargetType (type[0]);
+		}
+
+		target->setTargetName (tn);
+		target->setTargetComment (comment);
+
+		if (params->hasParam ("id"))
+			target->saveWithID (false, params->getInteger ("id", -1));
+		else
+			target->save (false);
+
+		os << "\"id\":" << target->getTargetID ();
+
+		delete (target);
 	}
 	else if (vals[0] == "create_tle_target")
 	{
@@ -403,48 +436,83 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			case TYPE_TERESTIAL:
 			case TYPE_AUGER:
 			case TYPE_LANDOLT:
+			case TYPE_ELLIPTICAL:
 			{
 				rts2db::ConstTarget *tar = (rts2db::ConstTarget *) t;
-				const char *tn = params->getString ("tn", "");
-				double ra = params->getDouble ("ra", -1000);
-				double dec = params->getDouble ("dec", -1000);
-				double pm_ra = params->getDouble ("pm_ra", NAN);
-				double pm_dec = params->getDouble ("pm_dec", NAN);
-				bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
-				const char *info = params->getString ("info", NULL);
 
-				if (strlen (tn) > 0)
-					tar->setTargetName (tn);
-				if (ra > -1000 && dec > -1000)
-					tar->setPosition (ra, dec);
-				if (!(std::isnan (pm_ra) && std::isnan (pm_dec)))
+				if (params->hasParam ("tn"))
 				{
-					switch (tar->getTargetType ())
+					const char *tn = params->getString ("tn", "");
+					tar->setTargetName (tn);
+				}
+
+				if (t->getTargetType () != TYPE_ELLIPTICAL)
+				{
+					if (params->hasParam ("ra") && params->hasParam ("dec"))
 					{
-						case TYPE_CALIBRATION:
-						case TYPE_OPORTUNITY:
-							((rts2db::ConstTarget *) (tar))->setProperMotion (pm_ra, pm_dec);
-							break;
-						default:
-							throw XmlRpc::JSONException ("only calibration and oportunity targets can have proper motion");
+						double ra = params->getDouble ("ra", -1000);
+						double dec = params->getDouble ("dec", -1000);
+						tar->setPosition (ra, dec);
+					}
+
+					if (params->hasParam ("pm_ra") && params->hasParam ("pm_dec"))
+					{
+						double pm_ra = params->getDouble ("pm_ra", NAN);
+						double pm_dec = params->getDouble ("pm_dec", NAN);
+						switch (tar->getTargetType ())
+						{
+							case TYPE_CALIBRATION:
+							case TYPE_OPORTUNITY:
+								((rts2db::ConstTarget *) (tar))->setProperMotion (pm_ra, pm_dec);
+								break;
+							default:
+								throw XmlRpc::JSONException ("only calibration and oportunity targets can have proper motion");
+						}
+					}
+
+					if (params->hasParam ("info"))
+					{
+						const char *info = params->getString ("info", NULL);
+						tar->setTargetInfo (std::string (info));
 					}
 				}
-				tar->setTargetEnabled (enabled, true);
-				if (info != NULL)
-					tar->setTargetInfo (std::string (info));
+
+				if (params->hasParam ("enabled"))
+				{
+					bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
+					tar->setTargetEnabled (enabled, true);
+				}
+
+				if (params->hasParam ("next_observable"))
+				{
+					time_t next = params->getInteger ("next_observable", 0);
+
+					if (next)
+						tar->setNextObservable (&next);
+					else
+						tar->setNextObservable ((time_t *)NULL);
+				}
+
+				if (params->hasParam ("priority"))
+				{
+					double priority = params->getInteger ("priority", 0);
+
+					tar->setTargetPriority (priority);
+				}
+
 				tar->save (true);
-	
+
 				os << "\"id\":" << tar->getTargetID ();
 				delete tar;
 				break;
-			}	
+			}
 			default:
 			{
 				std::ostringstream _err;
 				_err << "can update only subclass of constant targets, " << t->getTargetType () << " is unknow";
 				throw XmlRpc::JSONException (_err.str ());
-			}	
-		}		
+			}
+		}
 
 	}
 	else if (vals[0] == "change_script")
@@ -523,7 +591,66 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		obss.loadTarget (tar_id);
 
 		jsonObservations (&obss, os);
-		
+
+	}
+	else if (vals[0] == "obytime")
+	{
+		rts2db::ObservationSet obss = rts2db::ObservationSet ();
+		rts2db::MessageSet msgs = rts2db::MessageSet ();
+		time_t t_start = params->getInteger ("t_start", -1);
+		time_t t_end = params->getInteger ("t_end", -1);
+		const char *night = params->getString ("night", NULL);
+		int messageMask = params->getInteger ("msg_mask", MESSAGE_REPORTIT);
+
+		// Logic is the same as in rts2-nightreport, e.g. given night or night of last observations,
+		if (night)
+		{
+			struct ln_date *tm_night = new struct ln_date;
+			parseDate (night, tm_night);
+			Rts2Night tnight (tm_night, rts2core::Configuration::instance ()->getObserver ());
+			t_start = *(tnight.getFrom ());
+			t_end = *(tnight.getTo ());
+		}
+		else if (t_start < 0 && t_end < 0)
+		{
+			int lastobs = rts2db::lastObservationId ();
+
+			if (lastobs > -1)
+			{
+				rts2db::Observation obs (lastobs);
+				obs.load ();
+				time_t ts = obs.getObsStart ();
+				ts = rts2core::Configuration::instance ()->getNight (ts);
+				Rts2Night tnight (ln_get_julian_from_timet (&ts), rts2core::Configuration::instance ()->getObserver ());
+				t_start = *(tnight.getFrom ());
+				t_end = *(tnight.getTo ());
+			}
+		}
+
+		obss.loadTime (&t_start, &t_end);
+		msgs.load (t_start, t_end, messageMask);
+
+		jsonObservations (&obss, os);
+
+		os << ",\"messages\":{";
+		os << "\"h\":["
+			"{\"n\":\"Time\",\"t\":\"t\",\"c\":0},"
+			"{\"n\":\"Component\",\"t\":\"s\",\"c\":1},"
+			"{\"n\":\"Type\",\"t\":\"n\",\"c\":2},"
+			"{\"n\":\"Text\",\"t\":\"s\",\"c\":3}],"
+			"\"d\":[";
+
+		for (rts2db::MessageSet::iterator iter = msgs.begin (); iter != msgs.end (); iter++)
+		{
+			if (iter != msgs.begin ())
+				os << ",";
+			os << "[" << iter->getMessageTime () << ",\"" << JsonString (iter->getMessageOName ()) << "\"," << iter->getType () << ",\"" << JsonString (iter->getMessageString ()) << "\"]";
+		}
+		os << "]";
+		os << "}";
+
+
+		os << ",\"time_from\":" << t_start << ",\"time_to\":" << t_end;
 	}
 	else if (vals[0] == "lastobs")
 	{
@@ -568,9 +695,9 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		ps.load ();
 
 		os << "\"h\":["
-			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
-			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
+			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
+			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":6},"
@@ -662,12 +789,12 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			ta.load (a_id);
 		}
 
-		os << "\"t3id\":" << ta.t3id 
+		os << "\"t3id\":" << ta.t3id
 			<< ",\"auger_date\":" << rts2json::JsonDouble (ta.auger_date)
 			<< ",\"Eye\":" << ta.Eye
 			<< ",\"Run\":" << ta.Run
 			<< ",\"Event\":" << ta.Event
-			<< ",\"AugerId\":\"" << ta.AugerId 
+			<< ",\"AugerId\":\"" << ta.AugerId
 			<< "\",\"GPSSec\":" << ta.GPSSec
 			<< ",\"GPSNSec\":" << ta.GPSNSec
 			<< ",\"SDId\":" << ta.SDId
@@ -720,7 +847,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			<< ",\"MinAngle\":" << rts2json::JsonDouble (ta.MinAngle)       /// Minimum viewing angle (deg)
 			<< ",\"MaxAngle\":" << rts2json::JsonDouble (ta.MaxAngle)       /// Maximum viewing angle (deg)
 			<< ",\"MeanAngle\":" << rts2json::JsonDouble (ta.MeanAngle)      /// Mean viewing angle (deg)
-	
+
 			<< ",\"NTank\":" << ta.NTank          /// Number of stations in hybrid db_it
 			<< ",\"HottestTank\":" << ta.HottestTank    /// Station used in hybrid-geometry reco
 			<< ",\"AxisDist\":" << rts2json::JsonDouble (ta.AxisDist)       /// Shower axis distance to hottest station (m)
@@ -757,6 +884,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom, XmlRpc::XmlRpcServerConnection * chunked)
 {
 	bool extended = params->getInteger ("e", false);
+	bool bonus = params->getInteger ("b", false);
 	bool withpm = params->getInteger ("propm", false);
 	time_t from = params->getInteger ("from", getNow ());
 	int c = 5;
@@ -771,8 +899,8 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << "\"rows\":" << tar_set.size () << ",";
 
 		os << "\"h\":["
-			"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+			"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 			"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
@@ -806,6 +934,13 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << ",{\"n\":\"Proper motion RA\",\"t\":\"d\",\"c\":" << (c) << "},"
 			"{\"n\":\"Proper motion DEC\",\"t\":\"d\",\"c\":" << (c + 1) << "}";
 			c += 2;
+		}
+		if (bonus)
+		{
+			os << ",{\"n\":\"Bonus\",\"t\":\"d\",\"c\":" << (c) << "},"
+			"{\"n\":\"Priority\",\"t\":\"d\",\"c\":" << (c + 1) << "},"
+			"{\"n\":\"Next observable\",\"t\":\"t\",\"c\":" << (c + 2) << "}";
+			c += 3;
 		}
 
 		if (chunked)
@@ -859,7 +994,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 						cs << ",";
 					cs << "{\"" << cam << "\":[\"" << script_buf << "\"," << d << "," << e << "]}";
 					if (d > md)
-						md = d;  
+						md = d;
 				}
 				catch (rts2core::Error &er)
 				{
@@ -869,9 +1004,9 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 			os << "," << md << ",[" << cs.str () << "],";
 
 			tar->getSatisfiedConstraints (JD).printJSON (os);
-			
+
 			os << ",";
-		
+
 			tar->getViolatedConstraints (JD).printJSON (os);
 
 			if (std::isnan (equ.ra) || std::isnan (equ.dec))
@@ -886,7 +1021,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 				struct ln_rst_time rst;
 				tar->getRST (&rst, JD, 0);
 
-				os << "," << rts2json::JsonDouble (rst.transit) 
+				os << "," << rts2json::JsonDouble (rst.transit)
 					<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 			}
 		}
@@ -905,6 +1040,9 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 
 			os << "," << rts2json::JsonDouble (pm.ra) << "," << rts2json::JsonDouble (pm.dec);
 		}
+		if (bonus)
+			os << "," << rts2json::JsonDouble (tar->getBonus (JD)) << "," << rts2json::JsonDouble (tar->getTargetPriority ()) << "," << rts2json::JsonDouble (tar->getNextObservable ());
+
 		os << "]";
 		if (chunked)
 		{
@@ -915,7 +1053,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 	if (chunked == NULL)
 	{
 		os << "]";
-	}	
+	}
 }
 
 void JSONDBRequest::jsonObservation (rts2db::Observation *obs, std::ostream &os)
@@ -940,27 +1078,38 @@ void JSONDBRequest::jsonObservation (rts2db::Observation *obs, std::ostream &os)
 void JSONDBRequest::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 {
 	os << "\"h\":["
-		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
+		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
 		"{\"n\":\"Slew\",\"t\":\"t\",\"c\":1},"
 		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":2},"
 		"{\"n\":\"End\",\"t\":\"tT\",\"c\":3},"
 		"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":4},"
-		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":5}"
+		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":5},"
+		"{\"n\":\"Target ID\",\"t\":\"a\",\"c\":6,\"prefix\":\"" << getRequestBase () << getServer ()->getPagePrefix () << "/targets/\"},"
+		"{\"n\":\"Target Name\",\"t\":\"a\",\"c\":7},"
+		"{\"n\":\"RA\",\"t\":\"r\",\"c\":8},"
+		"{\"n\":\"Dec\",\"t\":\"d\",\"c\":9}"
 		"],\"d\":[";
 
 	os << std::fixed;
 
 	for (rts2db::ObservationSet::iterator iter = obss->begin (); iter != obss->end (); iter++)
 	{
+		struct ln_equ_posn equ;
+		iter->getTarget ()->getPosition (&equ);
+
 		if (iter != obss->begin ())
 			os << ",";
 		os << "[" << iter->getObsId () << ","
-			<< rts2json::JsonDouble(iter->getObsSlew ()) << ","
-			<< rts2json::JsonDouble(iter->getObsStart ()) << ","
-			<< rts2json::JsonDouble(iter->getObsEnd ()) << ","
-			<< iter->getNumberOfImages () << ","
-			<< iter->getNumberOfGoodImages ()
-			<< "]";
+		   << rts2json::JsonDouble(iter->getObsSlew ()) << ","
+		   << rts2json::JsonDouble(iter->getObsStart ()) << ","
+		   << rts2json::JsonDouble(iter->getObsEnd ()) << ","
+		   << iter->getNumberOfImages () << ","
+		   << iter->getNumberOfGoodImages () << ","
+		   << iter->getTarget ()->getTargetID () << ","
+		   << "\"" << rts2json::JsonString (iter->getTarget ()->getTargetName ()) << "\","
+		   << rts2json::JsonDouble (equ.ra) << ","
+		   << rts2json::JsonDouble (equ.dec)
+		   << "]";
 	}
 
 	os << "]";

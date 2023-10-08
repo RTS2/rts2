@@ -1,4 +1,4 @@
-/* 
+/*
  * Class for reporting sql errors.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -32,8 +32,6 @@ SqlError::SqlError ()
 	std::ostringstream _os;
 	_os << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
-	if (sqlca.sqlcode == ECPG_PGSQL)
-		getMasterApp ()->postEvent (new rts2core::Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
 
@@ -44,8 +42,5 @@ SqlError::SqlError (const char *sqlmsg)
 	std::ostringstream _os;
 	_os << sqlmsg << ":" << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
-	if (sqlca.sqlcode == ECPG_PGSQL)
-		getMasterApp ()->postEvent (new rts2core::Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
-

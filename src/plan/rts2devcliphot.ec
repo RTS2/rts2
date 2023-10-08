@@ -18,6 +18,7 @@
  */
 
 #include "rts2devcliphot.h"
+#include "rts2db/devicedb.h"
 
 EXEC SQL include sqlca;
 
@@ -55,6 +56,9 @@ void DevClientPhotExec::integrationFailed (int status)
 
 void DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 {
+	if (rts2db::checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id;
 	int d_count_value;

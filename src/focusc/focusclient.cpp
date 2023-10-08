@@ -1,4 +1,4 @@
-/* 
+/*
  * Generic class for focusing.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -51,6 +51,7 @@ FocusCameraClient::FocusCameraClient (rts2core::Connection * in_connection, Focu
 	bop = BOP_EXPOSURE;
 
 	autoSave = master->getAutoSave ();
+	singleSave = 0;
 }
 
 
@@ -96,10 +97,18 @@ void FocusCameraClient::stateChanged (rts2core::ServerState * state)
 rts2image::Image *FocusCameraClient::createImage (const struct timeval *expStart)
 {
 	rts2image::Image *image;
-	if (autoSave)
+
+	if (autoSave || singleSave)
 	{
 		image = rts2image::DevClientCameraFoc::createImage (expStart);
 		image->keepImage ();
+
+		if (singleSave)
+		{
+			std::cout << "Next image will be saved to disk" << std::endl;
+			singleSave = 0;
+		}
+
 		return image;
 	}
 	if (exe)
@@ -119,6 +128,17 @@ rts2image::Image *FocusCameraClient::createImage (const struct timeval *expStart
 void FocusCameraClient::center (int centerWidth, int centerHeight)
 {
 	connection->queCommand (new rts2core::CommandCenter (this, centerWidth, centerHeight));
+}
+
+rts2image::imageProceRes FocusCameraClient::processImage (rts2image::Image * image)
+{
+	rts2image::imageProceRes res = DevClientCameraFoc::processImage (image);
+
+	if (image->getFileName ())
+		// A bit hackish way to determine whether the image has been just saved to disk.
+		std::cout << image->getFileName () << std::endl;
+
+	return res;
 }
 
 FocusClient::FocusClient (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv, "focusclient")

@@ -62,6 +62,10 @@ class NWindowEdit:public NWindow
 		virtual WINDOW *getWriteWindow () { return comwin; }
 
 		int getLength ();
+
+		void setValue (std::string _val) { wprintw (getWriteWindow (), _val.c_str ()); }
+
+		std::string getValueString ();
 	protected:
 		/**
 		 * Returns true if key should be wadded to comwin.

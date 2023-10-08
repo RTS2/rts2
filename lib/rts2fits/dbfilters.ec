@@ -1,4 +1,4 @@
-/* 
+/*
  * Filter look-up table and creator.
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
@@ -16,6 +16,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
+#include "rts2db/devicedb.h"
 
 #include "rts2fits/dbfilters.h"
 #include "error.h"
@@ -38,6 +40,9 @@ DBFilters * DBFilters::instance ()
 
 void DBFilters::load ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2core::Error (sqlca.sqlerrm.sqlerrmc);
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_filter_id;
 	VARCHAR db_standart_name[50];
@@ -49,7 +54,7 @@ void DBFilters::load ()
 		standart_name
 	FROM
 		filters;
-	
+
 	EXEC SQL OPEN all_filters;
 
 	while (1)
@@ -70,6 +75,9 @@ void DBFilters::load ()
 
 int DBFilters::getIndex (const char *filter)
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_filter_id;
 	VARCHAR db_standart_name[50];
@@ -87,7 +95,7 @@ int DBFilters::getIndex (const char *filter)
 		nextval('filter_id')
 	INTO
 		:db_filter_id;
-	
+
 	if (sqlca.sqlcode)
 	{
 		logStream (MESSAGE_ERROR) << "cannot get id for new filter" << sendLog;
@@ -96,7 +104,7 @@ int DBFilters::getIndex (const char *filter)
 
 	db_standart_name.len = strlen (filter) > 50 ? 50 : strlen (filter);
 	memcpy (db_standart_name.arr, filter, db_standart_name.len);
-	
+
 	EXEC SQL INSERT INTO
 		filters (filter_id, standart_name)
 	VALUES

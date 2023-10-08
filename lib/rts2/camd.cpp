@@ -51,6 +51,7 @@
 #define OPT_COMMENTS          OPT_LOCAL + 421
 #define OPT_HISTORIES         OPT_LOCAL + 422
 #define OPT_RTS2_COOLING      OPT_LOCAL + 423
+#define OPT_DATASEC           OPT_LOCAL + 424
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -123,6 +124,7 @@ int Camera::box (int _x, int _y, int _width, int _height, rts2core::ValueRectang
 	if (retv)
 		retv->setInts (_x, _y, _width, _height);
 	sendValueAll (chipUsedReadout);
+
 	return 0;
 }
 
@@ -285,7 +287,7 @@ void Camera::startImageData (rts2core::Connection * conn)
 	size_t chansize[chnTot];
 	int i;
 	for (i = 0; i < chnTot; i++)
-		chansize[i] = chipByteSize () + sizeof (imghdr);
+		chansize[i] = lastExposureChipByteSize () + sizeof (imghdr);
 
 	if (sharedData)
 	{
@@ -327,31 +329,9 @@ void Camera::startImageData (rts2core::Connection * conn)
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	if (currentImageTransfer == SHARED)
-	{
-		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
-	}
-	else
-	{
-		focusingHeader = fhd;
-	}
+	struct imghdr *header = NULL;
 
-	focusingHeader->data_type = htons (getDataType ());
-	focusingHeader->naxes = 2;
-	focusingHeader->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
-	focusingHeader->sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
-	focusingHeader->binnings[0] = htons (binningVertical ());
-	focusingHeader->binnings[1] = htons (binningHorizontal ());
-	focusingHeader->x = htons (chipUsedReadout->getXInt ());
-	focusingHeader->y = htons (chipUsedReadout->getYInt ());
-	focusingHeader->filter = htons (getLastFilterNum ());
-	// light - dark images
-	if (expType)
-		focusingHeader->shutter = htons (expType->getValueInteger ());
-	else
-		focusingHeader->shutter = 0;
-
-	focusingHeader->channel = htons (pchan);
+	fhd->channel = htons (pchan);
 
 	sum->setValueDouble (0);
 	average->setValueDouble (0);
@@ -362,11 +342,13 @@ int Camera::sendFirstLine (int chan, int pchan)
 	switch (currentImageTransfer)
 	{
 		case SHARED:
+			header = (struct imghdr*) (sharedData->getChannelData (chan));
+			memcpy (header, fhd, sizeof(imghdr));
 			sharedData->dataWritten (chan, sizeof (imghdr));
 			break;
 		case TCPIP:
 			if (exposureConn)
-				return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
+				return exposureConn->sendBinaryData (currentImageData, chan, (char *) fhd, sizeof (imghdr));
 			break;
 		case FITS:
 			break;
@@ -399,12 +381,13 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	coolingOnOff = NULL;
 
 	detsize = NULL;
+	datasec = NULL;
 	chan1offset = NULL;
 	chan2offset = NULL;
 
 	chan1delta = NULL;
 	chan2delta = NULL;
-        acquireTime = NULL;
+	acquireTime = NULL;
 
 	shiftstoreLines = NULL;
 
@@ -428,6 +411,9 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	dataBuffers = NULL;
 	dataWritten = NULL;
+
+	lastExposurePixels = 0;
+	lastExposureBytes = 0;
 
 	histories = 0;
 	comments = 0;
@@ -454,7 +440,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	imageType->addSelVal ("zero");
 	imageType->addSelVal ("flat");
 
-	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
+	createValue (objectName, "OBJECT", "target object name", false, RTS2_VALUE_WRITABLE);
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
@@ -543,6 +529,10 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	exposure->setValueDouble (1);
 
 	createValue (lastImagePath, "last_image", "path to the last image", false, RTS2_VALUE_WRITABLE);
+#ifdef RTS2_HAVE_LIBJPEG
+	createValue (lastPreviewImagePath, "last_preview_image", "path to the last preview image", false, RTS2_VALUE_WRITABLE);
+	createValue (lastPreviewImageTime, "last_preview_time", "time of the last preview image", false, RTS2_VALUE_WRITABLE);
+#endif // RTS2_HAVE_LIBJPEG
 
 	sendOkInExposure = false;
 
@@ -585,6 +575,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	addOption (OPT_TRIMS_END, "trimend", 1, "trimmed (good data) XY ends on unbinned chip - x1:y1,..");
 	addOption (OPT_CHANNELS_STARTS, "chanstarts", 1, "channel starts - X1:Y1,:..");
 	addOption (OPT_CHANNELS_DELTAS, "chandeltas", 1, "channel deltas - DX1:DY1,..");
+	addOption (OPT_DATASEC, "datasec", 1, "good data section - X:Y:W:H");
 }
 
 Camera::~Camera ()
@@ -686,7 +677,6 @@ int Camera::killAll (bool callScriptEnds)
 		sendValueAll (iter->moving);
 	}
 
-
 	if (exposureConn && currentImageData >= 0)
 	{
 		// end actual data connections
@@ -750,6 +740,9 @@ int Camera::scriptEnds ()
 
 	dataType->setValueInteger (0);
 	sendValueAll (dataType);
+
+	// Clear PRIORITY CHANGED state
+	maskState (DEVICE_ERROR_KILL, 0, "cleared PRIORITY CHANGED state");
 
 	return rts2core::ScriptDevice::scriptEnds ();
 }
@@ -898,6 +891,16 @@ int Camera::processOption (int in_opt)
 				if (detsize->setValueCharArr (optarg))
 				{
 					std::cerr << "cannot parse --detsize argument: " << optarg << ", exiting." << std::endl;
+					return -1;
+				}
+			}
+			break;
+		case OPT_DATASEC:
+			{
+				createValue (datasec, "DATASEC", "[x w y h] good data section", false, RTS2_VALUE_INTEGER);
+				if (datasec->setValueCharArr (optarg))
+				{
+					std::cerr << "cannot parse --datasec argument: " << optarg << ", exiting." << std::endl;
 					return -1;
 				}
 			}
@@ -1627,6 +1630,7 @@ int Camera::camStartExposure (bool careBlock)
 	// check if we aren't blocked
 	// we can allow this test as camStartExposure is called only after quedExpNumber was decreased
 	bool fm = filterMoving ();
+
 	if (careBlock == true
 		&& (!expType || expType->getValueInteger () == 0)
 		&& (
@@ -1688,12 +1692,6 @@ int Camera::camStartExposureWithoutCheck ()
 	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
 	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
 
-	if (expType)
-	{
-		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : (exposure->getValueFloat () > 0 ? 1 : 2));
-		sendValueAll (imageType);
-	}
-
 	if (needReload->getValueBool ())
 	{
 		Binning2D *bin = (Binning2D *) binning->getData ();
@@ -1701,17 +1699,47 @@ int Camera::camStartExposureWithoutCheck ()
 		needReload->setValueBool (false);
 	}
 
+	// Fill the image header while we have all the actual values used to start exposure
+	fhd->data_type = htons (getDataType ());
+	fhd->naxes = 2;
+	fhd->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
+	fhd->sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
+	fhd->binnings[0] = htons (binningVertical ());
+	fhd->binnings[1] = htons (binningHorizontal ());
+	fhd->x = htons (chipUsedReadout->getXInt ());
+	fhd->y = htons (chipUsedReadout->getYInt ());
+	fhd->filter = htons (getFilterNum ());
+
+	// Cache frame size in pixels and bytes so that the readout may use these actual values, and not
+	// the ones at readout start (as it may be after current script end + reset of parameters)
+	lastExposurePixels = getUsedHeightBinned () * getUsedWidthBinned ();
+	lastExposureBytes = chipByteSize ();
+
+	if (expType)
+	{
+		fhd->shutter = htons (expType->getValueInteger ());
+		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : (exposure->getValueFloat () > 0 ? 1 : 2));
+		sendValueAll (imageType);
+	}
+	else
+		fhd->shutter = 0;
+
 	sepX->clear ();
 	sepY->clear ();
 	sepFluxes->clear ();
 
+	maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure is about to start", NAN, NAN, exposureConn);
+
 	ret = startExposure ();
 	if (!(ret == 0 || ret == 1))
+	{
+		maskState (BOP_TEL_MOVE, 0, "exposure did not start", NAN, NAN, exposureConn);
 		return ret;
+	}
 
 	double now = getNow ();
 
-        exposureEnd->setValueDouble (now + ( acquireTime ? acquireTime->getValueDouble () : exposure->getValueDouble () ));
+	exposureEnd->setValueDouble (now + ( acquireTime ? acquireTime->getValueDouble () : exposure->getValueDouble () ));
 
 	infoAll ();
 
@@ -1781,6 +1809,7 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue,
 	{
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
 	}
+
 	return ret;
 }
 
@@ -1808,7 +1837,7 @@ int Camera::readoutStart ()
 	int ret;
 	for (int i = 0; i < (dataChannels ? dataChannels->getValueInteger () : 1); i++)
 	{
-		ret = sendFirstLine (i, getPhysicalChannel (i + 1));
+		ret = sendFirstLine (i, getPhysicalChannel (i));
 		if (ret)
 			return ret;
 	}
@@ -1845,7 +1874,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	}
 
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
-		calculateDataSize = chipByteSize ();
+		calculateDataSize = lastExposureChipByteSize ();
 
 	memset (dataWritten, 0, getNumChannels () * sizeof (size_t));
 
@@ -1857,7 +1886,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
-		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
+		readoutPixels = lastExposurePixels;
 		if (std::isnan (timeReadoutStart))
 			timeReadoutStart = getNow ();
 		return readoutStart ();
@@ -2071,7 +2100,7 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		}
 		else if (strcmp (kind, "end") == 0)
 		{
-			if (conn->paramNextInteger (&shift) << conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
 				return -2;
 			return shiftStoreEnd (conn, shift, exptime);
 		}
@@ -2102,6 +2131,10 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 			|| !conn->paramEnd ())
 			return -2;
 		return camBox (conn, x, y, w, h);
+	}
+	else if (conn->isCommand ("full"))
+	{
+		return camBox (conn, -1, -1, -1, -1);
 	}
 	else if (conn->isCommand ("center"))
 	{

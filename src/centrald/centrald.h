@@ -114,6 +114,13 @@ class Centrald:public Daemon
 			return changeState (SERVERD_SOFT_OFF | ((next_event_type + 5) % 6), user);
 		}
 
+		int changeStateDay () {maskCentralState (SERVERD_STATUS_MASK, SERVERD_DAY, "by client"); return 0;}
+		int changeStateEvening () {maskCentralState (SERVERD_STATUS_MASK, SERVERD_EVENING, "by client"); return 0;}
+		int changeStateDusk () {maskCentralState (SERVERD_STATUS_MASK, SERVERD_DUSK, "by client"); return 0;}
+		int changeStateNight () {maskCentralState (SERVERD_STATUS_MASK, SERVERD_NIGHT, "by client"); return 0;}
+		int changeStateDawn () {maskCentralState (SERVERD_STATUS_MASK, SERVERD_DAWN, "by client"); return 0;}
+		int changeStateMorning () {maskCentralState (SERVERD_STATUS_MASK, SERVERD_MORNING, "by client"); return 0;}
+
 		virtual rts2core::Connection *createConnection (int in_sock);
 		void connAdded (ConnCentrald * added);
 

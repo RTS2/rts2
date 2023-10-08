@@ -1,4 +1,4 @@
-/* 
+/*
  * Skeleton for applications which works with targets.
  * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -62,10 +62,10 @@ int Rts2TargetApp::askForDegrees (const char *desc, double &val)
 	return 0;
 }
 
-int Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
+int Rts2TargetApp::askForObject (const char *desc, std::string obj_text, bool empty)
 {
 	int ret;
-	if (obj_text.length () == 0)
+	if (obj_text.length () == 0 && !empty)
 	{
 		ret = askForString (desc, obj_text);
 		if (ret)

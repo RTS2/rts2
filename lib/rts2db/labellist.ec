@@ -1,4 +1,4 @@
-/* 
+/*
  * List all labels know to the system
  * Copyright (C) 2011 Petr Kubanek, Insititute of Physics <kubanek@fzu.cz>
  *
@@ -19,11 +19,15 @@
 
 #include "rts2db/labellist.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
 void LabelList::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_label_id;
 	int db_label_t;
@@ -44,7 +48,7 @@ void LabelList::load ()
 			:db_label_id, :db_label_t, :db_label_text;
 		if (sqlca.sqlcode)
 		  	break;
-		db_label_text.arr[db_label_text.len] = '\0';	
+		db_label_text.arr[db_label_text.len] = '\0';
 		push_back ( LabelEntry (db_label_id, db_label_t, db_label_text.arr) );
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)

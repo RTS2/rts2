@@ -40,11 +40,6 @@ using namespace rts2image;
 ConnProcess::ConnProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):rts2script::ConnExe (in_master, in_exe, false, in_timeout)
 {
 	astrometryStat = NOT_ASTROMETRY;
-
-#ifdef RTS2_HAVE_LIBJPEG
-	last_good_jpeg = NULL;
-	last_trash_jpeg = NULL;
-#endif
 }
 
 int ConnProcess::init ()
@@ -66,11 +61,12 @@ int ConnImgOnlyProcess::init ()
 	{
 		Image image;
 		image.openFile (imgPath.c_str (), true, false);
-		if (image.getShutter () == SHUT_CLOSED)
+		if (image.getShutter () == SHUT_CLOSED || image.getImageType () == IMGTYPE_DARK)
 		{
 			astrometryStat = DARK;
-			return 0;
 		}
+		else if (image.getImageType () == IMGTYPE_FLAT)
+			astrometryStat = FLAT;
 
 		expDate = image.getExposureStart () + image.getExposureLength ();
 	}
@@ -154,9 +150,32 @@ ConnImgProcess::ConnImgProcess (rts2core::Block *_master, const char *_exe, cons
 	end_event = _end_event;
 }
 
+int ConnImgProcess::init ()
+{
+#ifdef RTS2_HAVE_LIBJPEG
+	try
+	{
+		Image image;
+
+		image.openFile (imgPath.c_str (), true, false);
+
+		if (!last_processed_jpeg.empty ())
+		{
+			image.writeAsJPEG (last_processed_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
+		}
+	}
+	catch (rts2core::Error &e)
+	{
+	}
+#endif
+
+	return ConnImgOnlyProcess::init ();
+}
+
+
 int ConnImgProcess::newProcess ()
 {
-	if (astrometryStat == DARK)
+	if (astrometryStat == DARK || astrometryStat == FLAT)
 		return 0;
 
 	return ConnImgOnlyProcess::newProcess ();
@@ -191,9 +210,17 @@ void ConnImgProcess::connectionError (int last_data_size)
 		{
 			// just return..
 			if (image->getImageType () == IMGTYPE_FLAT)
+			{
 				astrometryStat = FLAT;
+				if (end_event <= 0)
+					image->toFlat ();
+			}
 			else
+			{
 				astrometryStat = DARK;
+				if (end_event <= 0)
+					image->toDark ();
+			}
 			delete image;
 			ConnImgOnlyProcess::connectionError (last_data_size);
 			return;
@@ -204,7 +231,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			case NOT_ASTROMETRY:
 			case TRASH:
 #ifdef RTS2_HAVE_LIBJPEG
-				if (last_trash_jpeg)
+				if (!last_trash_jpeg.empty ())
 					image->writeAsJPEG (last_trash_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 				astrometryStat = TRASH;
@@ -213,31 +240,29 @@ void ConnImgProcess::connectionError (int last_data_size)
 				break;
 			case GET:
 #ifdef RTS2_HAVE_LIBJPEG
-				if (last_good_jpeg)
+				if (!last_good_jpeg.empty ())
 					image->writeAsJPEG (last_good_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 				image->setAstroResults (ra, dec, ra_err, dec_err);
 				if (end_event <= 0)
 					image->toArchive ();
 
-				if (ra_err != 0 || dec_err != 0) // TODO: correct using only latest images, not any image!
+				if (ra_err != 0 || dec_err != 0)
 				{
-					// send correction to telescope..
+					// send correction information to executor, to be sent to telescope when it is safe
 					telescopeName = image->getMountName ();
 					try
 					{
 						image->getValue ("MOVE_NUM", corr_mark);
 						image->getValue ("CORR_IMG", corr_img);
 						image->getValue ("CORR_OBS", corr_obs);
+
 						if (telescopeName)
 						{
-							rts2core::Connection *telConn;
-							telConn = master->findName (telescopeName);
+							rts2core::Connection *execConn = master->getOpenConnection (DEVICE_TYPE_EXECUTOR);
+							rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_corrections");
 
-							rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");
-
-							// correction error should be in degrees
-							if (telConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
+							if (execConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
 							{
 								struct ln_equ_posn pos1, pos2;
 								pos1.ra = ra;
@@ -248,7 +273,13 @@ void ConnImgProcess::connectionError (int last_data_size)
 
 								double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-								telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, corr_obs, image->getImgId (), image->getObsId (), ra_err, dec_err, posErr));
+								std::ostringstream _os;
+								_os << "correction_info " << telescopeName << " "
+									<< corr_mark << " " << corr_img << " " << corr_obs << " "
+									<< image->getImgId () << " " << image->getObsId () << " "
+									<< ra_err << " " << dec_err << " " << posErr;
+
+								execConn->queCommand (new rts2core::Command (master, _os));
 							}
 						}
 					}
@@ -275,6 +306,18 @@ void ConnImgProcess::connectionError (int last_data_size)
 			else
 				master->postEvent (new rts2core::Event (EVENT_NOT_ASTROMETRY, (void *) image));
 		}
+
+#ifdef RTS2_HAVE_PGSQL
+		// Check whether it was the last image of the observation
+		int obsId = image->getObsId ();
+		rts2db::Observation *obs = new rts2db::Observation (obsId);
+
+		if (obs->checkUnprocessedImages (master) == 0)
+			master->postEvent (new rts2core::Event (EVENT_ALL_PROCESSED, (void *) &obsId));
+
+		delete obs;
+#endif
+
 		delete image;
 	}
 	catch (rts2core::Error &er)
@@ -341,61 +384,36 @@ void ConnImgOnlyProcess::checkAstrometry ()
 
 ConnObsProcess::ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
+	astrometryStat = OBS;
+
 #ifdef RTS2_HAVE_PGSQL
 	obsId = in_obsId;
+
+	addArg (obsId);
+
 	obs = new rts2db::Observation (obsId);
 	if (obs->load ())
 	{
-		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
-		obs = NULL;
+		logStream (MESSAGE_ERROR) << "ConnObsProcess::ConnObsProcess cannot load obs " << obsId << sendLog;
+		addArg (-1);
+		addArg ('-');
 	}
-
-	fillIn (&obsIdCh, obsId);
-	fillIn (&obsTarIdCh, obs->getTargetId ());
-	fillIn (&obsTarTypeCh, obs->getTargetType ());
-
-	delete obs;
+	else
+	{
+		logStream (MESSAGE_DEBUG) << "ConnObsProcess::ConnObsProcess loaded obs " << obsId << sendLog;
+		addArg (obs->getTargetId ());
+		addArg (obs->getTargetType ());
+	}
 #endif
 }
 
-int ConnObsProcess::newProcess ()
+ConnObsProcess::~ConnObsProcess (void)
 {
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "ConnObsProcess::newProcess exe: " <<
-		exePath << " obsid: " << obsId << " pid: " << getpid () << sendLog;
-	#endif
-
-	if (exePath)
-	{
-		execl (exePath, exePath, obsIdCh, obsTarIdCh, obsTarTypeCh,
-			(char *) NULL);
-		// if we get there, it's error in execl
-		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess: " <<
-			strerror (errno) << sendLog;
-	}
-	return -2;
+	delete obs;
 }
 
 void ConnObsProcess::processLine ()
 {
 	// no error
-	return;
-}
-
-ConnDarkProcess::ConnDarkProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
-{
-}
-
-void ConnDarkProcess::processLine ()
-{
-	return;
-}
-
-ConnFlatProcess::ConnFlatProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
-{
-}
-
-void ConnFlatProcess::processLine ()
-{
 	return;
 }

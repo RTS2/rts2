@@ -1,4 +1,4 @@
-/* 
+/*
  * Device with database connection.
  * Copyright (C) 2004-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -50,7 +50,7 @@ class DeviceDb:public rts2core::Device
 		 *
 		 * @param conn_name   connection name
 		 *
-		 * @return -1 on error, 0 on sucess. 
+		 * @return -1 on error, 0 on sucess.
 		 */
 		int initDB (const char *conn_name);
 
@@ -72,6 +72,23 @@ class DeviceDb:public rts2core::Device
 		char *connectString;
 		char *configFile;
 };
+
+/**
+ * Global function to connect to database that keeps the parameters (in a
+ * thread-local way) between invocations so that they may be used outside of
+ * DeviceDb sub-classes for re-establishing a connection with exactly the same
+ * parameters as initially.
+ */
+int connectToDb (char *connectionString, const char *connectionName);
+
+/**
+ * Global function to test whether current connection to the database is alive,
+ * and re-establish it if possible.
+ *
+ * @return 0 on success (either alive connection or successfully re-established
+ * one), and -1 if the connection can't be re-established.
+ */
+int checkDbConnection ();
 
 }
 #endif							 /* !__RTS2_DEVICEDB__ */

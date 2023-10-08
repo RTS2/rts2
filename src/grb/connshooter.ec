@@ -1,4 +1,4 @@
-/* 
+/*
  * Receive and reacts to Auger showers.
  * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -31,6 +31,8 @@
 
 #include <libnova/libnova.h>
 
+#include "rts2db/devicedb.h"
+
 EXEC SQL include sqlca;
 
 #define GPS_OFFSET  315964800
@@ -47,13 +49,16 @@ void ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 // is called when nbuf contains '\n'
 int ConnShooter::processAuger ()
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	//  int db_auger_t3id;
 	double db_auger_date;
 
 	double db_ra;             /// Shower ra
 	double db_dec;            /// Shower dec
-  
+
 	int    db_Eye;            /// FD eye Id
 	int    db_Run;            /// FD run number
 	int    db_Event;          /// FD event number
@@ -529,17 +534,17 @@ int ConnShooter::processAuger ()
 		eye,
 		run,
 		event,
-		augerid, 
-		GPSSec, 
-		GPSNSec, 
-		SDId, 
+		augerid,
+		GPSSec,
+		GPSNSec,
+		SDId,
 		NPix,
 		SDPTheta,
 		SDPThetaErr,
 		SDPPhi,
 		SDPPhiErr,
 		SDPChi2,
-		SDPNdf, 
+		SDPNdf,
 		Rp,
 		RpErr,
 		Chi0,
@@ -548,7 +553,7 @@ int ConnShooter::processAuger ()
 		T0Err,
 		TimeChi2,
 		TimeChi2FD,
-		TimeNdf,	
+		TimeNdf,
 		Easting,
 		Northing,
 		Altitude,
@@ -629,7 +634,7 @@ int ConnShooter::processAuger ()
 		EyeId4,
 		minNPix4,
 		maxDGHChi2Improv4
-	)	
+	)
 	VALUES
 	(
 		nextval('auger_t3id'),

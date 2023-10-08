@@ -1,4 +1,4 @@
-/* 
+/*
  * Client which produces images.
  * Copyright (C) 2003-2007,2011 Petr Kubanek <petr@kubanek.net>
  *
@@ -52,14 +52,20 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		virtual void postEvent (rts2core::Event * event);
 
 		virtual void newDataConn (int data_conn);
-		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data) { allImageDataReceived (data_conn, data, true); }
+		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data)
+		{
+			if (data->getRestSize () > 0)
+				exposureFailed (-1);
+			else
+				allImageDataReceived (data_conn, data, true);
+		}
 		virtual void fitsData (const char *fn, int filter_num);
 		virtual Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Image * image);
 
 		void processCameraImage (CameraImages::iterator cis);
 		virtual void stateChanged (rts2core::ServerState * state);
- 
+
 		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
 
 		void setWriteConnnection (bool write_conn, bool write_rts2)
@@ -126,6 +132,14 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 
 		// template for headers.
 		rts2core::IniParser *fitsTemplate;
+
+#ifdef RTS2_HAVE_LIBJPEG
+		// Some parameters for image previews
+		std::string previewPath;
+		double previewZoom;
+		double previewQuantiles;
+		int previewColor;
+#endif // RTS2_HAVE_LIBJPEG
 
 	private:
 		// queue for images needed to be checked for metadata arrival

@@ -36,6 +36,7 @@
 #define OPT_FILTERS             OPT_LOCAL + 7
 #define OPT_FILTER_FILE         OPT_LOCAL + 8
 #define OPT_FILTER_ALIAS        OPT_LOCAL + 9
+#define OPT_IGNORE_DAY          OPT_LOCAL + 10
 
 namespace rts2selector
 {
@@ -138,6 +139,8 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::TimeArray *free_start;
 		rts2core::TimeArray *free_end;
 
+		rts2core::ValueBool *ignoreDay;
+
 		double last_p;
 
 		double nightHorizon;
@@ -226,6 +229,9 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (interrupt, "interrupt", "if next target from queue hard interrupt current observations", false, RTS2_VALUE_WRITABLE);
 	interrupt->setValueBool (false);
 
+	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false, RTS2_VALUE_WRITABLE);
+	ignoreDay->setValueBool (false);
+
 	createValue (current_target, "current_target", "current target ID", false);
 	current_target->setValueInteger (-1);
 	createValue (current_qid, "current_qid", "current target queue ID", false);
@@ -267,6 +273,7 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (simulExpected, "simul_expected", "[s] expected simulation duration", false, RTS2_DT_TIMEINTERVAL);
 	simulExpected->setValueDouble (60);
 
+	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "select even during daytime");
 	addOption (OPT_IDLE_SELECT, "idle-select", 1, "selection timeout (reselect every I seconds)");
 
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
@@ -286,6 +293,9 @@ int SelectorDev::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case OPT_IGNORE_DAY:
+			ignoreDay->setValueBool (true);
+			break;
 		case OPT_IDLE_SELECT:
 			idle_select->setValueCharArr (optarg);
 			night_idle_select->setValueCharArr (optarg);
@@ -364,7 +374,7 @@ int SelectorDev::init ()
 	int i = 0;
 
 	setMessageMask (INFO_OBSERVATION_SLEW | INFO_OBSERVATION_INTERRUPTED | INFO_OBSERVATION_LOOP);
-	
+
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
 	{
 		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer, obs_altitude, i));
@@ -508,15 +518,23 @@ int SelectorDev::selectNext ()
 		double next_length = NAN;
 		double selectLength = selectUntil->getValueDouble ();
 		bool removeObserved = true;
+
 		if (!std::isnan (selectLength))
 		{
 			selectLength -= getNow ();
 		  	next_length = selectLength;
 		}
 
+		int auto_id = sel->selectNext (getMasterState (), next_length, ignoreDay->getValueBool ());
+		int auto_bonus = auto_id >= 0 ? sel->getTargetBonus (auto_id) : -1;
+
 		queueSelectUntil->setValueDouble (NAN);
 
-	 	if (getMasterState () == SERVERD_NIGHT && queues.size () > 0)
+	 	if ((getMasterState () == SERVERD_NIGHT || ignoreDay->getValueBool () == true) && queues.size () > 0 &&
+			// If automatic target is above priority 1000 it should be used instead of the queues
+			// TODO: make the limit configurabe on a per-queue basis
+			(auto_id < 0 || auto_bonus < 1000 || queueOnly->getValueBool ())
+			)
 		{
 			int id = -1;
 			int q = 1;
@@ -546,6 +564,10 @@ int SelectorDev::selectNext ()
 					if (hard)
 						logStream (MESSAGE_INFO) << "set interrupt to true (next target has hard time start)" << sendLog;
 					sendValueAll (queueSelectUntil);
+
+					if (next_id->getValueInteger () != id)
+						logStream (MESSAGE_INFO) << "selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << " target " << id << sendLog;
+
 					return id;
 				}
 				double n = getNow ();
@@ -562,11 +584,10 @@ int SelectorDev::selectNext ()
 		// select calibration frames even if in queue mode
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
 		{
-			int id = sel->selectNext (getMasterState (), next_length);
-			if (id != last_auto_id)
+			if (auto_id != last_auto_id)
 			{
-				logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
-				last_auto_id = id;
+				logStream (MESSAGE_INFO) << "selecting from automatic selector " << auto_id << sendLog;
+				last_auto_id = auto_id;
 				if (interrupt->getValueBool ())
 				{
 					interrupt->setValueBool (false);
@@ -576,7 +597,7 @@ int SelectorDev::selectNext ()
 			}
 			next_qid->setValueInteger (-1);
 			next_plan_id->setValueInteger (-1);
-			return id;
+			return auto_id;
 		}
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
 	}
@@ -635,7 +656,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 			current_plan_id->setValueInteger (-1);
 			current_start->setValueDouble (NAN);
 			current_end->setValueDouble (NAN);
-			current_queue->setValueInteger (0);			
+			current_queue->setValueInteger (0);
 		}
 
 		sendValueAll (current_target);
@@ -670,7 +691,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 
 	if (next_id->getValueInteger () > 0)
 	{
-		connections_t::iterator iexec = getConnections ()->begin ();  	
+		connections_t::iterator iexec = getConnections ()->begin ();
 		getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iexec);
 		if (iexec != getConnections ()->end () && selEnabled->getValueBool ())
 		{
@@ -921,6 +942,56 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		}
 		return 0;
 	}
+	else if (conn->isCommand ("move"))
+	{
+		int index;
+		int newindex;
+		if (conn->paramNextString (&name) || conn->paramNextInteger (&index) || conn->paramNextInteger (&newindex) || !conn->paramEnd ())
+			return -2;
+		// try to find queue with name..
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
+			return -2;
+		rts2plan::ExecutorQueue * q = &(*qi);
+		try
+		{
+			if (q->moveIndex (index, newindex))
+				return -2;
+			afterQueueChange (q);
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
+			return -2;
+		}
+		return 0;
+	}
+	else if (conn->isCommand ("update_times"))
+	{
+		int index;
+		double t_start = NAN;
+		double t_end = NAN;
+
+		if (conn->paramNextString (&name) || conn->paramNextInteger (&index) || conn->paramNextDoubleTime (&t_start) || conn->paramNextDoubleTime (&t_end))
+			return -2;
+		// try to find queue with name..
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
+			return -2;
+		rts2plan::ExecutorQueue * q = &(*qi);
+		try
+		{
+			if (q->updateIndexTimes (index, t_start, t_end))
+				return -2;
+			afterQueueChange (q);
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
+			return -2;
+		}
+		return 0;
+	}
 	else if (conn->isCommand ("now") || conn->isCommand ("now_once"))
 	{
 		int tar_id;
@@ -945,7 +1016,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		qi->filter (getNow ());
 		if (qi->front ().target == tar)
 		{
-			if (getMasterState () == SERVERD_NIGHT)
+			if (getMasterState () == SERVERD_NIGHT || ignoreDay->getValueBool () == true)
 				updateNext ();
 			interrupt->setValueBool (true);
 			sendValueAll (interrupt);
@@ -1067,7 +1138,7 @@ void SelectorDev::queuePlanId (rts2plan::ExecutorQueue *q, int plan_id)
 
 void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)
 {
-	if (getMasterState () == SERVERD_NIGHT)
+	if (getMasterState () == SERVERD_NIGHT || ignoreDay->getValueBool () == true)
 	{
 		q->beforeChange (getNow ());
 		updateNext ();

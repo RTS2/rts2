@@ -187,6 +187,9 @@ void XFitsImage::XeventLoop ()
 					case XK_c:
 						connection->queCommand (new rts2core::Command (client->getMaster (), "center"));
 						break;
+					case XK_n:
+						cam->singleSave = 1;
+						break;
 /*					case XK_p:
 						connection->postEvent (new rts2core::Event (EVENT_INTEGRATE_START));
 						break;

@@ -1,4 +1,4 @@
-/* 
+/*
  * Device with database connection.
  * Copyright (C) 2004-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -57,14 +57,6 @@ void DeviceDb::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
-		case EVENT_DB_LOST_CONN:
-			EXEC SQL DISCONNECT;
-			if (initDB ("master"))
-			{
-				addTimer (20, event);
-				return;
-			}
-			break;
 	}
 	rts2core::Device::postEvent (event);
 }
@@ -97,7 +89,46 @@ int DeviceDb::reloadConfig ()
 
 int DeviceDb::initDB (const char *conn_name)
 {
-	int ret;
+	if (config == NULL)
+	{
+		config = rts2core::Configuration::instance ();
+		int ret = reloadConfig ();
+
+		if (ret)
+			return ret;
+	}
+
+	if (connectString && strlen(connectString) == 0)
+	{
+		logStream (MESSAGE_WARNING) << "starting without DB" << sendLog;
+		return 0;
+	}
+
+	if (rts2db::connectToDb (connectString, conn_name))
+		return -1;
+
+	cameras.load ();
+
+	return 0;
+}
+
+// Static thread-local variables to keep DB connection parameters
+// They will be used if connectToDb() is called with NULL arguments
+__thread char *pConnectString = NULL;
+__thread char *pConnName = NULL;
+
+int rts2db::connectToDb (char *connectString, const char *conn_name)
+{
+	if (!connectString)
+		connectString = pConnectString;
+	else
+		pConnectString = strdup (connectString);
+
+	if (!conn_name)
+		conn_name = pConnName;
+	else
+		pConnName = strdup (conn_name);
+
 	std::string cs;
 	EXEC SQL BEGIN DECLARE SECTION;
 	const char *c_db;
@@ -105,24 +136,11 @@ int DeviceDb::initDB (const char *conn_name)
 	const char *c_password;
 	const char *c_connection = conn_name;
 	EXEC SQL END DECLARE SECTION;
-	// try to connect to DB
 
-	if (config == NULL)
-	{
-		config = rts2core::Configuration::instance ();
-		ret = reloadConfig ();
-
-		if (ret)
-			return ret;
-	}
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
 	if (connectString)
 	{
-		if (strlen(connectString) == 0)
-		{
-			logStream (MESSAGE_WARNING) << "starting without DB" << sendLog;
-			return 0;
-		}
 		c_db = connectString;
 	}
 	else
@@ -143,7 +161,7 @@ int DeviceDb::initDB (const char *conn_name)
 			EXEC SQL CONNECT TO :c_db AS :c_connection USER  :c_username USING :c_password;
 			if (sqlca.sqlcode != 0)
 			{
-				logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db 
+				logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db
 					<< "' with user '" << c_username
 					<< "' and password xxxx (see rts2.ini) :"
 					<< sqlca.sqlerrm.sqlerrmc << sendLog;
@@ -155,7 +173,7 @@ int DeviceDb::initDB (const char *conn_name)
 			EXEC SQL CONNECT TO :c_db AS :c_connection USER  :c_username;
 			if (sqlca.sqlcode != 0)
 			{
-				logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db 
+				logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db
 					<< "' with user '" << c_username
 					<< "': " << sqlca.sqlerrm.sqlerrmc << sendLog;
 				return -1;
@@ -173,7 +191,33 @@ int DeviceDb::initDB (const char *conn_name)
 		}
 	}
 
-	cameras.load ();
+	return 0;
+}
+
+int rts2db::checkDbConnection ()
+{
+	// Execute simplest SQL query to check whether we are connected to DB
+	EXEC SQL BEGIN DECLARE SECTION;
+	int tmp;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT 0 INTO :tmp;
+
+	// Check for error, and re-connect if any
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+
+		if (sqlca.sqlcode == ECPG_PGSQL || sqlca.sqlcode == ECPG_NO_CONN)
+		{
+			EXEC SQL DISCONNECT;
+
+			if (connectToDb (NULL, NULL))
+				return -1;
+			else
+				logStream (MESSAGE_INFO) << "Successfully re-connected to DB" << sendLog;
+		}
+	}
 
 	return 0;
 }

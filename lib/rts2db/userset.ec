@@ -1,4 +1,4 @@
-/* 
+/*
  * User set.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -20,6 +20,7 @@
 #include "app.h"
 #include "rts2db/sqlerror.h"
 #include "rts2db/userset.h"
+#include "rts2db/devicedb.h"
 
 #ifdef RTS2_HAVE_CRYPT
 #include <crypt.h>
@@ -29,6 +30,9 @@ using namespace rts2db;
 
 int UserSet::load ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id;
 	VARCHAR db_login[25];
@@ -102,6 +106,9 @@ UserSet::~UserSet (void)
 
 int createUser (std::string login, std::string password, std::string email, std::string allowed_devices)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
 	VARCHAR db_password[101];
@@ -182,6 +189,9 @@ int createUser (std::string login, std::string password, std::string email, std:
 
 int removeUser (std::string login)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
 	EXEC SQL END DECLARE SECTION;

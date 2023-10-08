@@ -68,6 +68,14 @@ int NWindowEdit::getLength ()
 	return length;
 }
 
+std::string NWindowEdit::getValueString ()
+{
+	char buf[getLength () + 1];
+	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
+
+	return std::string (buf);
+}
+
 keyRet NWindowEdit::injectKey (int key)
 {
 	switch (key)
@@ -181,7 +189,7 @@ void NWindowEdit::winrefresh ()
 	}
 
 	width = MIN (ew, width);
-	height = MIN (ew, height);
+	height = MIN (eh, height);
 
 	if (x0 + width > COLS)
 		width -= COLS - x0 - width;

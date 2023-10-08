@@ -1,4 +1,4 @@
-/* 
+/*
  * Class for rectangle.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -67,6 +67,8 @@ void ValueRectangle::setInts (int in_x, int in_y, int in_w, int in_h)
 
 int ValueRectangle::setValue (Connection *connection)
 {
+	connection->unquoteRest ();
+
 	char *val;
 	if (connection->paramNextString (&val) || x->setValueCharArr (val))
 		return -2;

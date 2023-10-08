@@ -1,4 +1,4 @@
-/* 
+/*
  * Abstract class for server implementation.
  * Copyright (C) 2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
@@ -76,22 +76,11 @@ class HTTPServer
 		virtual bool getDebug () = 0;
 
 		virtual void sendValueAll (rts2core::Value * value) = 0;
-
 		virtual rts2db::CamList *getCameras () = 0;
 
 		virtual rts2core::connections_t *getConnections () = 0;
 
 		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current) = 0;
-
-		/**
-		 * Return default label for image preview.
-		 */
-		virtual const char *getDefaultImageLabel () { return "%Y-%m-%d %H:%M:%S @OBJECT"; }
-
-		/**
-		 * Return default channel for image preview.
-		 */
-		virtual int getDefaultChannel () { return 0; }
 
 		/**
 		 * Verify user credentials.

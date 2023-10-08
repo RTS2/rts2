@@ -54,6 +54,8 @@ namespace XmlRpc
 			HttpParams () {};
 			void addParam (std::string _name, std::string _val) { push_back (HttpParam (_name, _val)); }
 
+			bool hasParam (const char *_name);
+
 			std::string getValue (const char *_name, const char *dev_val);
 			const char *getString (const char *_name, const char *def_val);
 			int getInteger (const char *_name, int def_val);
@@ -69,14 +71,14 @@ namespace XmlRpc
 			bool getBoolean (const char *_name, bool def_val);
 			double getDouble (const char *_name, double def_val);
 
-			/** 
+			/**
 			 * Return date as double ctime.
-			 * 
+			 *
 			 * @param _name  name of variable which will be returned.
 			 * @param def_val default value. You can use time(NULL) to use current time.
 			 * @param next_midnight  if only date is specified, return next local midnight time
-			 * 
-			 * @return 
+			 *
+			 * @return
 			 */
 			double getDate (const char *_name, double def_val, bool next_midnight = false);
 
@@ -99,18 +101,24 @@ namespace XmlRpc
 			const char* getDescription () { return _description; }
 
 			//! Set authentification string..
-			void setAuthorization(std::string authorization);
+			void setAuthorization (std::string authorization);
+
+			//! Set request base (per-request page prefix) for this request
+			void setRequestBase (std::string prefix) { _request_base = prefix; }
+
+			//! Return request base (per-request page prefix)
+			std::string getRequestBase () { return _request_base; }
 
 			//! Return username
-			std::string getUsername() { return _username; }
+			std::string getUsername () { return _username; }
 
 			//! Return user password
-			std::string getPassword() { return _password; }
+			std::string getPassword () { return _password; }
 
 			//! Execute the method. Subclasses must provide a definition for this method.
 			virtual void execute (XmlRpcSource *source, sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &respose, size_t &response_length) = 0;
 			//! Returns 401 page
-			virtual void authorizePage(int &http_code, const char* &response_type, char* &response, size_t &response_length);
+			virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
 			void setConnection (XmlRpcServerConnection *_connection) { connection = _connection; }
 
@@ -141,6 +149,8 @@ namespace XmlRpc
 		private:
 			std::string _prefix;
 			const char *_description;
+
+			std::string _request_base;
 
 			std::string _username;
 			std::string _password;

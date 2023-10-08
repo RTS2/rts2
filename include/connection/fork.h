@@ -1,4 +1,4 @@
-/* 
+/*
  * Forking connection handling.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -56,7 +56,7 @@ class ConnFork:public ConnNoSend
 			argv.push_back (_os.str ());
 		}
 
-		int writeToProcess (const char *msg);
+		virtual int writeToProcess (const char *msg);
 		int writeToProcessInt (int msg);
 
 		/**
@@ -126,14 +126,14 @@ class ConnFork:public ConnNoSend
 		 */
 		virtual void processErrorLine (char *errbuf);
 
+		// for statistics, how much time was consumed
+		time_t startTime;
+		time_t endTime;
+
 	private:
 		pid_t childPid;
 		std::vector <std::string> argv;
 		int forkedTimeout;
-
-		// for statistics, how much time was consumed
-		time_t startTime;
-		time_t endTime;
 
 		// holds pipe with stderr. Stdout is stored in sock
 		int sockerr;

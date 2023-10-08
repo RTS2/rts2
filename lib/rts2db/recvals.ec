@@ -1,4 +1,4 @@
-/* 
+/*
  * Utility classes for record values manipulations.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -21,11 +21,15 @@
 
 #include "rts2db/recvals.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
 void RecvalsSet::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id;
 	VARCHAR d_device_name[26];

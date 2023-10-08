@@ -583,9 +583,7 @@ int HttpD::init ()
 	if (events.docroot.length () > 0)
 		XmlRpcServer::setDefaultGetRequest (new rts2json::Directory (NULL, this, events.docroot.c_str (), "index.html", NULL));
 	if (events.defchan != INT_MAX)
-		defchan = events.defchan;
-	else
-		defchan = 0;
+		previewDefaultChannel->setValueInteger (events.defchan);
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
@@ -797,8 +795,24 @@ HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_
 	createValue (bbLastSuccess, "bb_lastsucess", "last successful transmision with BB", false);
 	createValue (bbSelectorQueue, "bb_selectorQueue", "queue used for scheduler entries", false, RTS2_VALUE_WRITABLE);
 
-	createValue (messageBufferSize, "message_buffer_size", "number of last messages to kept in memory", false, RTS2_VALUE_WRITABLE);
+	createValue (messageBufferSize, "message_buffer_size", "number of last messages to kept in memory", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	messageBufferSize->setValueInteger (100);
+
+	// Parameters for image previews
+	createValue (previewQuantiles, "preview_quantiles", "Default quantile for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewQuantiles->setValueDouble (0.005);
+	createValue (previewQuality, "preview_quality", "Default quality for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewQuality->setValueInteger (40);
+	createValue (previewSize, "preview_size", "Default preview size for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewSize->setValueInteger (128);
+	createValue (previewPageSize, "preview_pagesize", "Number of images per page for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewPageSize->setValueInteger (400);
+	createValue (previewColorVariant, "preview_colorvariant", "Default color variant for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewColorVariant->setValueInteger (0);
+	createValue (previewDefaultChannel, "preview_default_channel", "Default channel for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewDefaultChannel->setValueInteger (0);
+	createValue (previewImageLabel, "preview_imagelabel", "Default image label for JPEG image preview", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	previewImageLabel->setValueCharArr ("%Y-%m-%d %H:%M:%S @OBJECT");
 
 	debugTestscript = false;
 
@@ -907,6 +921,10 @@ int HttpD::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 void HttpD::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerState * new_state)
 {
+	if (new_state->getOldValue () & DEVICE_NOT_READY)
+		// Device just appeared, we should not consider it as a state change
+		return;
+
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
 	for (StateCommands::iterator iter = events.stateCommands.begin (); iter != events.stateCommands.end (); iter++)
@@ -1091,11 +1109,6 @@ bool HttpD::isPublic (struct sockaddr_in *saddr, const std::string &path)
 	return true;
 }
 
-const char *HttpD::getDefaultImageLabel ()
-{
-	return defLabel;
-}
-
 void HttpD::scriptProgress (double start, double end)
 {
 	maskState (EXEC_MASK_SCRIPT, EXEC_SCRIPT_RUNNING, "script running", start, end);
@@ -1129,9 +1142,8 @@ void HttpD::reloadEventsFile ()
 			logStream (MESSAGE_ERROR) << "error loading events: " << err << sendLog;
 		}
 
-	  	defLabel = events.getDefaultImageLabel ();
-		if (defLabel == NULL)
-			defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
+		if (events.getDefaultImageLabel ())
+			previewImageLabel->setValueCharArr (events.getDefaultImageLabel ());
 	}
 }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Class representing FITS file.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -129,7 +129,7 @@ class FitsFile: public rts2core::Expander
 		 * @param _tv
 		 */
 		FitsFile (const struct timeval *_tv);
-		
+
 		/**
 		 * Create FITS file from expand path. Uses given date for date related file expansion.
 		 *
@@ -355,7 +355,14 @@ class KeyNotFound:public rts2core::Error
 		KeyNotFound (FitsFile *_image, const char *_header):rts2core::Error ()
 		{
 			std::ostringstream _os;
-			_os << "keyword " << _header <<  " missing in file " << _image->getFileName () << ":" << _image->getFitsErrors ();
+			_os << "keyword " << _header <<  " missing in ";
+			if (_image->getFileName ())
+				_os << "file " << _image->getFileName ();
+			else
+				_os << "in-memory image";
+
+			_os << ":" << _image->getFitsErrors ();
+
 			setMsg (_os.str ());
 		}
 };

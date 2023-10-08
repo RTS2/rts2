@@ -1,4 +1,4 @@
-/* 
+/*
  * Skeleton for applications which works with targets.
  * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -53,6 +53,6 @@ class Rts2TargetApp:public rts2db::AppDb
 		void getObject (std::string tar_name);
 
 		int askForDegrees (const char *desc, double &val);
-		int askForObject (const char *desc, std::string obj_text = std::string (""));
+		int askForObject (const char *desc, std::string obj_text = std::string (""), bool empty = false);
 };
 #endif							 /* !__RTS2_TARGETAPP__ */
