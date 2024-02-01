@@ -56,6 +56,7 @@ class MultiBase:public Daemon
 		void addDevice (Device *dev);
 		virtual int init ();
 		virtual int run ();
+    		virtual void initLockFile () { setLockFile (std::string (getLockPrefix ()) + std::string (multi_name)); }
 
 	protected:
 		virtual int processOption (int opt);

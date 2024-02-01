@@ -127,11 +127,6 @@ int MultiBase::init ()
 	if (ret)
 		exit (ret);
 
-	std::string s = std::string (getLockPrefix ()) + multi_name;
-	setLockFile (s.c_str ());
-	ret = checkLockFile ();
-	if (ret)
-		return ret;
 	return lockFile ();
 }
 
