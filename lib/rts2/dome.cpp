@@ -308,7 +308,7 @@ int Dome::idle ()
 			setMasterOn ();
 		}
 	}
-	else 
+	else if (isClosed () != -2)
 	{
 		int ret;
 		ret = closeDomeWeather ();
