@@ -42,6 +42,7 @@ keyRet NComWin::injectKey (int key)
 	{
 		case KEY_BACKSPACE:
 		case 127:
+		case '\b':
 			getyx (comwin, y, x);
 			mvwdelch (comwin, y, x - 1);
 			break;
