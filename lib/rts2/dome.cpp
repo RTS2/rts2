@@ -357,7 +357,9 @@ int Dome::closeDomeWeather ()
 	{
 		if (domeAutoClose == NULL || domeAutoClose->getValueBool () == true)
 		{
-			logStream (MESSAGE_DEBUG) << "closeDomeWeather: domeCloseStart" << sendLog;
+			if (isClosed() != -2) {
+				logStream(MESSAGE_DEBUG) << "closeDomeWeather: domeCloseStart" << sendLog;
+			}
 			ret = domeCloseStart ();
 		}
 		setMasterStandby ();
