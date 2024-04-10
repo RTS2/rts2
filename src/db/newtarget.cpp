@@ -294,6 +294,12 @@ int Rts2NewTarget::doProcessing ()
 	if (tryMatch)
 	{
 		rts2db::TargetSet ts;
+		if (n_tar_name == NULL)
+		{
+			std::string target_name;
+			askForString ("Target NAME", target_name);
+			n_tar_name = target_name.c_str();
+		}
 		ts.loadByName (n_tar_name, true);
 		if (ts.size () == 1)
 		{
