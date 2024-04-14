@@ -26,7 +26,7 @@
 #ifdef RTS2_HAVE_CURSES_H
 #include <curses.h>
 #elif defined(RTS2_HAVE_NCURSES_CURSES_H)
-#include <ncurses/curses.h>
+#include <ncursesw/curses.h>
 #endif
 
 #include "nlayout.h"

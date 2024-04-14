@@ -19,6 +19,7 @@
 
 #ifndef __RTS2_NLAYOUT__
 #define __RTS2_NLAYOUT__
+#include "utf8chars.h"
 
 namespace rts2ncurses
 {
@@ -28,6 +29,8 @@ namespace rts2ncurses
  */
 class Layout
 {
+	protected:
+		static Utf8Chars utf8Chars;
 	public:
 		Layout ()
 		{

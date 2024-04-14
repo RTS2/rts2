@@ -21,6 +21,8 @@
 
 using namespace rts2ncurses;
 
+Utf8Chars Layout::utf8Chars;
+
 void LayoutBlock::resize (int x, int y, int w, int h)
 {
 	int tmp_i;

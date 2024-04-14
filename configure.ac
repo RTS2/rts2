@@ -181,28 +181,28 @@ AC_ARG_WITH(ncurses,
 	*) ncurses=${withval} ;;
 esac],[ncurses=yes])
 
-PKG_CHECK_MODULES([NCURSES],[ncurses],,[
+PKG_CHECK_MODULES([NCURSESW],[ncursesw],,[
 	AC_MSG_RESULT(not found)
-	AS_IF([test "x${ncurses}" !- "xyes"], [LDFLAGS="${LDFLAGS} -L${ncurses}"])
-	AC_CHECK_LIB([ncurses], [mvwprintw], [
-		NCURSES_LIBS="-lncurses"
+	AS_IF([test "x${ncursesw}" != "xyes"], [LDFLAGS="${LDFLAGS} -L${ncursesw}"])
+	AC_CHECK_LIB([ncursesw], [mvwprintw], [
+		NCURSESW_LIBS="-lncursesw"
 	],[
 		cat<<EOF
-**** ncurses library is not installed.
+**** ncursesw library is not installed.
 **** Please install ncurses (development package)
 EOF
 		exit 1
 	])
-	AS_IF([test "x${ncurses}" != "xyes"], [
-		NCURSES_LIBS="-L${ncurses} ${NCURSES_LIBS}"
-		NCURSES_CFLAGS="-I${ncurses}"
+	AS_IF([test "x${ncursesw}" != "xyes"], [
+		NCURSESW_LIBS="-L${ncursesw} ${NCURSES_LIBS}"
+		NCURSESW_CFLAGS="-I${ncursesw}"
 	],[
-		NCURSES_CFLAGS=""
+		NCURSESW_CFLAGS=""
 	])
 ])
 
-AC_SUBST(NCURSES_LIBS)
-AC_SUBST(NCURSES_CFLAGS)
+AC_SUBST(NCURSESW_LIBS)
+AC_SUBST(NCURSESW_CFLAGS)
 
 dnl Check for GraphicsMagic++ library
 

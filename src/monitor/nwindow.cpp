@@ -57,14 +57,16 @@ void NWindow::draw ()
 	if (haveBox ())
 	{
 		if (isActive ())
-			wborder (window, A_REVERSE | ACS_VLINE, A_REVERSE | ACS_VLINE,
-			A_REVERSE | ACS_HLINE, A_REVERSE | ACS_HLINE,
-			A_REVERSE | ACS_ULCORNER,
-			A_REVERSE | ACS_URCORNER,
-			A_REVERSE | ACS_LLCORNER,
-			A_REVERSE | ACS_LRCORNER);
+		{
+			wattron (window, A_REVERSE);
+			wborder_set (window, &utf8Chars.getChar ("VLINE"), &utf8Chars.getChar ("VLINE"),
+					&utf8Chars.getChar ("HLINE"), &utf8Chars.getChar ("HLINE"),
+					&utf8Chars.getChar ("ULCORNER"), &utf8Chars.getChar ("URCORNER"),
+					&utf8Chars.getChar ("LLCORNER"), &utf8Chars.getChar ("LRCORNER"));
+			wattroff (window, A_REVERSE);
+		}
 		else
-			box (window, 0, 0);
+			box_set (window, &utf8Chars.getChar ("VLINE"), &utf8Chars.getChar ("HLINE"));
 	}
 
 	if (!title.empty ())

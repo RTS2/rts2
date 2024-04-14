@@ -23,6 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <list>
+#include <langinfo.h>
 
 #include <iostream>
 #include <fstream>
@@ -509,6 +510,7 @@ int NMonitor::repaint ()
 int NMonitor::init ()
 {
 	int ret;
+	const char *s;
 	ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
@@ -516,6 +518,15 @@ int NMonitor::init ()
 	rts2core::Configuration::instance ()->loadFile ();
 
 	// init ncurses
+	if (setlocale (LC_CTYPE, "en_US.UTF-8") == NULL &&
+		setlocale (LC_CTYPE, "C.UTF-8") == NULL) {
+		if (setlocale (LC_CTYPE, "") == NULL)
+			std::cerr << "invalid LC_ALL, LC_CTYPE or LANG" << std::endl;
+
+		s = nl_langinfo (CODESET);
+		if (strcasecmp (s, "UTF-8") != 0 && strcasecmp (s, "UTF8") != 0)
+			std::cerr << "need UTF-8 locale (LC_CTYPE) but have " << s << std::endl;
+	}
 	cursesWin = initscr ();
 	if (!cursesWin)
 	{

@@ -31,12 +31,12 @@ void NActionBool::draw (WINDOW *window, int y)
 {
 	if (isActive)
 	{
-		mvwaddch (window, y, 0, ACS_DIAMOND);
+		mvwadd_wch (window, y, 0, &utf8Chars.getChar ("DIAMOND"));
 		wprintw (window, " %s ", text);
 	}
 	else
 	{
-		mvwaddch (window, y, 0, ACS_BULLET);
+		mvwadd_wch (window, y, 0, &utf8Chars.getChar ("BULLET"));
 		wprintw (window, " %s ", text_unactive);
 	}
 }
