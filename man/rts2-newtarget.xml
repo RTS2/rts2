@@ -55,6 +55,7 @@
       <arg choice="opt"><option>-m</option></arg>
       <arg choice="opt"><option>-r</option> <replaceable class="parameter">radius</replaceable></arg>
       <arg choice="opt"><option>-f</option></arg>
+      <arg choice="opt"><option>-n</option></arg>
       <arg choice="opt"><option>--pi</option> <replaceable class="parameter">PI name</replaceable></arg>
       <arg choice="opt"><option>--program</option> <replaceable class="parameter">program name</replaceable></arg>
       &dbapp;
@@ -157,6 +158,14 @@
 	    existing target etc.
 	  </para>
 	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-n</option></term>
+        <listitem>
+          <para>
+            No coordinates. Don't move the telescope.
+          </para>
+        </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--pi <replaceable class="parameter">PI name</replaceable></option></term>
