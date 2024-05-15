@@ -33,7 +33,7 @@ namespace rts2ncurses
 class NAction
 {
 	public:
-		NAction (const char *in_text, int in_code)
+		NAction (const char *in_text, int in_code, Utf8Chars& chars) : utf8Chars (chars)
 		{
 			text = in_text;
 			code = in_code;
@@ -58,6 +58,7 @@ class NAction
 
 	protected:
 		const char *text;
+		Utf8Chars& utf8Chars;
 
 	private:
 		int code;
@@ -69,7 +70,7 @@ class NAction
 class NActionBool:public NAction
 {
 	public:
-		NActionBool (const char *_text_active, const char *_text_unactive, int _code):NAction (_text_active, _code) { isActive = true; text_unactive = _text_unactive; }
+		NActionBool (const char *_text_active, const char *_text_unactive, int _code, Utf8Chars chars):NAction (_text_active, _code, chars) { isActive = true; text_unactive = _text_unactive; }
 
 		virtual void draw (WINDOW *window, int y);
 		void setActive (bool _active) { isActive = _active; }
@@ -100,7 +101,7 @@ class NSubmenu:public NSelWindow
 		 */
 		NAction * createAction (const char *in_text, int in_code)
 		{
-			NAction *ret = new NAction (in_text, in_code);
+			NAction *ret = new NAction (in_text, in_code, utf8Chars);
 			addAction (ret);
 			grow (strlen (in_text) + 4, 1);
 			return ret;
@@ -108,7 +109,7 @@ class NSubmenu:public NSelWindow
 
 		NActionBool * createActionBool (const char *in_text, const char *_unactive, int in_code)
 		{
-			NActionBool *ret = new NActionBool (in_text, _unactive, in_code);
+			NActionBool *ret = new NActionBool (in_text, _unactive, in_code, utf8Chars);
 			addAction (ret);
 			grow (strlen (in_text) + 5, 1);
 			return ret;

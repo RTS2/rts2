@@ -90,18 +90,18 @@ void NMsgWindow::draw ()
 	}
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-	mvwvline (getWriteWindow (), 0, 12, ACS_VLINE, (maxrow > getHeight ()? maxrow : getHeight ()));
-	mvwvline (getWriteWindow (), 0, 14, ACS_VLINE, (maxrow > getHeight ()? maxrow : getHeight ()));
+	mvwvline_set (getWriteWindow (), 0, 12, &utf8Chars.getChar ("VLINE"), (maxrow > getHeight ()? maxrow : getHeight ()));
+	mvwvline_set (getWriteWindow (), 0, 14, &utf8Chars.getChar ("VLINE"), (maxrow > getHeight ()? maxrow : getHeight ()));
 
 	if (isActive ())
 		wattron (window, A_REVERSE);
-	mvwaddch (window, 0, 15, ACS_TTEE);
-	mvwaddch (window, getHeight () - 1, 15, ACS_BTEE);
-	mvwaddch (window, 0, 13, ACS_TTEE);
-	mvwaddch (window, getHeight () - 1, 13, ACS_BTEE);
+	mvwadd_wch (window, 0, 15, &utf8Chars.getChar ("TTEE"));
+	mvwadd_wch (window, getHeight () - 1, 15, &utf8Chars.getChar ("BTEE"));
+	mvwadd_wch (window, 0, 13, &utf8Chars.getChar ("TTEE"));
+	mvwadd_wch (window, getHeight () - 1, 13, &utf8Chars.getChar ("BTEE"));
 	// Scrollbar
 	if (maxrow > 1)
-		mvwaddch (window, 1 + (getHeight () - 3)*getSelRow () / (maxrow - 1), getWidth()-1, ACS_DIAMOND);
+		mvwadd_wch (window, 1 + (getHeight () - 3)*getSelRow () / (maxrow - 1), getWidth()-1, &utf8Chars.getChar ("DIAMOND"));
 	wattroff (window, A_REVERSE);
 
 	winrefresh ();
