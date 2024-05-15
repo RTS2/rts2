@@ -151,6 +151,7 @@ void XFocusClient::help ()
 		<< "\te,d     .. increase/decrease exposure by 1 sec" << std::endl
 		<< "\tf       .. full frame exposure" << std::endl
 		<< "\tc       .. center (1/2x1/2 chip size) exposure" << std::endl
+		<< "\tn       .. save next image as FITS file" << std::endl
 		// << "\ty     .. save FITS file" << std::endl
 		// << "\tu     .. don't save fits file" << std::endl
 		// << "\thjkl, arrows .. move (change mount position)" << std::endl

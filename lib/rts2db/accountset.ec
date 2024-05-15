@@ -1,4 +1,4 @@
-/* 
+/*
  * Account class.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,6 +19,7 @@
 
 #include "rts2db/accountset.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
@@ -41,6 +42,9 @@ AccountSet::~AccountSet ()
 void
 AccountSet::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_account_id;
 	VARCHAR d_account_name[150];
@@ -71,7 +75,7 @@ AccountSet::load ()
 			break;
 		else if (sqlca.sqlcode)
 			throw SqlError();
-		
+
 		(*this)[d_account_id] = new Account (d_account_id, std::string (d_account_name.arr), d_account_share);
 
 		shareSum += d_account_share;

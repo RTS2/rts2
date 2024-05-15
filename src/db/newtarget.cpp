@@ -1,4 +1,4 @@
-/* 
+/*
  * Create new observation target.
  * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -286,7 +286,7 @@ int Rts2NewTarget::doProcessing ()
 	}
 	else
 	{
-		ret = askForObject ("Target, RA&DEC or anything else (MPEC one line, TLEs separated with |,..)", std::string (n_tar_ra_dec));
+		ret = askForObject ("Target, RA&DEC or anything else (MPEC one line, TLEs separated with |,..)", std::string (n_tar_ra_dec), *n_tar_ra_dec ? false : true);
 	}
 	if (ret)
 		return ret;

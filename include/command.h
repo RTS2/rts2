@@ -244,6 +244,7 @@ class Command
 	public:
 		Command (Block * _owner);
 		Command (Block * _owner, const char *_text);
+		Command (Block * _owner, std::ostringstream &_os);
 		Command (Command * _command);
 		Command (Command & _command);
 		virtual ~ Command (void);
@@ -500,17 +501,6 @@ class CommandExposure:public Command
 		virtual int commandReturnFailed (int status, Connection * conn);
 	private:
 		DevClientCamera * camera;
-};
-
-/**
- * Start data readout.
- *
- * @ingourp RTS2Command
- */
-class CommandReadout:public Command
-{
-	public:
-		CommandReadout (Block * _master);
 };
 
 class CommandShiftStart: public Command

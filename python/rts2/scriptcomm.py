@@ -58,6 +58,13 @@ DT_KMG             = "DT_KMG"
 DT_INTERVAL        = "DT_INTERVAL"
 DT_ONOFF           = "DT_ONOFF"
 
+def quote_if_string(value):
+	"""Return quoted string if value is string, or just the value itself"""
+	if isinstance(value, basestring):
+		return '"' + value + '"'
+	else:
+		return value
+
 class Rts2Exception(Exception):
 	"""Thrown on exceptions on communicated over stdin/stdout connection."""
 	def __init__(self,message):
@@ -72,6 +79,7 @@ class Rts2Comm:
 	def __init__(self, log_device = True):
 		self.exception_re = re.compile('([!&]) (\S.*)')
 		self.__run_device = None
+		self.__exec_device = None
 		self.__log_device = log_device
 
 	def sendCommand(self,command,device = None):
@@ -104,15 +112,27 @@ class Rts2Comm:
 		"""Returns given value."""
 		if device is None:
 			print('? {0}'.format(value))
+		elif (device == self.getExecDevice()):
+			return self.getOwnValue(value)
 		else:
 			print('G {0} {1}'.format(device,value))
 		sys.stdout.flush()
-		return self.readline()
+
+		value = self.readline()
+		if value == 'ERR':
+			return None
+		else:
+			return value
 
 	def getOwnValue(self, value):
 		print('get_own {0}'.format(value))
 		sys.stdout.flush()
-		return self.readline()
+
+		value = self.readline()
+		if value == 'ERR':
+			return None
+		else:
+			return value
 
 	def getLoopCount(self):
 		print('loopcount')
@@ -126,12 +146,24 @@ class Rts2Comm:
 			self.__run_device = self.readline()
 		return self.__run_device
 
+	def getExecDevice(self):
+		if self.__exec_device is None:
+			print('exec_device')
+			sys.stdout.flush()
+			self.__exec_device = self.readline()
+		return self.__exec_device
+
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
-		return float(self.getValue(value,device).split(" ")[0])
+		value = self.getValue(value,device)
+		if value is None:
+			return None
+		return float(value.split(" ")[0])
 
 	def getValueInteger(self,value,device = None):
 		val = self.getValue(value,device)
+		if value is None:
+			return None
 		if val[0:2] == "0x":
 			vals = val.split()[0:2]
 			if len(vals[0]) > 2:
@@ -141,31 +173,33 @@ class Rts2Comm:
 		else:
 			return int(val.split(" ")[0])
 
-	def incrementValue(self,name,new_value,device = None):
+	def incrementValue(self, name, new_value, device = None):
 		if (device is None):
-			print("value {0} += {1}".format(name,new_value))
+			print("value {0} += {1}".format(name, quote_if_string(new_value)))
 		else:
-			print("V {0} {1} += {2}".format(device,name,new_value))
+			print("V {0} {1} += {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
-	
-	def incrementValueType(self,device,name,new_value):
-		print("VT {0} {1} += {2}".format(device,name,new_value))
+
+	def incrementValueType(self, device, name, new_value):
+		print("VT {0} {1} += {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
 	def setValue(self, name, new_value, device = None):
 		if (device is None):
-			print("value {0} = {1}".format(name,new_value))
+			print("value {0} = {1}".format(name, quote_if_string(new_value)))
+		elif (device == self.getExecDevice()):
+			self.setOwnValue(name, new_value)
 		else:
-			print("V {0} {1} = {2}".format(device,name,new_value))
+			print("V {0} {1} = {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
 	def setOwnValue(self, name, new_value):
 		print('set_own {0} {1}'.format(name, new_value))
 		sys.stdout.flush()
 
-	def setValueByType(self,device,name,new_value):
+	def setValueByType(self, device, name, new_value):
 		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
-		print("VT {0} {1} = {2}".format(device,name,new_value))
+		print("VT {0} {1} = {2}".format(device, name, quote_if_string(new_value)))
 		sys.stdout.flush()
 
 	def getDeviceByType(self,device):
@@ -184,6 +218,11 @@ class Rts2Comm:
 		print("target_tempdisable {0}".format(ti))
 		sys.stdout.flush()
 
+	def loopDisable(self):
+		"""Temporarily disable looping in executor."""
+		print("loop_disable")
+		sys.stdout.flush()
+
 	def endScript(self):
 		"""Ask controlling process to end the current script."""
 		print("end_script")
@@ -194,7 +233,7 @@ class Rts2Comm:
 		print('S {0}'.format(device))
 		sys.stdout.flush()
 		return int(self.readline())
-	
+
 	def waitIdle(self,device,timeout):
 		"""Wait for idle state (with timeout)"""
 		print('waitidle {0} {1}'.format(device,timeout))
@@ -262,7 +301,7 @@ class Rts2Comm:
 	def radec(self,ra,dec):
 		print("radec {0} {1}".format(ra,dec))
 		sys.stdout.flush()
-	
+
 	def newObs(self,ra,dec):
 		print("newobs {0} {1}".format(ra,dec))
 		sys.stdout.flush()
@@ -298,7 +337,7 @@ class Rts2Comm:
 		print("move",imagename, pattern)
 		sys.stdout.flush()
 		return self.readline()
-	
+
 	def toFlat(self,imagename):
 		return self.__imageAction("flat",imagename)
 
@@ -312,15 +351,52 @@ class Rts2Comm:
 	def toTrash(self,imagename):
 		"""Move image at path to trash. Return new image path."""
 		return self.__imageAction("trash",imagename)
-	
+
 	def delete(self,imagename):
 		"""Delete image from disk."""
 		print("delete",imagename)
 		sys.stdout.flush()
-	
+
 	def process(self,imagename):
 		"""Put image to image processor queue."""
 		print("process",imagename)
+		sys.stdout.flush()
+
+	def valueCreate(self, name, value=None, device=None, desc='created from script', type="string", writable=False, fits=False, temporary=False, rts2_type=None):
+		"""Add to device new value of given type with given flags"""
+		chunks = ['value_create', type, name, '"' + desc.replace('"', '\\"') + '"']
+
+		if value is not None:
+			if type == 'string':
+				chunks.append('"' + str(value).replace('"', '\\"') + '"')
+			else:
+				chunks.append(str(value))
+
+		if writable:
+			chunks.append('writable')
+
+		if fits:
+			chunks.append('fits')
+
+		if temporary:
+			chunks.append('temporary')
+
+		if rts2_type:
+			chunks.append(rts2_type)
+
+		if device is not None and device != '.':
+			chunks.insert(0, 'C ' + device)
+
+		print(" ".join(chunks))
+
+		sys.stdout.flush()
+
+	def valueDelete(self, name, device=None):
+		if device is not None and device != '.':
+			print("C", device, "value_delete", name)
+		else:
+			print("value_delete", name)
+
 		sys.stdout.flush()
 
 	def doubleValue(self,name,desc,value,rts2_type=None):
@@ -352,7 +428,7 @@ class Rts2Comm:
 		"""Add to device integer writable variable."""
 		print("integer_w",name,'"{0}"'.format(desc),value)
 		sys.stdout.flush()
-	
+
 	def stringValue(self,name,desc,value):
 		"""Add to device string value."""
 		print("string",name,'"{0}"'.format(desc),value)
@@ -396,21 +472,36 @@ class Rts2Comm:
 		print("double_array_w",name,'"{0}"'.format(desc),' '.join(map(str,values)))
 		sys.stdout.flush()
 
-	def doubleArrayAdd(self,name,values):
-		print("double_array_add",name,' '.join(map(str,values)))
+	def valueAdd(self, name, values, device=None):
+		"""Add new double to existing double array or statistical double value."""
+		if device and device != '.':
+			print("C", device, "value_add", name, ' '.join(map(str, values)))
+		else:
+			print("value_add", name,' '.join(map(str, values)))
 		sys.stdout.flush()
 
-	def statAdd(self, name, desc, num, value):
-		"""Add to statistics boolean value."""
-		print("stat_add",name,'"{0}"'.format(desc),num,value)
+	def doubleArrayAdd(self, name, values, device=None):
+		"""Add new double to existing double array value."""
+		if device and device != '.':
+			print("C", device, "double_array_add", name, ' '.join(map(str, values)))
+		else:
+			print("double_array_add", name,' '.join(map(str, values)))
 		sys.stdout.flush()
 
-	def log(self,level, text):
+	def statAdd(self, name, desc, maxsize, values, device=None):
+		"""Add new double to existing statistical double value."""
+		if device and device != '.':
+			print("C", device, "stat_add", name, maxsize, ' '.join(map(str, values)))
+		else:
+			print("C", device, "stat_add", name, maxsize, ' '.join(map(str, values)))
+		sys.stdout.flush()
+
+	def log(self,level, *text):
 		if self.__log_device:
-			text = self.getRunDevice() + ' ' + text
-		print("log",level,text)
+			text = (self.getRunDevice(),) + text
+		print("log",level,*text)
 		sys.stdout.flush()
-	
+
 	def isEvening(self):
 		"""Returns true if is evening - sun is on West"""
 		sun_az = self.getValueFloat('sun_az','centrald')

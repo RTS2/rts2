@@ -1,4 +1,4 @@
-/* 
+/*
  * Labels support (for targets,..).
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,6 +19,7 @@
 
 #include "rts2db/labels.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
@@ -48,9 +49,12 @@ const LabelsVector::iterator LabelsVector::findLabelId (int label_id)
 	}
 	return iter;
 }
-		
+
 int Labels::getLabel (const char *label, int type)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_label_id;
 	VARCHAR d_label[500];
@@ -86,6 +90,9 @@ int Labels::getLabel (const char *label, int type)
 
 int Labels::insertLabel (const char *label, int type)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_label_id;
 	VARCHAR d_label[500];
@@ -104,7 +111,7 @@ int Labels::insertLabel (const char *label, int type)
 		(label_id, label_type, label_text)
 	VALUES
 		(:d_label_id, :d_type, :d_label);
-	
+
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
@@ -116,6 +123,9 @@ int Labels::insertLabel (const char *label, int type)
 
 void Labels::addLabel (int tar_id, int label_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = tar_id;
 	int d_label_id = label_id;
@@ -147,6 +157,9 @@ void Labels::addLabel (int tar_id, const char *label, int type, bool create)
 
 LabelsVector Labels::getTargetLabels (int tar_id)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = tar_id;
 	int d_lid;
@@ -168,7 +181,7 @@ LabelsVector Labels::getTargetLabels (int tar_id)
 	{
 		EXEC SQL FETCH next FROM label_target_cur INTO :d_lid, :d_type, :label;
 		if (sqlca.sqlcode)
-			break; 
+			break;
 		label.arr[label.len] = '\0';
 		ret.push_back (Label (d_lid, d_type, label.arr));
 	}
@@ -184,6 +197,9 @@ LabelsVector Labels::getTargetLabels (int tar_id)
 
 LabelsVector Labels::getTargetLabels (int tar_id, int type)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = tar_id;
 	int d_type = type;
@@ -221,6 +237,9 @@ LabelsVector Labels::getTargetLabels (int tar_id, int type)
 
 void Labels::deleteTargetLabels (int tar_id, int type)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = tar_id;
 	int d_type = type;

@@ -1,6 +1,6 @@
-SUBDIRS = 
+SUBDIRS =
 
-bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl \
+bin_PROGRAMS = rts2-focusd-optec rts2-focusd-astromech rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl \
 	rts2-focusd-atc2 rts2-focusd-microfocuser rts2-focusd-nstep rts2-focusd-planewave rts2-focusd-apm \
 	rts2-focusd-ng rts2-focusd-aaf rts2-focusd-pwiirf90 rts2-focusd-tefo
 
@@ -8,6 +8,8 @@ LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 rts2_focusd_optec_SOURCES = optec.cpp
+
+rts2_focusd_astromech_SOURCES = astromech.cpp
 
 rts2_focusd_robofocus_SOURCES = robofocus.cpp
 
@@ -33,7 +35,7 @@ rts2_focusd_pwiirf90_SOURCES = pwiirf90.cpp
 
 rts2_focusd_tefo_SOURCES = tefo.cpp
 
-EXTRA_DIST = 
+EXTRA_DIST =
 
 if FLI
 bin_PROGRAMS += rts2-focusd-fli

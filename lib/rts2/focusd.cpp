@@ -39,7 +39,7 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 	createValue (position, "FOC_POS", "focuser position", true); // reported by focuser, use FOC_TAR to set the target position
 	createValue (target, "FOC_TAR", "focuser target position", true, RTS2_VALUE_WRITABLE);
 
-	createValue (defaultPosition, "FOC_DEF", "default target value", true, RTS2_VALUE_WRITABLE);
+	createValue (defaultPosition, "FOC_DEF", "default target value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (filterOffset, "FOC_FILTEROFF", "offset related to actual filter", true, RTS2_VALUE_WRITABLE);
 	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true, RTS2_VALUE_WRITABLE);
 	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true, RTS2_VALUE_WRITABLE);
@@ -267,7 +267,7 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		// set target and default target to preset position
 		target->setValueDouble (new_value->getValueDouble ());
 		defaultPosition->setValueDouble (new_value->getValueDouble ());
-		
+
 		sendValueAll (target);
 		sendValueAll (defaultPosition);
 		return 0;
@@ -279,7 +279,7 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	else if (old_value == focusingOffset)
 	{
 		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat () + tco )? -2 : 0;
-	}  
+	}
 	else if (old_value == tempOffset)
 	{
 		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat () + tco )? -2 : 0;

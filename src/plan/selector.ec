@@ -24,6 +24,7 @@
 
 #include "rts2script/script.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include <libnova/libnova.h>
 
@@ -69,12 +70,16 @@ void Selector::init ()
 	}
 }
 
-int Selector::selectNext (int masterState, double length)
+int Selector::selectNext (int masterState, double length, bool ignoreDay)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn sun_hrz;
 	double JD;
 	int ret;
+
+	if (ignoreDay && (masterState & SERVERD_ONOFF_MASK) == SERVERD_ON)
+			return selectNextNight (0, false, length);
+
 	// take care of state - select to make darks when we are able to
 	// make darks.
 	switch (masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
@@ -176,6 +181,9 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 // enable targets which become observable
 void Selector::checkTargetObservability ()
 {
+	if (rts2db::checkDbConnection ())
+		return;
+
 	EXEC SQL
 		UPDATE
 			targets
@@ -189,6 +197,9 @@ void Selector::checkTargetObservability ()
 // drop old priorities..
 void Selector::checkTargetBonus ()
 {
+	if (rts2db::checkDbConnection ())
+		return;
+
 	EXEC SQL
 		UPDATE
 			targets
@@ -203,6 +214,9 @@ void Selector::checkTargetBonus ()
 
 void Selector::findNewTargets ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int consider_tar_id;
 	char consider_type_id;
@@ -286,7 +300,7 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 	{
 		(*target_list)->updateBonus ();
 	}
-	
+
 	// sort them..
 	std::sort (possibleTargets.begin (), possibleTargets.end (), bonusSort ());
 
@@ -435,7 +449,7 @@ void Selector::disableTarget (int n)
 
 void Selector::saveTargets ()
 {
-	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();  
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();
 	for (; iter != possibleTargets.end (); iter++)
 	{
 		(*iter)->target->save (false);
@@ -449,4 +463,16 @@ void Selector::revalidateConstraints (int watch_id)
 	{
 		(*iter)->target->revalidateConstraints (watch_id);
 	}
+}
+
+int Selector::getTargetBonus (int id)
+{
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();
+	for (; iter != possibleTargets.end (); iter++)
+	{
+		if ((*iter)->target->getTargetID() == id)
+			return (*iter)->bonus;
+	}
+
+	return -1;
 }

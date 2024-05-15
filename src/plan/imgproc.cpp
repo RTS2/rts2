@@ -24,6 +24,7 @@
 #include <glob.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
@@ -115,6 +116,7 @@ class ImageProc:public rts2core::Device
 
 		rts2core::ValueInteger *darkImages;
 		rts2core::ValueInteger *flatImages;
+		rts2core::ValueInteger *numObs;
 
 		rts2core::ValueString *processedImage;
 		rts2core::ValueInteger *queSize;
@@ -134,6 +136,8 @@ class ImageProc:public rts2core::Device
 		rts2core::ValueInteger *nightDarks;
 		rts2core::ValueInteger *nightFlats;
 
+		rts2core::ValueDouble *freeDiskSpace;
+
 		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
 
 		std::string defaultImgProcess;
@@ -142,9 +146,9 @@ class ImageProc:public rts2core::Device
 		unsigned int globPos;
 		int reprocessingPossible;
 
-		const char *last_processed_jpeg;
-		const char *last_good_jpeg;
-		const char *last_trash_jpeg;
+		std::string last_processed_jpeg;
+		std::string last_good_jpeg;
+		std::string last_trash_jpeg;
 };
 
 };
@@ -158,7 +162,6 @@ ImageProc::ImageProc (int _argc, char **_argv)
 :rts2core::Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #endif
 {
-	last_processed_jpeg = last_good_jpeg = last_trash_jpeg = NULL;
 	runningImage = NULL;
 
 	createValue (applyCorrections, "apply_corrections", "apply corrections from astrometry", false, RTS2_VALUE_WRITABLE);
@@ -180,6 +183,8 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	darkImages->setValueInteger (0);
 	createValue (flatImages, "flat_images", "number of flats", false);
 	flatImages->setValueInteger (0);
+	createValue (numObs, "num_observations", "number of observations", false);
+	numObs->setValueInteger (0);
 
 	createValue (processedImage, "processed_image", "image being processed at the moment", false);
 
@@ -203,6 +208,9 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (nightFlats, "night_flats", "number of flat images taken during night", false);
 
 	createValue (image_glob, "image_glob", "glob path for images processed in standy mode", false, RTS2_VALUE_WRITABLE);
+
+	createValue (freeDiskSpace, "free_diskspace", "free disk space on the device where we store files, in bytes", false);
+	freeDiskSpace->setValueDouble (0);
 
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
@@ -309,12 +317,10 @@ int ImageProc::init ()
 
 void ImageProc::postEvent (rts2core::Event * event)
 {
-	int obsId;
 	switch (event->getType ())
 	{
 		case EVENT_ALL_PROCESSED:
-			obsId = *((int *) event->getArg ());
-			queObs (obsId);
+			queObs (*(int *)(event->getArg ()));
 			break;
 	}
 #ifdef RTS2_HAVE_PGSQL
@@ -339,14 +345,19 @@ int ImageProc::getFreeSlot ()
 
 int ImageProc::idle ()
 {
-	std::list < ConnProcess * >::iterator img_iter;
-	if (int free_slot = getFreeSlot () >= 0 && imagesQue.size () != 0)
+	if (imagesQue.size () != 0)
 	{
-		img_iter = imagesQue.begin ();
-		ConnProcess *newImage = *img_iter;
-		imagesQue.erase (img_iter);
-		changeRunning (newImage, free_slot);
+		int free_slot = getFreeSlot ();
+
+		if (free_slot >= 0)
+		{
+			std::list < ConnProcess * >::iterator img_iter = imagesQue.begin ();
+			ConnProcess *newImage = *img_iter;
+			imagesQue.erase (img_iter);
+			changeRunning (newImage, free_slot);
+		}
 	}
+
 #ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::idle ();
 #else
@@ -358,6 +369,13 @@ int ImageProc::info ()
 {
 	queSize->setValueInteger ((int) imagesQue.size () + numRunning ());
 	sendValueAll (queSize);
+
+	struct statvfs s;
+	statvfs(rts2core::Configuration::instance ()->observatoryBasePath ().c_str (), &s);
+
+	freeDiskSpace->setValueDouble (s.f_bavail*s.f_frsize);
+	sendValueAll (freeDiskSpace);
+
 #ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::info ();
 #else
@@ -500,6 +518,10 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 				sendValueAll (darkImages);
 				sendValueAll (nightDarks);
 				break;
+			case OBS:
+				numObs->inc ();
+				sendValueAll (numObs);
+				break;
 			default:
 				logStream (MESSAGE_ERROR) << "wrong image state: " << rImage->getAstrometryStat () << sendLog;
 				break;
@@ -534,6 +556,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 {
 	int ret;
+
 	if (runningImage[slot])
 	{
 		if (sendStop)
@@ -548,9 +571,14 @@ void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 			return;
 		}
 	}
+
 	runningImage[slot] = newImage;
 	runningImage[slot]->setConnectionDebug (getDebug ());
+#ifdef RTS2_HAVE_LIBJPEG
+		runningImage[slot]->setLastProcessedJpeg (last_processed_jpeg);
+#endif
 	ret = runningImage[slot]->init ();
+
 	if (ret < 0)
 	{
 		deleteConnection (runningImage[slot]);
@@ -611,9 +639,13 @@ int ImageProc::doImage (const char *_path)
 
 int ImageProc::queObs (int obsId)
 {
-	ConnObsProcess *newObsConn;
-	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, astrometryTimeout->getValueInteger ());
-	return que (newObsConn);
+	if (access (defaultObsProcess.c_str (), X_OK) == 0)
+	{
+		ConnObsProcess *newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, astrometryTimeout->getValueInteger ());
+		return que (newObsConn);
+	}
+	else
+		return 0;
 }
 
 int ImageProc::queNextFromGlob ()

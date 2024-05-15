@@ -1,4 +1,4 @@
-/* 
+/*
  * Classes for answers to HTTP requests.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -58,24 +58,24 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, const char *css, const char *cssLink, const char *onLoad)
 {
 	os << "<html><head><title>" << title << "</title>";
-	
+
 	if (css)
 		os << "<style type='text/css'>" << css << "</style>";
 
 	if (cssLink)
-		os << "<link href='" << getServer ()->getPagePrefix () << cssLink << "' rel='stylesheet' type='text/css'/>";
+		os << "<link href='" << getRequestBase () << getServer ()->getPagePrefix () << cssLink << "' rel='stylesheet' type='text/css'/>";
 
 	os << "</head><body";
-	
+
 	if (onLoad)
 		os << " onload='" << onLoad << "'";
-	
+
 	os << ">";
 }
 
 void GetRequestAuthorized::printSubMenus (std::ostream &os, const char *prefix, const char *current, const char *submenus[][2])
 {
-	const char **p = submenus[0];  
+	const char **p = submenus[0];
 	const char *a = p[0];
 	const char *n = p[1];
 	while (true)
@@ -104,12 +104,12 @@ void GetRequestAuthorized::printFooter (std::ostream &os)
 
 void GetRequestAuthorized::includeJavaScript (std::ostream &os, const char *name)
 {
-	os << "<script type='text/javascript' src='" << getServer ()->getPagePrefix () << "/js/" << name << "'></script>\n";
+	os << "<script type='text/javascript' src='" << getRequestBase () << getServer ()->getPagePrefix () << "/js/" << name << "'></script>\n";
 }
 
 void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const char *name)
 {
-	os << "<script type='text/javascript'>pagePrefix = '" << getServer ()->getPagePrefix () << "';</script>\n";
+	os << "<script type='text/javascript'>pagePrefix = '" << getRequestBase () << getServer ()->getPagePrefix () << "';</script>\n";
 	includeJavaScript (os, name);
 }
 

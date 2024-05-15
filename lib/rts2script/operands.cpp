@@ -91,7 +91,7 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 				}
 				it++;
 			}
-		  	
+
 			// get the number
 			if (it == str.end ())
 			  	mul = 1;
@@ -116,7 +116,7 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 							break;
 						default:
 			  				throw rts2script::UnknowOperantMultiplier (*it);
-					}		
+					}
 					break;
 				case MUL_TIME:
 					switch (*it)
@@ -130,9 +130,9 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 						case 'w':
 			  				mul = 7 * 86400;
 							break;
-						default:	
+						default:
 			  				throw rts2script::UnknowOperantMultiplier (*it);
-					}		
+					}
 					break;
 			}
 			// eats units specifications
@@ -146,7 +146,7 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 	else
 	{
 		int start = iter - str.begin ();
-		while (iter != str.end() && isalnum (*iter))
+		while (iter != str.end() && (isalnum (*iter) || *iter == '_' || *iter == '+' || *iter == '-' || *iter == '.'))
 			iter++;
 		// see what we get..
 		std::string name = str.substr (start, iter - str.begin () - start);

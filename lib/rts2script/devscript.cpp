@@ -201,7 +201,8 @@ void DevScript::postEvent (rts2core::Event * event)
 			// if we are still exposing, exposureEnd/readoutEnd will query new command
 			break;
 		case EVENT_SCRIPT_RUNNING_QUESTION:
-			if (script.get ())
+			// We should report us as active if we either have an actual script, or are waiting for a next target already
+			if (script.get () || killTarget || nextTarget)
 				(*((int *) event->getArg ()))++;
 			break;
 		case EVENT_OK_ASTROMETRY:
@@ -389,7 +390,7 @@ void DevScript::setNextTarget (Rts2Target * in_target)
 {
 	if (in_target->getTargetID () == dont_execute_for && in_target->getObsId () == dont_execute_for_obsid)
 	{
-	  	logStream (MESSAGE_WARNING) << "device " << script_connection->getName () << " ignores next target (" << in_target->getTargetID () << "," << dont_execute_for 
+	  	logStream (MESSAGE_WARNING) << "device " << script_connection->getName () << " ignores next target (" << in_target->getTargetID () << "," << dont_execute_for
 			<< "), as it should not be execute" << sendLog;
 		nextTarget = NULL;
 	}

@@ -1,4 +1,4 @@
-/* 
+/*
  * Utility to move images to backup location.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,6 +19,7 @@
 
 #include "utilsfunc.h"
 #include "rts2db/appdb.h"
+#include "rts2db/devicedb.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -175,6 +176,9 @@ void Rts2BckImageApp::usage ()
 
 int Rts2BckImageApp::doProcessing ()
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	double size_count = 0;
 	int img_move_count = 0;
 	int file_move_count = 0;

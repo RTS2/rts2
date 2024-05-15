@@ -1,4 +1,4 @@
-/* 
+/*
  * User management.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -18,6 +18,7 @@
  */
 
 #include "rts2db/user.h"
+#include "rts2db/devicedb.h"
 #include "app.h"
 
 #include <unistd.h>
@@ -40,6 +41,9 @@ TypeUser::~TypeUser (void)
 
 int TypeUser::updateFlags (int id, int newFlags)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id = id;
 	char db_type = type;
@@ -52,11 +56,11 @@ int TypeUser::updateFlags (int id, int newFlags)
 		event_mask = :db_eventMask
 	WHERE
 		usr_id = :db_id AND type_id = :db_type;
-	
+
 	if (sqlca.sqlcode)
 	{
 		logStream (MESSAGE_ERROR) << "error while updating flags for user " << id
-			<< " and type " << type 
+			<< " and type " << type
 			<< " :" << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
@@ -70,6 +74,9 @@ int TypeUser::updateFlags (int id, int newFlags)
 
 int TypeUserSet::load (int usr_id)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_usr_id = usr_id;
 	char db_type;
@@ -130,14 +137,17 @@ TypeUser * TypeUserSet::getFlags (char type)
 
 int TypeUserSet::addNewTypeFlags (int id, char type, int flags)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
         char db_type_id = type;
 	int db_usr_id = id;
 	int db_event_mask = flags;
 	EXEC SQL END DECLARE SECTION;
-	
+
 	EXEC SQL INSERT INTO type_users
-	(	
+	(
 		type_id,
 		usr_id,
 		event_mask
@@ -163,6 +173,9 @@ int TypeUserSet::addNewTypeFlags (int id, char type, int flags)
 
 int TypeUserSet::removeType (int id, char type)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id = id;
 	char db_type = type;
@@ -172,10 +185,10 @@ int TypeUserSet::removeType (int id, char type)
 		type_users
 	WHERE
 		type_id = :db_type AND usr_id = :db_id;
-	
+
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "error while removing user " << id 
+		logStream (MESSAGE_ERROR) << "error while removing user " << id
 			<< " and type " << type << "." << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
@@ -208,6 +221,9 @@ User::~User (void)
 
 int User::load (const char * in_login)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id;
 	VARCHAR db_login[25];
@@ -266,6 +282,9 @@ int User::loadTypes ()
 
 int User::setPassword (std::string newPass)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
 	VARCHAR db_passwd[100];
@@ -313,6 +332,9 @@ int User::setPassword (std::string newPass)
 
 int User::setEmail (std::string newEmail)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
 	VARCHAR db_email[200];
@@ -351,6 +373,9 @@ int User::setEmail (std::string newEmail)
 
 bool verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
+	if (checkDbConnection ())
+		return false;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_username[25];
 	VARCHAR d_passwd[100];

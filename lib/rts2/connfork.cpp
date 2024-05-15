@@ -100,7 +100,7 @@ ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEn
 ConnFork::~ConnFork ()
 {
 	if (childPid > 0)
-		kill (-childPid, SIGINT);
+		kill (-childPid, SIGTERM);
 	if (sockerr > 0)
 		close (sockerr);
 	if (sockwrite > 0)
@@ -149,6 +149,8 @@ void ConnFork::processLine ()
 
 int ConnFork::add (Block *block)
 {
+	if (sock > 0)
+		block->addPollFD (sock, POLLIN | POLLPRI | POLLHUP);
 	if (sockerr > 0)
 		block->addPollFD (sockerr, POLLIN | POLLPRI | POLLHUP);
 	if (input.length () > 0)
@@ -163,7 +165,7 @@ int ConnFork::add (Block *block)
 			block->addPollFD (sockwrite, POLLOUT);
 		}
 	}
-	return ConnNoSend::add (block);
+	return 0;
 }
 
 int ConnFork::receive (Block *block)
@@ -185,8 +187,7 @@ int ConnFork::receive (Block *block)
 			{
 				close (sockerr);
 				sockerr = -1;
-				connectionError (0);
-				return -1;
+				return 0;
 			}
 			else
 			{
@@ -243,6 +244,7 @@ void ConnFork::connectionError (int last_data_size)
 		logStream (MESSAGE_DEBUG) << "ConnFork::connectionError reported EAGAIN - that should not happen, ignoring it " << getpid () << sendLog;
 		return;
 	}
+
 	Connection::connectionError (last_data_size);
 }
 
@@ -353,6 +355,11 @@ int ConnFork::init ()
 		}
 	}
 
+	char *home = getenv ("HOME");
+	// FIXME: this is a quite crude workaround that should probably be done in some other way?
+	if ((!home || !*home) && (getuid () == 0))
+		home = "/root"; // Fallback for starting from root environments not providing HOME, e.g. systemd
+
 	// do everything that will be needed to done before forking
 	beforeFork ();
 	childPid = fork ();
@@ -395,16 +402,24 @@ int ConnFork::init ()
 	close (1);
 	close (2);
 
+	// Better set HOME variable as some scripts (e.g. AstroPy based ones) expect it to be set
+	if (home && *home)
+		setenv ("HOME", home, 1);
+
 	if (sockwrite == -2)
 	{
 		close (filedeswrite[1]);
 		dup2 (filedeswrite[0], 0);
+		close (filedeswrite[0]);
 	}
 
 	close (filedes[0]);
 	dup2 (filedes[1], 1);
+	close (filedes[1]);
+
 	close (filedeserr[0]);
 	dup2 (filedeserr[1], 2);
+	close (filedeserr[1]);
 
 	// if required, pass environemnt values about connections..
 	if (fillConnEnvVars)

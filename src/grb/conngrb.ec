@@ -1,4 +1,4 @@
-/* 
+/*
  * GCN socket connection.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -22,6 +22,7 @@
 
 #include "connection/fork.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -280,6 +281,9 @@ int ConnGrb::pr_swift_with_radec ()
 
 int ConnGrb::pr_swift_without_radec ()
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	// those messages have only sence, when they set grb_is_grb flag to false
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_grb_id;
@@ -426,8 +430,37 @@ int ConnGrb::pr_fermi_sc ()
 	return -1;
 }
 
+int ConnGrb::pr_icecube ()
+{
+	int grb_id;
+	int grb_type;
+	double grb_ra;
+	double grb_dec;
+
+	time_t grb_date;
+	long grb_date_usec;
+	float grb_errorbox;
+
+	grb_type = (int) (lbuf[PKT_TYPE]);
+	grb_id = lbuf[BURST_TRIG];
+	grb_ra = lbuf[BURST_RA] / 10000.0;
+	grb_dec = lbuf[BURST_DEC] / 10000.0;
+
+	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
+
+	grb_errorbox = (float) lbuf[BURST_ERROR] / 10000.0;
+
+	logStream (MESSAGE_INFO) << "IceCube type " << lbuf[PKT_TYPE] << " " << (grb_type == 173 ? "GOLD" : "BRONZE")
+							 << " trigger " << grb_id << " at " << grb_ra << " " << grb_dec << " err " << grb_errorbox << sendLog;
+
+	return addGcnPoint (grb_id, 1, grb_type, grb_ra, grb_dec, 1, &grb_date, grb_date_usec, grb_errorbox, false, true);
+}
+
 int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float merit)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_swift_ra = swiftLastRa;
 		double d_swift_dec = swiftLastDec;
@@ -477,6 +510,9 @@ int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 
 int ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_integral_ra = ra;
 		double d_integral_dec = dec;
@@ -679,6 +715,9 @@ float ConnGrb::getInstrumentErrorBox (int grb_type)
 
 int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly, bool enabled)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id;
 	int d_grb_id = grb_id;
@@ -704,11 +743,11 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 	int grb_isnew = 0;
 
-	if ((master->getRecordNotVisible () == false) && 
+	if ((master->getRecordNotVisible () == false) &&
 		((master->observer->lat > 0 && grb_dec < (master->observer->lat - 90 ))
 		 || (master->observer->lat < 0 && grb_dec > (master->observer->lat + 90 ))
 	        )
-	)	
+	)
 	{
 		logStream (MESSAGE_INFO) << "not recording GRB at " << LibnovaRaDec (grb_ra, grb_dec) << ", as it is never visible from current location (latitude " << master->observer->lat << ")" << sendLog;
 		return 0;
@@ -727,8 +766,8 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 		ln_get_object_next_rst_horizon (night.getJDFrom (), master->observer, &pos, master->getMinGrbAltitute (), &rst);
 
-		if (!((night.getJDFrom () < rst.set && night.getJDTo () > rst.set) || 
-			(night.getJDFrom () < rst.rise && night.getJDTo () > rst.rise) || 
+		if (!((night.getJDFrom () < rst.set && night.getJDTo () > rst.set) ||
+			(night.getJDFrom () < rst.rise && night.getJDTo () > rst.rise) ||
 			(night.getJDFrom () < rst.transit && night.getJDTo () > rst.transit)))
 		{
 			logStream (MESSAGE_INFO) << "not recording GRB at " << LibnovaRaDec (grb_ra, grb_dec) << " as it is not durring current night above minimal altitude " << LibnovaDeg90 (master->getMinGrbAltitute ()) << sendLog;
@@ -741,10 +780,19 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	int ret = 0;
 
 	gmtime_r (grb_date, &grb_broken_time);
-	d_tar_name.len = snprintf (d_tar_name.arr, 150, "GRB %02d%02d%06.3f GCN #%i",
-		grb_broken_time.tm_year % 100, grb_broken_time.tm_mon + 1, grb_broken_time.tm_mday +
-		(grb_broken_time.tm_hour * 3600 + grb_broken_time.tm_min * 60 + grb_broken_time.tm_sec) / 86400.0,
-		d_grb_id);
+
+	if (grb_type == TYPE_ICECUBE_ASTROTRACK_GOLD ||
+		grb_type == TYPE_ICECUBE_ASTROTRACK_BRONZE)
+		d_tar_name.len = snprintf (d_tar_name.arr, 150, "IceCube %02d%02d%06.3f %s trigger #%i",
+								   grb_broken_time.tm_year % 100, grb_broken_time.tm_mon + 1, grb_broken_time.tm_mday +
+								   (grb_broken_time.tm_hour * 3600 + grb_broken_time.tm_min * 60 + grb_broken_time.tm_sec) / 86400.0,
+								   (grb_type == TYPE_ICECUBE_ASTROTRACK_GOLD ? "GOLD" : "BRONZE"),
+								   d_grb_id);
+	else
+		d_tar_name.len = snprintf (d_tar_name.arr, 150, "GRB %02d%02d%06.3f GCN #%i",
+								   grb_broken_time.tm_year % 100, grb_broken_time.tm_mon + 1, grb_broken_time.tm_mday +
+								   (grb_broken_time.tm_hour * 3600 + grb_broken_time.tm_min * 60 + grb_broken_time.tm_sec) / 86400.0,
+								   d_grb_id);
 
 	getGrbBound (grb_type, d_grb_type_start, d_grb_type_end);
 
@@ -788,7 +836,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		// insert part..we do care about HETE burst without coordinates
 		if (d_grb_ra < -300 && d_grb_dec < -300)
 		{
-			
+
 			logStream (MESSAGE_DEBUG) << "ConnGrb::addGcnPoint HETE GRB without coords? ra="
 				<< d_grb_ra << " dec=" << d_grb_dec << sendLog;
 			EXEC SQL ROLLBACK;
@@ -889,7 +937,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				<< d_tar_id
 				<< " grb_id: " << d_grb_id
 				<< " grb_seqn: " << d_grb_seqn
-				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec) 
+				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec)
 				<< " grb errorbox: " << d_grb_errorbox
 				<< sendLog;
 			EXEC SQL COMMIT;
@@ -1118,6 +1166,9 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 int ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_grb_id = grb_id;
 		int d_grb_seqn = grb_seqn;
@@ -1517,7 +1568,7 @@ int ConnGrb::receive (rts2core::Block *block)
 			{
 				lbuf[i] = ntohl (nbuf[i]);
 			}
-	
+
 			/* Immediately echo back the packet so GCN can monitor:
 			 * (1) the actual receipt by the site, and
 			 * (2) the roundtrip travel times.
@@ -1529,7 +1580,7 @@ int ConnGrb::receive (rts2core::Block *block)
 			}
 			t = gmtime (&last_packet.tv_sec);
 			here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec + last_packet.tv_usec / USEC_SEC;
-	
+
 			// switch based on packet content
 			switch (lbuf[PKT_TYPE])
 			{
@@ -1624,6 +1675,10 @@ int ConnGrb::receive (rts2core::Block *block)
 				case TYPE_FERMI_OBS_REQ:
 				case TYPE_FERMI_SC_SLEW:
 					pr_fermi_sc ();
+					break;
+				case TYPE_ICECUBE_ASTROTRACK_GOLD:
+				case TYPE_ICECUBE_ASTROTRACK_BRONZE:
+					pr_icecube ();
 					break;
 				case TYPE_KILL_SOCKET:
 					connectionError (-1);

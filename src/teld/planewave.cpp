@@ -43,7 +43,7 @@ class PlaneWave:public Telescope
 		virtual int init();
 		virtual int initValues();
 
-		virtual int info();		
+		virtual int info();
 
 	  	virtual int startResync();
 		virtual int isMoving();
@@ -53,7 +53,7 @@ class PlaneWave:public Telescope
 		virtual int isParking();
 		virtual int endPark();
 
-		virtual int setTracking(int track, bool addTrackingTimer=false, bool send=true);
+		virtual int setTracking(int track, bool addTrackingTimer=false, bool send=true, const char *stopMsg = "tracking stopped");
 		virtual void startTracking();
 		virtual void stopTracking();
 
@@ -65,9 +65,9 @@ class PlaneWave:public Telescope
 		virtual int send_command(const char *command);
 		static size_t curl_parser(void *contents, size_t size,
 								  size_t nmemb, std::string *s);
-	
+
 		int is_connected;
-		int is_slewing; 
+		int is_slewing;
 		int is_tracking;
 	    int axis0_is_enabled;
 		int axis1_is_enabled;
@@ -76,13 +76,13 @@ class PlaneWave:public Telescope
 
 		char pointmodel_used[100];
 		char pointmodel_filename[100];
-		
-		
-		float geometry, ra_apparent_h, dec_apparent_d, ra_j2000_d, dec_j2000_d, 
-		azimuth, altitude, field_angle_local, field_angle_target, field_anglerate, 
-		path_angle_target, path_anglerate, axis0_rms_error_arcsec, 
-		axis0_dist_to_target_arcsec, axis0_err, axis0_position, 
-		axis1_rms_error_arcsec, axis1_dist_to_target_arcsec, axis1_err, 
+
+
+		float geometry, ra_apparent_h, dec_apparent_d, ra_j2000_d, dec_j2000_d,
+		azimuth, altitude, field_angle_local, field_angle_target, field_anglerate,
+		path_angle_target, path_anglerate, axis0_rms_error_arcsec,
+		axis0_dist_to_target_arcsec, axis0_err, axis0_position,
+		axis1_rms_error_arcsec, axis1_dist_to_target_arcsec, axis1_err,
 		axis1_position, model_numpoints_total, model_numpoints_enabled,
 		model_rms_error;
 
@@ -106,7 +106,7 @@ PlaneWave::PlaneWave(int argc, char **argv):Telescope(argc, argv)
 
 	// define parking position in alt/az
 	parkPos.alt = 10;
-	parkPos.az = 270; // E; (N:180, W:90, S:0, E:270)	
+	parkPos.az = 270; // E; (N:180, W:90, S:0, E:270)
 }
 
 PlaneWave::~PlaneWave(void)
@@ -118,7 +118,7 @@ size_t PlaneWave::curl_parser(void *contents, size_t size, size_t nmemb, std::st
 {
 	size_t newlength = size*nmemb;
 
-	try 
+	try
 	{
 		s->append((char*)contents, newlength);
 	}
@@ -134,7 +134,7 @@ size_t PlaneWave::curl_parser(void *contents, size_t size, size_t nmemb, std::st
 int  PlaneWave::mountstatus_parser(std::string s)
 {
 	float ra_j2000_h;
-	
+
 	// strip off lines unrelated to mount
 	unsigned first = s.find("mount");
 	unsigned last = s.find("focuser");
@@ -173,17 +173,17 @@ int  PlaneWave::mountstatus_parser(std::string s)
 		"mount.model.filename=%s\n"
 		"mount.model.num_points_total=%f\n"
 		"mount.model.num_points_enabled=%f\nmount.model.rms_error_arcsec=%f",
-		&is_connected, &geometry, &ra_apparent_h, &dec_apparent_d, &ra_j2000_h, 
-		&dec_j2000_d, &azimuth, &altitude, &is_slewing, &is_tracking, &field_angle_local, 
-		&field_angle_target, &field_anglerate, &path_angle_target, &path_anglerate, 
-		&axis0_is_enabled, &axis0_rms_error_arcsec, &axis0_dist_to_target_arcsec, 
-		&axis0_err, &axis0_position, &axis1_is_enabled, &axis1_rms_error_arcsec, 
-		&axis1_dist_to_target_arcsec, &axis1_err, &axis1_position, pointmodel_used, 
+		&is_connected, &geometry, &ra_apparent_h, &dec_apparent_d, &ra_j2000_h,
+		&dec_j2000_d, &azimuth, &altitude, &is_slewing, &is_tracking, &field_angle_local,
+		&field_angle_target, &field_anglerate, &path_angle_target, &path_anglerate,
+		&axis0_is_enabled, &axis0_rms_error_arcsec, &axis0_dist_to_target_arcsec,
+		&axis0_err, &axis0_position, &axis1_is_enabled, &axis1_rms_error_arcsec,
+		&axis1_dist_to_target_arcsec, &axis1_err, &axis1_position, pointmodel_used,
 		&model_numpoints_total, &model_numpoints_enabled, &model_rms_error);
 
 	// convert ra from hours to degs
 	ra_j2000_d = floor(ra_j2000_h)*15+(ra_j2000_h-floor(ra_j2000_h))*15;
-	
+
 	return 0;
 
 }
@@ -204,7 +204,7 @@ int PlaneWave::processOption(int in_opt)
 
 	url = "http://localhost:8220/";
 	sprintf(pointmodel_filename, "timo.pxp");
-	
+
 	return 0;
 }
 
@@ -218,24 +218,24 @@ int PlaneWave::send_command(const char *command)
 	std::string s;
 
 	logStream (MESSAGE_DEBUG) << "sending " << os.str().c_str() << sendLog;
-	
+
 	curl = curl_easy_init();
-	
+
 	curl_easy_setopt(curl, CURLOPT_URL, os.str().c_str());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, PlaneWave::curl_parser);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
-	
+
 	res = curl_easy_perform(curl);
 
 	if (res != CURLE_OK)
 	{
 		logStream (MESSAGE_ERROR) << "curl failed " << url <<
-			curl_easy_strerror(res) << sendLog;	
+			curl_easy_strerror(res) << sendLog;
 		return -1;
 	}
 
 	curl_easy_cleanup(curl);
-	
+
 	mountstatus_parser(s);
 
 	return 0;
@@ -257,10 +257,10 @@ int PlaneWave::init()
 	if (is_connected != 1)
 	{
 		logStream (MESSAGE_ERROR) << "could not connect to mount" <<
-			sendLog;	
+			sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "mount connected" << sendLog;	
+	logStream (MESSAGE_INFO) << "mount connected" << sendLog;
 
 	// enable az axis
 	ret = send_command("mount/enable?axis=0");
@@ -269,10 +269,10 @@ int PlaneWave::init()
 	if (axis0_is_enabled != 1)
 	{
 		logStream (MESSAGE_ERROR) << "could not enable axis 0" <<
-			sendLog;	
+			sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "az axis enabled" << sendLog;	
+	logStream (MESSAGE_INFO) << "az axis enabled" << sendLog;
 
 	// enable el axis
 	ret = send_command("mount/enable?axis=1");
@@ -281,21 +281,21 @@ int PlaneWave::init()
 	if (axis1_is_enabled != 1)
 	{
 		logStream (MESSAGE_ERROR) << "could not enable axis 1" <<
-			sendLog;	
+			sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "el axis enabled" << sendLog;	
+	logStream (MESSAGE_INFO) << "el axis enabled" << sendLog;
 
 	// home telescope
 	ret = send_command("mount/find_home");
     usleep(USEC_SEC * 20);
-	logStream (MESSAGE_INFO) << "homing telescope" << sendLog;	
+	logStream (MESSAGE_INFO) << "homing telescope" << sendLog;
 
 	// load pointing model
 	char cmdbuffer[120];
 	sprintf(cmdbuffer, "mount/model/load?filename=%s", pointmodel_filename);
 	ret = send_command(cmdbuffer);
-	logStream (MESSAGE_INFO) << "loading pointing model" << sendLog;	
+	logStream (MESSAGE_INFO) << "loading pointing model" << sendLog;
 
 	// send telescope to park position
 	startPark();
@@ -306,9 +306,9 @@ int PlaneWave::init()
 		usleep(USEC_SEC);
 	}
 	logStream (MESSAGE_INFO) << "mount is in park position" << sendLog;
-	
+
 	// now, the telescope is ready for operations
-	
+
 	return 0;
 }
 
@@ -327,7 +327,7 @@ int PlaneWave::info()
 {
 	// this function is called when you use <info> in rts2-mon; should also be used
 	// to update telescope information
-	
+
 	if (send_command("status") != 0)
 		return -1;
 
@@ -335,7 +335,7 @@ int PlaneWave::info()
 	setTelRa(ra_j2000_d);
 	setTelDec(dec_j2000_d);
 
-	return Telescope::info();	
+	return Telescope::info();
 }
 
 
@@ -345,11 +345,11 @@ int PlaneWave::startResync()
 
 
 
-	
+
     // check if target is above/below horizon
-	struct ln_equ_posn tar;	
+	struct ln_equ_posn tar;
 	getTarget (&tar);
-	
+
 	// send telescope to target position
 	char cmd[100];
 	sprintf(cmd, "mount/goto_ra_dec_j2000?ra_hours=%f&dec_degs=%f",
@@ -363,7 +363,7 @@ int PlaneWave::startResync()
 	//ln_get_hrz_from_equ (&localPosition, rts2core::Configuration::instance ()->getObserver (), ln_get_julian_from_timet (&localDate), &hrz);
 
 	getTargetAltAz(&hrz, JD);
-	
+
 	return 0;
 }
 
@@ -393,12 +393,12 @@ int PlaneWave::isMoving()
 int PlaneWave::stopMove()
 {
 	// this function will be called when stop is used in rts2-mon
-	
+
 	if (send_command("mount/stop") != 0)
 		return -1;
 
-    //logStream (MESSAGE_INFO) << "stopping movement" << sendLog;	
-	
+    //logStream (MESSAGE_INFO) << "stopping movement" << sendLog;
+
 	return 0;
 }
 
@@ -422,7 +422,7 @@ int PlaneWave::startPark()
 
 	if (startResync() != 0)
 		return -1;
-	
+
     return 0;
 }
 
@@ -433,7 +433,7 @@ int PlaneWave::isParking()
 
 	if (info() != 0)
 		return -1;
-	
+
 	if (is_slewing)
 	{
 		// return values > 0 means time to wait in millisec until calling this function
@@ -450,18 +450,18 @@ int PlaneWave::endPark()
 	// this function is called once the parking is done
 
 	int ret;
-	
+
 	// check if telescope is actually close to parkPos
 	if (info() != 0)
 		return -1;
 	if ((abs(altitude-parkPos.alt) > 10) || (abs(azimuth-parkPos.az) > 20))
 	{
-		//logStream (MESSAGE_ERROR) << "parking failed!" << sendLog;		
+		//logStream (MESSAGE_ERROR) << "parking failed!" << sendLog;
 		return -1;
 	}
 
-	//logStream (MESSAGE_ERROR) << "parking succeeded" << sendLog;		
-	
+	//logStream (MESSAGE_ERROR) << "parking succeeded" << sendLog;
+
 	// deactivate telescope
 
 	// disable az axis
@@ -471,10 +471,10 @@ int PlaneWave::endPark()
 	if (axis0_is_enabled != 0)
 	{
 		logStream (MESSAGE_ERROR) << "could not disable axis 0" <<
-			sendLog;	
+			sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "az axis disabled" << sendLog;	
+	logStream (MESSAGE_INFO) << "az axis disabled" << sendLog;
 
 	// disable el axis
 	ret = send_command("mount/disable?axis=1");
@@ -483,10 +483,10 @@ int PlaneWave::endPark()
 	if (axis1_is_enabled != 0)
 	{
 		logStream (MESSAGE_ERROR) << "could not disable axis 1" <<
-			sendLog;	
+			sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "el axis disabled" << sendLog;	
+	logStream (MESSAGE_INFO) << "el axis disabled" << sendLog;
 
 	// disconnect the mount
 	ret = send_command("mount/disconnect");
@@ -495,13 +495,13 @@ int PlaneWave::endPark()
 	if (is_connected != 0)
 	{
 		logStream (MESSAGE_ERROR) << "could not disconnect mount" <<
-			sendLog;	
+			sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "mount disconnected" << sendLog;	
+	logStream (MESSAGE_INFO) << "mount disconnected" << sendLog;
 }
 
-int PlaneWave::setTracking(int track, bool addTrackingTimer, bool send)
+int PlaneWave::setTracking(int track, bool addTrackingTimer, bool send, const char *stopMsg)
 {
 	return 0;
 }
@@ -515,10 +515,10 @@ void PlaneWave::startTracking()
 	// if (is_tracking != 1)
 	// {
 	// 	logStream (MESSAGE_ERROR) << "could not activate tracking" <<
-	// 		sendLog;	
+	// 		sendLog;
 	// 	return -1;
 	// }
-	// logStream (MESSAGE_INFO) << "tracking is activated" << sendLog;	
+	// logStream (MESSAGE_INFO) << "tracking is activated" << sendLog;
 
 
 }
@@ -532,10 +532,10 @@ void PlaneWave::stopTracking()
 	// if (is_tracking != 0)
 	// {
 	// 	logStream (MESSAGE_ERROR) << "could not deactivate tracking" <<
-	// 		sendLog;	
+	// 		sendLog;
 	// 	return -1;
 	// }
-	// logStream (MESSAGE_INFO) << "tracking is deactivated" << sendLog;	
+	// logStream (MESSAGE_INFO) << "tracking is deactivated" << sendLog;
 }
 
 
