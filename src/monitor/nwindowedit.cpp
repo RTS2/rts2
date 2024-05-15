@@ -74,6 +74,7 @@ keyRet NWindowEdit::injectKey (int key)
 	{
 		case KEY_BACKSPACE:
 		case 127:
+		case '\b':
 			getyx (getWriteWindow (), y, x);
 			mvwdelch (getWriteWindow (), y, x - 1);
 			return RKEY_HANDLED;
