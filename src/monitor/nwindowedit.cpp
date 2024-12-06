@@ -304,6 +304,7 @@ bool NWindowEditDegrees::passKey (int key)
 
 double NWindowEditDegrees::getValueDouble ()
 {
+	unsigned short neg = 0;
 	char buf[getLength () + 1];
 	char *endptr;
 	mvwinnstr (getWriteWindow (), 0, 0, buf, getLength ());
@@ -311,6 +312,10 @@ double NWindowEditDegrees::getValueDouble ()
 	double tval = 0;
 	while (*p != '\0')
 	{
+		if (*p == '-') {
+			neg = 1;
+			p++;
+		}
 		double v = strtod (p, &endptr);
 		switch (*endptr)
 		{
@@ -328,13 +333,13 @@ double NWindowEditDegrees::getValueDouble ()
 				tval += v / 3600.0;
 				break;
 			default:
-				return tval;
+				return neg ? -tval : tval;
 		}
 		p = endptr;
 		if (*p != '\0')
 			p++;
 	}
-	return tval;
+	return neg ? -tval : tval;
 }
 
 
