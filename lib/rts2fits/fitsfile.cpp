@@ -1,4 +1,4 @@
-/* 
+/*
  * Class representing FITS file.
  * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
@@ -261,7 +261,14 @@ std::string FitsFile::getFitsErrors ()
 
 	fits_get_errstatus (fits_status, buf);
 	fits_read_errmsg (errmsg);
-	os << "file " << getFileName () << " " << buf << " message: " << errmsg;
+
+	if (getFileName ())
+		os << "file " << getFileName ();
+	else
+		os << "in-memory file";
+
+	os << " " << buf << " message: " << errmsg;
+
 	return os.str ();
 }
 
@@ -562,7 +569,7 @@ void FitsFile::getValue (const char *name, long &value, bool required, char *com
 {
 	if (!getFitsFile ())
 		openFile (NULL, false, true);
-	
+
 	fits_read_key (getFitsFile (), TLONG, (char *) name, (void *) &value, comment,
 		&fits_status);
 	fitsStatusGetValue (name, required);
@@ -572,7 +579,7 @@ void FitsFile::getValue (const char *name, float &value, bool required, char *co
 {
 	if (!getFitsFile ())
 		openFile (NULL, false, true);
-	
+
 	fits_read_key (getFitsFile (), TFLOAT, (char *) name, (void *) &value, comment,	&fits_status);
 	fitsStatusGetValue (name, required);
 }
@@ -581,7 +588,7 @@ void FitsFile::getValue (const char *name, double &value, bool required, char *c
 {
 	if (!getFitsFile ())
 		openFile (NULL, false, true);
-	
+
 	fits_read_key (getFitsFile (), TDOUBLE, (char *) name, (void *) &value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
 }
@@ -605,7 +612,7 @@ void FitsFile::getValue (const char *name, char *value, int valLen, const char* 
 		static char val[FLEN_VALUE];
 		if (!getFitsFile ())
 			openFile (NULL, true, true);
-	
+
                 fits_status = 0;
 		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment, &fits_status);
 		strncpy (value, val, valLen);
@@ -712,7 +719,7 @@ void FitsFile::getValues (const char *name, char **values, int num, bool require
 {
 	if (!getFitsFile ())
 		throw ErrorOpeningFitsFile (getFileName ());
-	
+
 	int nfound;
 	fits_read_keys_str (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
 	fitsStatusGetValue (name, required);
@@ -922,7 +929,7 @@ int FitsFile::writeArray (const char *extname, TableData *values)
 	const char *units[values->size ()];
 
 	size_t maxsize = 0;
-	
+
 	int i = 0;
 	std::list <ColumnData *>::iterator iter;
 

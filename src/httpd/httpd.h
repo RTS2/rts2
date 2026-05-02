@@ -1,4 +1,4 @@
-/* 
+/*
  * XML-RPC daemon.
  * Copyright (C) 2010-2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
@@ -231,7 +231,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 			XmlDevInterface::valueChanged (value);
 			rts2script::DevClientCameraExec::valueChanged (value);
 		}
-		
+
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 
 		virtual void scriptProgress (double start, double end);
@@ -310,7 +310,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 	private:
 		// path for storing XMLRPC produced images
 		std::string path;
-		
+
 		// default expansion for images
 		std::string fexpand;
 
@@ -359,7 +359,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 				if (v->getValueType () == expectedType)
 					val = (T *) v;
 				else
-					throw rts2core::Error (std::string ("cannot create ") + suffix + ", value already exists with different type");		
+					throw rts2core::Error (std::string ("cannot create ") + suffix + ", value already exists with different type");
 			}
 			else
 			{
@@ -437,21 +437,9 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current);
 
-		/**
-		 * Default channel for display.
-		 */
-		int defchan; 
-
 		virtual bool isPublic (struct sockaddr_in *saddr, const std::string &path);
 
 		virtual bool existsSession (std::string sessionId);
-
-		/**
-		 * Return default image label.
-		 */
-		virtual const char *getDefaultImageLabel ();
-
-		virtual int getDefaultChannel () { return defchan; }
 
 		rts2core::ConnNotify * getNotifyConnection () { return notifyConn; }
 
@@ -463,7 +451,7 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		 *
 		 * @param v_name   value name
 		 * @param oper     operator
-		 * @param operand  
+		 * @param operand
 		 *
 		 * @throw rts2core::Error
 		 */
@@ -521,6 +509,14 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		rts2core::ValueInteger *bbCadency;
 		rts2core::ValueInteger *bbQueueSize;
 		rts2core::ValueSelection *bbSelectorQueue;
+
+		rts2core::ValueDouble *previewQuantiles;
+		rts2core::ValueInteger *previewQuality;
+		rts2core::ValueInteger *previewSize;
+		rts2core::ValueInteger *previewPageSize;
+		rts2core::ValueInteger *previewColorVariant;
+		rts2core::ValueInteger *previewDefaultChannel;
+		rts2core::ValueString *previewImageLabel;
 
 		const char *bbQueueName;
 

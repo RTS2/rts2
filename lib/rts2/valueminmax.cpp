@@ -1,4 +1,4 @@
-/* 
+/*
  * Min-max value.
  * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -38,6 +38,8 @@ ValueDoubleMinMax::ValueDoubleMinMax (std::string in_val_name, std::string in_de
 
 int ValueDoubleMinMax::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	double new_val;
 	if (connection->paramNextDouble (&new_val))
 		return -2;
@@ -135,6 +137,8 @@ ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name, std::string in_
 
 int ValueIntegerMinMax::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	int new_val;
 	if (connection->paramNextInteger (&new_val))
 		return -2;

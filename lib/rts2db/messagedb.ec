@@ -20,6 +20,7 @@
 
 #include "rts2db/messagedb.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 #include "block.h"
 
 #include <iostream>
@@ -42,6 +43,9 @@ MessageDB::~MessageDB (void)
 
 void MessageDB::insertDB ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_message_time = messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;
 	varchar d_message_oname[8];
@@ -86,6 +90,9 @@ void MessageDB::insertDB ()
 
 void MessageSet::load (double from, double to, int type_mask)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_from = from;
 	double d_to = to;
@@ -97,7 +104,7 @@ void MessageSet::load (double from, double to, int type_mask)
 	varchar d_message_string[200];
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL DECLARE cur_message CURSOR FOR 
+	EXEC SQL DECLARE cur_message CURSOR FOR
 	SELECT
 		EXTRACT (EPOCH FROM message_time),
 		message_oname,
@@ -110,7 +117,7 @@ void MessageSet::load (double from, double to, int type_mask)
 		AND (message_type & :d_type_mask) <> 0
 	ORDER BY
 		message_time ASC;
-	
+
 	EXEC SQL OPEN cur_message;
 	while (true)
 	{

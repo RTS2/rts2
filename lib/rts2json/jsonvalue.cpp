@@ -1,4 +1,4 @@
-/* 
+/*
  * JSON value encoding.
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
@@ -55,7 +55,7 @@ void rts2json::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 				os << "\"" << (*iter) << "\"";
 			}
 			break;
-		case RTS2_VALUE_DOUBLE:	
+		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_TIME:
 			for (std::vector <double>::iterator iter = ((rts2core::DoubleArray *) value)->valueBegin (); iter != ((rts2core::DoubleArray *) value)->valueEnd (); iter++)
 			{
@@ -218,4 +218,7 @@ void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connecti
 	}
 
 	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << rts2json::JsonDouble (conn->getProgressStart ()) << ",\"send\":" << rts2json::JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << rts2json::JsonDouble (mfrom);
+
+	os << ",\"statestring\":\"" << conn->getStateString(true) << "\"";
+	os << ",\"type\":" << conn->getOtherType();
 }

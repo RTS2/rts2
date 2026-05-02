@@ -294,18 +294,6 @@ bool ValueBoxDouble::setCursor ()
 AbstractBoxSelection::AbstractBoxSelection (NWindow * top, rts2core::Value * _val, int _x, int _y):ValueBox (top, _val),NSelWindow (top->getX () + _x, top->getY () + _y, 3, 3)
 {
 	maxrow = 0;
-	rts2core::ValueSelection *vals = (rts2core::ValueSelection *) getValue ();
-	for (std::vector < rts2core::SelVal >::iterator iter = vals->selBegin (); iter != vals->selEnd (); iter++)
-	{
-		maxrow ++;
-		// Grow the window in horizontal direction to accommodate longest element, taking care to not overflow the parent window
-		grow (fmin (strlen ((*iter).name.c_str ()) + 4, getTopWindow ()->getWidth () + getTopWindow()->getX () - getX ()), 0);
-
-		// And now in vertical direction, taking care to not overflow the parent window
-		if (maxrow + 2 > getHeight () && getY () + getHeight () < getTopWindow ()->getHeight () + getTopWindow ()->getY ())
-			grow (0, 1);
-	}
-
 	setLineOffset (0);
 }
 
@@ -335,6 +323,23 @@ void AbstractBoxSelection::drawRow (const char *_text)
 
 ValueBoxSelection::ValueBoxSelection (NWindow * top, rts2core::ValueSelection * _val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
 {
+	rts2core::ValueSelection *vals = (rts2core::ValueSelection *) getValue ();
+	maxrow = 0;
+
+	// Adjust the vertical position of the box
+	winmove (getX (), fmax (2, getY () - fmax (0, vals->selSize () + 2 - (getTopWindow ()->getHeight () + getTopWindow()->getY () - getY ()))));
+
+	for (std::vector < rts2core::SelVal >::iterator iter = vals->selBegin (); iter != vals->selEnd (); iter++)
+	{
+		maxrow ++;
+		// Grow the window in horizontal direction to accommodate longest element, taking care to not overflow the parent window
+		grow (fmin (strlen ((*iter).name.c_str ()) + 4, getTopWindow ()->getWidth () + getTopWindow()->getX () - getX ()), 0);
+
+		// And now in vertical direction, taking care to not overflow the parent window
+		if (maxrow + 2 > getHeight () && getY () + getHeight () < getTopWindow ()->getHeight () + getTopWindow ()->getY ())
+			grow (0, 1);
+	}
+
 	setSelRow (_val->getValueInteger ());
 }
 
@@ -363,19 +368,32 @@ void ValueBoxSelection::sendValue (rts2core::Connection * connection)
 
 ValueBoxTimeDiff::ValueBoxTimeDiff (NWindow * top, rts2core::ValueTime *_val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
 {
+	int nrows = 11;
+	int nchars = 7;
+
+	// Adjust the vertical position of the box
+	winmove (getX (), fmax (2, getY () - fmax (0, nrows + 2 - (getTopWindow ()->getHeight () + getTopWindow()->getY () - getY ()))));
+
+	// Grow the window to accommodate for all elements, taking care to not overflow the parent window
+	grow (fmin (nchars + 4, getTopWindow ()->getWidth () + getTopWindow()->getX () - getX ()), 0);
+	grow (0, fmin (nrows + 2 - getHeight (), getTopWindow ()->getHeight () + getTopWindow()->getY () - getY () - getHeight ()));
+
+	setSelRow (5);
 }
 
 void ValueBoxTimeDiff::draw ()
 {
 	wbkgd (window, COLOR_PAIR (CLR_SUBMENU));
-	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_INPUT));
+	wbkgd (getWriteWindow (), COLOR_PAIR (CLR_SUBMENU));
 
 	NSelWindow::draw ();
 	werase (getWriteWindow ());
-	for (maxrow = 0; maxrow < 5;)
+	for (maxrow = 0; maxrow < 11;)
 	{
 		std::ostringstream _os;
-		_os << "+" << ((maxrow + 1) * 2) << " min";
+		int shift = (maxrow - 5) * 2;
+
+		_os << ((shift > 0) ? "+" : (shift == 0 ? " " : "")) << shift << " min";
 		drawRow (_os.str ().c_str ());
 	}
 	winrefresh ();
@@ -385,7 +403,7 @@ void ValueBoxTimeDiff::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', time (NULL) + (getSelRow () + 1) * 120));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', time (NULL) + (getSelRow () - 5) * 120));
 }
 
 ValueBoxRectangle::ValueBoxRectangle (NWindow * top, rts2core::ValueRectangle * _val, int _x, int _y):ValueBox (top, _val), NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
@@ -511,6 +529,14 @@ ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x
 					w += 6;
 				}
 				break;
+			case RTS2_VALUE_STRING:
+				{
+					NWindowEdit *inte = new NWindowEdit (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+					inte->setValue ((*((rts2core::StringArray *) _val))[i]);
+					edt.push_back (inte);
+					w += 11;
+				}
+				break;
 		}
 	}
 	setWidth (w + 2);
@@ -567,7 +593,7 @@ void ValueBoxArray::draw ()
 
 	// draw border..
 	NWindowEdit::draw ();
-	werase (getWriteWindow ()) ;
+	werase (getWriteWindow ());
 
 	if (edt.size () > (size_t) edtSelected)
 		edt[edtSelected]->setReverse ();
@@ -601,6 +627,9 @@ void ValueBoxArray::sendValue (rts2core::Connection * connection)
 				break;
 			case RTS2_VALUE_BOOL:
 				os << ((NWindowEditBool *)edt[i])->getValueBool ();
+				break;
+			case RTS2_VALUE_STRING:
+				os << ((NWindowEdit *)edt[i])->getValueString ();
 				break;
 		}
 		os << " ";

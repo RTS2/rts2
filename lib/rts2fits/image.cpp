@@ -230,6 +230,10 @@ Image::Image (const char *in_expression, int in_expNum, const struct timeval *in
 
 	createImage (expandPath (in_expression), _overwrite);
 	writeExposureStart ();
+
+	setValue ("CCD_NAME", in_connection->getName (), "camera name");
+
+	setEnvironmentalValues ();
 }
 
 Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart, const char *expand_path, bool overwrite):FitsFile (in_exposureStart)
@@ -400,11 +404,6 @@ int Image::createImage (bool _overwrite)
 	// add history
 	writeHistory ("Created with RTS2 version " RTS2_VERSION " build on " __DATE__ " " __TIME__ ".");
 
-	if (isMemImage ())
-		logStream (MESSAGE_DEBUG) << "creating in-memory image" << sendLog;
-	else
-		logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
-
 	flags = IMAGE_SAVE;
 	return 0;
 }
@@ -491,6 +490,13 @@ void Image::getHeaders ()
 
 	getValue ("CAM_FILT", filter_i, false);
 
+	int tshutter = SHUT_UNKNOW;
+	getValue ("SHUTTER", tshutter, false);
+	if (tshutter == 0)
+		shutter = SHUT_OPENED;
+	else if (tshutter == 1)
+		shutter = SHUT_CLOSED;
+
 	filter = new char[5];
 	getValue ("FILTER", filter, 5, "UNK", verbose);
 	getValue ("AVERAGE", average, false);
@@ -506,15 +512,21 @@ void Image::getHeaders ()
 
 void Image::getTargetHeaders ()
 {
-	// get IRAF info..
-	targetName = new char[FLEN_VALUE];
-	getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
-	// get info
-	getValue ("TARGET", targetId, verbose);
-	getValue ("TARSEL", targetIdSel, verbose);
-	getValue ("TARTYPE", targetType, verbose);
-	getValue ("OBSID", obsId, verbose);
-	getValue ("IMGID", imgId, verbose);
+	try
+	{
+		// get IRAF info..
+		targetName = new char[FLEN_VALUE];
+		getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
+		// get info
+		getValue ("TARGET", targetId, verbose);
+		getValue ("TARSEL", targetIdSel, verbose);
+		getValue ("TARTYPE", targetType, verbose);
+		getValue ("OBSID", obsId, verbose);
+		getValue ("IMGID", imgId, verbose);
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 }
 
 void Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype)
@@ -1165,34 +1177,98 @@ void Image::getHistogram (long *histogram, long nbins)
 	}
 }
 
-void Image::getChannelHistogram (int chan, long *histogram, long nbins)
+void Image::getChannelHistogram (int chan, long *histogram, long nbins, long *npixels)
 {
 	memset (histogram, 0, nbins * sizeof(int));
 	int bins;
 	if (channels.size () == 0)
 		loadChannels ();
 
+	int width = channels[chan]->getWidth ();
+	int height = channels[chan]->getHeight ();
+
+	int x1 = 1;
+	int x2 = width;
+	int y1 = 1;
+	int y2 = height;
+
+	int i;
+	int N = 0;
+
+	// Use DATASEC keyword, if any, to compute the histogram of good image part only
+	try
+	{
+		char tmp[128];
+		getValue ("DATASEC", tmp, 128, NULL, true);
+
+		std::string datasec (tmp);
+		for (i = 0; i < datasec.length (); i++)
+			if (datasec[i] == '[' || datasec[i] == ']' || datasec[i] == ':' || datasec[i] == ',')
+				datasec[i] = ' ';
+
+		std::vector<std::string> split = SplitStr (datasec, " ");
+
+		if (split.size () == 4)
+		{
+			x1 = std::stoi (split[0]);
+			x2 = std::stoi (split[1]);
+			y1 = std::stoi (split[2]);
+			y2 = std::stoi (split[3]);
+		}
+	}
+	catch (rts2core::Error &er)
+	{
+	}
+
+	int npix = channels[chan]->getNPixels ();
+
 	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
 			bins = 65536 / nbins;
-			for (uint16_t *d = (uint16_t *)(channels[chan]->getData ()); d < ((uint16_t *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
 			{
-				histogram[*d / bins]++;
+				uint16_t *data = (uint16_t *)(channels[chan]->getData ());
+
+				for (i = 0; i < npix; i++)
+				{
+					int y = i / width;
+					int x = i - y * width;
+
+					if (x + 1 >= x1 && x + 1 <= x2 &&
+						y + 1 >= y1 && y + 1 <= y2)
+					{
+						histogram[data[i] / bins] ++;
+						N += 1;
+					}
+				}
 			}
 			break;
 		case RTS2_DATA_FLOAT:
 			bins = 65536 / nbins;
-			for (float *d = (float *)(channels[chan]->getData ()); d < ((float *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
 			{
-				histogram[((uint16_t)*d) / bins]++;
+				float *data = (float *)(channels[chan]->getData ());
+
+				for (i = 0; i < npix; i++)
+				{
+					int y = i / width;
+					int x = i - y * width;
+
+					if (x + 1 >= x1 && x + 1 <= x2 &&
+						y + 1 >= y1 && y + 1 <= y2)
+					{
+						histogram[(uint16_t)data[i] / bins] ++;
+						N += 1;
+					}
+				}
 			}
 			break;
 		default:
 			break;
 	}
-}
 
+	if (npixels)
+		*npixels = N;
+}
 
 template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y)
 {
@@ -1437,15 +1513,14 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer
 template <typename dt> void Image::getChannelQuantiles (int chan, dt minval, dt mval, float quantiles, dt * low_ptr, dt * high_ptr)
 {
 	long hist[65536];
-	getChannelHistogram (chan, hist, 65536);
+	long s = getChannelNPixels (chan);
+	getChannelHistogram (chan, hist, 65536, &s);
 
 	long psum = 0;
 	dt low = minval;
 	dt high = minval;
 
 	uint32_t i;
-
-	long s = getChannelNPixels (chan);
 
 	// find quantiles
 	for (i = 0; (dt) i < mval; i++)
@@ -1692,7 +1767,7 @@ void Image::writeLabel (Magick::Image *mimage, int x, int y, unsigned int fs, co
 	mimage->draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
 }
 
-void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
+std::string Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
 {
 	std::string new_filename = expandPath (expand_str);
 
@@ -1719,6 +1794,8 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 		delete image;
 		throw ex;
 	}
+
+	return new_filename;
 }
 
 void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles, int chan, int colourVariant)
@@ -2474,12 +2551,15 @@ void Image::prepareArrayData (const std::string sname, rts2core::Connection *con
 
 	if (ai == arrayGroups.end ())
 	{
-		rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
-		if (infoTime)
+		if (conn)
 		{
-			TableData *td = new TableData (name, infoTime->getValueDouble ());
-			td->push_back (getColumnData (name, val));
-			arrayGroups[val->getWriteGroup ()] = td;
+			rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
+			if (infoTime)
+			{
+				TableData *td = new TableData (name, infoTime->getValueDouble ());
+				td->push_back (getColumnData (name, val));
+				arrayGroups[val->getWriteGroup ()] = td;
+			}
 		}
 	}
 	else
@@ -2509,7 +2589,7 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 
 	// array groups to write. First they are created, then they are written at the end
 
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
+	if (conn && (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY))
 	{
 		name = std::string (conn->getName ()) + "." + val->getName ();
 	}
@@ -2588,7 +2668,7 @@ void Image::recordChange (rts2core::Connection * conn, rts2core::Value * val)
 {
 	char *name;
 	// construct name
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
+	if (conn && (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ()))
 	{
 		name = new char[strlen (conn->getName ()) + strlen (val->getName ().c_str ()) + 10];
 		strcpy (name, conn->getName ());

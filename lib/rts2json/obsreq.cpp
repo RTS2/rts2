@@ -1,4 +1,4 @@
-/* 
+/*
  * Classes for generating pages with observations by nights.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -63,7 +63,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 		throw XmlRpc::XmlRpcException ("Cannot load observation");
 
 	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
+	int pagesiz = params->getInteger ("s", 400);
 
 	if (pageno <= 0)
 		pageno = 1;
@@ -72,21 +72,21 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	int ie = istart + pagesiz;
 	int in = 0;
 
-	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
+	int prevsize = params->getInteger ("ps", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_size")->getValueInteger ());
+	const char * label = params->getString ("lb", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_imagelabel")->getValue ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
-	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
-	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
+	float quantiles = params->getDouble ("q", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_quantiles")->getValueDouble ());
+	int chan = params->getInteger ("chan", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_default_channel")->getValueInteger ());
+	int colourVariant = params->getInteger ("cv", ((rts2core::Block *) getMasterApp ())->getValue (".", "preview_colorvariant")->getValueInteger ());
 
 	std::ostringstream _os;
 	std::ostringstream _title;
 	_title << "Images for observation " << obs.getObsId () << " of " << obs.getTargetName ();
 
-	Previewer preview = Previewer (getServer ());
+	Previewer preview = Previewer (getServer (), this);
 
 	printHeader (_os, _title.str ().c_str (), preview.style ());
 
@@ -115,7 +115,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
-	
+
 	printFooter (_os);
 
 	response_type = "text/html";
@@ -131,7 +131,7 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 	rts2db::ImageSetObs images (&obs);
 	images.load ();
 	_os << "[" << std::fixed;
-	
+
 	for (rts2db::ImageSetObs::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
 		if (iter != images.begin ())
@@ -143,7 +143,7 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 	}
 
 	_os << "]";
-	
+
 	returnJSON (_os, response_type, response, response_length);
 }
 

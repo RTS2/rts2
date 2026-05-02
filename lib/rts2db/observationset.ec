@@ -1,4 +1,4 @@
-/* 
+/*
  * Observation class set.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -22,6 +22,7 @@
 #include "rts2db/observationset.h"
 #include "rts2db/sqlerror.h"
 #include "rts2db/target.h"
+#include "rts2db/devicedb.h"
 
 #include <algorithm>
 #include <sstream>
@@ -134,6 +135,9 @@ void ObservationSet::loadLabel (int label_id)
 
 void ObservationSet::load (std::string in_where)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	char *stmp_c;
 
@@ -165,7 +169,7 @@ void ObservationSet::load (std::string in_where)
 	EXEC SQL END DECLARE SECTION;
 
 	std::ostringstream _os;
-	_os << 
+	_os <<
 		"SELECT "
 		"tar_name,"
 		"observations.tar_id,"
@@ -184,7 +188,7 @@ void ObservationSet::load (std::string in_where)
 		"observations, targets"
 		" WHERE "
 		"observations.tar_id = targets.tar_id "
-		"AND " << in_where << 
+		"AND " << in_where <<
 		" ORDER BY obs_id ASC;";
 	stmp_c  = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
@@ -436,10 +440,10 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 					}
 				}
 
-				_os << "  " << std::setw (6) << (*obs_iter).getTargetId () 
+				_os << "  " << std::setw (6) << (*obs_iter).getTargetId ()
 					<< SEP << std::setw (20) << (*obs_iter).getTargetName ()
 					<< SEP << std::setw (3) << obsNum
-					<< SEP << TimeDiff (totalObsTime + totalSlewTime) 
+					<< SEP << TimeDiff (totalObsTime + totalSlewTime)
 					<< SEP << TimeDiff (totalObsTime)
 					<< SEP << TimeDiff (totalSlewTime)
 					<< SEP << std::setw (5) << totalImages
@@ -496,13 +500,16 @@ void ObservationSet::printUntil (double time, std::ostream &os)
 		timeLogIter->setPrintImages (getPrintImages (), imageFormat);
 		timeLogIter->setPrintCounts (getPrintCounts ());
 		os << (*timeLogIter);
-	
+
 		timeLogIter++;
 	}
 }
 
 void ObservationSetDate::load (int year, int month, int day, int hour, int minutes)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_value1;
 	int d_value2;
@@ -563,7 +570,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 	std::ostringstream _os;
 	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (observations.*) as c FROM observations";
-	
+
 	if (_where.str ().length () > 0)
 		_os << " WHERE " << _where.str ();
 
@@ -584,7 +591,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	std::ostringstream _osi;
 	std::ostringstream _osig;
 	_osi << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (im_all.*) as i, sum(im_all.img_exposure) as tt FROM observations, images im_all WHERE observations.obs_id = im_all.obs_id";
-	
+
 	if (_where.str ().length () > 0)
 		_osi << " and " << _where.str ();
 
@@ -700,6 +707,9 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 int rts2db::lastObservationId ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id;
 	EXEC SQL END DECLARE SECTION;

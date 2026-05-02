@@ -709,6 +709,43 @@ void Daemon::addValue (Value * value, int queCondition)
 	values.push_back (new CondValue (value, queCondition));
 }
 
+int Daemon::deleteValue (const char *v_name)
+{
+	CondValueVector::iterator iter;
+	for (iter = values.begin (); iter != values.end (); iter++)
+	{
+		CondValue *val = *iter;
+		if (val->getValue ()->isValue (v_name))
+		{
+			delete *iter;
+			values.erase (iter);
+
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+void Daemon::deleteTemporaryValues ()
+{
+	CondValueVector::iterator iter;
+
+	for (iter = values.begin (); iter != values.end ();)
+	{
+		rts2core::Value *value = (*iter)->getValue ();
+
+		if (value->isTemporary ())
+		{
+			sendValueDeleteAll (value);
+			delete *iter;
+			iter = values.erase (iter);
+		}
+		else
+			iter++;
+	}
+}
+
 Value * Daemon::getOwnValue (const char *v_name)
 {
 	CondValue *c_val = getCondValue (v_name);
@@ -1108,6 +1145,15 @@ void Daemon::sendValueAll (Value * value)
 				value->send (*iter);
 		value->resetNeedSend ();
 	}
+}
+
+void Daemon::sendValueDeleteAll (Value * value)
+{
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		value->sendDelete (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		value->sendDelete (*iter);
 }
 
 void Daemon::sendProgressAll (double start, double end, Connection *except)

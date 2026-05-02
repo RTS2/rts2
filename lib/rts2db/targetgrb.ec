@@ -18,6 +18,7 @@
  */
 
 #include "rts2db/targetgrb.h"
+#include "rts2db/devicedb.h"
 
 #include "configuration.h"
 #include "libnova_cpp.h"
@@ -45,6 +46,9 @@ TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_alt
 
 void TargetGRB::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double  db_grb_date;
 	double  db_grb_last_update;
@@ -189,6 +193,9 @@ double TargetGRB::getPostSec ()
 
 void TargetGRB::checkValidity ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = getTargetID ();
 	EXEC SQL END DECLARE SECTION;
@@ -226,6 +233,9 @@ void TargetGRB::checkValidity ()
 
 void TargetGRB::getDBScript (const char *camera_name, std::string &script)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_post_sec;
 	int d_pos_ind;
@@ -377,6 +387,9 @@ float TargetGRB::getBonus (double JD)
 
 int TargetGRB::isContinues ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = getTargetID ();
 	double db_tar_ra;
@@ -417,6 +430,9 @@ int TargetGRB::isContinues ()
 
 double TargetGRB::getFirstPacket ()
 {
+	if (checkDbConnection ())
+		return NAN;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_grb_id = gcnGrbId;
 		int db_grb_type_min = gcnPacketMin;

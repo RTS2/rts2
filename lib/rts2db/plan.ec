@@ -1,4 +1,4 @@
-/* 
+/*
  * Plan target class.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -22,6 +22,7 @@
 
 #include "rts2db/plan.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include <ostream>
 #include <sstream>
@@ -75,6 +76,9 @@ Plan::~Plan (void)
 
 int Plan::load ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_plan_id = plan_id;
 	int db_prop_id;
@@ -152,6 +156,9 @@ int Plan::load ()
 
 int Plan::loadBBSchedule (int _bb_observatory_id, int _bb_schedule_id)
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_plan_id;
 	int db_prop_id;
@@ -208,6 +215,9 @@ int Plan::loadBBSchedule (int _bb_observatory_id, int _bb_schedule_id)
 
 int Plan::save ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_plan_id = plan_id;
 	int db_tar_id = tar_id;
@@ -315,6 +325,9 @@ int Plan::save ()
 
 int Plan::del ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_plan_id = plan_id;
 	EXEC SQL END DECLARE SECTION;

@@ -1,4 +1,4 @@
-/* 
+/*
  * Basic RTS2 devices and clients building block.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -41,7 +41,7 @@
 #include "centralstate.h"
 
 //* Null terminated list of names for different device types.
-const char *type_names[] = 
+const char *type_names[] =
 {
   "UNKNOWN", "SERVERD", "MOUNT", "CCD", "DOME", "WEATHER", "ARCH", "PHOT", "PLAN", "GRB", "FOCUS", // 10
   "MIRROR", "CUPOLA", "FILTER", "AUGERSH", "SENSOR", "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN"    // 20
@@ -906,6 +906,12 @@ int Block::queAll (const char *text)
 	return queAll (new Command (this, text));
 }
 
+void Block::queAllCentralds (Command * command)
+{
+	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
+		(*iter)->queCommand (command);
+}
+
 void Block::queAllCentralds (const char *command)
 {
 	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
@@ -1035,4 +1041,3 @@ short getMasterGetEvents (int fd)
 {
 	return ((Block *) getMasterApp ())->getPollEvents (fd);
 }
-

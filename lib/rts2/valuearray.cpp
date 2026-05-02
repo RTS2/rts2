@@ -1,4 +1,4 @@
-/* 
+/*
  * Array values.
  * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -76,7 +76,11 @@ const char * StringArray::getValue ()
 	std::vector <std::string>::iterator iter = value.begin ();
 	while (iter != value.end ())
 	{
-		_os += (*iter);
+		if ((*iter).find (" ") != std::string::npos)
+			_os += "\"" + (*iter) + "\"";
+		else
+			_os += (*iter);
+
 		iter++;
 		if (iter == value.end ())
 			break;
@@ -128,6 +132,8 @@ DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool 
 
 int DoubleArray::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	value.clear ();
 
 	while (!(connection->paramEnd ()))
@@ -205,7 +211,7 @@ bool DoubleArray::isEqual (rts2core::Value *other_val)
 		DoubleArray *ov = (DoubleArray *) other_val;
 		if (ov->size () != value.size ())
 			return false;
-		
+
 		std::vector <double>::iterator iter1;
 		std::vector <double>::iterator iter2;
 		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
@@ -309,7 +315,7 @@ bool TimeArray::isEqual (rts2core::Value *other_val)
 		TimeArray *ov = (TimeArray *) other_val;
 		if (ov->size () != value.size ())
 			return false;
-		
+
 		std::vector <double>::iterator iter1;
 		std::vector <double>::iterator iter2;
 		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
@@ -334,6 +340,8 @@ IntegerArray::IntegerArray (std::string _val_name, std::string _description, boo
 
 int IntegerArray::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	value.clear ();
 
 	while (!(connection->paramEnd ()))
@@ -411,7 +419,7 @@ bool IntegerArray::isEqual (rts2core::Value *other_val)
 		IntegerArray *ov = (IntegerArray *) other_val;
 		if (ov->size () != value.size ())
 			return false;
-		
+
 		std::vector <int>::iterator iter1;
 		std::vector <int>::iterator iter2;
 		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
@@ -479,6 +487,8 @@ const char * BoolArray::getDisplayValue ()
 
 int BoolArray::setValue (Connection * connection)
 {
+	connection->unquoteRest ();
+
 	value.clear ();
 
 	while (!(connection->paramEnd ()))
@@ -551,7 +561,7 @@ bool BoolArray::isEqual (rts2core::Value *other_val)
 		BoolArray *ov = (BoolArray *) other_val;
 		if (ov->size () != value.size ())
 			return false;
-		
+
 		std::vector <int>::iterator iter1;
 		std::vector <int>::iterator iter2;
 		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)

@@ -1,4 +1,4 @@
-/* 
+/*
  * LX200 protocol abstract class.
  * Copyright (C) 2009-2010 Markus Wildi
  * Copyright (C) 2010 Petr Kubanek, Institute of Physics
@@ -11,7 +11,7 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details. 
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
@@ -145,7 +145,7 @@ int TelLX200::tel_read_hms (double *hmsptr, const char *command, bool allowZ)
 		*hmsptr = hmstod (wbuf);
 	if (std::isnan (*hmsptr))
 	{
-		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
+		logStream (MESSAGE_ERROR) << "invalid character for HMS (" << command << "): " << wbuf << sendLog;
 		serConn->flushPortIO ();
 		return -1;
 	}
@@ -167,7 +167,7 @@ int TelLX200::tel_read_dec ()
 	double t_telDec;
 	if (tel_read_hms (&t_telDec, "#:GD#"))
 		return -1;
-	
+
 	setTelDec (t_telDec);
 	return 0;
 }

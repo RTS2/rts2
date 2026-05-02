@@ -1,4 +1,4 @@
-/* 
+/*
  * Various value classes.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -49,14 +49,14 @@
 #define RTS2_VALUE_STRING             0x00000001
 
 /**
- * Value is integer number. 
+ * Value is integer number.
  * @ingroup RTS2Value
  */
 #define RTS2_VALUE_INTEGER            0x00000002
 
 /**
  * Value is time (date and time, distributed as double precission floating point
- * number, representing number of seconds from 1.1.1970) 
+ * number, representing number of seconds from 1.1.1970)
  * @ingroup RTS2Value
  */
 #define RTS2_VALUE_TIME               0x00000003
@@ -272,7 +272,8 @@
  * If set, value is reseted at the end of script execution to hardcoded
  * (sensible) default.
 */
-#define RTS2_VALUE_SCRIPTENDRESET     0x04000000
+// #define RTS2_VALUE_SCRIPTENDRESET     0x04000000
+#define RTS2_VALUE_SCRIPTTEMPORARY     0x04000000
 
 /**
  * If set, value is checked before run if it is set.
@@ -466,6 +467,9 @@ class Value
 
 		void setReadOnly () { rts2Type &= ~RTS2_VALUE_WRITABLE; }
 
+		bool isTemporary () { return rts2Type & RTS2_VALUE_SCRIPTTEMPORARY; }
+		void setTemporary () { rts2Type |= RTS2_VALUE_SCRIPTTEMPORARY; }
+
 		void setRandevous () { rts2Type |= RTS2_VALUE_RANDEVOUS_WAIT; }
 
 		int32_t getFlags () { return rts2Type; }
@@ -482,6 +486,7 @@ class Value
 		 * @return -1 on error, 0 on success.
 		 */
 		int sendMetaInfo (Connection * connection);
+		int sendDelete (Connection * connection);
 
 		/**
 		 * Sends value over given connection.
@@ -503,7 +508,7 @@ class Value
 		 * @see resetValueChanged()
 		 */
 		bool wasChanged () { return rts2Type & RTS2_VALUE_CHANGED; }
-		
+
 		/**
 		 * Return true if value needs to be send - when it was modified from last send.
 		 */
@@ -554,7 +559,7 @@ class ValueString:public Value
 {
 	public:
 		ValueString (std::string in_val_name);
-		ValueString (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0); 
+		ValueString (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual ~ ValueString (void) {}
 		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
@@ -940,7 +945,7 @@ class ValueLong:public Value
 		virtual long int getValueLong () { return value; }
 		long inc ()
 		{
-		 	changed ();	
+		 	changed ();
 			return value++;
 		}
 		long dec ()
@@ -1197,6 +1202,12 @@ class ValuePID:public Value
 		int factor;
 };
 
+/**
+ * Guess value type from string
+ *
+ * @param type Value type.
+ */
+int32_t typeFromString (const char *dt_string);
 
 }
 

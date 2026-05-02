@@ -134,6 +134,7 @@ Script::Script (int scriptLoopCount, rts2core::Block * _master):Object ()
 	loopCount = scriptLoopCount;
 	executedCount = 0;
 	lineOffset = 0;
+	lineNumber = 0;
 	cmdBuf = NULL;
 	cmdBufTop = NULL;
 	wholeScript = std::string ("");
@@ -153,6 +154,7 @@ Script::Script (const char *script):Object ()
 	loopCount = 0;
 	executedCount = 0;
 	lineOffset = 0;
+	lineNumber = 0;
 	cmdBuf = new char[strlen (script) + 1];
 	strcpy (cmdBuf, script);
 	cmdBufTop = cmdBuf;
@@ -178,6 +180,11 @@ void Script::parseScript (Rts2Target *target)
 {
 	char *comment = NULL;
 	Element *element;
+
+	if (lineNumber == 0)
+		// it might be initialized before in Script::Script (or might not), so better reset it
+		wholeScript = std::string ("");
+
 	// find any possible comment and mark it
 	cmdBufTop = cmdBuf;
 	while (*cmdBufTop && *cmdBufTop != '#')
@@ -200,6 +207,7 @@ void Script::parseScript (Rts2Target *target)
 	}
 
 	wholeScript += std::string (cmdBuf);
+	lineNumber ++;
 
 	cmdBufTop = cmdBuf;
 	commandStart = cmdBuf;
@@ -209,7 +217,6 @@ void Script::parseScript (Rts2Target *target)
 		if (!element)
 			break;
 		element->setLen (cmdBufTop - commandStart);
-		lineOffset += cmdBufTop - commandStart;
 		try
 		{
 			element->checkParameters ();
@@ -658,7 +665,7 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new ElementTempDisable (this, target, distime);
 	}
-	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
+	else if (!strcmp (commandStart, COMMAND_TARGET_BOOST))
 	{
 		int seconds;
 		int bonus;
@@ -666,19 +673,22 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new ElementTarBoost (this, target, seconds, bonus);
 	}
+	else if (!strcmp (commandStart, COMMAND_LOOP_DISABLE))
+	{
+		return new ElementLoopDisable (this);
+	}
 	else if (!strcmp (commandStart, COMMAND_HEX))
 	{
 		double ra_size;
 		double dec_size;
 		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
 			return NULL;
-		ElementHex *hexEl;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		hexEl = new ElementHex (this, new_device, ra_size, dec_size);
+		ElementHex *hexEl = new ElementHex (this, new_device, ra_size, dec_size);
 		parseBlock (hexEl, target);
 		return hexEl;
 	}
@@ -688,15 +698,30 @@ Element *Script::parseBuf (Rts2Target * target)
 		double dec_size;
 		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
 			return NULL;
-		ElementFxF *ffEl;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
+		ElementFxF *ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
 		parseBlock (ffEl, target);
 		return ffEl;
+	}
+	else if (!strcmp (commandStart, COMMAND_SPIRAL))
+	{
+		double ra_size;
+		double dec_size;
+		int length;
+		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size) || getNextParamInteger (&length))
+			return NULL;
+		// test for block start..
+		el = nextElement ();
+		// error, return NULL
+		if (*el != '{')
+			return NULL;
+		ElementSpiral *spiralEl = new ElementSpiral (this, new_device, ra_size, dec_size, length);
+		parseBlock (spiralEl, target);
+		return spiralEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_EXE))
 	{

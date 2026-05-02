@@ -1,4 +1,4 @@
-/* 
+/*
  * Class providing directory to GET request.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -42,7 +42,7 @@ void Directory::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string pat
 	std::string fn = dirPath + '/' + path;
 	if (path.length () > 0 && path[path.length () - 1] == '/')
 		fn += defaultFile;
-	
+
 	// check if file exists..
 	int f = open (fn.c_str (), O_RDONLY);
 	if (f != -1)
@@ -131,7 +131,7 @@ void Directory::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string pat
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/'>" << fname << "</a> ";
+			_os << "<a href='" << getRequestBase () << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/'>" << fname << "</a> ";
 		}
 	}
 
@@ -160,9 +160,9 @@ void Directory::parseFd (int f, char * &response, size_t &response_length)
 		throw XmlRpcException ("cannot parse RTS2 file");
 	root_element = xmlDocGetRootElement (doc);
 
-	ExpandStrings rts2file (getServer ()->getPagePrefix (), this);
+	ExpandStrings rts2file ((getRequestBase () + std::string(getServer ()->getPagePrefix ())).c_str (), this);
 	rts2file.expandXML (root_element, "centrald", true);
-	
+
 	std::string es = rts2file.getString ();
 
 	response_length = es.length ();

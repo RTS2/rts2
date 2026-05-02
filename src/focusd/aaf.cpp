@@ -28,7 +28,7 @@
 #define AAF_POLL_HW 750
 /*
  * Protocol details.
- * 
+ *
  * ASA provided a windows client (which we sniffed), and a Linux SDK (which
  * (a) did maximally stupid things like spontaneously create logging
  * directories, and (b) segfaulted.
@@ -66,7 +66,7 @@ namespace rts2focusd
  * Class for ASA AAF focuser (and possibly others)
  *
  * This is based on reverse-engineered protocol.  See source code for details.
- * 
+ *
  *
  * @author Ronan Cunniffe
  */
@@ -78,7 +78,7 @@ class AAF:public Focusd
 		AAF (int argc, char **argv);
 		~AAF (void);
 
-//		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int info ();
@@ -93,7 +93,11 @@ class AAF:public Focusd
 	private:
 		const char *dev_name;
 		rts2core::ConnSerial *serialport;
-		
+
+		rts2core::ValueString *HWstatus;
+
+		bool is_connected;
+
 		int status;
 
 		// high-level I/O functions
@@ -111,6 +115,10 @@ AAF::AAF (int argc, char **argv):Focusd (argc, argv)
 	dev_name=NULL;
 	setFocusExtent(MECH_MIN_PST, MECH_MAX_PST);
 	addOption ('f', "dev_name", 1, "device file (usually /dev/ttySx");
+
+	createValue (HWstatus, "status", "low-level status as returned by focuser");
+
+	is_connected = false;
 }
 
 AAF::~AAF ()
@@ -143,6 +151,9 @@ int AAF::initHardware ()
 {
 	int ret;
 
+	// is_connected = false;
+
+	setIdleInfoInterval (10);
 
 	if (dev_name == NULL)
 	{
@@ -172,17 +183,52 @@ int AAF::initHardware ()
 	serialport->writePort("#E012 F 50$",11);
 	serialport->writePort("#E022 F 50$",11);
 
+	is_connected = true;
+
+	maskState (DEVICE_ERROR_HW, 0, "cleared error state");
+
 	logStream(MESSAGE_INFO) << "AAF on " << dev_name << " initialized ok." << sendLog;
 	return 0;
 }
 
 
-/*
- * int AAF::commandAuthorized (rts2core::Connection * conn)
+
+int AAF::commandAuthorized (rts2core::Connection * conn)
 {
+	if (conn->isCommand ("reset"))
+	{
+		delete serialport;
+		initHardware ();
+
+		return 0;
+	}
+	else if (conn->isCommand ("cmd"))
+	{
+		char *cmd = conn->paramNextWholeString ();
+		char rbuf[100];
+
+		// if (conn->paramNextWholeString (&cmd) || !conn->paramEnd ())
+		// 	return DEVDEM_E_PARAMSNUM;
+
+		if (serialport->writeRead (cmd, strlen(cmd), rbuf, 100, '\n') < 0)
+			return DEVDEM_E_HW;
+
+		char *pos = strchr(rbuf, '\n');
+
+		if (pos)
+		{
+			*pos = '\0';
+			logStream (MESSAGE_INFO) << "focuser reply for " << cmd << " : " << rbuf << sendLog;
+		}
+		else
+			logStream (MESSAGE_INFO) << "wrong focuser reply for " << cmd << sendLog;
+
+		return DEVDEM_OK;
+	}
+
+
 	return Focusd::commandAuthorized(conn);
 }
-*/
 
 bool AAF::isAtStartPosition()
 {
@@ -192,16 +238,38 @@ bool AAF::isAtStartPosition()
 
 int AAF::getPos ()
 {
-//	logStream(MESSAGE_INFO) << "Getting position." << sendLog;
+	// logStream(MESSAGE_INFO) << "Getting position." << sendLog;
 	char rbuf[16];
 	memset((void *)rbuf,0,16);
 
+	if (!is_connected)
+	{
+		delete serialport;
+		if (initHardware ())
+			return -1;
+	}
+
 	if (serialport->writeRead ("#P081 F$", 8, rbuf, 16, '\n') < 1)
 	{
+		HWstatus->setValueString ("error getting position");
+		sendValueAll (HWstatus);
+
 		serialport->flushPortIO ();
 		logStream (MESSAGE_ERROR) << "Position query failed." << sendLog;
-		return -1;
+
+		logStream (MESSAGE_ERROR) << "Re-opening the device" << sendLog;
+
+		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "position query failed");
+
+		is_connected = false;
+
+		delete serialport;
+		if (initHardware ())
+			return -1;
+		else
+			return getPos ();
 	}
+
 	unsigned rblen = strlen(rbuf);
 	if ((!strncmp("#P081 F ",rbuf,16)) || (rbuf[rblen-1]=='$'))
 	{
@@ -219,7 +287,6 @@ int AAF::getPos ()
 		return -1;
 	}
 
-
 	position->setValueInteger((int)(steps/STEPS_PER_PST));
 	sendValueAll(position);
 	return 0;
@@ -232,6 +299,8 @@ int AAF::getTemp ()
 	memset((void *)rbuf,0,16);
 	if (serialport->writeRead ("#S051 F$", 8, rbuf, 13, '\n') < 1)
 	{
+		HWstatus->setValueString ("error getting temperature");
+		sendValueAll (HWstatus);
 		return -1;
 	}
 	temperature->setValueFloat (atof ((rbuf + 8)));
@@ -248,11 +317,16 @@ int AAF::getStatus ()
 	memset((void *)rbuf,0,16);
 	if (serialport->writeRead ("#S001 F$", 8, rbuf, 13, '\n') < 1)
 	{
+		HWstatus->setValueString ("error getting status");
+		sendValueAll (HWstatus);
 		return -1;
 	}
 	rbuf[11]='\0';
 //	logStream(MESSAGE_INFO) << "Status code " << &rbuf[8] << sendLog;
-	
+
+	HWstatus->setValueString (rbuf);
+	sendValueAll (HWstatus);
+
 	if (rbuf[8] != 'N')
 	{
 		logStream(MESSAGE_INFO) << "Unexpected status ch1 code '" << rbuf[8] << "'.  Expected 'N'" << sendLog;
@@ -268,7 +342,7 @@ int AAF::getStatus ()
 			setIdleInfoInterval(0.1);
 			return 1;
 		case 'S' : 	//stationary
-			setIdleInfoInterval(20);
+			setIdleInfoInterval(10);
 			return 0;
 	}
 	logStream(MESSAGE_INFO) << "Unexpected status ch2 code " << rbuf[9] << sendLog;
@@ -286,18 +360,23 @@ int AAF::initValues ()
 
 int AAF::info ()
 {
-	int ret;
-	ret = getPos ();
-	if (ret)
-		return ret;
-	ret = getTemp ();
-	if (ret)
-		return ret;
+	if (getPos () || getTemp () || getStatus ())
+	{
+		return -1;
+	}
 
-	ret = getStatus();
-	if (ret)
-		return ret;
-	
+	// int ret;
+	// ret = getPos ();
+	// if (ret)
+	// 	return ret;
+	// ret = getTemp ();
+	// if (ret)
+	// 	return ret;
+
+	// ret = getStatus();
+	// if (ret)
+	// 	return ret;
+
 	return Focusd::info ();
 }
 
@@ -306,6 +385,10 @@ int AAF::info ()
  */
 int AAF::setTo (double pseudosteps)
 {
+	// FIXME: find a better way for re-setting focuser only when really necessary
+ 	serialport->writePort("#P031 F$",8);
+	usleep(USEC_SEC/10);
+
 	/* *FIXME* can this be called while focuser is still moving? */
 	char command[20];
 	int ret;
@@ -329,14 +412,14 @@ int AAF::setTo (double pseudosteps)
 
 	ret = serialport->writePort(command, strlen(command));
 
-	usleep(USEC_SEC/100);
+	usleep(USEC_SEC/10);
 	return ret;
 }
 
 int AAF::isFocusing ()
 {
 	int ret = getStatus ();
-	
+
 	switch (ret)
 	{
 		case 0 : return -2;

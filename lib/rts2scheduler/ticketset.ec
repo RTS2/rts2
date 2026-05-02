@@ -19,6 +19,7 @@
 
 #include "rts2scheduler/ticketset.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2sched;
 
@@ -31,7 +32,7 @@ TicketSet::~TicketSet ()
 {
 	for (TicketSet::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter).second;
-	
+
 	clear ();
 }
 
@@ -39,6 +40,9 @@ TicketSet::~TicketSet ()
 void
 TicketSet::load (rts2db::TargetSet *tarSet)
 {
+	if (rts2db::checkDbConnection ())
+		throw rts2db::SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_schedticket_id;
 	int d_tar_id;
@@ -74,7 +78,7 @@ TicketSet::load (rts2db::TargetSet *tarSet)
 	EXEC SQL OPEN cur_tickets;
 	if (sqlca.sqlcode)
 		throw rts2db::SqlError();
-	
+
 	while (true)
 	{
 		EXEC SQL FETCH next FROM cur_tickets INTO

@@ -1,4 +1,4 @@
-/* 
+/*
  * Generic class for focusing.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -21,7 +21,6 @@
 #define __RTS2_GENFOC__
 #include "client.h"
 #include "rts2fits/devclifoc.h"
-
 #include <vector>
 
 // events types
@@ -120,6 +119,8 @@ class FocusCameraClient:public rts2image::DevClientCameraFoc
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		void center (int centerWidth, int centerHeight);
 
+		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
+
 		/**
 		 * Set condition mask describing when command cannot be send.
 		 *
@@ -127,6 +128,7 @@ class FocusCameraClient:public rts2image::DevClientCameraFoc
 		 */
 		void setBop (int _bop) { bop = _bop; }
 
+		int singleSave;
 	protected:
 		int autoSave;
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * GCN socket connection.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -115,6 +115,7 @@ class ConnGrb:public rts2core::ConnNoSend
 		int pr_fermi_gbm ();
 		int pr_fermi_lat ();
 		int pr_fermi_sc ();
+		int pr_icecube ();
 
 		// GRB db stuff
 		int addSwiftPoint (double roll, char *name, float obstime, float merit);

@@ -41,6 +41,8 @@ class LX200:public TelLX200
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
+		virtual int checkPrecision ();
+
 		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int stopMove ();
@@ -71,6 +73,8 @@ class LX200:public TelLX200
 
 		rts2core::ValueString *productName;
 		rts2core::ValueString *mntflip;
+
+		rts2core::ValueString *Gstat;
 
 		bool hasAstroPhysicsExtensions;
 };
@@ -133,24 +137,39 @@ int LX200::commandAuthorized (rts2core::Connection *conn)
 		else
 			return DEVDEM_E_COMMAND;
 	}
+	else if (conn->isCommand ("cmd"))
+	{
+		char *cmd;
+		char rbuf[100];
+
+		if (conn->paramNextString (&cmd) || !conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
+
+		if (serConn->writeRead (cmd, strlen(cmd), rbuf, 100, '#') < 0)
+			return DEVDEM_E_HW;
+
+		char *pos = strchr(rbuf, '#');
+
+		if (pos)
+		{
+			*pos = '\0';
+			logStream (MESSAGE_INFO) << "mount reply for " << cmd << " : " << rbuf << sendLog;
+		}
+		else
+			logStream (MESSAGE_INFO) << "wrong mount reply for " << cmd << sendLog;
+
+		return DEVDEM_OK;
+	}
 
 	return TelLX200::commandAuthorized (conn);
 }
 
-int LX200::initHardware ()
+int LX200::checkPrecision ()
 {
-	int ret = TelLX200::initHardware ();
-	if (ret)
-		return ret;
-
-	int ovtime = serConn->getVTime ();
-
-	serConn->setVTime (100);
-
 	char rbuf[100];
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
-	if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+	if (serConn->writeRead ("#:Gr#", 5, rbuf, 19, '#') < 0)
 		return -1;
 
 	if (rbuf[7] == '\0' || rbuf[7] == '#')
@@ -161,7 +180,7 @@ int LX200::initHardware ()
 		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
 
-		if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+		if (serConn->writeRead ("#:Gr#", 5, rbuf, 19, '#') < 0)
 			return -1;
 		if (rbuf[7] == '\0' || rbuf[7] == '#')
 		{
@@ -170,6 +189,25 @@ int LX200::initHardware ()
 		}
 	}
 
+	return 0;
+}
+
+int LX200::initHardware ()
+{
+	setIdleInfoInterval (1);
+
+	int ret = TelLX200::initHardware ();
+	if (ret)
+		return ret;
+
+	int ovtime = serConn->getVTime ();
+
+	serConn->setVTime (100);
+
+	if (checkPrecision () < 0)
+		return -1;
+
+	char rbuf[100];
 	// get product name
 	ret = serConn->writeRead (":GVP#", 5, rbuf, 99, '#');
 	if (ret < 0)
@@ -191,6 +229,8 @@ int LX200::initHardware ()
 
 		if (rbuf[0] == '5')
 			maskState (TEL_MASK_MOVING, TEL_PARKED, "telescope was parked at initializiation");
+
+		createValue (Gstat, "Gstat", "low-level status as returned by mount");
 	}
 
 	serConn->setVTime (ovtime);
@@ -224,8 +264,20 @@ int LX200::initValues ()
 
 int LX200::info ()
 {
+	serConn->flushPortIO ();
+
+	checkPrecision ();
+
 	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
+	{
+		if (hasAstroPhysicsExtensions && getNow () - getInfoTime () > 3.0*getIdleInfoInterval ())
+		{
+			maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "mount did not respond to status queries");
+			Gstat->setValueString ("disconnected");
+		}
+
 		return -1;
+	}
 
 	if (hasAstroPhysicsExtensions)
 	{
@@ -233,32 +285,47 @@ int LX200::info ()
 
 		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') >= 0)
 		{
+			char *pos = strchr(rbuf, '#');
+
+			if (pos)
+			{
+				*pos = '\0';
+				Gstat->setValueString (rbuf);
+			}
+			else
+				Gstat->setValueString ("?");
+
 			// Guess tracking state
 			if (rbuf[0] == '0')
 				maskState (TEL_MASK_TRACK, TEL_TRACKING);
 			else
 				maskState (TEL_MASK_TRACK, TEL_NOTRACK);
 
-			if (rbuf[0] != '5' && (getState () & TEL_PARKED))
+			if (rbuf[0] == '9' && rbuf[1] == '9')
+				// 99 state is HW error
+				maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "mount reported error state");
+			else if (getState () & DEVICE_ERROR_HW)
+				maskState (DEVICE_ERROR_HW, 0, "cleared error state");
+
+			if (rbuf[0] != '5' && (getState () & TEL_PARKED)){
+				logStream (MESSAGE_DEBUG) << "Wrong mount state '" << rbuf[0] << "' while TEL_PARKED is set" << sendLog;
+
 				// Unset parking state if Gstat says it is not parked
-				maskState (TEL_MASK_MOVING, TEL_MOVING);
+				maskState (TEL_MASK_MOVING, TEL_OBSERVING);
+			}
+		}
+
+		if (serConn->writeRead (":pS#", 4, rbuf, 99, '#') >= 0)
+		{
+			char *pos = strchr(rbuf, '#');
+
+			if (pos)
+			{
+				*pos = '\0';
+				mntflip->setValueCharArr (rbuf);
+			}
 		}
 	}
-
-	//char rbuff[100];
-	//int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
-	//int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
-	//cout << "ret " << ret << endl;
-	//	if (ret < 0)
-	//	return -1;
-	//if (ret > 0)
-	//	rbuff[ret] = '\0';
-	//else
-	//	rbuff[0] = '\0';
-
-        //mntflip->setValueCharArr (rbuff);
-
-	//telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
 
 	return Telescope::info ();
 }
@@ -301,15 +368,54 @@ int LX200::tel_set_rate (char new_rate)
 int LX200::tel_slew_to (double ra, double dec)
 {
 	char retstr;
+	int iter = 0;
 
 	normalizeRaDec (ra, dec);
 
-	if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
-		return -1;
-	if (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
-		return -1;
+	while (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Wrong or absent reply from the mount on sending coordinates, iteration " << iter << sendLog;
+
+		if (iter > 2)
+			return -1;
+
+		iter += 1;
+	}
+
+	iter = 0;
+	while (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Wrong or absent reply from the mount on initiating the movement, iteration " << iter << sendLog;
+
+		if (iter > 2)
+			return -1;
+
+		iter += 1;
+	}
+
 	if (retstr == '0')
 		return 0;
+	else
+	{
+		// Extended reply, should read it all and report the error
+		char rbuf[100];
+		int ret = serConn->readPort (rbuf, 99, '#');
+
+		if (ret > 0)
+		{
+			rbuf[ret - 1] = '\0';
+			logStream (MESSAGE_ERROR) << "Mount slew error: " << rbuf << sendLog;
+		}
+		else
+			logStream (MESSAGE_ERROR) << "Mount slew error" << sendLog;
+
+		// It seems on error 10micron stops the tracking, so let's re-start it
+		if (hasAstroPhysicsExtensions)
+			return serConn->writePort (":RT2#", 5);
+		else
+			return serConn->writePort (":TQ#", 4);
+
+	}
 	return -1;
 }
 
@@ -319,7 +425,7 @@ int LX200::tel_slew_to (double ra, double dec)
  * @param ra		target right ascenation
  * @param dec		target declination
  *
- * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
+ park* @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
 int LX200::tel_check_coords (double ra, double dec)
 {
@@ -379,7 +485,8 @@ int LX200::startResync ()
 	if (hasAstroPhysicsExtensions)
 		serConn->writePort (":PO#", 4);
 
-	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
+	if (tel_slew_to (getTelTargetRa (), getTelTargetDec ()) < 0)
+		return -1;
 
 	set_move_timeout (100);
 	return 0;
@@ -392,10 +499,12 @@ int LX200::isMoving ()
 		// 10micron reports tracking and moving state in Gstat
 		// FIXME: seems to report end of moving too early?..
 		char rbuf[100];
-		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0)
+		if (serConn->writeRead (":Gstat#", 7, rbuf, 99, '#') < 0 || rbuf[0] == '1')
 			return -1;
 		else if (rbuf[0] == '0')
 			return -2;
+		else if (rbuf[0] == '9' && rbuf[1] == '9')
+			return -1;
 		else
 			return USEC_SEC;
 	}
@@ -466,7 +575,6 @@ int LX200::setTo (double ra, double dec)
 	return ret == 1;
 }
 
-
 /*!
  * Correct telescope coordinates.
  *
@@ -511,6 +619,10 @@ int LX200::isParking ()
 			return -1;
 		else if (rbuf[0] == '5')
 			return -2;
+		else if (rbuf[0] == '9' && rbuf[1] == '9')
+			return -1;
+		else if (rbuf[0] == '1')
+			return -1;
 		else
 			return USEC_SEC;
 	}
@@ -595,9 +707,9 @@ int LX200::stopDir (char *dir)
 
 int LX200::idle ()
 {
-	info ();
+	// info ();
 
-	return Telescope::idle ();
+	return TelLX200::idle ();
 }
 
 int main (int argc, char **argv)

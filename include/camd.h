@@ -542,6 +542,7 @@ class Camera:public rts2core::ScriptDevice
 		 * @return Size of pixel data from current configured single CCD channel in bytes
 		 */
 		virtual size_t chipByteSize () { return chipUsedSize () * usedPixelByteSize (); }
+		virtual size_t lastExposureChipByteSize () { return lastExposureBytes; }
 
 		/**
 		 * Returns size of one line in bytes.
@@ -571,7 +572,7 @@ class Camera:public rts2core::ScriptDevice
 
 		// image type - IRAF keyword. FLAT, DARK or OBJECT
 		rts2core::ValueSelection *imageType;
-		// current object
+		// current object, kept here for backward compatibiluty only (as AzCam driver uses it)
 		rts2core::ValueString *objectName;
 		// which channels are off (and which are on)
 		rts2core::BoolArray *channels;
@@ -590,6 +591,9 @@ class Camera:public rts2core::ScriptDevice
 
 		// Detector size - for DETSIZE keyword
 		rts2core::ValueRectangle *detsize;
+
+		// Good data section - for DATASEC keyword
+		rts2core::ValueRectangle *datasec;
 
 		// Channel X offsets
 		rts2core::DoubleArray *chan1offset;
@@ -1011,6 +1015,10 @@ class Camera:public rts2core::ScriptDevice
 		char** dataBuffers;
 		size_t *dataWritten;
 
+		// Sizes of last exposed frame, to be used for readout
+		size_t lastExposurePixels;
+		size_t lastExposureBytes;
+
 		int histories;
 		int comments;
 
@@ -1029,6 +1037,8 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::Connection *exposureConn;
 
 		rts2core::ValueString *lastImagePath;
+		rts2core::ValueString *lastPreviewImagePath;
+		rts2core::ValueTime *lastPreviewImageTime;
 
 		// shared memory identifier
 		int sharedMemNum;

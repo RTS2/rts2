@@ -559,6 +559,8 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 		case EVENT_CHANGE_TARGET:
 			{
 				struct ln_equ_posn *pos = (struct ln_equ_posn *) event->getArg ();
+				if (currentTarget)
+					currentTarget->moveNotStarted ();
 				queCommand (new rts2core::CommandMove (getMaster (), this, pos->ra, pos->dec), BOP_TEL_MOVE);
 			}
 			break;
@@ -573,6 +575,8 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 		case EVENT_CHANGE_TARGET_ALTAZ:
 			{
 				struct ln_hrz_posn *hrz = (struct ln_hrz_posn *) event->getArg ();
+				if (currentTarget)
+					currentTarget->moveNotStarted ();
 				queCommand (new rts2core::CommandMoveAltAz (getMaster (), this, hrz->alt, hrz->az), BOP_TEL_MOVE);
 			}
 			break;

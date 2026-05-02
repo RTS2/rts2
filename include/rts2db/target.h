@@ -1,4 +1,4 @@
-/* 
+/*
  * Target classes.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -100,7 +100,7 @@ class UnresolvedTarget:public rts2core::Error
 		virtual ~UnresolvedTarget () throw () {}
 
 		const char* getTargetName () { return name.c_str (); }
-	
+
 	private:
 		std::string name;
 };
@@ -157,7 +157,7 @@ class Target:public Rts2Target
 {
 	public:
 		/**
-		 * Construct new target. As Target is abstract class, used mainly in 
+		 * Construct new target. As Target is abstract class, used mainly in
 		 * childrens.
 		 *
 		 * @param  in_tar_id     target number
@@ -190,15 +190,15 @@ class Target:public Rts2Target
 		 */
 		void deleteTarget ();
 
-		/** 
+		/**
 		 * Return script for target action.
 		 *
 		 * @brief Returns script for device action. Scripts are used to perform actions
 		 * on device during target execution.
-		 * 
+		 *
 		 * @param device_name script device
 		 * @param buf buffer script
-		 * 
+		 *
 		 * @throw CameraMissingExcetion when script was not specified and camera cannot be found in rts2.ini
 		 */
 		virtual bool getScript (const char *device_name, std::string & buf);
@@ -562,6 +562,7 @@ class Target:public Rts2Target
 
 		virtual int setNextObservable (time_t * time_ch);
 		int setNextObservable (double validJD);
+		double getNextObservable () {return tar_next_observable;}
 
 		int getNumObs (time_t * start_time, time_t * end_time);
 
@@ -575,7 +576,7 @@ class Target:public Rts2Target
 		/**
 		 * Return total number of target images.
 		 */
-		int getTotalNumberOfImages (); 
+		int getTotalNumberOfImages ();
 
 		/**
 		 * Returns total open shutter time in seconds.
@@ -774,7 +775,7 @@ class Target:public Rts2Target
 		 */
 		const char *getConstraintFile ();
 
-		
+
 		/**
 		 * Load constraints and returns reference to their list.
 		 */
@@ -851,7 +852,7 @@ class Target:public Rts2Target
 		// holds current target observation
 		Observation * observation;
 
-		std::vector <int> watchIDs;		// 
+		std::vector <int> watchIDs;		//
 
 		void addWatch (const char *filename);
 
@@ -908,7 +909,7 @@ class ConstTarget:public Target
 		 * Returns true if the target has nan position - this is usually case with scripted targets.
 		 */
 		bool hasNaNPosition () { return std::isnan (position.ra) || std::isnan (position.dec); }
-		
+
 		/**
 		 * Retrieve target proper motion.
 		 *
@@ -1192,7 +1193,7 @@ class TargetPlan:public Target
 		virtual int isContinues ();
 		virtual int beforeMove ();
 		virtual moveType startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1);
-	
+
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 	protected:

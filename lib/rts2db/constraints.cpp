@@ -1,4 +1,4 @@
-/* 
+/*
  * Constraints.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -143,14 +143,14 @@ void ConstraintInterval::parse (const char *arg)
 			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + arg).c_str ());
 		}
 	}
-	
+
 	if (*(cp + 1) != '\0')
 	{
 #ifdef RTS2_HAVE_STRTOF
 		upper = strtof (cp + 1, &endp);
 #else
 		upper = strtod (cp + 1, &endp);
-#endif		
+#endif
 		if (*endp != 0)
 		{
 			delete[] sint;
@@ -168,7 +168,7 @@ bool ConstraintInterval::isInvalid ()
 	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
 	{
 		if (iter->isInvalid ())
-			return true;		
+			return true;
 	}
 	return false;
 }
@@ -215,7 +215,7 @@ void reverseInterval (time_t from, time_t to, interval_arr_t &intervals)
 	{
 		interval_arr_t::iterator iter = intervals.begin ();
 		time_t t = from;
-		
+
 		for (; iter != intervals.end (); iter++)
 		{
 			if (t < iter->first)
@@ -499,6 +499,38 @@ bool ConstraintDec::satisfy (Target *tar, double JD, double *nextJD)
 	return isBetween (pos.dec);
 }
 
+bool ConstraintAltitude::satisfy (Target *tar, double JD, double *nextJD)
+{
+	struct ln_hrz_posn hrz;
+	tar->getAltAz (&hrz, JD);
+
+	if (std::isnan (hrz.alt))
+	{
+	 	if (nextJD)
+			*nextJD = NAN;
+		return true;
+	}
+	if (nextJD)
+		*nextJD = 0;
+	return isBetween (hrz.alt);
+}
+
+bool ConstraintAzimuth::satisfy (Target *tar, double JD, double *nextJD)
+{
+	struct ln_hrz_posn hrz;
+	tar->getAltAz (&hrz, JD);
+
+	if (std::isnan (hrz.az))
+	{
+	 	if (nextJD)
+			*nextJD = NAN;
+		return true;
+	}
+	if (nextJD)
+		*nextJD = 0;
+	return isBetween (hrz.az);
+}
+
 bool ConstraintLunarDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double ld = tar->getLunarDistance (JD);
@@ -658,8 +690,8 @@ size_t Constraints::getAltitudeConstraints (std::map <std::string, std::vector <
 			std::vector <ConstraintDoubleInterval> vv;
 
 			iter->second->getAltitudeIntervals (vv);
-			ac[std::string (iter->second->getName ())] = vv; 
-			
+			ac[std::string (iter->second->getName ())] = vv;
+
 			i++;
 		}
 	}
@@ -676,8 +708,8 @@ size_t Constraints::getAltitudeViolatedConstraints (std::map <std::string, std::
 			std::vector <ConstraintDoubleInterval> vv;
 
 			iter->second->getAltitudeViolatedIntervals (vv);
-			ac[std::string (iter->second->getName ())] = vv; 
-			
+			ac[std::string (iter->second->getName ())] = vv;
+
 			i++;
 		}
 	}
@@ -701,7 +733,7 @@ size_t Constraints::getTimeConstraints (std::map <std::string, ConstraintPtr> &c
 		)
 		{
 			cons[iter->second->getName ()] = iter->second;
-			
+
 			i++;
 		}
 	}
@@ -759,7 +791,7 @@ double Constraints::getSatisfiedDuration (Target *tar, double from, double to, d
 
 	double to_JD = ln_get_julian_from_timet (&fti);
 	fti = (time_t) (from + length);
-	
+
 	double t;
 	double from_JD = ln_get_julian_from_timet (&fti);
 	for (t = from_JD; t < to_JD; t += step / 86400.0)
@@ -799,7 +831,7 @@ void Constraints::load (xmlNodePtr _node, bool overwrite)
 				continue;
 			con = candidate->second;
 		}
-		else 
+		else
 		{
 			Constraint *cp = createConstraint ((const char *) cons->name);
 			if (cp == NULL)
@@ -906,10 +938,14 @@ Constraint *Constraints::createConstraint (const char *name)
 		return new ConstraintHA ();
 	else if (!strcmp (name, CONSTRAINT_DEC))
 		return new ConstraintDec ();
+	else if (!strcmp (name, CONSTRAINT_ALTITUDE))
+		return new ConstraintAltitude ();
+	else if (!strcmp (name, CONSTRAINT_AZIMUTH))
+		return new ConstraintAzimuth ();
 	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
 		return new ConstraintLunarDistance ();
 	else if (!strcmp (name, CONSTRAINT_LALTITUDE))
-		return new ConstraintLunarDistance ();
+		return new ConstraintLunarAltitude ();
 	else if (!strcmp (name, CONSTRAINT_LPHASE))
 		return new ConstraintLunarPhase ();
 	else if (!strcmp (name, CONSTRAINT_SDISTANCE))
@@ -943,7 +979,7 @@ MasterConstraints::~MasterConstraints ()
 {
 	for (std::map <int, Constraints *>::iterator ci = constraintsCache.begin (); ci != constraintsCache.end (); ci++)
 		delete ci->second;
-	constraintsCache.clear ();	
+	constraintsCache.clear ();
 }
 
 Constraints & MasterConstraints::getConstraint ()

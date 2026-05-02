@@ -141,6 +141,9 @@ namespace XmlRpc
 			// User authorization
 			std::string _authorization;
 
+			// Request base from X-Request-Base header
+			std::string _request_base;
+
 			// Name of data requested with GET
 			std::string _get;
 

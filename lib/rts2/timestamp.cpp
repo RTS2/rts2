@@ -1,4 +1,4 @@
-/* 
+/*
  * Timestamp manipulation routines.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -46,7 +46,7 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 		if (formatLocalTime (_os))
 			_os << *tzname;
 		else
-			_os << "UT";  
+			_os << "UT";
 		return _os;
 	}
 	tv.tv_sec = (long) _ts.ts;
@@ -72,7 +72,7 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 	if (formatLocalTime (_os))
 		_os << " " << *tzname;
 	else
-		_os << " UT";  	
+		_os << " UT";
 
 	_os.flags (old_settings);
 	_os.precision (old_precision);
@@ -98,7 +98,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 	{
 		std::ostringstream _oss;
 		int diff = (int) (_td.time_2 - _td.time_1);
-		if (diff < 0)
+		if (_td.time_2 < _td.time_1)
 		{
 			_oss << "-";
 			diff *= -1;
@@ -135,7 +135,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			{
 				_oss << "m";
 				mprinted = true;
-			}	
+			}
 			else
 				_oss << ":";
 			diff %= 60;
@@ -146,7 +146,8 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			if (mprinted)
 				_oss << " ";
 			_oss << std::setw (2) << diff;
-			if (_td.print_milisec || mprinted == false)
+			if (_td.print_milisec // || mprinted == false
+				)
 				if (msec > 0 || print_all)
 					 _oss << "." << std::setfill('0') << std::setw (3) << msec;
 			if (!print_all)
@@ -154,24 +155,24 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			mprinted = true;
 		}
 
-		if (diff == 0 && msec > 0)
+		if (diff == 0 && msec > 0 && _td.print_milisec && !print_all)
 		{
 			if (msec > 99)
 			{
 				if ((msec > 0 && _td.print_milisec) || mprinted == false)
-					_oss << "0." << msec;
-						
+					_oss << " 0." << msec;
+
 				_oss << "s";
 				mprinted = true;
 			}
 			else
-			{	
+			{
 				if ((msec > 0 && _td.print_milisec) || mprinted == false)
 					_oss  << msec;
-						
+
 				_oss << "ms";
 				mprinted = true;
-			}	
+			}
 		}
 
 		if (!mprinted)

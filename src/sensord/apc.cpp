@@ -1,8 +1,9 @@
+#include "sensord.h"
+
+/* These have to be included after sensord as they may redefine our HAVE_* macros */
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <string.h>
-
-#include "sensord.h"
 
 /* change the word "define" to "undef" to try the (insecure) SNMPv1 version */
 #define DEMO_USE_SNMP_VERSION_3
@@ -25,7 +26,7 @@ class APC:public Sensor
 	public:
 		APC (int argc, char **argv);
 		virtual ~APC ();
-	
+
 	protected:
 		virtual int processOption (int opt);
 
@@ -104,7 +105,7 @@ int main(int argc, char ** argv)
 
     /* set the SNMP version number */
     session.version=SNMP_VERSION_3;
-        
+
     /* set the SNMPv3 user name */
     session.securityName = strdup("MD5User");
     session.securityNameLen = strlen(session.securityName);
@@ -130,7 +131,7 @@ int main(int argc, char ** argv)
                  "Error generating Ku from authentication pass phrase. \n");
         exit(1);
     }
-    
+
 #else /* we'll use the insecure (but simplier) SNMPv1 */
 
     /* set the SNMP version number */
@@ -153,7 +154,7 @@ int main(int argc, char ** argv)
       SOCK_CLEANUP;
       exit(1);
     }
-    
+
     /*
      * Create the PDU for the data for our request.
      *   1) We're going to GET the system.sysDescr.0 node.
@@ -176,7 +177,7 @@ int main(int argc, char ** argv)
 #endif
 
     snmp_add_null_var(pdu, anOID, anOID_len);
-  
+
     /*
      * Send the Request out.
      */

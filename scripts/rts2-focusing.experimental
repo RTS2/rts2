@@ -1,0 +1,326 @@
+#!/usr/bin/env python
+#
+# Script for experimenting with different autofocusing algorithms
+#
+# You will need following python packages: numpy astropy sep
+
+from __future__ import print_function
+
+import sys, posixpath, glob
+
+from rts2.focusestimator import FocusEstimator
+
+def send_email(message, to='karpov.sv@gmail.com', sender='focuser@localhost', subject=None, attachments=[]):
+	import smtplib
+	from email.message import Message
+	from email.mime.audio import MIMEAudio
+	from email.mime.text import MIMEText
+	from email.mime.image import MIMEImage
+	from email.mime.base import MIMEBase
+	from email.mime.multipart import MIMEMultipart
+	from email import encoders
+	import mimetypes
+
+	if attachments:
+		msg = MIMEMultipart()
+		msg.attach(MIMEText(message))
+
+		for filename in attachments:
+			with open(filename, 'r') as fp:
+				ctype, encoding = mimetypes.guess_type(filename)
+				if ctype is None or encoding is not None:
+					# No guess could be made, or the file is encoded (compressed), so
+					# use a generic bag-of-bits type.
+					ctype = 'application/octet-stream'
+
+				maintype, subtype = ctype.split('/', 1)
+
+				if maintype == 'text':
+					data = MIMEText(fp.read(), _subtype=subtype)
+				elif maintype == 'image':
+					data = MIMEImage(fp.read(), _subtype=subtype)
+				elif maintype == 'audio':
+					data = MIMEAudio(fp.read(), _subtype=subtype)
+				else:
+					data = MIMEBase(maintype, subtype)
+					data.set_payload(fp.read())
+					encoders.encode_base64(data)
+
+			data.add_header('Content-Disposition', 'attachment', filename=posixpath.split(filename)[-1])
+			msg.attach(data)
+
+	else:
+		msg = MIMEText(message)
+
+	msg['Subject'] = subject
+	msg['From'] = sender
+	msg['To'] = to
+
+	s = smtplib.SMTP('localhost')
+	s.sendmail(sender, to, msg.as_string())
+	s.quit()
+
+def plotResults(estimator, bestpos=None, dirname=None, oldPos=None, spline=False):
+	"""Plot the results of the fit into some files. Returns the list of files."""
+	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+	from matplotlib.figure import Figure
+	import sep
+	import numpy as np
+	from scipy.interpolate import UnivariateSpline
+
+	if dirname is None:
+		dirname = posixpath.split(estimator.filenames[0])[0]
+
+	if bestpos is None:
+		bestpos = estimator.bestPos
+
+	# Find the position of the measurement closes to best one
+	dist = np.abs(estimator.focpos - bestpos)
+	pos = np.where(dist == np.min(dist))[0][0]
+
+	filenames = []
+
+	# Plot the best image with 1:1 scale
+	filename = posixpath.join(dirname, 'best_%s.png' % estimator.headers[0]['CCD_NAME'])
+
+	img = estimator.images[pos]
+	bg = sep.Background(img.astype(np.double))
+	img = img - bg.back()
+	vmin,vmax = np.percentile(img, [0.5, 99.7])
+
+	figsize = (1.0*img.shape[1]/72, 1.0*img.shape[0]/72)
+	fig = Figure(facecolor='white', dpi=72, figsize=figsize, tight_layout=True)
+	fig.figimage(img, vmin=vmin, vmax=vmax, cmap='hot')
+	fig.suptitle('%s : focus %g best %g' % (posixpath.split(estimator.filenames[pos])[-1], estimator.focpos[pos], bestpos), bbox={'alpha':0.8, 'fc':'white'})
+
+	canvas = FigureCanvas(fig)
+	canvas.print_png(filename, bbox_inches='tight')
+
+	filenames.append(filename)
+
+	# Plot 100x100 pix centers of nearest sample images
+	filename = posixpath.join(dirname, 'center_%s.png' % estimator.headers[0]['CCD_NAME'])
+	fig = Figure(facecolor='white', dpi=72, figsize=(20,4), tight_layout=True)
+
+	for di in [-2,-1,0,1,2]:
+	    if pos+di >= 0 and pos+di < len(estimator.filenames):
+		image = estimator.images[pos+di]
+		bg = sep.Background(image)
+		image1 = image - bg.back()
+
+		ax = fig.add_subplot(1,5,di+3)
+
+		vmin,vmax = np.percentile(image1, [0.5, 99.7])
+		ax.imshow(image1, interpolation='nearest', vmin=vmin, vmax=vmax, cmap='hot')
+		ax.set_xlim(0.5*image1.shape[1]-50, 0.5*image1.shape[1]+50)
+		ax.set_ylim(0.5*image1.shape[0]-50, 0.5*image1.shape[0]+50)
+
+		if di == 0:
+		    ax.set_title("focus %g best %g" % (estimator.focpos[pos+di], bestpos))
+		else:
+		    ax.set_title("focus %g" % estimator.focpos[pos+di])
+		ax.axis('off')
+
+	canvas = FigureCanvas(fig)
+	canvas.print_png(filename, bbox_inches='tight')
+
+	filenames.append(filename)
+
+	# Plot all estimators with marked best position
+	filename = posixpath.join(dirname, 'estimators_%s.png' % estimator.headers[0]['CCD_NAME'])
+
+	fig = Figure(facecolor='white', dpi=72, figsize=(8,12), tight_layout=True)
+	color = 'red' if estimator.shouldRefine else 'green'
+
+	def plotit(ax, x, y, fmt='o-', spline=spline):
+		ax.plot(x, y, fmt)
+
+		ax.autoscale(False)
+
+		if spline:
+			spl = UnivariateSpline(x, (1.0*y - np.min(y))/(np.max(y)-np.min(y)), s=0.01)
+			x1 = np.linspace(np.min(x), np.max(x), 500)
+			ax.plot(x1, spl(x1)*(np.max(y)-np.min(y))+np.min(y), color='red')
+
+		if oldPos is not None:
+			ax.axvline(oldPos, color='gray', ls=':', alpha=0.3)
+
+		ax.axvline(bestpos, color=color, ls='--')
+
+	ax = fig.add_subplot(611)
+	ax0 = ax
+	plotit(ax, estimator.focpos, estimator.valFWHM)
+	ax.set_title('%s: %s - FWHM' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(612, sharex=ax0)
+	plotit(ax, estimator.focpos, estimator.valNumStars)
+	ax.set_title('%s: %s - Number of Stars' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(613, sharex=ax0)
+	plotit(ax, estimator.focpos, estimator.valSeqFWHM)
+	ax.set_title('%s: %s - Sequence FWHM' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(614, sharex=ax0)
+	plotit(ax, estimator.focpos, estimator.valSeqNumStars)
+	ax.set_title('%s: %s - Sequence Number of Stars' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(615, sharex=ax0)
+	plotit(ax, estimator.focpos, estimator.valStd)
+	ax.set_title('%s: %s - Std Dev' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	ax = fig.add_subplot(616, sharex=ax)
+	plotit(ax, estimator.focpos, estimator.valFFT)
+	ax.set_title('%s: %s - FFT' % (dirname, estimator.headers[0]['CCD_NAME']))
+
+	canvas = FigureCanvas(fig)
+	canvas.print_png(filename, bbox_inches='tight')
+
+	filenames.append(filename)
+
+	return filenames
+
+if __name__ == '__main__':
+	from optparse import OptionParser
+
+	parser = OptionParser(usage='usage: %prog [options] arg')
+	parser.add_option('-e', '--exposure', help='Exposure', action='store', dest='exposure', type='float', default=1)
+	parser.add_option('-s', '--step', help='Step', action='store', dest='step', type='float', default=10)
+	parser.add_option('-n', '--nsteps', help='Number of steps', action='store', dest='nsteps', type='int', default=20)
+	parser.add_option('-f', '--focuser', help='Focuser to use', action='store', dest='focuser', type='string', default='F0')
+	parser.add_option('-d', '--dir', help='Process already acquired data from given directory', action='store', dest='dir', type='string', default=None)
+	parser.add_option('-c', '--camera', help='Process data for given camera only', action='store', dest='camera', type='string', default=None)
+	parser.add_option('-v', '--verbose', help='Verbose output', action='store_true', dest='verbose', default=False)
+	parser.add_option('-r', '--refine', help='Initiate refinement focusing run if necessary', action='store_true', dest='refine', default=False)
+	parser.add_option('-p', '--plot', help='Plot diagnostic images', action='store_true', dest='plot', default=False)
+	parser.add_option('-m', '--mail', help='Email for sending the diagnostic message', action='append', dest='mail', type='string', default=[])
+	parser.add_option('--r0', help='Smoothing kernel radius for object detection', action='store', dest='r0', type='float', default=0.5)
+	parser.add_option('--thresh', help='Detection threshold', action='store', dest='thresh', type='float', default=2.0)
+	parser.add_option('--minnthresh', help='Minimum amount of pixels above threshold', action='store', dest='minnthresh', type='float', default=2)
+	parser.add_option('--minarea', help='Minimum area of object', action='store', dest='minarea', type='float', default=5)
+	parser.add_option('--relfluxradius', help='Relative radius of total flux circle, in FWHM units', action='store', dest='relfluxradius', type='float', default=3.0)
+	parser.add_option('-i', '--ignore', help='Ignore the result of focusing', action='store_true', dest='ignore', default=False)
+	(options,args) = parser.parse_args()
+
+	if options.dir:
+		# Offline mode
+		files = sorted(glob.glob(posixpath.join(options.dir, '*.fits')))
+		estimator = FocusEstimator(verbose=options.verbose, r0=options.r0, thresh=options.thresh, minnthresh=options.minnthresh, minarea=options.minarea, relfluxradius=options.relfluxradius)
+		estimator.processFiles(files, ccdname=options.camera, verbose=True)
+		bestPos = estimator.getBestFocus()
+
+		if estimator.fitFailed:
+			print('Focus fitting failed')
+		elif estimator.shouldRefine:
+			print('Next focus is at %gm additional refinement is needed' % bestPos)
+		else:
+			print('Best focus is at %g' % bestPos)
+
+	else:
+		# RTS2 script mode
+		from rts2 import scriptcomm
+
+		comm = scriptcomm.Rts2Comm()
+
+		comm.loopDisable()
+
+		log = ""
+
+		# Try to use some values from the camera variables
+		focuser = comm.getValue('focuser') or options.focuser
+		exptime = comm.getValueFloat('AF_exptime', focuser) or options.exposure
+		step = comm.getValueFloat('AF_step', focuser) or options.step
+		nsteps = comm.getValueFloat('AF_attempts', focuser) or options.nsteps
+
+		comm.log('I', 'focusing run on %s, %d steps x %d pts with %g exposure' % (focuser, nsteps, step, exptime))
+
+		comm.setValue('exposure', exptime)
+		comm.setValue('SHUTTER', 'LIGHT')
+
+		delta = 0
+		for niter in [0,1]:
+			toff = -0.5 * step * nsteps + delta
+			comm.setValue('FOC_TOFF', toff, focuser)
+
+			def beforeFn():
+				# Will be run after exposure and before readout
+				comm.setValue('FOC_TOFF', toff + step, focuser)
+
+			files = [] # Should we try to re-use files from previous iteration?..
+
+			# Acquire the measurements and collect image filenames
+			for _ in range(nsteps):
+				filename = comm.exposure(beforeFn, '%b/focusing/%N/%o/%f')
+				comm.log('I', '%d : %g : %s' % (_, toff, filename))
+				if filename:
+					files.append(filename)
+
+				toff += step
+
+			# Process acquired filenames and estimate best focus
+			estimator = FocusEstimator(files, verbose=options.verbose, print_fn=lambda *args: comm.log('I',*args), r0=options.r0, thresh=options.thresh, minnthresh=options.minnthresh, minarea=options.minarea, relfluxradius=options.relfluxradius)
+			bestPos = estimator.getBestFocus()
+			comm.log('I', 'best focus is %g, refinement %s' % (bestPos, 'needed' if estimator.shouldRefine else 'not needed'))
+
+			if estimator.shouldRefine and options.refine:
+				delta = bestPos - comm.getValueFloat('FOC_DEF', focuser)
+				comm.log('I', 'Adjusting focusing position by %g' % delta)
+			if estimator.shouldRefine:
+				comm.log('I', 'Refinement is necessary but is disabled')
+				break
+			elif estimator.fitFailed:
+				comm.log('I', 'Fit failed')
+				break
+			elif not options.ignore:
+				comm.log('I', 'Applying this value to FOC_DEF')
+				comm.setValue('FOC_DEF', bestPos, focuser)
+				break
+
+		if estimator.shouldRefine or estimator.fitFailed:
+			comm.log('E', 'Focusing unsuccessful')
+
+	# Focusing is finished, the rest is diagnostic stuff
+
+	filenames = []
+
+	# Plot some diagnostics
+	if options.plot:
+		try:
+			filenames = plotResults(estimator, oldPos = estimator.headers[0].get('FOC_DEF'))
+		except:
+			import traceback
+			traceback.print_exc()
+
+	if options.mail:
+		import platform
+
+		header0 = estimator.headers[0]
+
+		sender = 'focuser@' + platform.node()
+
+		subject = "Unsuccessful" if (estimator.shouldRefine or estimator.fitFailed) else "Successful"
+		subject += " focusing run %d on %s / %s" % (header0['OBSID'], header0['CCD_NAME'], header0['FILTER'])
+
+		msg = "Focusing run %d on %s / %s at %s\n" % (header0['OBSID'], header0['CCD_NAME'], header0['FILTER'], header0['DATE-OBS'])
+
+		msg += "Focuser: %s\n" % header0['FOC_NAME']
+		msg += "Exposure: %.1f s\n" % header0['EXPOSURE']
+		msg += "Telescope RA: %.2f Dec: %.1f Alt: %.1f Az: %.1f\n" % (header0['TELRA'], header0['TELDEC'], header0['TEL_ALT'], header0['TEL_AZ'])
+
+		msg += "Target: %d script: %s\n" % (header0['TARGET'], header0['SCRIPT'])
+		msg += "\n"
+
+		for _ in xrange(len(estimator.focpos)):
+			msg += "%d: %g %g %g %g\n" % (estimator.focpos[_], estimator.valFWHM[_], estimator.valNumStars[_], estimator.valStd[_], estimator.valFFT[_])
+
+		msg += "\n"
+
+		msg += "Focusing estimator: %s, fitter: %s\n" % (estimator.estimator, estimator.fitter)
+
+		if estimator.fitFailed:
+			msg += "Fit failed"
+		else:
+			msg += "Best %s position: %g\n" % (header0['FOC_NAME'], bestPos)
+		msg += "Previous %s position: %g\n" % (header0['FOC_NAME'], header0['FOC_DEF'])
+
+		for _ in options.mail:
+			send_email(msg, to=_, attachments=filenames, subject=subject, sender=sender)

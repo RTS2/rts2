@@ -576,6 +576,238 @@ int Device::commandAuthorized (Connection * conn)
 	{
 		return autosaveValues ();
 	}
+	else if (conn->isCommand ("value_create"))
+	{
+		char *type;
+		char *name;
+		char *desc;
+		char *param;
+		rts2core::Value *value = NULL;
+
+		if (conn->paramNextString (&type) || conn->paramNextString (&name) || conn->paramNextString (&desc))
+			return -2;
+
+		// Try to find the value if any
+		value = getOwnValue (name);
+
+		if (!strcmp (type, "double"))
+		{
+			double nval = 0;
+
+			if (conn->paramNextDouble (&nval))
+				return -2;
+
+			if (!value)
+				createValue ((rts2core::ValueDouble *&)value, name, desc, false, 0);
+			else if (value->getValueType () != RTS2_VALUE_DOUBLE)
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating DOUBLE value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::ValueDouble *)value)->setValueDouble (nval);
+		}
+		else if (!strcmp (type, "time") || !strcmp (type, "timevalue"))
+		{
+			double nval = 0;
+
+			if (conn->paramNextDouble (&nval))
+				return -2;
+
+			if (!value)
+				createValue ((rts2core::ValueTime *&)value, name, desc, false, 0);
+			else if (value->getValueType () != RTS2_VALUE_TIME)
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating TIME value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::ValueTime *)value)->setValueDouble (nval);
+		}
+		else if (!strcmp (type, "integer") || !strcmp (type, "int"))
+		{
+			int nval = 0;
+
+			if (conn->paramNextInteger (&nval))
+				return -2;
+
+			if (!value)
+				createValue ((rts2core::ValueInteger *&)value, name, desc, false, 0);
+			else if (value->getValueType () != RTS2_VALUE_INTEGER)
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating INTEGER value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::ValueInteger *)value)->setValueInteger (nval);
+		}
+		else if (!strcmp (type, "bool") || !strcmp (type, "boolean") || !strcmp (type, "onoff"))
+		{
+			char *nval = NULL;
+
+			if (conn->paramNextString (&nval))
+				return -2;
+
+			if (!value)
+				createValue ((rts2core::ValueBool *&)value, name, desc, false, 0);
+			else if (value->getValueType () != RTS2_VALUE_BOOL)
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating BOOLEAN value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::ValueBool *)value)->setValueCharArr (nval);
+
+			if (!strcmp(type, "onoff"))
+				value->setFlags (value->getFlags () | RTS2_DT_ONOFF);
+		}
+		else if (!strcmp (type, "string") || !strcmp (type, "str"))
+		{
+			char *nval = NULL;
+
+			if (conn->paramNextString (&nval))
+				return -2;
+
+			if (!value)
+				createValue ((rts2core::ValueString *&)value, name, desc, false, 0);
+			else if (value->getValueType () != RTS2_VALUE_STRING)
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating STRING value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::ValueString *)value)->setValueCharArr (nval);
+		}
+		else if (!strcmp (type, "double_array"))
+		{
+			if (!value)
+				createValue ((rts2core::DoubleArray *&)value, name, desc, false, 0);
+			else if (value->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating DOUBLE ARRAY value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::DoubleArray *)value)->clear ();
+		}
+		else if (!strcmp (type, "stat"))
+		{
+			if (!value)
+				createValue ((rts2core::ValueDoubleStat *&)value, name, desc, false, 0);
+			else if (value->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
+			{
+				logStream (MESSAGE_ERROR) << "Wrong type of already existing value when creating DOUBLE STAT value " << name << " : " << value->getValueBaseType () << sendLog;
+				return -2;
+			}
+
+			((rts2core::ValueDoubleStat *)value)->clearStat ();
+		}
+
+		while (conn->paramNextString (&param) == 0)
+		{
+			int rts2type = rts2core::typeFromString (param);
+			double nval = NAN;
+
+			if (!strcmp (param, "writable") || !strcmp (param, "write"))
+			{
+				if (value)
+					value->setWritable ();
+			}
+			else if (!strcmp (param, "fits"))
+			{
+				if (value)
+					value->setWriteToFits ();
+			}
+			else if (!strcmp (param, "temp") || !strcmp (param, "temporary"))
+			{
+				if (value)
+					value->setTemporary ();
+			}
+			else if (rts2type > 0)
+			{
+				if (value)
+					value->setFlags (value->getFlags () | rts2type);
+			}
+			else if (!strcmp (type, "double_array") && (sscanf (param, "%lf", &nval) == 1))
+			{
+				((rts2core::DoubleArray *)value)->addValue (nval);
+			}
+			else if (!strcmp (type, "stat") && (sscanf (param, "%lf", &nval) == 1))
+			{
+				((rts2core::ValueDoubleStat *)value)->addValue (nval);
+			}
+			else
+				logStream (MESSAGE_ERROR) << "Wrong option for value " << name << " : " << param << sendLog;
+		}
+
+		if (value)
+			updateMetaInformations (value);
+
+		return 0;
+	}
+	else if (conn->isCommand ("value_add") || conn->isCommand ("double_array_add") || conn->isCommand ("stat_add"))
+	{
+		char *name;
+		rts2core::Value *value = NULL;
+		int maxSize = 0;
+
+		if (conn->paramNextString (&name))
+		{
+			logStream (MESSAGE_ERROR) << "Missing value name" << sendLog;
+			return -2;
+		}
+
+		value = getOwnValue (name);
+
+		if (!value)
+		{
+			logStream (MESSAGE_ERROR) << "Value " << name << " not found" << sendLog;
+			return -2;
+		}
+
+		if (conn->isCommand ("stat_add") && conn->paramNextInteger (&maxSize))
+		{
+			logStream (MESSAGE_ERROR) << "Missing max queue size for STAT value " << name << sendLog;
+			return -2;
+		}
+
+		while (!conn->paramEnd ())
+		{
+			double nval = NAN;
+			if (conn->paramNextDouble (&nval))
+			{
+				logStream (MESSAGE_ERROR) << "Wrong double value" << sendLog;
+				return -2;
+			}
+
+			if (value->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+				((rts2core::DoubleArray *)value)->addValue (nval);
+			else if (value->getValueType () == (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
+				((rts2core::ValueDoubleStat *)value)->addValue (nval, maxSize);
+		}
+
+		sendValueAll (value);
+
+		return 0;
+	}
+	else if (conn->isCommand ("value_delete"))
+	{
+		char *name;
+
+		if (conn->paramNextString (&name)|| !conn->paramEnd ())
+			return -2;
+
+		rts2core::Value *value = getOwnValue (name);
+
+		if (value)
+		{
+			sendValueDeleteAll (value);
+			return deleteValue (name);
+		}
+
+		return -1;
+	}
+
 	// we need to try that - due to other device commands
 	return -5;
 }
@@ -831,6 +1063,10 @@ int Device::scriptEnds ()
 		setMode (0);
 		sendValueAll (modesel);
 	}
+
+	// Remove script temporary values
+	deleteTemporaryValues ();
+
 	logStream (MESSAGE_DEBUG) << "executed script ends, all values changed to defaults" << sendLog;
 	return 0;
 }

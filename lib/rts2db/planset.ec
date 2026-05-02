@@ -1,4 +1,4 @@
-/* 
+/*
  * Plan set class.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -18,6 +18,7 @@
  */
 
 #include "rts2db/planset.h"
+#include "rts2db/devicedb.h"
 #include "configuration.h"
 #include "libnova_cpp.h"
 
@@ -27,6 +28,9 @@ using namespace rts2db;
 
 void PlanSet::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	char *stmp_c;
 
@@ -57,7 +61,7 @@ void PlanSet::load ()
 	EXEC SQL OPEN plan_cur;
 	while (1)
 	{
-		EXEC SQL FETCH next 
+		EXEC SQL FETCH next
 			FROM plan_cur
 			INTO :db_plan_id;
 		if (sqlca.sqlcode)
@@ -104,7 +108,7 @@ PlanSet::PlanSet (int prop_id)
 
 PlanSet::PlanSet (double t_from, double t_to)
 {
-	planFromTo (t_from, t_to);  
+	planFromTo (t_from, t_to);
 }
 
 PlanSet::~PlanSet (void)

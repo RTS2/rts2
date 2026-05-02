@@ -36,6 +36,16 @@ Target *createTargetByString (std::string tar_string, bool debug)
 
 	LibnovaRaDec raDec;
 
+	if (tar_string.length() == 0)
+	{
+		// Empty target
+		ConstTarget *constTarget = new ConstTarget ();
+		constTarget->setPosition (NAN, NAN);
+		constTarget->setTargetName ("Empty target");
+		constTarget->setTargetType (TYPE_OPORTUNITY);
+		return constTarget;
+	}
+
 	int ret = raDec.parseString (tar_string.c_str ());
 	if (ret == 0)
 	{

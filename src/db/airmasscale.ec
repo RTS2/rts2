@@ -1,4 +1,4 @@
-/* 
+/*
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 Copyright 2005 Petr Kubanek	*/
 
 #include "rts2db/appdb.h"
+#include "rts2db/devicedb.h"
 
 #include <iostream>
 #include <math.h>
@@ -109,6 +110,9 @@ int Rts2AirmasScale::init ()
 
 int Rts2AirmasScale::doSetAirmass ()
 {
+	if (rts2db::checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	float db_airmass_start;
 	float db_airmass_end;

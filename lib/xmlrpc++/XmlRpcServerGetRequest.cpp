@@ -12,6 +12,16 @@
 
 using namespace XmlRpc;
 
+bool HttpParams::hasParam (const char *_name)
+{
+	for (HttpParams::iterator p = begin (); p != end (); p++)
+	{
+		if (p->haveName (_name))
+			return true;
+	}
+	return false;
+}
+
 const char *HttpParams::getString (const char *_name, const char *def_val)
 {
 	for (HttpParams::iterator p = begin (); p != end (); p++)

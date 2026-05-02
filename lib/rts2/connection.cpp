@@ -221,6 +221,11 @@ std::string Connection::getStateString (bool verbose)
 	{
 		case DEVICE_TYPE_SERVERD:
 			_os << CentralState (getState ()).getString ();
+			if (verbose)
+			{
+				if (getValue ("next_state"))
+					_os << " | next in " << TimeDiff (getNow (), getValueDouble ("next_state_change"), false) << " " << getValueSelection ("next_state");
+			}
 			break;
 		case DEVICE_TYPE_MOUNT:
 			if (verbose)
@@ -330,6 +335,17 @@ std::string Connection::getStateString (bool verbose)
 			{
 				if (getValue ("automode"))
 					_os << (getValueInteger ("automode") ? "AUTO" : "MANUAL") << " ";
+
+				if (getValue ("emergency") && getValueInteger ("emergency"))
+					_os << "EMERGENCY ";
+
+				if (getValue ("low_oil") && getValueInteger ("low_oil"))
+					_os << "OIL ";
+
+				if ((getValue ("battery_fault") && getValueInteger ("battery_fault")) ||
+					(getValue ("on_battery") && getValueInteger ("on_battery")) ||
+					(getValue ("battery_low") && getValueInteger ("battery_low")))
+					_os << "BATTERY ";
 			}
 
 			switch (real_state & DOME_DOME_MASK)
@@ -451,10 +467,27 @@ std::string Connection::getStateString (bool verbose)
 			_os << "augershooter " << real_state;
 			break;
 		case DEVICE_TYPE_EXECUTOR:
-			if (verbose && getValue ("current") && getValueInteger ("current") >= 0)
+			if (verbose)
 			{
-				_os << " | " << getValueInteger ("current") << " " << getValueChar ("current_name")
-					<< " " << getValueInteger ("obsid") << " | ";
+				_os << " |";
+
+				if (getValue ("current") && getValueInteger ("current") >= 0)
+					_os << " " << getValueInteger ("current") << " " << getValueChar ("current_name")
+						<< " " << getValueInteger ("obsid");
+
+				if (getValue ("enabled") && !getValueInteger ("enabled"))
+					_os << " DISABLED";
+
+				if (getValue ("auto_loop") && getValueInteger ("auto_loop"))
+					_os << " loop";
+
+				if (getValue ("ignore_day") && getValueInteger ("ignore_day"))
+					_os << " ignore_day";
+
+				if (getValue ("selector_next") && getValueInteger ("selector_next"))
+					_os << " sel";
+
+				_os << " | ";
 			}
 			switch (real_state & EXEC_STATE_MASK)
 			{
@@ -506,7 +539,8 @@ std::string Connection::getStateString (bool verbose)
 		case DEVICE_TYPE_IMGPROC:
 			if (verbose)
 			{
-				_os << " | " << getValueInteger ("queue_size") << " : "<< getValueInteger ("good_astrom") << " " << getValueInteger ("no_astrom") << " | ";
+				_os << " | " << getValueInteger ("queue_size") << " : "<< getValueInteger ("night_astrom") << " " << getValueInteger ("night_noastrom") << " | ";
+				_os << std::fixed << std::setprecision(1) << getValueDouble("free_diskspace")/1024/1024/1024 << " Gb | ";
 			}
 			if (real_state & IMGPROC_RUN)
 				_os << "PROCESS RUNNING";
@@ -514,6 +548,25 @@ std::string Connection::getStateString (bool verbose)
 				_os << "idle";
 			break;
 		case DEVICE_TYPE_SELECTOR:
+			if (verbose)
+			{
+				_os << " |";
+
+				if (getValue ("next_id") && getValueInteger ("next_id") >= 0)
+				{
+					_os << " " << getValueInteger ("next_id");
+					if (getValue ("next_started") && getValueInteger ("next_started"))
+						_os << " STARTED";
+				}
+
+				if (getValue ("selector_enabled") && !getValueInteger ("selector_enabled"))
+					_os << " DISABLED";
+
+				if (getValue ("ignore_day") && getValueInteger ("ignore_day"))
+					_os << " ignore_day";
+
+				_os << " | ";
+			}
 			if (real_state & SENSOR_INPROGRESS)
 				_os << "CHANGING";
 			else
@@ -752,6 +805,7 @@ void Connection::processLine ()
 	int ret;
 
 	// find command parameters end
+	command_full = std::string (command_start);
 
 	while (*command_buf_top && !isspace (*command_buf_top))
 		command_buf_top++;
@@ -821,6 +875,26 @@ void Connection::processLine ()
 		else
 		{
 			ret = metaInfo (m_type, std::string (m_name), std::string (m_descr));
+		}
+	}
+	else if (isCommand (PROTO_DELETE))
+	{
+		char *m_name;
+		if (paramNextString (&m_name) || !paramEnd ())
+		{
+		 	ret = -2;
+		}
+		else
+		{
+			rts2core::Value *value = values.getValue (m_name);
+
+			if (value)
+			{
+				values.removeValue (m_name);
+				ret = -1;
+			}
+			else
+				ret = -2;
 		}
 	}
 	else if (isCommand (PROTO_VALUE))
@@ -1020,13 +1094,13 @@ void Connection::processLine ()
 			sendCommandEnd (DEVDEM_OK, "OK");
 			break;
 		case DEVDEM_E_COMMAND:
-                        // shall be handled by command itself, which should sendCommandEnd..
+			// shall be handled by command itself, which should sendCommandEnd..
 			break;
 		case DEVDEM_E_PARAMSNUM:
-			sendCommandEnd (DEVDEM_E_PARAMSNUM, (std::string ("invalid parameters/invalid number of parameters - ") + getCommand ()).c_str ());
+			sendCommandEnd (DEVDEM_E_PARAMSNUM, (std::string ("invalid parameters/invalid number of parameters - ") + getCommandFull ()).c_str ());
 			break;
 		case DEVDEM_E_PARAMSVAL:
-			sendCommandEnd (DEVDEM_E_PARAMSVAL, (std::string ("invalid parameter values for command ") + getCommand ()).c_str ());
+			sendCommandEnd (DEVDEM_E_PARAMSVAL, (std::string ("invalid parameter values for command ") + getCommandFull ()).c_str ());
 			break;
 		default:
 			break;
@@ -1104,7 +1178,7 @@ int Connection::receive (Block *block)
 	// connections market for deletion
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if ((sock >= 0) && (block->getPollEvents (sock) & (POLLIN | POLLPRI)))
+	if ((sock >= 0) && (block->getPollEvents (sock) & (POLLIN | POLLPRI | POLLHUP)))
 	{
 		if (isConnState (CONN_CONNECTING))
 		{
@@ -2163,6 +2237,40 @@ int Connection::paramNextTimeval (struct timeval *tv)
 	tv->tv_sec = sec;
 	tv->tv_usec = usec;
 	return 0;
+}
+
+void Connection::unquoteRest ()
+{
+	char ch = 0;
+
+	while (isspace (*command_buf_top) || *command_buf_top == '"' || *command_buf_top == '\'')
+	{
+		if (!isspace(*command_buf_top))
+			ch = *command_buf_top;
+
+		*command_buf_top = ' ';
+		command_buf_top ++;
+
+		if (ch)
+			break;
+	}
+
+	if (!ch)
+		return;
+
+	char *ptr = command_buf_top;
+
+	while (*ptr)
+		ptr ++;
+
+	while (ptr > command_buf_top)
+	{
+		ptr --;
+		if (isspace(*ptr) || *ptr == ch)
+			*ptr = '\0';
+		else
+			break;
+	}
 }
 
 void Connection::newDataConn (int data_conn)

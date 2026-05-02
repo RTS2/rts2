@@ -1,4 +1,4 @@
-/* 
+/*
  * Utility classes for record values.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,11 +19,15 @@
 
 #include "rts2db/recordsavg.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
 void RecordAvgSet::load (double t_from, double t_to)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
 	double d_t_from = t_from;

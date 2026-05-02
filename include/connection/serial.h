@@ -29,7 +29,7 @@ namespace rts2core
 /**
  * Enum for baud speeds.
  */
-typedef enum {BS1200, BS2400, BS4800, BS9600, BS19200, BS57600, BS115200} bSpeedT;
+typedef enum {BS1200, BS2400, BS4800, BS9600, BS19200, BS38400, BS57600, BS115200} bSpeedT;
 
 /**
  * Enum for data size.
@@ -218,6 +218,7 @@ class ConnSerial: public ConnNoSend
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, const char *endChar);
 
 	private:
+		std::string devName;
 		struct termios s_termios;
 
 		bSpeedT baudSpeed;
@@ -251,6 +252,7 @@ class ConnSerial: public ConnNoSend
 
 		void flushError ();
 
+		int checkConnected ();
 };
 
 }

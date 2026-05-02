@@ -1,4 +1,4 @@
-/* 
+/*
  * Set of targets.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,6 +19,7 @@
 
 #include "rts2db/targetset.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include "configuration.h"
 #include "libnova_cpp.h"
@@ -31,6 +32,9 @@ using namespace rts2db;
 
 void TargetSet::load ()
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	char *stmp_c;
 	int db_tar_id;
@@ -44,7 +48,7 @@ void TargetSet::load ()
 		"tar_id"
 		" FROM "
 		"targets"
-		" WHERE " << where << 
+		" WHERE " << where <<
 		" ORDER BY " << order_by << ";";
 
 	stmp_c = new char[_os.str ().length () + 1];
@@ -138,7 +142,7 @@ void TargetSet::loadByName (const char *name, bool approxName, bool ignoreCase)
 void TargetSet::loadByLabel (const char *label)
 {
 	int d_label_id;
-	
+
 	Labels lb;
 	for (int i = LABEL_PI; i <= LABEL_PROGRAM; i++)
 	{
@@ -149,7 +153,7 @@ void TargetSet::loadByLabel (const char *label)
 		}
 		catch (rts2core::Error &er)
 		{
-			// ignore error  
+			// ignore error
 		}
 	}
 }
@@ -157,7 +161,7 @@ void TargetSet::loadByLabel (const char *label)
 void TargetSet::loadByLabelId (int label_id)
 {
 	std::ostringstream os;
-	
+
 	os << "EXISTS (SELECT * FROM target_labels where target_labels.tar_id = targets.tar_id and label_id = " << label_id << ")";
 
 	where = os.str ();
@@ -519,6 +523,9 @@ TargetSetGrb::~TargetSetGrb (void)
 
 void TargetSetGrb::load ()
 {
+	if (checkDbConnection ())
+		return;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id;
 	EXEC SQL END DECLARE SECTION;
@@ -631,7 +638,7 @@ bool sortWestEast::doSort (Target *tar1, Target *tar2)
 	double ha2 = tar2->getHourAngle (JD, observer);
 	// ha1 on west, ha2 on east - ha1 is winner
 	return ha1 > ha2;
-		
+
 }
 
 TargetSet::iterator const rts2db::resolveAll (TargetSet *ts)

@@ -1,4 +1,4 @@
-/* 
+/*
  * Sets of Auger targets.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -19,6 +19,7 @@
 
 #include "augerset.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 #include "configuration.h"
 
@@ -26,6 +27,9 @@ using namespace rts2db;
 
 void AugerSet::load (double _from, double _to)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_from = _from;
 	double d_to = _to;
@@ -123,17 +127,17 @@ void AugerSet::load (double _from, double _to)
 		eye,
 		run,
 		event,
-		augerid, 
-		GPSSec, 
-		GPSNSec, 
-		SDId, 
+		augerid,
+		GPSSec,
+		GPSNSec,
+		SDId,
 		NPix,
 		SDPTheta,
 		SDPThetaErr,
 		SDPPhi,
 		SDPPhiErr,
 		SDPChi2,
-		SDPNdf, 
+		SDPNdf,
 		Rp,
 		RpErr,
 		Chi0,
@@ -142,7 +146,7 @@ void AugerSet::load (double _from, double _to)
 		T0Err,
 		TimeChi2,
 		TimeChi2FD,
-		TimeNdf,	
+		TimeNdf,
 		Easting,
 		Northing,
 		Altitude,
@@ -189,7 +193,7 @@ void AugerSet::load (double _from, double _to)
 		auger_date BETWEEN to_timestamp (:d_from) and to_timestamp (:d_to)
 	ORDER BY
 		auger_date asc;
-	
+
 	EXEC SQL OPEN cur_augerset;
 
 	while (1)
@@ -379,6 +383,9 @@ void AugerSet::printHTMLTable (std::ostringstream &_os)
 
 void AugerSetDate::load (int year, int month, int day, int hour, int minutes)
 {
+	if (checkDbConnection ())
+		throw SqlError ();
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_value;
 	int d_c;
@@ -432,7 +439,7 @@ void AugerSetDate::load (int year, int month, int day, int hour, int minutes)
 	}
 
 	_os << "SELECT EXTRACT (" << group_by << " FROM auger_date) as value, count (*) as c FROM auger ";
-	
+
 	if (_where.str ().length () > 0)
 		_os << "WHERE " << _where.str ();
 

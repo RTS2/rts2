@@ -28,7 +28,7 @@
 namespace rts2plan
 {
 
-typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
+typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT, OBS } astrometry_stat_t;
 
 class ConnProcess:public rts2script::ConnExe
 {
@@ -38,7 +38,7 @@ class ConnProcess:public rts2script::ConnExe
 		virtual int init ();
 
 		astrometry_stat_t getAstrometryStat () { return astrometryStat; }
-	
+
 		double getExposureEnd () { return expDate; };
 
 		/**
@@ -47,8 +47,9 @@ class ConnProcess:public rts2script::ConnExe
 		virtual const char* getProcessArguments () { return "none"; }
 
 #ifdef RTS2_HAVE_LIBJPEG
-		void setLastGoodJpeg (const char *_last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
-		void setLastTrashJpeg (const char *_last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
+		void setLastProcessedJpeg (std::string _last_processed_jpeg) { last_processed_jpeg = _last_processed_jpeg; }
+		void setLastGoodJpeg (std::string _last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
+		void setLastTrashJpeg (std::string _last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
 #endif
 
 	protected:
@@ -56,8 +57,9 @@ class ConnProcess:public rts2script::ConnExe
 		double expDate;
 
 #ifdef RTS2_HAVE_LIBJPEG
-		const char *last_good_jpeg;
-		const char *last_trash_jpeg;
+		std::string last_processed_jpeg;
+		std::string last_good_jpeg;
+		std::string last_trash_jpeg;
 #endif
 };
 
@@ -69,7 +71,7 @@ class ConnProcess:public rts2script::ConnExe
  */
 class ConnImgOnlyProcess:public ConnProcess
 {
-	public:  
+	public:
 		/**
 		 *
 		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed
@@ -125,6 +127,7 @@ class ConnImgProcess:public ConnImgOnlyProcess
 		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
 		 */
 		ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
+		virtual int init ();
 
 		virtual int newProcess ();
 
@@ -139,35 +142,15 @@ class ConnObsProcess:public ConnProcess
 {
 	public:
 		ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout);
+		virtual ~ ConnObsProcess (void);
 
 		virtual const char* getProcessArguments () { return obs == NULL ? "unknown" : obs->getTargetName ().c_str (); }
 
-		virtual int newProcess ();
 		virtual void processLine ();
 
 	private:
 		int obsId;
 		rts2db::Observation *obs;
-
-		char *obsIdCh;
-		char *obsTarIdCh;
-		char *obsTarTypeCh;
-};
-
-class ConnDarkProcess:public ConnProcess
-{
-	public:
-		ConnDarkProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
-
-		virtual void processLine ();
-};
-
-class ConnFlatProcess:public ConnProcess
-{
-	public:
-		ConnFlatProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
-
-		virtual void processLine ();
 };
 
 };

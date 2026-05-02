@@ -1,4 +1,4 @@
-/* 
+/*
  * Account class.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
@@ -21,6 +21,7 @@
 
 #include "rts2db/account.h"
 #include "rts2db/sqlerror.h"
+#include "rts2db/devicedb.h"
 
 using namespace rts2db;
 
@@ -40,6 +41,9 @@ Account::Account (int _id, std::string _name, float _share)
 int
 Account::load ()
 {
+	if (checkDbConnection ())
+		return -1;
+
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_account_id = id;
 	VARCHAR d_account_name[150];
